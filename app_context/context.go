@@ -2,6 +2,7 @@ package app_context
 
 import (
 	"github.com/evgeniums/go-backend-helpers/config"
+	"github.com/evgeniums/go-backend-helpers/db"
 	"github.com/evgeniums/go-backend-helpers/logger"
 )
 
@@ -12,7 +13,7 @@ type Context interface {
 	logger.WithLogger
 	config.WithConfig
 
-	DB() DB
+	DB() db.DB
 	Validator() Validator
 
 	Testing() bool

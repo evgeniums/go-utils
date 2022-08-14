@@ -31,6 +31,9 @@ func (c *ConfigViper) GetBool(key string) bool {
 }
 
 func (c *ConfigViper) Init(configFile string) error {
+
+	c.Viper = viper.New()
+
 	c.Viper.SetConfigFile(configFile)
 	c.Viper.SetConfigType("json")
 	c.Viper.AddConfigPath(".")

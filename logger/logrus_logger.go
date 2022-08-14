@@ -63,8 +63,11 @@ type LogrusConfig struct {
 }
 
 func (l *LogrusLogger) Init(config LogrusConfig) error {
+
+	l.Logrus = logrus.New()
+
 	var err error
-	if config.Destination == "" || config.Destination == "file" {
+	if config.Destination == "file" {
 		logFileName := config.File
 		if logFileName == "" {
 			logFileName = "log.log"

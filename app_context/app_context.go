@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/config"
+	"github.com/evgeniums/go-backend-helpers/db"
 	"github.com/evgeniums/go-backend-helpers/gorm_db"
 	"github.com/evgeniums/go-backend-helpers/logger"
 
@@ -26,7 +27,7 @@ type AppContext struct {
 	TestValues map[string]interface{}
 }
 
-func (c *AppContext) DB() DB {
+func (c *AppContext) DB() db.DB {
 	return c.GormDB
 }
 
@@ -51,7 +52,7 @@ func (c *AppContext) GetTestParameter(key string) (interface{}, bool) {
 	return value, ok
 }
 
-func NewAppContext() Context {
+func NewAppContext() *AppContext {
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
@@ -119,5 +120,10 @@ func (ctx *AppContext) InitLog(configPath string) error {
 }
 
 func (ctx *AppContext) InitDb(configPath string) error {
+
+	ctx.GormDB = &gorm_db.GormDB{}
+	ctx.GormDB.WithConfigBase = ctx.WithConfigBase
+	ctx.GormDB.WithLoggerBase = ctx.WithLoggerBase
+
 	return ctx.GormDB.Init(configPath)
 }

@@ -4,7 +4,9 @@ import (
 	"fmt"
 
 	"github.com/evgeniums/go-backend-helpers/config"
+	"github.com/evgeniums/go-backend-helpers/db"
 	"github.com/evgeniums/go-backend-helpers/logger"
+	"github.com/evgeniums/go-backend-helpers/orm"
 	"gorm.io/gorm"
 )
 
@@ -17,7 +19,6 @@ type GormDB struct {
 
 	DB *gorm.DB
 
-	// FindByField(field string, value string, obj interface{}, tx ...DBTransaction) (bool, error)
 	// Find(id interface{}, obj interface{}, tx ...DBTransaction) (bool, error)
 	// Delete(obj orm.WithIdInterface, tx ...DBTransaction) error
 	// DeleteByField(field string, value interface{}, obj interface{}, tx ...DBTransaction) error
@@ -35,6 +36,8 @@ type GormDB struct {
 }
 
 func (g *GormDB) Init(configPath ...string) error {
+
+	g.Logger().Info("Init GormDB")
 
 	path := "psql"
 	if len(configPath) == 1 {
@@ -61,4 +64,28 @@ func (g *GormDB) Init(configPath ...string) error {
 		return msg
 	}
 	return nil
+}
+
+func (g *GormDB) FindByField(field string, value string, obj interface{}, tx ...db.Transaction) (bool, error) {
+	if len(tx) != 0 {
+		return tx[0].FindByField(field, value, obj)
+	}
+	notFound, err := FindByField(g.DB, field, value, obj)
+	if err != nil && !notFound {
+		err = fmt.Errorf("failed to FindByField %v", ObjectTypeName(obj))
+		g.Logger().Error("GormDB", err, logger.Fields{"field": field, "value": value, "error": err})
+	}
+	return notFound, err
+}
+
+func (g *GormDB) Create(obj orm.BaseInterface, tx ...db.Transaction) error {
+	if len(tx) != 0 {
+		return tx[0].Create(obj)
+	}
+	err := Create(g.DB, obj)
+	if err != nil {
+		err = fmt.Errorf("failed to Create %v", ObjectTypeName(obj))
+		g.Logger().Error("GormDB", err)
+	}
+	return err
 }
