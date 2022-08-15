@@ -43,7 +43,7 @@ func FindByField(db *gorm.DB, fieldName string, fieldValue interface{}, doc inte
 }
 
 func FindByFields(db *gorm.DB, fields map[string]interface{}, doc interface{}) (bool, error) {
-	result := db.Where(fields).First(doc)
+	result := db. /*.Debug()*/ Where(fields).First(doc)
 	if result.Error != nil {
 		notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
 		if !notFound {
