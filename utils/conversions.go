@@ -68,11 +68,19 @@ func RoundMoney(value float64) float64 {
 	r := math.Round(float64(value)*100) / 100
 	return r
 }
-func FormatInn(value int64) string {
-	return fmt.Sprintf("%012d", value)
-}
 
 func TimeToStr(t time.Time) string {
 	str := fmt.Sprintf("%02d.%02d.%04d %02d:%02d", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute())
 	return str
+}
+
+func StrToUint32(s string) (uint32, error) {
+	if s == "" {
+		return 0, nil
+	}
+	val, err := strconv.ParseUint(s, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	return uint32(val), nil
 }

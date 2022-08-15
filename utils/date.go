@@ -93,3 +93,7 @@ func StrToTime(s string) (time.Time, error) {
 func Today() Date {
 	return Date(time.Now())
 }
+
+func DateOfTime(t time.Time) Date {
+	return Date(BeginningOfDay(t))
+}
