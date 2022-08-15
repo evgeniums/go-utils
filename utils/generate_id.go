@@ -10,13 +10,12 @@ var idCount = 0
 
 func GenerateID() string {
 	t := time.Now().UTC().Unix()
-	r1 := rand.Int31n(0xffff)
-	r2 := rand.Int31n(0xff)
+	r1 := rand.Int31n(0x7fffffff)
 
-	count := idCount % 0x100
+	count := idCount % 0x10000
 	idCount++
 
-	id := fmt.Sprintf("%08x%02x%04x%02x", t, count, r1, r2)
+	id := fmt.Sprintf("%08x%04x%04x", t, count, r1)
 	return id
 }
 
