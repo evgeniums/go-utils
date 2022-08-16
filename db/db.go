@@ -10,16 +10,19 @@ type Transaction interface {
 	FindByField(field string, value string, obj interface{}) (bool, error)
 	FindByFields(fields map[string]interface{}, obj interface{}) (bool, error)
 	Create(obj orm.BaseInterface) error
+	DeleteByField(field string, value interface{}, obj interface{}) error
+	DeleteByFields(fields map[string]interface{}, obj interface{}) error
 }
 
 type DB interface {
 	FindByField(field string, value string, obj interface{}, tx ...Transaction) (bool, error)
 	FindByFields(fields map[string]interface{}, obj interface{}, tx ...Transaction) (bool, error)
 	Create(obj orm.BaseInterface, tx ...Transaction) error
+	DeleteByField(field string, value interface{}, obj interface{}, tx ...Transaction) error
+	DeleteByFields(fields map[string]interface{}, obj interface{}, tx ...Transaction) error
+
 	// Find(id interface{}, obj interface{}, tx ...DBTransaction) (bool, error)
 	// Delete(obj orm.WithIdInterface, tx ...DBTransaction) error
-	// DeleteByField(field string, value interface{}, obj interface{}, tx ...DBTransaction) error
-	// DeleteByFields(fields map[string]interface{}, obj interface{}, tx ...DBTransaction) error
 	// CreateDoc(obj interface{}, tx ...DBTransaction) error
 	// Update(obj interface{}, tx ...DBTransaction) error
 	// UpdateField(obj interface{}, field string, tx ...DBTransaction) error

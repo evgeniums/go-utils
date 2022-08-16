@@ -86,3 +86,27 @@ func (g *GormDB) Create(obj orm.BaseInterface, tx ...db.Transaction) error {
 	}
 	return err
 }
+
+func (g *GormDB) DeleteByField(field string, value interface{}, obj interface{}, tx ...db.Transaction) error {
+	if len(tx) != 0 {
+		return tx[0].DeleteByField(field, value, obj)
+	}
+	err := RemoveByField(g.DB, field, value, obj)
+	if err != nil {
+		err = fmt.Errorf("failed to DeleteByField %v", ObjectTypeName(obj))
+		g.Logger().Error("GormDB", err, logger.Fields{"field": field, "value": value})
+	}
+	return err
+}
+
+func (g *GormDB) DeleteByFields(fields map[string]interface{}, obj interface{}, tx ...db.Transaction) error {
+	if len(tx) != 0 {
+		return tx[0].DeleteByFields(fields, obj)
+	}
+	err := DeleteAllByFields(g.DB, fields, obj)
+	if err != nil {
+		err = fmt.Errorf("failed to DeleteByFields %v", ObjectTypeName(obj))
+		g.Logger().Error("GormDB", err, fields)
+	}
+	return err
+}
