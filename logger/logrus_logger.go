@@ -24,12 +24,14 @@ func (l *LogrusLogger) Debug(message string, fields ...Fields) {
 	l.Logrus.WithFields(f).Debug(message)
 }
 
-func (l *LogrusLogger) Error(message string, err error, fields ...Fields) {
+func (l *LogrusLogger) Error(message string, err error, fields ...Fields) error {
 	f := Fields{"error": err}
 	if len(fields) > 0 {
 		f = utils.AppendMap(f, fields[0])
 	}
 	l.Logrus.WithFields(f).Error(message)
+
+	return fmt.Errorf("%s: %s", message, err)
 }
 
 func (l *LogrusLogger) Warn(message string, fields ...Fields) {
