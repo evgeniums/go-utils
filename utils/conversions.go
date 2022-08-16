@@ -84,3 +84,9 @@ func StrToUint32(s string) (uint32, error) {
 	}
 	return uint32(val), nil
 }
+
+const float64EqualityThreshold = 1e-9
+
+func FloatAlmostEqual(a, b float64) bool {
+	return math.Abs(a-b) <= float64EqualityThreshold
+}
