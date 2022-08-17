@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"reflect"
 
-	log "github.com/sirupsen/logrus"
-
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -16,26 +14,13 @@ func ConnectDB(dsn string) (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
-	if err != nil {
-		log.WithField("error", err).Panic("Failed to connect database")
-		panic("failed to connect database")
-	}
-
-	return db, nil
-}
-
-func Find(db *gorm.DB, id interface{}, doc interface{}) (bool, error) {
-	// TODO just find
-	return FindByField(db, "id", id, doc)
+	return db, err
 }
 
 func FindByField(db *gorm.DB, fieldName string, fieldValue interface{}, doc interface{}) (bool, error) {
 	result := db.First(doc, fmt.Sprintf("\"%v\" = ?", fieldName), fieldValue)
 	if result.Error != nil {
 		notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
-		if !notFound {
-			log.WithFields(log.Fields{"field_name": fieldName, "field_value": fieldValue, "type": ObjectTypeName(doc), "error": result.Error}).Error("orm.FindByField: failed")
-		}
 		return notFound, result.Error
 	}
 
@@ -46,22 +31,24 @@ func FindByFields(db *gorm.DB, fields map[string]interface{}, doc interface{}) (
 	result := db. /*.Debug()*/ Where(fields).First(doc)
 	if result.Error != nil {
 		notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
-		if !notFound {
-			log.WithFields(log.Fields{"fields": fields, "type": ObjectTypeName(doc), "error": result.Error}).Error("orm.FindByFields: failed")
-		}
 		return notFound, result.Error
 	}
 
 	return false, nil
 }
 
+func RowsByFields(db *gorm.DB, fields map[string]interface{}, doc interface{}) (gorm.Rows, error) {
+	return db.Model(doc).Where(fields).Rows()
+}
+
+func AllRows(db *gorm.DB, doc interface{}) (gorm.Rows, error) {
+	return db.Model(doc).Rows()
+}
+
 func FindAll(db *gorm.DB, docs interface{}) error {
 	result := db.Find(docs)
-	if result.Error != nil {
-		log.WithFields(log.Fields{"type": reflect.TypeOf(docs).Name, "error": result.Error}).Error("orm.FindAll: failed")
-		return result.Error
-	}
-	return nil
+	return result.Error
+
 }
 
 type Interval struct {
@@ -158,7 +145,6 @@ func FindWithFilter(db *gorm.DB, filter *Filter, docs interface{}) error {
 	// result := h.Debug().Find(docs)
 	result := h.Find(docs)
 	if result.Error != nil {
-		log.WithFields(log.Fields{"filter": filter, "type": reflect.TypeOf(docs).Name, "error": result.Error}).Error("orm.FindAll: failed")
 		return result.Error
 	}
 	return nil
@@ -194,7 +180,6 @@ func SumWithFilter(db *gorm.DB, filter *Filter, fields map[string]string, doc in
 func FindAllByFields(db *gorm.DB, fields map[string]interface{}, docs interface{}) error {
 	result := db.Where(fields).Find(docs)
 	if result.Error != nil {
-		log.WithFields(log.Fields{"fields": fields, "type": reflect.TypeOf(docs).Name, "error": result.Error}).Error("orm.FindAllByFields: failed")
 		return result.Error
 	}
 	return nil
@@ -203,7 +188,6 @@ func FindAllByFields(db *gorm.DB, fields map[string]interface{}, docs interface{
 func FindNotIn(db *gorm.DB, fields map[string]interface{}, docs interface{}) error {
 	result := db.Not(fields).Find(docs)
 	if result.Error != nil {
-		log.WithFields(log.Fields{"fields": fields, "type": reflect.TypeOf(docs).Name, "error": result.Error}).Error("orm.FindNotIn: failed")
 		return result.Error
 	}
 	return nil
@@ -212,7 +196,6 @@ func FindNotIn(db *gorm.DB, fields map[string]interface{}, docs interface{}) err
 func FindSelectNotIn(db *gorm.DB, fields map[string]interface{}, docModel interface{}, docs interface{}) error {
 	result := db.Model(docModel).Not(fields).Find(docs)
 	if result.Error != nil {
-		log.WithFields(log.Fields{"fields": fields, "type": reflect.TypeOf(docs).Name, "error": result.Error}).Error("orm.FindSelectNotIn: failed")
 		return result.Error
 	}
 	return nil
@@ -220,41 +203,26 @@ func FindSelectNotIn(db *gorm.DB, fields map[string]interface{}, docModel interf
 
 func RemoveById(db *gorm.DB, id interface{}, doc interface{}) error {
 	result := db.Where("id = ?", id).Delete(doc)
-	if result.Error != nil {
-		log.WithFields(log.Fields{"id": id, "type": ObjectTypeName(doc), "error": result.Error}).Error("orm.RemoveById: failed")
-	}
 	return result.Error
 }
 
 func RemoveByField(db *gorm.DB, field string, value interface{}, doc interface{}) error {
 	result := db.Where(fmt.Sprintf("\"%v\" = ?", field), value).Delete(doc)
-	if result.Error != nil {
-		log.WithFields(log.Fields{"field": field, "value": value, "type": ObjectTypeName(doc), "error": result.Error}).Error("orm.RemoveByField: failed")
-	}
 	return result.Error
 }
 
 func Create(db *gorm.DB, doc interface{}) error {
 	result := db.Create(doc)
-	if result.Error != nil {
-		log.WithFields(log.Fields{"type": ObjectTypeName(doc), "error": result.Error}).Error("orm.Create: failed")
-	}
 	return result.Error
 }
 
 func UpdateFields(db *gorm.DB, fields []string, doc interface{}) error {
 	result := db.Model(doc).Select(fields).Updates(doc)
-	if result.Error != nil {
-		log.WithFields(log.Fields{"type": ObjectTypeName(doc), "error": result.Error}).Error("orm.UpdateFields: failed")
-	}
 	return result.Error
 }
 
 func UpdateField(db *gorm.DB, field string, doc interface{}) error {
 	result := db.Model(doc).Select(field).Updates(doc)
-	if result.Error != nil {
-		log.WithFields(log.Fields{"type": ObjectTypeName(doc), "error": result.Error}).Error("orm.UpdateField: failed")
-	}
 	return result.Error
 }
 
@@ -312,16 +280,12 @@ func ObjectTypeName(obj interface{}) string {
 
 func UpdateFieldMulti(db *gorm.DB, fields map[string]interface{}, doc interface{}, field string, value interface{}) error {
 	result := db.Model(doc).Where(fields).Update(field, value)
-	if result.Error != nil {
-		log.WithFields(log.Fields{"fields": fields, "type": ObjectTypeName(doc), "error": result.Error}).Error("orm.UpdateFieldMulti: failed")
-	}
 	return result.Error
 }
 
 func DeleteAllByFields(db *gorm.DB, fields map[string]interface{}, docs interface{}) error {
 	result := db.Where(fields).Delete(docs)
 	if result.Error != nil {
-		log.WithFields(log.Fields{"fields": fields, "type": reflect.TypeOf(docs).Name, "error": result.Error}).Error("orm.DeleteAllByFields: failed")
 		return result.Error
 	}
 	return nil
@@ -331,7 +295,6 @@ func FindAllInterval(db *gorm.DB, name string, interval *Interval, docs interfac
 	h := prepareInterval(db, name, interval)
 	result := h.Find(docs)
 	if result.Error != nil {
-		log.WithFields(log.Fields{"field": name, "type": reflect.TypeOf(docs).Name, "error": result.Error}).Error("orm.FindAllInterval: failed")
 		return result.Error
 	}
 	return nil
@@ -340,7 +303,6 @@ func FindAllInterval(db *gorm.DB, name string, interval *Interval, docs interfac
 func DeleteAll(db *gorm.DB, docs interface{}) error {
 	result := db.Where("1 = 1").Delete(docs)
 	if result.Error != nil {
-		log.WithFields(log.Fields{"type": reflect.TypeOf(docs).Name, "error": result.Error}).Error("orm.DeleteAll: failed")
 		return result.Error
 	}
 	return nil

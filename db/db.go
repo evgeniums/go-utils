@@ -14,12 +14,25 @@ type Transaction interface {
 	DeleteByFields(fields map[string]interface{}, obj interface{}) error
 }
 
+type TransactionHandler = func(tx Transaction) error
+
+type Cursor interface {
+	Next() (bool, error)
+	Close() error
+	Scan(obj interface{}) error
+}
+
 type DB interface {
 	FindByField(field string, value string, obj interface{}, tx ...Transaction) (bool, error)
 	FindByFields(fields map[string]interface{}, obj interface{}, tx ...Transaction) (bool, error)
 	Create(obj orm.BaseInterface, tx ...Transaction) error
 	DeleteByField(field string, value interface{}, obj interface{}, tx ...Transaction) error
 	DeleteByFields(fields map[string]interface{}, obj interface{}, tx ...Transaction) error
+
+	RowsByFields(fields map[string]interface{}, obj interface{}) (Cursor, error)
+	AllRows(obj interface{}) (Cursor, error)
+
+	Transaction(handler TransactionHandler) error
 
 	// Find(id interface{}, obj interface{}, tx ...DBTransaction) (bool, error)
 	// Delete(obj orm.WithIdInterface, tx ...DBTransaction) error

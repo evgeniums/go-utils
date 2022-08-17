@@ -50,12 +50,13 @@ func (l *LogrusLogger) Info(message string, fields ...Fields) {
 	l.Logrus.WithFields(f).Info(message)
 }
 
-func (l *LogrusLogger) Fatal(message string, fields ...Fields) {
-	f := Fields{}
+func (l *LogrusLogger) Fatal(message string, err error, fields ...Fields) error {
+	f := Fields{"error": err}
 	if len(fields) > 0 {
 		f = utils.AppendMap(f, fields[0])
 	}
 	l.Logrus.WithFields(f).Fatal(message)
+	return fmt.Errorf("%s: %s", message, err)
 }
 
 type LogrusConfig struct {

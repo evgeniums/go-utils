@@ -7,7 +7,7 @@ type Logger interface {
 	Warn(message string, fields ...Fields)
 	Debug(message string, fields ...Fields)
 	Info(message string, fields ...Fields)
-	Fatal(message string, fields ...Fields)
+	Fatal(message string, err error, fields ...Fields) error
 
 	ErrorRaw(...interface{})
 }

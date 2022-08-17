@@ -10,9 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type GormDBTransaction struct {
-}
-
 type GormDB struct {
 	logger.WithLoggerBase
 	config.WithConfigBase
@@ -44,9 +41,7 @@ func (g *GormDB) Init(configPath ...string) error {
 
 	g.DB, err = ConnectDB(dsn)
 	if err != nil {
-		msg := fmt.Errorf("failed to connect to database: %s", err)
-		g.Logger().Fatal(msg.Error())
-		return msg
+		return g.Logger().Fatal("failed to connect to database", err)
 	}
 	return nil
 }
@@ -73,6 +68,32 @@ func (g *GormDB) FindByFields(fields map[string]interface{}, obj interface{}, tx
 		g.Logger().Error("GormDB", err, logger.Fields{"fields": fields, "error": err})
 	}
 	return notFound, err
+}
+
+func (g *GormDB) RowsByFields(fields map[string]interface{}, obj interface{}) (db.Cursor, error) {
+
+	var err error
+	cursor := &GormCursor{GormDB: g}
+	cursor.Rows, err = RowsByFields(g.DB, fields, obj)
+	if err != nil {
+		err = fmt.Errorf("failed to RowsByFields %v", ObjectTypeName(obj))
+		g.Logger().Error("GormDB", err)
+	}
+
+	return cursor, err
+}
+
+func (g *GormDB) AllRows(obj interface{}) (db.Cursor, error) {
+
+	var err error
+	cursor := &GormCursor{GormDB: g}
+	cursor.Rows, err = AllRows(g.DB, obj)
+	if err != nil {
+		err = fmt.Errorf("failed to AllRows %v", ObjectTypeName(obj))
+		g.Logger().Error("GormDB", err)
+	}
+
+	return cursor, err
 }
 
 func (g *GormDB) Create(obj orm.BaseInterface, tx ...db.Transaction) error {
@@ -109,4 +130,15 @@ func (g *GormDB) DeleteByFields(fields map[string]interface{}, obj interface{}, 
 		g.Logger().Error("GormDB", err, fields)
 	}
 	return err
+}
+
+func (g *GormDB) Transaction(handler db.TransactionHandler) error {
+
+	nativeHandler := func(nativeTx *gorm.DB) error {
+		txWrapper := &GormDB{DB: nativeTx, WithLoggerBase: g.WithLoggerBase, WithConfigBase: g.WithConfigBase}
+		tx := &GormTransaction{Tx: txWrapper}
+		return handler(tx)
+	}
+
+	return g.DB.Transaction(nativeHandler)
 }
