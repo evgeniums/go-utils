@@ -23,14 +23,16 @@ type Cursor interface {
 }
 
 type DB interface {
-	FindByField(field string, value string, obj interface{}, tx ...Transaction) (bool, error)
-	FindByFields(fields map[string]interface{}, obj interface{}, tx ...Transaction) (bool, error)
-	Create(obj orm.BaseInterface, tx ...Transaction) error
-	DeleteByField(field string, value interface{}, obj interface{}, tx ...Transaction) error
-	DeleteByFields(fields map[string]interface{}, obj interface{}, tx ...Transaction) error
+	FindByField(field string, value string, obj interface{}) (bool, error)
+	FindByFields(fields map[string]interface{}, obj interface{}) (bool, error)
+	Create(obj orm.BaseInterface) error
+	DeleteByField(field string, value interface{}, obj interface{}) error
+	DeleteByFields(fields map[string]interface{}, obj interface{}) error
 
 	RowsByFields(fields map[string]interface{}, obj interface{}) (Cursor, error)
 	AllRows(obj interface{}) (Cursor, error)
+
+	UpdateFields(obj interface{}, fields map[string]interface{}) error
 
 	Transaction(handler TransactionHandler) error
 

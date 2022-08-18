@@ -1,6 +1,7 @@
 package gorm_db
 
 import (
+	"database/sql"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -9,6 +10,8 @@ import (
 type GormCursor struct {
 	Rows   gorm.Rows
 	GormDB *GormDB
+
+	Sql *sql.Rows
 }
 
 func (c *GormCursor) Close() error {
@@ -21,7 +24,7 @@ func (c *GormCursor) Close() error {
 }
 
 func (c *GormCursor) Scan(obj interface{}) error {
-	err := c.Rows.Close()
+	err := c.GormDB.DB.ScanRows(c.Sql, obj)
 	if err != nil {
 		err = fmt.Errorf("failed to scan rows to object %v", ObjectTypeName(obj))
 		c.GormDB.Logger().Error("GormDB.Cursor", err)

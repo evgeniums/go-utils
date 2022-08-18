@@ -46,10 +46,7 @@ func (g *GormDB) Init(configPath ...string) error {
 	return nil
 }
 
-func (g *GormDB) FindByField(field string, value string, obj interface{}, tx ...db.Transaction) (bool, error) {
-	if len(tx) != 0 {
-		return tx[0].FindByField(field, value, obj)
-	}
+func (g *GormDB) FindByField(field string, value string, obj interface{}) (bool, error) {
 	notFound, err := FindByField(g.DB, field, value, obj)
 	if err != nil && !notFound {
 		err = fmt.Errorf("failed to FindByField %v", ObjectTypeName(obj))
@@ -58,10 +55,7 @@ func (g *GormDB) FindByField(field string, value string, obj interface{}, tx ...
 	return notFound, err
 }
 
-func (g *GormDB) FindByFields(fields map[string]interface{}, obj interface{}, tx ...db.Transaction) (bool, error) {
-	if len(tx) != 0 {
-		return tx[0].FindByFields(fields, obj)
-	}
+func (g *GormDB) FindByFields(fields map[string]interface{}, obj interface{}) (bool, error) {
 	notFound, err := FindByFields(g.DB, fields, obj)
 	if err != nil && !notFound {
 		err = fmt.Errorf("failed to FindByFields %v", ObjectTypeName(obj))
@@ -74,11 +68,13 @@ func (g *GormDB) RowsByFields(fields map[string]interface{}, obj interface{}) (d
 
 	var err error
 	cursor := &GormCursor{GormDB: g}
-	cursor.Rows, err = RowsByFields(g.DB, fields, obj)
+	rows, err := RowsByFields(g.DB, fields, obj)
 	if err != nil {
 		err = fmt.Errorf("failed to RowsByFields %v", ObjectTypeName(obj))
 		g.Logger().Error("GormDB", err)
 	}
+	cursor.Rows = rows
+	cursor.Sql = rows
 
 	return cursor, err
 }
@@ -87,19 +83,18 @@ func (g *GormDB) AllRows(obj interface{}) (db.Cursor, error) {
 
 	var err error
 	cursor := &GormCursor{GormDB: g}
-	cursor.Rows, err = AllRows(g.DB, obj)
+	rows, err := AllRows(g.DB, obj)
 	if err != nil {
 		err = fmt.Errorf("failed to AllRows %v", ObjectTypeName(obj))
 		g.Logger().Error("GormDB", err)
 	}
+	cursor.Rows = rows
+	cursor.Sql = rows
 
 	return cursor, err
 }
 
-func (g *GormDB) Create(obj orm.BaseInterface, tx ...db.Transaction) error {
-	if len(tx) != 0 {
-		return tx[0].Create(obj)
-	}
+func (g *GormDB) Create(obj orm.BaseInterface) error {
 	err := Create(g.DB, obj)
 	if err != nil {
 		err = fmt.Errorf("failed to Create %v", ObjectTypeName(obj))
@@ -108,10 +103,7 @@ func (g *GormDB) Create(obj orm.BaseInterface, tx ...db.Transaction) error {
 	return err
 }
 
-func (g *GormDB) DeleteByField(field string, value interface{}, obj interface{}, tx ...db.Transaction) error {
-	if len(tx) != 0 {
-		return tx[0].DeleteByField(field, value, obj)
-	}
+func (g *GormDB) DeleteByField(field string, value interface{}, obj interface{}) error {
 	err := RemoveByField(g.DB, field, value, obj)
 	if err != nil {
 		err = fmt.Errorf("failed to DeleteByField %v", ObjectTypeName(obj))
@@ -120,10 +112,7 @@ func (g *GormDB) DeleteByField(field string, value interface{}, obj interface{},
 	return err
 }
 
-func (g *GormDB) DeleteByFields(fields map[string]interface{}, obj interface{}, tx ...db.Transaction) error {
-	if len(tx) != 0 {
-		return tx[0].DeleteByFields(fields, obj)
-	}
+func (g *GormDB) DeleteByFields(fields map[string]interface{}, obj interface{}) error {
 	err := DeleteAllByFields(g.DB, fields, obj)
 	if err != nil {
 		err = fmt.Errorf("failed to DeleteByFields %v", ObjectTypeName(obj))
@@ -132,11 +121,20 @@ func (g *GormDB) DeleteByFields(fields map[string]interface{}, obj interface{}, 
 	return err
 }
 
+func (g *GormDB) UpdateFields(obj interface{}, fields map[string]interface{}) error {
+	err := UpdateFields(g.DB, fields, obj)
+	if err != nil {
+		err = fmt.Errorf("failed to UpdateFields %v", ObjectTypeName(obj))
+		g.Logger().Error("GormDB", err, fields)
+	}
+	return err
+}
+
 func (g *GormDB) Transaction(handler db.TransactionHandler) error {
 
 	nativeHandler := func(nativeTx *gorm.DB) error {
-		txWrapper := &GormDB{DB: nativeTx, WithLoggerBase: g.WithLoggerBase, WithConfigBase: g.WithConfigBase}
-		tx := &GormTransaction{Tx: txWrapper}
+		tx := g
+		tx.DB = nativeTx
 		return handler(tx)
 	}
 

@@ -1,6 +1,7 @@
 package gorm_db
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"reflect"
@@ -37,12 +38,12 @@ func FindByFields(db *gorm.DB, fields map[string]interface{}, doc interface{}) (
 	return false, nil
 }
 
-func RowsByFields(db *gorm.DB, fields map[string]interface{}, doc interface{}) (gorm.Rows, error) {
+func RowsByFields(db *gorm.DB, fields map[string]interface{}, doc interface{}) (*sql.Rows, error) {
 	return db.Model(doc).Where(fields).Rows()
 }
 
-func AllRows(db *gorm.DB, doc interface{}) (gorm.Rows, error) {
-	return db.Model(doc).Rows()
+func AllRows(db *gorm.DB, doc interface{}) (*sql.Rows, error) {
+	return db.Debug().Model(doc).Rows()
 }
 
 func FindAll(db *gorm.DB, docs interface{}) error {
@@ -216,8 +217,8 @@ func Create(db *gorm.DB, doc interface{}) error {
 	return result.Error
 }
 
-func UpdateFields(db *gorm.DB, fields []string, doc interface{}) error {
-	result := db.Model(doc).Select(fields).Updates(doc)
+func UpdateFields(db *gorm.DB, fields map[string]interface{}, doc interface{}) error {
+	result := db.Model(doc).Updates(fields)
 	return result.Error
 }
 
@@ -249,19 +250,6 @@ func collectFieldNames(t reflect.Type, names *[]string) {
 			*names = append(*names, sf.Name)
 		}
 	}
-}
-
-func Update(db *gorm.DB, doc interface{}) error {
-
-	v := reflect.ValueOf(doc)
-	if reflect.ValueOf(doc).Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-
-	fields := make([]string, 0)
-	collectFieldNames(v.Type(), &fields)
-
-	return UpdateFields(db, fields, doc)
 }
 
 type TransactionHandler func(tx *gorm.DB) error
