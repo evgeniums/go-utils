@@ -97,3 +97,13 @@ func Today() Date {
 func DateOfTime(t time.Time) Date {
 	return Date(BeginningOfDay(t))
 }
+
+func ParseRuTime(str string) (time.Time, error) {
+
+	t, err := time.Parse("02.01.2006 15:04:05", str)
+	if err != nil {
+		t, err = time.Parse("02.01.2006", str)
+	}
+
+	return t, err
+}
