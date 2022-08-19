@@ -29,7 +29,7 @@ func FindByField(db *gorm.DB, fieldName string, fieldValue interface{}, doc inte
 }
 
 func FindByFields(db *gorm.DB, fields map[string]interface{}, doc interface{}) (bool, error) {
-	result := db. /*.Debug()*/ Where(fields).First(doc)
+	result := db.Where(fields).First(doc)
 	if result.Error != nil {
 		notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
 		return notFound, result.Error
@@ -43,7 +43,7 @@ func RowsByFields(db *gorm.DB, fields map[string]interface{}, doc interface{}) (
 }
 
 func AllRows(db *gorm.DB, doc interface{}) (*sql.Rows, error) {
-	return db.Debug().Model(doc).Rows()
+	return db.Model(doc).Rows()
 }
 
 func FindAll(db *gorm.DB, docs interface{}) error {
@@ -143,7 +143,6 @@ func FindWithFilter(db *gorm.DB, filter *Filter, docs interface{}) error {
 		h = h.Limit(filter.Limit)
 	}
 
-	// result := h.Debug().Find(docs)
 	result := h.Find(docs)
 	if result.Error != nil {
 		return result.Error
