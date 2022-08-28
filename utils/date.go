@@ -103,7 +103,26 @@ func ParseRuTime(str string) (time.Time, error) {
 	t, err := time.Parse("02.01.2006 15:04:05", str)
 	if err != nil {
 		t, err = time.Parse("02.01.2006", str)
+		if err != nil {
+			t, err = time.Parse("02.01.06 15:04:05", str)
+		}
 	}
 
+	return t, err
+}
+
+func ParseTime(str string) (time.Time, error) {
+
+	t, err := time.Parse("2006-01-02 15:04:05", str)
+	if err != nil {
+		t, err = time.Parse("2006-01-02", str)
+	}
+
+	return t, err
+}
+
+func ParseRuTimeShort(str string) (time.Time, error) {
+
+	t, err := time.Parse("02.01.06 15:04:05", str)
 	return t, err
 }
