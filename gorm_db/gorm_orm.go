@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/evgeniums/go-backend-helpers/db"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -52,29 +53,8 @@ func FindAll(db *gorm.DB, docs interface{}) error {
 
 }
 
-type Interval struct {
-	From interface{}
-	To   interface{}
-}
-
-func (i *Interval) IsNull() bool {
-	return i.From == nil && i.To == nil
-}
-
-type Filter struct {
-	PreconditionFields      map[string]interface{}
-	IntervalFields          map[string]*Interval
-	PreconditionFieldsIn    map[string][]interface{}
-	PreconditionFieldsNotIn map[string][]interface{}
-
-	Field         string
-	SortField     string
-	SortDirection string
-	Offset        int
-	Limit         int
-	Interval
-	In []string
-}
+type Interval = db.Interval
+type Filter = db.Filter
 
 func prepareInterval(db *gorm.DB, name string, interval *Interval) *gorm.DB {
 	h := db
@@ -148,6 +128,29 @@ func FindWithFilter(db *gorm.DB, filter *Filter, docs interface{}) error {
 		return result.Error
 	}
 	return nil
+}
+
+func RowsWithFilter(db *gorm.DB, filter *Filter, docs interface{}) (*sql.Rows, error) {
+
+	h := prepareFilter(db.Model(docs), filter)
+
+	if filter.SortField != "" && (filter.SortDirection == "asc" || filter.SortDirection == "desc") {
+		h = h.Order(fmt.Sprintf("\"%v\" %v", filter.SortField, filter.SortDirection))
+	}
+
+	if filter.Offset > 0 {
+		h = h.Offset(filter.Offset)
+	}
+
+	if filter.Limit > 0 {
+		h = h.Limit(filter.Limit)
+	}
+
+	rows, err := h.Rows()
+	if err != nil {
+		return nil, err
+	}
+	return rows, err
 }
 
 func CountWithFilter(db *gorm.DB, filter *Filter, doc interface{}) int64 {

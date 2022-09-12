@@ -29,7 +29,7 @@ type DB interface {
 	DeleteByField(field string, value interface{}, obj interface{}) error
 	DeleteByFields(fields map[string]interface{}, obj interface{}) error
 
-	RowsByFields(fields map[string]interface{}, obj interface{}) (Cursor, error)
+	RowsWithFilter(filter *Filter, obj interface{}) (Cursor, error)
 	AllRows(obj interface{}) (Cursor, error)
 
 	UpdateFields(obj interface{}, fields map[string]interface{}) error
@@ -71,4 +71,28 @@ func CheckFoundDbError(notfound bool, err error) error {
 		return err
 	}
 	return nil
+}
+
+type Interval struct {
+	From interface{}
+	To   interface{}
+}
+
+func (i *Interval) IsNull() bool {
+	return i.From == nil && i.To == nil
+}
+
+type Filter struct {
+	PreconditionFields      map[string]interface{}
+	IntervalFields          map[string]*Interval
+	PreconditionFieldsIn    map[string][]interface{}
+	PreconditionFieldsNotIn map[string][]interface{}
+
+	Field         string
+	SortField     string
+	SortDirection string
+	Offset        int
+	Limit         int
+	Interval
+	In []string
 }

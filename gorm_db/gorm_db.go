@@ -155,3 +155,17 @@ func (g *GormDB) Transaction(handler db.TransactionHandler) error {
 
 	return g.DB.Transaction(nativeHandler)
 }
+
+func (g *GormDB) RowsWithFilter(filter *Filter, obj interface{}) (db.Cursor, error) {
+	var err error
+	cursor := &GormCursor{GormDB: g}
+	rows, err := RowsWithFilter(g.db_(), filter, obj)
+	if err != nil {
+		e := fmt.Errorf("failed to RowsWithFilter %v", ObjectTypeName(obj))
+		g.Logger().Error("GormDB", e, logger.Fields{"error": err})
+	}
+	cursor.Rows = rows
+	cursor.Sql = rows
+
+	return cursor, err
+}
