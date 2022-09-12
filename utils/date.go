@@ -7,54 +7,87 @@ import (
 	"time"
 )
 
-type Date time.Time
+type Date int
 
-var DateNil Date
+var DateNil = Date(0)
 
 func (d *Date) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), "\"")
 
 	if s == "" {
-		*d = Date{}
+		*d = DateNil
 		return nil
 	}
 
-	t, err := time.Parse("2006-01-02", s)
+	tmp, err := StrToDate(s)
 	if err != nil {
 		return err
 	}
-	*d = Date(t)
-	return nil
+	*d = tmp
+	return err
+}
+
+func (d *Date) Set(year int, month int, day int) {
+	*d = Date(year*10000 + month*100 + day)
+}
+
+func (d *Date) SetTime(t time.Time) {
+	d.Set(t.Year(), int(t.Month()), t.Day())
 }
 
 func (d *Date) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d.String())
 }
 
+func (d *Date) IsNil() bool {
+	return *d == DateNil
+}
+
+func (d *Date) Year() int {
+	year := int(*d) / 10000
+	return year
+}
+
+func (d *Date) Month() int {
+	month := (int(*d) % 10000) / 100
+	return month
+}
+
+func (d *Date) Day() int {
+	day := int(*d) % 100
+	return day
+}
+
+func (d *Date) MMonth() Month {
+	var month Month
+	month.Set(d.Year(), d.Month())
+	return month
+}
+
+func (d *Date) Time() time.Time {
+	return time.Date(d.Year(), time.Month(d.Month()), d.Day(), 0, 0, 0, 0, time.UTC)
+}
+
 func (d *Date) String() string {
-	t := time.Time(*d)
-	if t.Equal(time.Time{}) {
+	if d.IsNil() {
 		return ""
 	}
-	formatted := fmt.Sprintf("%04d-%02d-%02d", t.Year(), t.Month(), t.Day())
+	formatted := fmt.Sprintf("%04d-%02d-%02d", d.Year(), d.Month(), d.Day())
 	return formatted
 }
 
-func (d *Date) RuDate() string {
-	t := time.Time(*d)
-	formatted := fmt.Sprintf("%02d.%02d.%04d", t.Day(), t.Month(), t.Year())
+func (d *Date) StringRu() string {
+	formatted := fmt.Sprintf("%02d.%02d.%04d", d.Day(), d.Month(), d.Year())
 	return formatted
 }
 
-func (d *Date) RuDateShort() string {
-	t := time.Time(*d)
-	formatted := fmt.Sprintf("%02d.%02d.%02d", t.Day(), t.Month(), t.Year()-2000)
+func (d *Date) StringRuShort() string {
+	formatted := fmt.Sprintf("%02d.%02d.%02d", d.Day(), d.Month(), d.Year()-2000)
 	return formatted
 }
 
 func (d *Date) AsNumber() string {
-	t := time.Time(*d)
-	formatted := fmt.Sprintf("%04d%02d%02d", t.Year(), t.Month(), t.Day())
+	formatted := fmt.Sprintf("%08d", int(*d))
 	return formatted
 }
 
@@ -70,11 +103,13 @@ func EndOfDay(t time.Time) time.Time {
 }
 
 func StrToDate(s string) (Date, error) {
-	t, err := StrToTime(s)
-	return Date(t), err
+	t, err := strToTime(s)
+	var d Date
+	d.SetTime(BeginningOfDay(t))
+	return d, err
 }
 
-func StrToTime(s string) (time.Time, error) {
+func strToTime(s string) (time.Time, error) {
 
 	if s == "" {
 		return time.Time{}, nil
@@ -91,11 +126,15 @@ func StrToTime(s string) (time.Time, error) {
 }
 
 func Today() Date {
-	return Date(time.Now())
+	var d Date
+	d.SetTime(time.Now())
+	return d
 }
 
 func DateOfTime(t time.Time) Date {
-	return Date(BeginningOfDay(t))
+	var d Date
+	d.SetTime(BeginningOfDay(t))
+	return d
 }
 
 func ParseRuTime(str string) (time.Time, error) {
