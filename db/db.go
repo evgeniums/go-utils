@@ -37,6 +37,7 @@ type DB interface {
 	Transaction(handler TransactionHandler) error
 
 	EnableDebug(bool)
+	EnableErrorLogging(bool)
 
 	// Find(id interface{}, obj interface{}, tx ...DBTransaction) (bool, error)
 	// Delete(obj orm.WithIdInterface, tx ...DBTransaction) error
