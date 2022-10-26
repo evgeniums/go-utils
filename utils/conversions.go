@@ -45,11 +45,11 @@ func FloatToStr2Hyphen(val float64) string {
 	return str
 }
 
-func RoublyToKopeyki(roubles float64) int {
+func MoneyToInteger(roubles float64) int {
 	return int(math.Round(float64(roubles) * 100.00))
 }
 
-func KopeykiToRoubly(kopeyki int) float64 {
+func MoneyToDecimal(kopeyki int) float64 {
 	v := float64(kopeyki) / 100.00
 	return float64(v)
 }
@@ -83,6 +83,17 @@ func StrToUint32(s string) (uint32, error) {
 		return 0, err
 	}
 	return uint32(val), nil
+}
+
+func StrToInt(s string) (int, error) {
+	if s == "" {
+		return 0, nil
+	}
+	val, err := strconv.ParseInt(s, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	return int(val), nil
 }
 
 const float64EqualityThreshold = 1e-9
