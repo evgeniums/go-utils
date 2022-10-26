@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -26,10 +27,17 @@ func (l *LogrusLogger) Debug(message string, fields ...Fields) {
 
 func (l *LogrusLogger) Error(message string, err error, fields ...Fields) error {
 	f := Fields{"error": err}
+	if err == nil {
+		f = Fields{}
+	}
 	if len(fields) > 0 {
 		f = utils.AppendMap(f, fields[0])
 	}
 	l.Logrus.WithFields(f).Error(message)
+
+	if err == nil {
+		return errors.New(message)
+	}
 
 	return fmt.Errorf("%s: %s", message, err)
 }
