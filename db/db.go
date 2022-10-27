@@ -39,16 +39,7 @@ type DB interface {
 	EnableDebug(bool)
 	EnableErrorLogging(bool)
 
-	// Find(id interface{}, obj interface{}, tx ...DBTransaction) (bool, error)
-	// Delete(obj orm.WithIdInterface, tx ...DBTransaction) error
-	// CreateDoc(obj interface{}, tx ...DBTransaction) error
-	// Update(obj interface{}, tx ...DBTransaction) error
-	// UpdateField(obj interface{}, field string, tx ...DBTransaction) error
-	// UpdateFields(obj interface{}, fields ...string) error
-	// UpdateFieldsTx(tx DBTransaction, obj interface{}, fields ...string) error
-	// FindNotIn(fields map[string]interface{}, obj interface{}, tx ...DBTransaction) error
-	// FindAllByFields(fields map[string]interface{}, obj interface{}, tx ...DBTransaction) error
-	// DeleteAll(obj interface{}, tx ...DBTransaction) error
+	FinWithFilter(filter *Filter, obj interface{}) (bool, error)
 }
 
 func CheckFound(notfound bool, err *error) bool {
@@ -79,6 +70,12 @@ type Interval struct {
 	To   interface{}
 }
 
+type BetweenFields struct {
+	FromField string
+	ToField   string
+	Value     interface{}
+}
+
 func (i *Interval) IsNull() bool {
 	return i.From == nil && i.To == nil
 }
@@ -89,11 +86,10 @@ type Filter struct {
 	PreconditionFieldsIn    map[string][]interface{}
 	PreconditionFieldsNotIn map[string][]interface{}
 
-	Field         string
 	SortField     string
 	SortDirection string
 	Offset        int
 	Limit         int
-	Interval
-	In []string
+	In            []string
+	Between       []*BetweenFields
 }

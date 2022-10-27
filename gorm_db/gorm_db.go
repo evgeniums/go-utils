@@ -175,3 +175,12 @@ func (g *GormDB) RowsWithFilter(filter *Filter, obj interface{}) (db.Cursor, err
 
 	return cursor, err
 }
+
+func (g *GormDB) FinWithFilter(filter *Filter, obj interface{}) (bool, error) {
+	notFound, err := FindWithFilter(g.db_(), filter, obj)
+	if err != nil && g.logError && !notFound {
+		e := fmt.Errorf("failed to FinWithFilter %v", ObjectTypeName(obj))
+		g.Logger().Error("GormDB", e, logger.Fields{"error": err})
+	}
+	return notFound, err
+}

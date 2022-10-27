@@ -96,18 +96,14 @@ func prepareFilter(db *gorm.DB, filter *Filter) *gorm.DB {
 		h = prepareInterval(h, name, interval)
 	}
 
-	if filter.Field != "" {
-		if filter.In != nil {
-			h = h.Where(fmt.Sprintf("\"%v\" IN ? ", filter.Field), filter.In)
-		} else {
-			prepareInterval(h, filter.Field, &filter.Interval)
-		}
+	for _, between := range filter.Between {
+		h = h.Where(fmt.Sprintf(`? >= "%v" AND ? <= "%v"`, between.FromField, between.ToField), between.Value, between.Value)
 	}
 
 	return h
 }
 
-func FindWithFilter(db *gorm.DB, filter *Filter, docs interface{}) error {
+func FindWithFilter(db *gorm.DB, filter *Filter, doc interface{}) (bool, error) {
 
 	h := prepareFilter(db, filter)
 
@@ -123,11 +119,13 @@ func FindWithFilter(db *gorm.DB, filter *Filter, docs interface{}) error {
 		h = h.Limit(filter.Limit)
 	}
 
-	result := h.Find(docs)
+	result := h.Find(doc)
 	if result.Error != nil {
-		return result.Error
+		notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
+		return notFound, result.Error
 	}
-	return nil
+
+	return false, nil
 }
 
 func RowsWithFilter(db *gorm.DB, filter *Filter, docs interface{}) (*sql.Rows, error) {
