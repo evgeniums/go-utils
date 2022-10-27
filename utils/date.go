@@ -10,6 +10,7 @@ import (
 type Date int
 
 var DateNil = Date(0)
+var TimeNil = time.Time{}
 
 func (d *Date) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), "\"")
@@ -103,7 +104,13 @@ func EndOfDay(t time.Time) time.Time {
 }
 
 func StrToDate(s string) (Date, error) {
+	if s == "" {
+		return DateNil, nil
+	}
 	t, err := strToTime(s)
+	if t == TimeNil {
+		return DateNil, nil
+	}
 	var d Date
 	d.SetTime(BeginningOfDay(t))
 	return d, err
