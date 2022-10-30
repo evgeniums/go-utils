@@ -20,6 +20,7 @@ type Config interface {
 
 type WithConfig interface {
 	Config() Config
+	LogConfigParameters(log logger.Logger, configPaths ...string)
 }
 
 type WithConfigBase struct {
