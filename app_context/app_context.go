@@ -8,8 +8,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/db"
 	"github.com/evgeniums/go-backend-helpers/gorm_db"
 	"github.com/evgeniums/go-backend-helpers/logger"
-
-	"github.com/go-playground/validator"
+	"github.com/evgeniums/go-backend-helpers/validator"
 )
 
 var Version = "development"
@@ -20,8 +19,8 @@ type AppContext struct {
 	logger.WithLoggerBase
 	config.WithConfigBase
 
-	GormDB   *gorm_db.GormDB
-	Validate *validator.Validate
+	GormDB            *gorm_db.GormDB
+	ValidatorInstance *validator.PlaygroundValdator
 
 	TestMode   bool
 	TestValues map[string]interface{}
@@ -31,8 +30,8 @@ func (c *AppContext) DB() db.DB {
 	return c.GormDB
 }
 
-func (c *AppContext) Validator() Validator {
-	return c.Validate
+func (c *AppContext) Validator() validator.Validator {
+	return c.ValidatorInstance
 }
 
 func (c *AppContext) Testing() bool {
@@ -57,7 +56,7 @@ func NewAppContext() *AppContext {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	ctx := &AppContext{}
-	ctx.Validate = validator.New()
+	ctx.ValidatorInstance = validator.NewPlaygroundValidator()
 	return ctx
 }
 

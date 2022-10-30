@@ -4,17 +4,15 @@ import (
 	"github.com/evgeniums/go-backend-helpers/config"
 	"github.com/evgeniums/go-backend-helpers/db"
 	"github.com/evgeniums/go-backend-helpers/logger"
+	"github.com/evgeniums/go-backend-helpers/validator"
 )
-
-type Validator interface {
-}
 
 type Context interface {
 	logger.WithLogger
 	config.WithConfig
 
 	DB() db.DB
-	Validator() Validator
+	Validator() validator.Validator
 
 	Testing() bool
 	TestParameters() map[string]interface{}
