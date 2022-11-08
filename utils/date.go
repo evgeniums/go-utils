@@ -107,16 +107,16 @@ func StrToDate(s string) (Date, error) {
 	if s == "" {
 		return DateNil, nil
 	}
-	t, err := strToTime(s)
+	t, err := strDateToTime(s)
 	if t == TimeNil {
-		return DateNil, nil
+		return DateNil, err
 	}
 	var d Date
 	d.SetTime(BeginningOfDay(t))
 	return d, err
 }
 
-func strToTime(s string) (time.Time, error) {
+func strDateToTime(s string) (time.Time, error) {
 
 	if s == "" {
 		return time.Time{}, nil
@@ -126,7 +126,10 @@ func strToTime(s string) (time.Time, error) {
 	if err != nil {
 		t, err = time.Parse("02.01.2006", s)
 		if err != nil {
-			return time.Time{}, err
+			t, err = time.Parse("02.01.06", s)
+			if err != nil {
+				return time.Time{}, err
+			}
 		}
 	}
 	return t, nil
