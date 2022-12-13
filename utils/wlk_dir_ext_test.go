@@ -2,9 +2,14 @@ package utils_test
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/evgeniums/go-backend-helpers/utils"
+)
+
+var (
+	_, scriptPath, _, _ = runtime.Caller(0)
 )
 
 func TestWalkDirExt(t *testing.T) {
@@ -16,5 +21,5 @@ func TestWalkDirExt(t *testing.T) {
 
 	root := filepath.Dir(scriptPath)
 	utils.WalkDirExt(handler, root, "go")
-	utils.WalkDirExt(handler, root, "pem")
+	// utils.WalkDirExt(handler, root, "pem")
 }
