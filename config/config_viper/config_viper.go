@@ -7,36 +7,14 @@ import (
 )
 
 type ConfigViper struct {
-	Viper *viper.Viper
+	viper.Viper
 }
 
 func New() *ConfigViper {
 	return &ConfigViper{}
 }
 
-func (c *ConfigViper) GetString(key string) string {
-	return c.Viper.GetString(key)
-}
-
-func (c *ConfigViper) GetUint(key string) uint {
-	return c.Viper.GetUint(key)
-}
-
-func (c *ConfigViper) Get(key string) interface{} {
-	return c.Viper.Get(key)
-}
-
-func (c *ConfigViper) AllKeys() []string {
-	return c.Viper.AllKeys()
-}
-
-func (c *ConfigViper) GetBool(key string) bool {
-	return c.Viper.GetBool(key)
-}
-
 func (c *ConfigViper) Init(configFile string) error {
-
-	c.Viper = viper.New()
 
 	c.Viper.SetConfigFile(configFile)
 	c.Viper.SetConfigType("json")

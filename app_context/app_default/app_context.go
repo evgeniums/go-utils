@@ -18,108 +18,116 @@ var Version = "development"
 var Time = "unknown"
 var Revision = "unknown"
 
-type AppContext struct {
+type ContextConfig struct {
+	testing    bool
+	testValues map[string]interface{}
+}
+
+type Context struct {
 	logger.WithLoggerBase
 	config.WithConfigBase
 
-	GormDB            *db_gorm.GormDB
-	ValidatorInstance *validator_playground.PlaygroundValdator
+	db        *db_gorm.GormDB
+	validator *validator_playground.PlaygroundValdator
 
-	TestMode   bool
-	TestValues map[string]interface{}
+	ContextConfig
 }
 
-func (c *AppContext) DB() db.DB {
-	return c.GormDB
+func (c *Context) DB() db.DB {
+	return c.db
 }
 
-func (c *AppContext) Validator() validator.Validator {
-	return c.ValidatorInstance
+func (c *Context) Validator() validator.Validator {
+	return c.validator
 }
 
-func (c *AppContext) Testing() bool {
-	return c.TestMode
+func (c *Context) Testing() bool {
+	return c.testing
 }
 
-func (c *AppContext) TestParameters() map[string]interface{} {
-	return c.TestValues
+func (c *Context) TestParameters() map[string]interface{} {
+	return c.testValues
 }
 
-func (c *AppContext) SetTestParameter(key string, value interface{}) {
-	c.TestValues[key] = value
+func (c *Context) SetTestParameter(key string, value interface{}) {
+	c.testValues[key] = value
 }
 
-func (c *AppContext) GetTestParameter(key string) (interface{}, bool) {
-	value, ok := c.TestValues[key]
+func (c *Context) GetTestParameter(key string) (interface{}, bool) {
+	value, ok := c.testValues[key]
 	return value, ok
 }
 
-func NewAppContext() *AppContext {
+func New() *Context {
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	ctx := &AppContext{}
-	ctx.ValidatorInstance = validator_playground.New()
-	return ctx
+	c := &Context{}
+	c.validator = validator_playground.New()
+
+	return c
 }
 
-func (ctx *AppContext) Init(configFile string) error {
+func (c *Context) Init(configFile string) error {
 
 	// load configuration
-	err := ctx.InitConfig(configFile)
+	err := c.InitConfig(configFile)
 	if err != nil {
 		return err
 	}
 
 	// setup logger
 	logConfigPath := "log"
-	_ = ctx.InitLog(logConfigPath)
-	l := ctx.Logger()
+	_ = c.InitLog(logConfigPath)
+	l := c.Logger()
 	l.Info("Starting...")
 
 	// log build version
 	l.Info("Build configuration", logger.Fields{"build_time": Time, "package_version": Version, "git_revision": Revision})
 
 	// log app configuration
-	ctx.LogConfigParameters(ctx.Logger(), "")
-	ctx.LogConfigParameters(ctx.Logger(), logConfigPath)
+	c.LogConfigParameters(c.Logger(), "")
+	c.LogConfigParameters(c.Logger(), logConfigPath)
 
 	// connect to DB
 	dbConfigPath := "psql"
-	ctx.LogConfigParameters(ctx.Logger(), dbConfigPath)
-	err = ctx.InitDb(dbConfigPath)
+	c.LogConfigParameters(c.Logger(), dbConfigPath)
+	err = c.InitDb(dbConfigPath)
 	if err != nil {
 		return err
 	}
 
 	// setup testing
-	ctx.TestMode = ctx.Config().GetBool("testing")
-	if ctx.TestMode {
-		ctx.Logger().Info("Running in test mode")
-		ctx.TestValues = make(map[string]interface{})
+	c.testing = c.Config().GetBool("testing")
+	if c.Testing() {
+		c.Logger().Info("Running in test mode")
+		c.testValues = make(map[string]interface{})
 	}
 
 	return nil
 }
 
-func (ctx *AppContext) InitConfig(configFile string) error {
-	ctx.ConfigInterface = config_viper.New()
-	return ctx.Config().Init(configFile)
+func (c *Context) InitConfig(configFile string) error {
+	v := config_viper.New()
+	c.ConfigInterface = v
+	return v.Init(configFile)
 }
 
-func (ctx *AppContext) InitLog(configPath string) error {
+func (c *Context) InitLog(configPath string) error {
 
-	log := logger_logrus.New()
-	ctx.LoggerInterface = log
+	l := logger_logrus.New()
+	c.LoggerInterface = l
 
-	return log.Init(ctx.Config(), "logger")
+	return l.Init(c.Config(), "logger")
 }
 
-func (ctx *AppContext) InitDb(configPath string) error {
+func (c *Context) InitDb(configPath string) error {
 
-	ctx.GormDB = &db_gorm.GormDB{}
-	ctx.GormDB.WithConfigBase = ctx.WithConfigBase
-	ctx.GormDB.WithLoggerBase = ctx.WithLoggerBase
+	d := db_gorm.New()
 
-	return ctx.GormDB.Init(configPath)
+	c.db = d
+	c.db.WithConfigBase = c.WithConfigBase
+	c.db.WithLoggerBase = c.WithLoggerBase
+
+	return d.Init(configPath)
 }

@@ -20,6 +20,10 @@ type GormDB struct {
 	logError bool
 }
 
+func New() *GormDB {
+	return &GormDB{}
+}
+
 func (g *GormDB) EnableDebug(value bool) {
 	g.debug = value
 }
