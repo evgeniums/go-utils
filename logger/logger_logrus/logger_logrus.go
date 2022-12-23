@@ -8,13 +8,14 @@ import (
 	"github.com/evgeniums/go-backend-helpers/config"
 	"github.com/evgeniums/go-backend-helpers/logger"
 	"github.com/evgeniums/go-backend-helpers/utils"
+	"github.com/evgeniums/go-backend-helpers/validator"
 	"github.com/sirupsen/logrus"
 )
 
 type LogrusConfig struct {
-	Destination string
-	File        string
-	LogLevel    string
+	Destination string `config:"destination" defaul:"stdout" validate:"oneof=stdout file" vmessage:"logger destination must be one of: stdout | file"`
+	File        string `config:"file" validate:"required" vmessage:"path of logger file must be set"`
+	LogLevel    string `config:"log_level" validate:"omitempty,oneof=panic fatal error warn info debug trace" vmessage:"invalid log level, must be one of: panic | fatal | error | warn | info | debug | trace"`
 }
 
 type LogrusLogger struct {
@@ -80,27 +81,25 @@ func (l *LogrusLogger) Fatal(message string, err error, fields ...logger.Fields)
 	return fmt.Errorf("%s: %s", message, err)
 }
 
-func (l *LogrusLogger) Init(cfg config.Config, configPath string) error {
+func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPath ...string) error {
 
-	// TODO load configuration
-	l.Destination = cfg.GetString(config.Key(configPath, "destination"))
-	l.File = cfg.GetString(config.Key(configPath, "file"))
-	l.LogLevel = cfg.GetString(config.Key(configPath, "level"))
+	// load configuration
+	err := config.InitObjectNoLog(cfg, vld, l, "logger", configPath...)
+	if err != nil {
+		return err
+	}
 
+	// setup logrus
 	l.Logrus = logrus.New()
 
-	var err error
+	// setup output
 	if l.Destination == "file" {
-		logFileName := l.File
-		if logFileName == "" {
-			logFileName = "log.log"
-		}
-		writer := &utils.FileWriteReopen{Path: logFileName}
-		writer.File, err = os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		writer := &utils.FileWriteReopen{Path: l.File}
+		writer.File, err = os.OpenFile(l.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err == nil {
 			l.Logrus.Out = writer
 			logrus.SetOutput(writer)
-			fmt.Printf("Using log file %v\n", logFileName)
+			fmt.Printf("Using log file %v\n", l.File)
 		} else {
 			fmt.Println("Failed to log to file, using default console")
 		}
@@ -108,6 +107,8 @@ func (l *LogrusLogger) Init(cfg config.Config, configPath string) error {
 		l.Logrus.Out = os.Stdout
 		logrus.SetOutput(os.Stdout)
 	}
+
+	// setup log level
 	if l.LogLevel != "" {
 		logLevel, err := logrus.ParseLevel(l.LogLevel)
 		if err != nil {
@@ -118,13 +119,7 @@ func (l *LogrusLogger) Init(cfg config.Config, configPath string) error {
 			logrus.SetLevel(logLevel)
 		}
 	}
+
+	// done
 	return err
-}
-
-type WithLogrus struct {
-	Log *LogrusLogger
-}
-
-func (w *WithLogrus) Logger() logger.Logger {
-	return w.Log
 }

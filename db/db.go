@@ -37,7 +37,7 @@ type DB interface {
 	Transaction(handler TransactionHandler) error
 
 	EnableDebug(bool)
-	EnableErrorLogging(bool)
+	EnableVerboseErrors(bool)
 
 	FinWithFilter(filter *Filter, obj interface{}) (bool, error)
 }

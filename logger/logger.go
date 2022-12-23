@@ -17,9 +17,13 @@ type WithLogger interface {
 }
 
 type WithLoggerBase struct {
-	LoggerInterface Logger
+	logger Logger
 }
 
 func (w *WithLoggerBase) Logger() Logger {
-	return w.LoggerInterface
+	return w.logger
+}
+
+func (w *WithLoggerBase) SetLogger(logger Logger) {
+	w.logger = logger
 }

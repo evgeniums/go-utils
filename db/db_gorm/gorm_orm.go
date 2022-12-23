@@ -227,6 +227,7 @@ func UpdateField(db *gorm.DB, field string, doc interface{}) error {
 	return result.Error
 }
 
+/*
 func collectFieldNames(t reflect.Type, names *[]string) {
 
 	// Return if not struct or pointer to struct.
@@ -251,7 +252,7 @@ func collectFieldNames(t reflect.Type, names *[]string) {
 		}
 	}
 }
-
+*/
 type TransactionHandler func(tx *gorm.DB) error
 
 func Transaction(db *gorm.DB, handler TransactionHandler) error {

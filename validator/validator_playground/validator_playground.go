@@ -78,6 +78,9 @@ func (v *PlaygroundValdator) doValidation(s interface{}) (string, string, error)
 			}
 
 			name, _ = f.Tag.Lookup("json")
+			if name == "" {
+				name, _ = f.Tag.Lookup("config")
+			}
 			message, _ = f.Tag.Lookup("vmessage")
 		}
 		return name, message, err

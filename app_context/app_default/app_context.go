@@ -19,7 +19,7 @@ var Time = "unknown"
 var Revision = "unknown"
 
 type ContextConfig struct {
-	testing    bool
+	testing    bool `config:"testing"`
 	testValues map[string]interface{}
 }
 
@@ -71,63 +71,58 @@ func New() *Context {
 func (c *Context) Init(configFile string) error {
 
 	// load configuration
-	err := c.InitConfig(configFile)
+	err := c.initConfig(configFile)
 	if err != nil {
 		return err
 	}
 
 	// setup logger
 	logConfigPath := "log"
-	_ = c.InitLog(logConfigPath)
-	l := c.Logger()
-	l.Info("Starting...")
+	c.initLog(logConfigPath)
+	log := c.Logger()
+	log.Info("Starting...")
 
 	// log build version
-	l.Info("Build configuration", logger.Fields{"build_time": Time, "package_version": Version, "git_revision": Revision})
+	log.Info("Build configuration", logger.Fields{"build_time": Time, "package_version": Version, "git_revision": Revision})
 
-	// log app configuration
-	c.LogConfigParameters(c.Logger(), "")
-	c.LogConfigParameters(c.Logger(), logConfigPath)
+	// log logger configuration
+	config.LogConfigParameters(c.Config(), log, logConfigPath)
+
+	// load top level configuration
+	err = config.InitObject(c.Config(), log, c.validator, c, "")
+	if err != nil {
+		return log.Fatal("failed to load application configuration", err)
+	}
 
 	// connect to DB
-	dbConfigPath := "psql"
-	c.LogConfigParameters(c.Logger(), dbConfigPath)
-	err = c.InitDb(dbConfigPath)
+	err = c.initDb()
 	if err != nil {
 		return err
 	}
 
 	// setup testing
-	c.testing = c.Config().GetBool("testing")
 	if c.Testing() {
-		c.Logger().Info("Running in test mode")
+		log.Info("Running in test mode")
 		c.testValues = make(map[string]interface{})
 	}
 
 	return nil
 }
 
-func (c *Context) InitConfig(configFile string) error {
+func (c *Context) initConfig(configFile string) error {
 	v := config_viper.New()
-	c.ConfigInterface = v
+	c.SetConfig(v)
 	return v.Init(configFile)
 }
 
-func (c *Context) InitLog(configPath string) error {
-
+func (c *Context) initLog(configPath string) error {
 	l := logger_logrus.New()
-	c.LoggerInterface = l
-
-	return l.Init(c.Config(), "logger")
+	c.SetLogger(l)
+	return l.Init(c.Config(), c.validator, "logger")
 }
 
-func (c *Context) InitDb(configPath string) error {
-
-	d := db_gorm.New()
-
+func (c *Context) initDb() error {
+	d := db_gorm.New(c.Logger())
 	c.db = d
-	c.db.WithConfigBase = c.WithConfigBase
-	c.db.WithLoggerBase = c.WithLoggerBase
-
-	return d.Init(configPath)
+	return d.Init(c.Config(), c.validator, "psql")
 }

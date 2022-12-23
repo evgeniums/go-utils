@@ -7,28 +7,40 @@ import (
 	"github.com/evgeniums/go-backend-helpers/db"
 	"github.com/evgeniums/go-backend-helpers/logger"
 	"github.com/evgeniums/go-backend-helpers/orm"
+	"github.com/evgeniums/go-backend-helpers/validator"
 	"gorm.io/gorm"
 )
 
+type GormDBConfig struct {
+	host     string `config:"host" default:"127.0.0.1"`
+	port     string `config:"port" default:"5432"`
+	user     string `config:"user"`
+	dbname   string `config:"dbname"`
+	password string `config:"password"`
+
+	debug    bool `config:"enable_debug"`
+	logError bool `config:"verbose_errors"`
+}
+
 type GormDB struct {
 	logger.WithLoggerBase
-	config.WithConfigBase
 
 	DB *gorm.DB
 
-	debug    bool
-	logError bool
+	GormDBConfig
 }
 
-func New() *GormDB {
-	return &GormDB{}
+func New(log logger.Logger) *GormDB {
+	g := &GormDB{}
+	g.SetLogger(log)
+	return g
 }
 
 func (g *GormDB) EnableDebug(value bool) {
 	g.debug = value
 }
 
-func (g *GormDB) EnableErrorLogging(value bool) {
+func (g *GormDB) EnableVerboseErrors(value bool) {
 	g.logError = value
 }
 
@@ -39,33 +51,24 @@ func (g *GormDB) db_() *gorm.DB {
 	return g.DB
 }
 
-func (g *GormDB) Init(configPath ...string) error {
+func (g *GormDB) Init(cfg config.Config, vld validator.Validator, configPath ...string) error {
 
 	g.Logger().Info("Init GormDB")
 
-	g.logError = false
-	path := "psql"
-	if len(configPath) == 1 {
-		path = configPath[0]
+	// load configuration
+	err := config.InitObject(cfg, g.Logger(), vld, g, "psql", configPath...)
+	if err != nil {
+		return g.Logger().Fatal("failed to load GormDB configuration", err)
 	}
 
-	config.Key(path, "host")
-
-	dsn := fmt.Sprintf("host=%v port=%v user=%v dbname=%v sslmode=disable",
-		g.Config().GetString(config.Key(path, "host")),
-		g.Config().GetUint(config.Key(path, "port")),
-		g.Config().GetString(config.Key(path, "user")),
-		g.Config().GetString(config.Key(path, "dbname")))
-
-	g.LogConfigParameters(g.Logger(), "psql")
-
-	dsn = fmt.Sprintf("%v password=%v", dsn, g.Config().GetString(config.Key(path, "password")))
-	var err error
-
+	// connect database
+	dsn := fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable", g.host, g.port, g.user, g.dbname, g.password)
 	g.DB, err = ConnectDB(dsn)
 	if err != nil {
 		return g.Logger().Fatal("failed to connect to database", err)
 	}
+
+	// done
 	return nil
 }
 
@@ -157,7 +160,6 @@ func (g *GormDB) Transaction(handler db.TransactionHandler) error {
 
 	nativeHandler := func(nativeTx *gorm.DB) error {
 		tx := &GormDB{}
-		tx.WithConfigBase = g.WithConfigBase
 		tx.WithLoggerBase = g.WithLoggerBase
 		tx.DB = nativeTx
 		return handler(tx)
