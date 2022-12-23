@@ -5,10 +5,13 @@ import (
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/config"
+	"github.com/evgeniums/go-backend-helpers/config/config_viper"
 	"github.com/evgeniums/go-backend-helpers/db"
-	"github.com/evgeniums/go-backend-helpers/gorm_db"
+	"github.com/evgeniums/go-backend-helpers/db/db_gorm"
 	"github.com/evgeniums/go-backend-helpers/logger"
+	"github.com/evgeniums/go-backend-helpers/logger/logger_logrus"
 	"github.com/evgeniums/go-backend-helpers/validator"
+	"github.com/evgeniums/go-backend-helpers/validator/validator_playground"
 )
 
 var Version = "development"
@@ -19,8 +22,8 @@ type AppContext struct {
 	logger.WithLoggerBase
 	config.WithConfigBase
 
-	GormDB            *gorm_db.GormDB
-	ValidatorInstance *validator.PlaygroundValdator
+	GormDB            *db_gorm.GormDB
+	ValidatorInstance *validator_playground.PlaygroundValdator
 
 	TestMode   bool
 	TestValues map[string]interface{}
@@ -56,7 +59,7 @@ func NewAppContext() *AppContext {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	ctx := &AppContext{}
-	ctx.ValidatorInstance = validator.NewPlaygroundValidator()
+	ctx.ValidatorInstance = validator_playground.New()
 	return ctx
 }
 
@@ -100,27 +103,21 @@ func (ctx *AppContext) Init(configFile string) error {
 }
 
 func (ctx *AppContext) InitConfig(configFile string) error {
-	ctx.ConfigInterface = &config.ConfigViper{}
+	ctx.ConfigInterface = config_viper.New()
 	return ctx.Config().Init(configFile)
 }
 
 func (ctx *AppContext) InitLog(configPath string) error {
 
-	log := &logger.LogrusLogger{}
+	log := logger_logrus.New()
 	ctx.LoggerInterface = log
 
-	var logConfig logger.LogrusConfig
-
-	logConfig.Destination = ctx.Config().GetString(config.Key(configPath, "destination"))
-	logConfig.File = ctx.Config().GetString(config.Key(configPath, "file"))
-	logConfig.LogLevel = ctx.Config().GetString(config.Key(configPath, "level"))
-
-	return log.Init(logConfig)
+	return log.Init(ctx.Config(), "logger")
 }
 
 func (ctx *AppContext) InitDb(configPath string) error {
 
-	ctx.GormDB = &gorm_db.GormDB{}
+	ctx.GormDB = &db_gorm.GormDB{}
 	ctx.GormDB.WithConfigBase = ctx.WithConfigBase
 	ctx.GormDB.WithLoggerBase = ctx.WithLoggerBase
 

@@ -1,4 +1,4 @@
-package gorm_db
+package db_gorm
 
 import (
 	"fmt"

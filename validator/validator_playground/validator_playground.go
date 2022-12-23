@@ -1,9 +1,10 @@
-package validator
+package validator_playground
 
 import (
 	"reflect"
 	"strings"
 
+	"github.com/evgeniums/go-backend-helpers/validator"
 	playground "github.com/go-playground/validator"
 )
 
@@ -11,7 +12,7 @@ type PlaygroundValdator struct {
 	validator *playground.Validate
 }
 
-func NewPlaygroundValidator() *PlaygroundValdator {
+func New() *PlaygroundValdator {
 	return &PlaygroundValdator{validator: playground.New()}
 }
 
@@ -19,7 +20,7 @@ func (v *PlaygroundValdator) Validate(s interface{}) error {
 	err := v.validator.Struct(s)
 	if err != nil {
 		field, msg, err := v.doValidation(s)
-		return &ValidationError{Field: field, Message: msg, Err: err}
+		return &validator.ValidationError{Field: field, Message: msg, Err: err}
 	}
 
 	return nil

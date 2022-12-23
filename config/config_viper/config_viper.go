@@ -1,4 +1,4 @@
-package config
+package config_viper
 
 import (
 	"fmt"
@@ -8,6 +8,10 @@ import (
 
 type ConfigViper struct {
 	Viper *viper.Viper
+}
+
+func New() *ConfigViper {
+	return &ConfigViper{}
 }
 
 func (c *ConfigViper) GetString(key string) string {
