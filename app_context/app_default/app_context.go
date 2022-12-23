@@ -106,6 +106,7 @@ func (c *Context) Init(configFile string) error {
 		c.testValues = make(map[string]interface{})
 	}
 
+	// done
 	return nil
 }
 
