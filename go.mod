@@ -1,6 +1,6 @@
 module github.com/evgeniums/go-backend-helpers
 
-go 1.17
+go 1.18
 
 require (
 	github.com/evgeniums/go-condchan v0.0.0-20210623094011-3f4a45786e20
