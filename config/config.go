@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/logger"
+	"github.com/evgeniums/go-backend-helpers/utils"
 	"github.com/evgeniums/go-backend-helpers/validator"
 )
 
@@ -52,11 +53,7 @@ func Key(path string, key string) string {
 }
 
 func Path(defaultPath string, optional ...string) string {
-	path := defaultPath
-	if len(optional) > 0 {
-		path = optional[0]
-	}
-	return path
+	return utils.OptionalArg(defaultPath, optional...)
 }
 
 func logParameter(log logger.Logger, key string, value interface{}) {
@@ -64,10 +61,7 @@ func logParameter(log logger.Logger, key string, value interface{}) {
 }
 
 func LogConfigParameters(cfg Config, log logger.Logger, configPaths ...string) {
-	configPath := ""
-	if len(configPaths) > 0 {
-		configPath = configPaths[0]
-	}
+	configPath := utils.OptionalArg("", configPaths...)
 	keys := cfg.AllKeys()
 	for _, key := range keys {
 		k := strings.TrimPrefix(key, configPath)
