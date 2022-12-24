@@ -13,12 +13,16 @@ type Context interface {
 	DB() db.DB
 	Logger() logger.Logger
 
-	TraceBegin()
-	TraceEnd()
+	Begin()
+	End()
 
-	TraceInMethod(name string)
+	TraceInMethod(methodName string)
 	TraceOutMethod()
 
 	SetGenericError(err *generic_error.Error)
 	GetGenericError() *generic_error.Error
+}
+
+type WithCtx interface {
+	Ctx() Context
 }
