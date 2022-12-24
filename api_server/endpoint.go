@@ -2,53 +2,21 @@ package api_server
 
 import "github.com/evgeniums/go-backend-helpers/utils"
 
-type WithNameAndPath interface {
-	Name() string
-	Path() string
-	FullPath() string
-
-	setParentPath(path string, separator ...string)
-}
-
-type WithNameAndPathBase struct {
-	path string
-	name string
-
-	fullPath string
-}
-
-func (e *WithNameAndPathBase) Init(path string, name string) {
-	e.path = path
-	e.fullPath = path
-	e.name = name
-}
-
-func (e *WithNameAndPathBase) Path() string {
-	return e.path
-}
-
-func (e *WithNameAndPathBase) FullPath() string {
-	return e.fullPath
-}
-
-func (e *WithNameAndPathBase) Name() string {
-	return e.name
-}
-
-func (e *WithNameAndPathBase) setParentPath(path string, separator ...string) {
-	sep := utils.OptionalArg("/", separator...)
-	e.fullPath = path + sep + e.path
-}
-
+// Interface of API endpoint.
 type Endpoint interface {
 	WithNameAndPath
 
-	HandleRequest(request Request)
+	// Handle reqeust to server API.
+	HandleRequest(request Request) error
 
+	// Check if 2-factor authorization is enabled by default for this endpoint.
 	Is2FaDefault() bool
-	PrecheckRequestBefore2Fa(request Request)
+
+	// Precheck request before asking for 2-factor authprization.
+	PrecheckRequestBefore2Fa(request Request) error
 }
 
+// Base type for API endpoints.
 type EndpointBase struct {
 	WithNameAndPathBase
 
