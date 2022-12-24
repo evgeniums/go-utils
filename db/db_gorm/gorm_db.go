@@ -25,7 +25,7 @@ type GormDBConfig struct {
 type GormDB struct {
 	logger.WithLoggerBase
 
-	DB *gorm.DB
+	db *gorm.DB
 
 	GormDBConfig
 }
@@ -46,9 +46,9 @@ func (g *GormDB) EnableVerboseErrors(value bool) {
 
 func (g *GormDB) db_() *gorm.DB {
 	if g.debug {
-		return g.DB.Debug()
+		return g.db.Debug()
 	}
-	return g.DB
+	return g.db
 }
 
 func (g *GormDB) Init(cfg config.Config, vld validator.Validator, configPath ...string) error {
@@ -63,7 +63,7 @@ func (g *GormDB) Init(cfg config.Config, vld validator.Validator, configPath ...
 
 	// connect database
 	dsn := fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable", g.host, g.port, g.user, g.dbname, g.password)
-	g.DB, err = ConnectDB(dsn)
+	g.db, err = ConnectDB(dsn)
 	if err != nil {
 		return g.Logger().Fatal("failed to connect to database", err)
 	}
@@ -93,14 +93,14 @@ func (g *GormDB) FindByFields(fields map[string]interface{}, obj interface{}) (b
 func (g *GormDB) RowsByFields(fields map[string]interface{}, obj interface{}) (db.Cursor, error) {
 
 	var err error
-	cursor := &GormCursor{GormDB: g}
+	cursor := &GormCursor{gormDB: g}
 	rows, err := RowsByFields(g.db_(), fields, obj)
 	if err != nil && g.logError {
 		e := fmt.Errorf("failed to RowsByFields %v", ObjectTypeName(obj))
 		g.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
 	}
-	cursor.Rows = rows
-	cursor.Sql = rows
+	cursor.rows = rows
+	cursor.sql = rows
 
 	return cursor, err
 }
@@ -108,14 +108,14 @@ func (g *GormDB) RowsByFields(fields map[string]interface{}, obj interface{}) (d
 func (g *GormDB) AllRows(obj interface{}) (db.Cursor, error) {
 
 	var err error
-	cursor := &GormCursor{GormDB: g}
+	cursor := &GormCursor{gormDB: g}
 	rows, err := AllRows(g.db_(), obj)
 	if err != nil && g.logError {
 		e := fmt.Errorf("failed to AllRows %v", ObjectTypeName(obj))
 		g.Logger().Error("GormDB", e, logger.Fields{"error": err})
 	}
-	cursor.Rows = rows
-	cursor.Sql = rows
+	cursor.rows = rows
+	cursor.sql = rows
 
 	return cursor, err
 }
@@ -161,23 +161,23 @@ func (g *GormDB) Transaction(handler db.TransactionHandler) error {
 	nativeHandler := func(nativeTx *gorm.DB) error {
 		tx := &GormDB{}
 		tx.WithLoggerBase = g.WithLoggerBase
-		tx.DB = nativeTx
+		tx.db = nativeTx
 		return handler(tx)
 	}
 
-	return g.DB.Transaction(nativeHandler)
+	return g.db.Transaction(nativeHandler)
 }
 
 func (g *GormDB) RowsWithFilter(filter *Filter, obj interface{}) (db.Cursor, error) {
 	var err error
-	cursor := &GormCursor{GormDB: g}
+	cursor := &GormCursor{gormDB: g}
 	rows, err := RowsWithFilter(g.db_(), filter, obj)
 	if err != nil && g.logError {
 		e := fmt.Errorf("failed to RowsWithFilter %v", ObjectTypeName(obj))
 		g.Logger().Error("GormDB", e, logger.Fields{"error": err})
 	}
-	cursor.Rows = rows
-	cursor.Sql = rows
+	cursor.rows = rows
+	cursor.sql = rows
 
 	return cursor, err
 }
