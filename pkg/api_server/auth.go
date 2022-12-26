@@ -1,8 +1,10 @@
 package api_server
 
+import "github.com/evgeniums/go-backend-helpers/pkg/utils"
+
 // Interface of auth part of request and response.
 type Auth interface {
-	WithParameters
+	utils.WithParameters
 }
 
 // Base interface for types wuth auth section.
