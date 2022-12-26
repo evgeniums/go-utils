@@ -21,6 +21,8 @@ type Context interface {
 
 	SetGenericError(err *generic_error.Error)
 	GetGenericError() *generic_error.Error
+
+	Tr(phrase string) string
 }
 
 type WithCtx interface {
