@@ -1,4 +1,4 @@
-package api_server
+package utils
 
 // Generic parameter of requests and responses.
 type Parameter interface {
