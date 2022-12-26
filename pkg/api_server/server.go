@@ -9,6 +9,6 @@ type Server interface {
 	// Run server.
 	Run()
 
-	// Add group of endpoints to server.
-	AddEndpointGroup(group Group)
+	// Add a service to server.
+	AddService(service Service)
 }
