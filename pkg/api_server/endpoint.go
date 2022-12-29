@@ -1,12 +1,15 @@
 package api_server
 
-import "github.com/evgeniums/go-backend-helpers/pkg/utils"
+import (
+	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+)
 
 // Interface of API endpoint.
 type Endpoint interface {
-	WithNameAndPath
+	common.WithNameAndPath
 
-	// Handle reqeust to server API.
+	// Handle request to server API.
 	HandleRequest(request Request) error
 
 	// Check if 2-factor authorization is enabled by default for this endpoint.
@@ -18,7 +21,7 @@ type Endpoint interface {
 
 // Base type for API endpoints.
 type EndpointBase struct {
-	WithNameAndPathBase
+	common.WithNameAndPathBase
 
 	enable2FaDefault bool
 }

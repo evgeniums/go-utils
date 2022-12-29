@@ -9,7 +9,7 @@ import (
 
 type Context interface {
 	logger.WithLogger
-	config.WithConfig
+	config.WithCfg
 
 	DB() db.DB
 	Validator() validator.Validator

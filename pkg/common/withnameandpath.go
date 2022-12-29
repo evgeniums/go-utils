@@ -1,4 +1,4 @@
-package api_server
+package common
 
 import "github.com/evgeniums/go-backend-helpers/pkg/utils"
 
@@ -9,6 +9,11 @@ type WithNameAndPath interface {
 	FullPath() string
 
 	setParentPath(path string, separator ...string)
+}
+
+type WithNameAndPathParent interface {
+	WithNameAndPath
+	AddChild(child WithNameAndPath)
 }
 
 // Base type for types having name and path.
@@ -40,4 +45,13 @@ func (e *WithNameAndPathBase) Name() string {
 func (e *WithNameAndPathBase) setParentPath(path string, separator ...string) {
 	sep := utils.OptionalArg("/", separator...)
 	e.fullPath = path + sep + e.path
+}
+
+// Base type for types having name and path and children.
+type WithNameAndPathParentBase struct {
+	WithNameAndPathBase
+}
+
+func (w *WithNameAndPathParentBase) AddChild(child WithNameAndPath) {
+	child.setParentPath(w.FullPath())
 }

@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 	playground "github.com/go-playground/validator"
 )
@@ -28,10 +29,7 @@ func (v *PlaygroundValdator) Validate(s interface{}) error {
 
 func (v *PlaygroundValdator) validationSubfield(structField reflect.StructField, typenames []string) (reflect.StructField, bool) {
 
-	first := ""
-	if len(typenames) > 0 {
-		first = typenames[0]
-	}
+	first := utils.OptionalArg("", typenames...)
 
 	t := structField.Type
 	if t.Kind() == reflect.Ptr {
@@ -77,10 +75,15 @@ func (v *PlaygroundValdator) doValidation(s interface{}) (string, string, error)
 				return fieldErr.Field(), "", err
 			}
 
-			name, _ = f.Tag.Lookup("json")
-			if name == "" {
-				name, _ = f.Tag.Lookup("config")
+			name = f.Name
+			tag, _ := f.Tag.Lookup("json")
+			if tag == "" {
+				tag, _ = f.Tag.Lookup("config")
 			}
+			if tag != "" {
+				name = tag
+			}
+
 			message, _ = f.Tag.Lookup("vmessage")
 		}
 		return name, message, err

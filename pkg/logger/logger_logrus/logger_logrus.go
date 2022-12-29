@@ -6,21 +6,26 @@ import (
 	"os"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
+	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 	"github.com/sirupsen/logrus"
 )
 
-type LogrusConfig struct {
-	Destination string `config:"destination" defaul:"stdout" validate:"oneof=stdout file" vmessage:"logger destination must be one of: stdout | file"`
-	File        string `config:"file" validate:"required" vmessage:"path of logger file must be set"`
-	LogLevel    string `config:"log_level" validate:"omitempty,oneof=panic fatal error warn info debug trace" vmessage:"invalid log level, must be one of: panic | fatal | error | warn | info | debug | trace"`
+type logrusConfig struct {
+	destination string `defaul:"stdout" validate:"oneof=stdout file" vmessage:"logger destination must be one of: stdout | file"`
+	file        string `validate:"required" vmessage:"path of logger file must be set"`
+	log_level   string `validate:"omitempty,oneof=panic fatal error warn info debug trace" vmessage:"invalid log level, must be one of: panic | fatal | error | warn | info | debug | trace"`
 }
 
 type LogrusLogger struct {
-	LogrusConfig
-	Logrus *logrus.Logger
+	logrusConfig
+	logRus *logrus.Logger
+}
+
+func (l *LogrusLogger) Config() interface{} {
+	return &l.logrusConfig
 }
 
 func New() *LogrusLogger {
@@ -28,15 +33,27 @@ func New() *LogrusLogger {
 }
 
 func (l *LogrusLogger) ErrorRaw(data ...interface{}) {
-	l.Logrus.Error(data)
+	l.logRus.Error(data)
+}
+
+func appendFields(f *logger.Fields, fields ...logger.Fields) {
+	if len(fields) > 0 {
+		*f = utils.AppendMap(*f, fields[0])
+	}
+}
+
+func newFields(fields ...logger.Fields) logger.Fields {
+	f := logger.Fields{}
+	appendFields(&f, fields...)
+	return f
+}
+
+func (l *LogrusLogger) Log(level logger.Level, message string, fields ...logger.Fields) {
+	l.logRus.WithFields(newFields(fields...)).Log(logrus.Level(int(level)), message)
 }
 
 func (l *LogrusLogger) Debug(message string, fields ...logger.Fields) {
-	f := logger.Fields{}
-	if len(fields) > 0 {
-		f = utils.AppendMap(f, fields[0])
-	}
-	l.Logrus.WithFields(f).Debug(message)
+	l.logRus.WithFields(newFields(fields...)).Debug(message)
 }
 
 func (l *LogrusLogger) Error(message string, err error, fields ...logger.Fields) error {
@@ -44,10 +61,8 @@ func (l *LogrusLogger) Error(message string, err error, fields ...logger.Fields)
 	if err == nil {
 		f = logger.Fields{}
 	}
-	if len(fields) > 0 {
-		f = utils.AppendMap(f, fields[0])
-	}
-	l.Logrus.WithFields(f).Error(message)
+	appendFields(&f, fields...)
+	l.logRus.WithFields(f).Error(message)
 
 	if err == nil {
 		return errors.New(message)
@@ -57,65 +72,55 @@ func (l *LogrusLogger) Error(message string, err error, fields ...logger.Fields)
 }
 
 func (l *LogrusLogger) Warn(message string, fields ...logger.Fields) {
-	f := logger.Fields{}
-	if len(fields) > 0 {
-		f = utils.AppendMap(f, fields[0])
-	}
-	l.Logrus.WithFields(f).Warn(message)
+	l.logRus.WithFields(newFields(fields...)).Warn(message)
 }
 
 func (l *LogrusLogger) Info(message string, fields ...logger.Fields) {
-	f := logger.Fields{}
-	if len(fields) > 0 {
-		f = utils.AppendMap(f, fields[0])
-	}
-	l.Logrus.WithFields(f).Info(message)
+	l.logRus.WithFields(newFields(fields...)).Info(message)
 }
 
 func (l *LogrusLogger) Fatal(message string, err error, fields ...logger.Fields) error {
-	f := logger.Fields{"error": err}
-	if len(fields) > 0 {
-		f = utils.AppendMap(f, fields[0])
-	}
-	l.Logrus.WithFields(f).Fatal(message)
+	f := newFields(fields...)
+	f["error"] = err
+	l.logRus.WithFields(f).Fatal(message)
 	return fmt.Errorf("%s: %s", message, err)
 }
 
 func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPath ...string) error {
 
 	// load configuration
-	err := config.InitObjectNoLog(cfg, vld, l, "logger", configPath...)
+	err := object_config.LoadValidate(cfg, vld, l, "logger", configPath...)
 	if err != nil {
 		return err
 	}
 
 	// setup logrus
-	l.Logrus = logrus.New()
+	l.logRus = logrus.New()
 
 	// setup output
-	if l.Destination == "file" {
-		writer := &utils.FileWriteReopen{Path: l.File}
-		writer.File, err = os.OpenFile(l.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if l.destination == "file" {
+		writer := &utils.FileWriteReopen{Path: l.file}
+		writer.File, err = os.OpenFile(l.file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err == nil {
-			l.Logrus.Out = writer
+			l.logRus.Out = writer
 			logrus.SetOutput(writer)
-			fmt.Printf("Using log file %v\n", l.File)
+			fmt.Printf("Using log file %v\n", l.file)
 		} else {
 			fmt.Println("Failed to log to file, using default console")
 		}
 	} else {
-		l.Logrus.Out = os.Stdout
+		l.logRus.Out = os.Stdout
 		logrus.SetOutput(os.Stdout)
 	}
 
 	// setup log level
-	if l.LogLevel != "" {
-		logLevel, err := logrus.ParseLevel(l.LogLevel)
+	if l.log_level != "" {
+		logLevel, err := logrus.ParseLevel(l.log_level)
 		if err != nil {
 			fmt.Printf("Invalid log level %v\n", err.Error())
 		} else {
 			fmt.Printf("Using log level %v\n", logLevel)
-			l.Logrus.SetLevel(logLevel)
+			l.logRus.SetLevel(logLevel)
 			logrus.SetLevel(logLevel)
 		}
 	}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/config_viper"
+	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
@@ -18,19 +19,24 @@ var Version = "development"
 var Time = "unknown"
 var Revision = "unknown"
 
-type ContextConfig struct {
-	testing    bool `config:"testing"`
-	testValues map[string]interface{}
+type contextConfig struct {
+	testing bool
 }
 
 type Context struct {
 	logger.WithLoggerBase
-	config.WithConfigBase
+	config.WithCfgBase
 
 	db        *db_gorm.GormDB
 	validator *validator_playground.PlaygroundValdator
 
-	ContextConfig
+	contextConfig
+
+	testValues map[string]interface{}
+}
+
+func (c *Context) Config() interface{} {
+	return &c.contextConfig
 }
 
 func (c *Context) DB() db.DB {
@@ -78,7 +84,10 @@ func (c *Context) Init(configFile string) error {
 
 	// setup logger
 	logConfigPath := "log"
-	c.initLog(logConfigPath)
+	err = c.initLog(logConfigPath)
+	if err != nil {
+		return err
+	}
 	log := c.Logger()
 	log.Info("Starting...")
 
@@ -86,15 +95,15 @@ func (c *Context) Init(configFile string) error {
 	log.Info("Build configuration", logger.Fields{"build_time": Time, "package_version": Version, "git_revision": Revision})
 
 	// log logger configuration
-	config.LogConfigParameters(c.Config(), log, logConfigPath)
+	object_config.Info(log, log, logConfigPath)
 
-	// load top level configuration
-	err = config.InitObject(c.Config(), log, c.validator, c, "")
+	// load top level application configuration
+	err = object_config.LoadLogValidate(c.Cfg(), log, c.validator, c, "")
 	if err != nil {
 		return log.Fatal("failed to load application configuration", err)
 	}
 
-	// connect to DB
+	// init main application database
 	err = c.initDb()
 	if err != nil {
 		return err
@@ -112,18 +121,18 @@ func (c *Context) Init(configFile string) error {
 
 func (c *Context) initConfig(configFile string) error {
 	v := config_viper.New()
-	c.SetConfig(v)
+	c.SetCfg(v)
 	return v.Init(configFile)
 }
 
 func (c *Context) initLog(configPath string) error {
 	l := logger_logrus.New()
 	c.SetLogger(l)
-	return l.Init(c.Config(), c.validator, "logger")
+	return l.Init(c.Cfg(), c.validator, configPath)
 }
 
 func (c *Context) initDb() error {
 	d := db_gorm.New(c.Logger())
 	c.db = d
-	return d.Init(c.Config(), c.validator, "psql")
+	return d.Init(c.Cfg(), c.validator, "psql")
 }

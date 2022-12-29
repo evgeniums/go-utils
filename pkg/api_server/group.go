@@ -1,8 +1,10 @@
 package api_server
 
+import "github.com/evgeniums/go-backend-helpers/pkg/common"
+
 // Interface of group of API endpoints.
 type Group interface {
-	WithNameAndPath
+	common.WithNameAndPathParent
 
 	// Add endpoint to the group.
 	AddEndpoint(endpoint Endpoint) error
@@ -14,11 +16,11 @@ type Group interface {
 // Base type of group of API endpoints.
 type GroupBase struct {
 	Group
-	WithNameAndPathBase
+	common.WithNameAndPathParentBase
 }
 
 // Add endpoint to the group.
 func (g *GroupBase) AddEndpoint(endpoint Endpoint) error {
-	endpoint.setParentPath(g.path)
+	g.WithNameAndPathParentBase.AddChild(endpoint)
 	return g.DoAddEndpoint(endpoint)
 }

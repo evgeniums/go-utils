@@ -10,4 +10,5 @@ type Request interface {
 	op_context.WithCtx
 	WithAuth
 	message.WithMessage
+	Response() Response
 }

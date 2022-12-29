@@ -1,4 +1,4 @@
-package utils
+package common
 
 // Generic parameter of requests and responses.
 type Parameter interface {

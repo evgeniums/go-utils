@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
+	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/orm"
@@ -11,15 +12,15 @@ import (
 	"gorm.io/gorm"
 )
 
-type GormDBConfig struct {
-	host     string `config:"host" default:"127.0.0.1"`
-	port     string `config:"port" default:"5432"`
-	user     string `config:"user"`
-	dbname   string `config:"dbname"`
-	password string `config:"password"`
+type gormDBConfig struct {
+	host     string `default:"127.0.0.1"`
+	port     string `default:"5432"`
+	user     string
+	dbname   string
+	password string `mask:""`
 
-	debug    bool `config:"enable_debug"`
-	logError bool `config:"verbose_errors"`
+	enable_debug   bool
+	verbose_errors bool
 }
 
 type GormDB struct {
@@ -27,7 +28,11 @@ type GormDB struct {
 
 	db *gorm.DB
 
-	GormDBConfig
+	gormDBConfig
+}
+
+func (g *GormDB) Config() interface{} {
+	return &g.gormDBConfig
 }
 
 func New(log logger.Logger) *GormDB {
@@ -37,15 +42,15 @@ func New(log logger.Logger) *GormDB {
 }
 
 func (g *GormDB) EnableDebug(value bool) {
-	g.debug = value
+	g.enable_debug = value
 }
 
 func (g *GormDB) EnableVerboseErrors(value bool) {
-	g.logError = value
+	g.verbose_errors = value
 }
 
 func (g *GormDB) db_() *gorm.DB {
-	if g.debug {
+	if g.enable_debug {
 		return g.db.Debug()
 	}
 	return g.db
@@ -56,7 +61,7 @@ func (g *GormDB) Init(cfg config.Config, vld validator.Validator, configPath ...
 	g.Logger().Info("Init GormDB")
 
 	// load configuration
-	err := config.InitObject(cfg, g.Logger(), vld, g, "psql", configPath...)
+	err := object_config.LoadLogValidate(cfg, g.Logger(), vld, g, "psql", configPath...)
 	if err != nil {
 		return g.Logger().Fatal("failed to load GormDB configuration", err)
 	}
@@ -74,7 +79,7 @@ func (g *GormDB) Init(cfg config.Config, vld validator.Validator, configPath ...
 
 func (g *GormDB) FindByField(field string, value string, obj interface{}) (bool, error) {
 	notFound, err := FindByField(g.db_(), field, value, obj)
-	if err != nil && g.logError && !notFound {
+	if err != nil && g.verbose_errors && !notFound {
 		e := fmt.Errorf("failed to FindByField %v", ObjectTypeName(obj))
 		g.Logger().Error("GormDB", e, logger.Fields{"field": field, "value": value, "error": err})
 	}
@@ -83,7 +88,7 @@ func (g *GormDB) FindByField(field string, value string, obj interface{}) (bool,
 
 func (g *GormDB) FindByFields(fields map[string]interface{}, obj interface{}) (bool, error) {
 	notFound, err := FindByFields(g.db_(), fields, obj)
-	if err != nil && g.logError && !notFound {
+	if err != nil && g.verbose_errors && !notFound {
 		e := fmt.Errorf("failed to FindByFields %v", ObjectTypeName(obj))
 		g.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
 	}
@@ -95,7 +100,7 @@ func (g *GormDB) RowsByFields(fields map[string]interface{}, obj interface{}) (d
 	var err error
 	cursor := &GormCursor{gormDB: g}
 	rows, err := RowsByFields(g.db_(), fields, obj)
-	if err != nil && g.logError {
+	if err != nil && g.verbose_errors {
 		e := fmt.Errorf("failed to RowsByFields %v", ObjectTypeName(obj))
 		g.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
 	}
@@ -110,7 +115,7 @@ func (g *GormDB) AllRows(obj interface{}) (db.Cursor, error) {
 	var err error
 	cursor := &GormCursor{gormDB: g}
 	rows, err := AllRows(g.db_(), obj)
-	if err != nil && g.logError {
+	if err != nil && g.verbose_errors {
 		e := fmt.Errorf("failed to AllRows %v", ObjectTypeName(obj))
 		g.Logger().Error("GormDB", e, logger.Fields{"error": err})
 	}
@@ -122,7 +127,7 @@ func (g *GormDB) AllRows(obj interface{}) (db.Cursor, error) {
 
 func (g *GormDB) Create(obj orm.BaseInterface) error {
 	err := Create(g.db_(), obj)
-	if err != nil && g.logError {
+	if err != nil && g.verbose_errors {
 		e := fmt.Errorf("failed to Create %v", ObjectTypeName(obj))
 		g.Logger().Error("GormDB", e, logger.Fields{"error": err})
 	}
@@ -131,7 +136,7 @@ func (g *GormDB) Create(obj orm.BaseInterface) error {
 
 func (g *GormDB) DeleteByField(field string, value interface{}, obj interface{}) error {
 	err := RemoveByField(g.db_(), field, value, obj)
-	if err != nil && g.logError {
+	if err != nil && g.verbose_errors {
 		e := fmt.Errorf("failed to DeleteByField %v", ObjectTypeName(obj))
 		g.Logger().Error("GormDB", e, logger.Fields{"field": field, "value": value, "error": err})
 	}
@@ -140,7 +145,7 @@ func (g *GormDB) DeleteByField(field string, value interface{}, obj interface{})
 
 func (g *GormDB) DeleteByFields(fields map[string]interface{}, obj interface{}) error {
 	err := DeleteAllByFields(g.db_(), fields, obj)
-	if err != nil && g.logError {
+	if err != nil && g.verbose_errors {
 		e := fmt.Errorf("failed to DeleteByFields %v", ObjectTypeName(obj))
 		g.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
 	}
@@ -149,7 +154,7 @@ func (g *GormDB) DeleteByFields(fields map[string]interface{}, obj interface{}) 
 
 func (g *GormDB) UpdateFields(obj interface{}, fields map[string]interface{}) error {
 	err := UpdateFields(g.db_(), fields, obj)
-	if err != nil && g.logError {
+	if err != nil && g.verbose_errors {
 		e := fmt.Errorf("failed to UpdateFields %v", ObjectTypeName(obj))
 		g.Logger().Error("GormDB", e, logger.Fields{"error": err})
 	}
@@ -172,7 +177,7 @@ func (g *GormDB) RowsWithFilter(filter *Filter, obj interface{}) (db.Cursor, err
 	var err error
 	cursor := &GormCursor{gormDB: g}
 	rows, err := RowsWithFilter(g.db_(), filter, obj)
-	if err != nil && g.logError {
+	if err != nil && g.verbose_errors {
 		e := fmt.Errorf("failed to RowsWithFilter %v", ObjectTypeName(obj))
 		g.Logger().Error("GormDB", e, logger.Fields{"error": err})
 	}
@@ -184,7 +189,7 @@ func (g *GormDB) RowsWithFilter(filter *Filter, obj interface{}) (db.Cursor, err
 
 func (g *GormDB) FinWithFilter(filter *Filter, obj interface{}) (bool, error) {
 	notFound, err := FindWithFilter(g.db_(), filter, obj)
-	if err != nil && g.logError && !notFound {
+	if err != nil && g.verbose_errors && !notFound {
 		e := fmt.Errorf("failed to FinWithFilter %v", ObjectTypeName(obj))
 		g.Logger().Error("GormDB", e, logger.Fields{"error": err})
 	}
