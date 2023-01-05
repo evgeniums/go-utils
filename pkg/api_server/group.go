@@ -4,7 +4,7 @@ import "github.com/evgeniums/go-backend-helpers/pkg/common"
 
 // Interface of group of API endpoints.
 type Group interface {
-	common.WithNameAndPathParent
+	common.WithPathParent
 
 	// Add endpoint to the group.
 	AddEndpoint(endpoint Endpoint) error
