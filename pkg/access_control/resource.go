@@ -7,6 +7,8 @@ import (
 
 type Resource interface {
 	common.WithNameAndPath
+	IsOwner(subject Subject) bool
+	OwnerAccess() Access
 }
 
 type ResourceManager interface {

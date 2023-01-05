@@ -22,7 +22,16 @@ func (a *AccessControlBase) CheckAccess(ctx op_context.Context, resource Resourc
 
 	ctx.TraceInMethod("AccessControl.CheckAccess")
 
-	// use default access
+	// check owner access
+	if resource.IsOwner(subject) {
+		// if owner access is allowed then finish checking, otherwise go further and use ACL rules to check access
+		if resource.OwnerAccess().Check(accessType) {
+			// TODO log used rule
+			return true, nil
+		}
+	}
+
+	// init with default access
 	allow := a.defaultAccess.Check(accessType)
 	ruleFound := false
 
@@ -48,7 +57,7 @@ func (a *AccessControlBase) CheckAccess(ctx op_context.Context, resource Resourc
 			// if rule for tag is not found then look for the resource without tags
 			resourceTags = append(resourceTags, "")
 			for _, tag := range resourceTags {
-				// look for the first matching role a rule esists for
+				// look for a rule for any subject's role
 				for _, role := range subject.Roles() {
 					rule, err := a.acl.FindRule(ctx, path, tag, role)
 					if err != nil {
