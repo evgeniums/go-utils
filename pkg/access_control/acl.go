@@ -1,1 +1,14 @@
 package access_control
+
+import "github.com/evgeniums/go-backend-helpers/pkg/op_context"
+
+type Rule interface {
+	Resource() Resource
+	Role() Role
+	Access() Access
+	Tags() []string
+}
+
+type Acl interface {
+	FindRule(ctx op_context.Context, resourcePath string, tag string, role Role) (Rule, error)
+}
