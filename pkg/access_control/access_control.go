@@ -2,6 +2,7 @@ package access_control
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 // Interface for access controllers.
@@ -16,6 +17,12 @@ type AccessControlBase struct {
 	acl             Acl
 	resourceManager ResourceManager
 	defaultAccess   Access
+}
+
+func (a *AccessControlBase) Init(acl Acl, resourceManager ResourceManager, defaultAccess ...Access) {
+	a.acl = acl
+	a.resourceManager = resourceManager
+	a.defaultAccess = utils.OptionalArg[Access](&AccessBase{}, defaultAccess...)
 }
 
 func (a *AccessControlBase) CheckAccess(ctx op_context.Context, resource Resource, subject Subject, accessType AccessType) (bool, error) {
