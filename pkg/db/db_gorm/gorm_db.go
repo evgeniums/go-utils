@@ -3,11 +3,11 @@ package db_gorm
 import (
 	"fmt"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/orm"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 	"gorm.io/gorm"
 )
@@ -125,7 +125,7 @@ func (g *GormDB) AllRows(obj interface{}) (db.Cursor, error) {
 	return cursor, err
 }
 
-func (g *GormDB) Create(obj orm.BaseInterface) error {
+func (g *GormDB) Create(obj common.Object) error {
 	err := Create(g.db_(), obj)
 	if err != nil && g.verbose_errors {
 		e := fmt.Errorf("failed to Create %v", ObjectTypeName(obj))

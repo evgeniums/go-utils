@@ -3,13 +3,13 @@ package db
 import (
 	"errors"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/orm"
+	"github.com/evgeniums/go-backend-helpers/pkg/common"
 )
 
 type Transaction interface {
 	FindByField(field string, value string, obj interface{}) (bool, error)
 	FindByFields(fields map[string]interface{}, obj interface{}) (bool, error)
-	Create(obj orm.BaseInterface) error
+	Create(obj common.Object) error
 	DeleteByField(field string, value interface{}, obj interface{}) error
 	DeleteByFields(fields map[string]interface{}, obj interface{}) error
 }
@@ -25,7 +25,7 @@ type Cursor interface {
 type DB interface {
 	FindByField(field string, value string, obj interface{}) (bool, error)
 	FindByFields(fields map[string]interface{}, obj interface{}) (bool, error)
-	Create(obj orm.BaseInterface) error
+	Create(obj common.Object) error
 	DeleteByField(field string, value interface{}, obj interface{}) error
 	DeleteByFields(fields map[string]interface{}, obj interface{}) error
 
