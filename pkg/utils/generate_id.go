@@ -3,17 +3,17 @@ package utils
 import (
 	"fmt"
 	"math/rand"
+	"sync/atomic"
 	"time"
 )
 
-var idCount = 0
+var idCount atomic.Uint32
 
 func GenerateID() string {
 	t := time.Now().UTC().Unix()
 	r1 := rand.Int31n(0x7fffffff)
 
-	count := idCount % 0x10000
-	idCount++
+	count := idCount.Add(1) % 0x10000
 
 	id := fmt.Sprintf("%08x%04x%04x", t, count, r1)
 	return id
