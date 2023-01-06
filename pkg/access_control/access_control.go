@@ -19,6 +19,12 @@ type AccessControlBase struct {
 	defaultAccess   Access
 }
 
+func NewAccessControl(acl Acl, resourceManager ResourceManager, defaultAccess ...Access) *AccessControlBase {
+	a := &AccessControlBase{}
+	a.Init(acl, resourceManager, defaultAccess...)
+	return a
+}
+
 func (a *AccessControlBase) Init(acl Acl, resourceManager ResourceManager, defaultAccess ...Access) {
 	a.acl = acl
 	a.resourceManager = resourceManager
