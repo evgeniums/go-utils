@@ -34,6 +34,7 @@ func (a *AccessControlBase) Init(acl Acl, resourceManager ResourceManager, defau
 func (a *AccessControlBase) CheckAccess(ctx op_context.Context, resource Resource, subject Subject, accessType AccessType) (bool, error) {
 
 	ctx.TraceInMethod("AccessControl.CheckAccess")
+	defer ctx.TraceOutMethod()
 
 	// check owner access
 	if resource.IsOwner(subject) {
@@ -55,7 +56,6 @@ func (a *AccessControlBase) CheckAccess(ctx op_context.Context, resource Resourc
 		path := paths[i]
 		resourceTags, err := a.resourceManager.ResourceTags(ctx, path)
 		if err != nil {
-			ctx.TraceOutMethod()
 			return false, err
 		}
 		tags[i] = resourceTags
@@ -74,7 +74,6 @@ func (a *AccessControlBase) CheckAccess(ctx op_context.Context, resource Resourc
 				for _, role := range subject.Roles() {
 					rule, err := a.acl.FindRule(ctx, path, tag, role)
 					if err != nil {
-						ctx.TraceOutMethod()
 						return false, err
 					}
 					if rule != nil {
@@ -98,7 +97,6 @@ func (a *AccessControlBase) CheckAccess(ctx op_context.Context, resource Resourc
 	}
 
 	// TODO log detected access
-	ctx.TraceOutMethod()
 	return allow, nil
 }
 
