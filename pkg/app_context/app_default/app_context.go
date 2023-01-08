@@ -74,7 +74,7 @@ func New() *Context {
 	return c
 }
 
-func (c *Context) Init(configFile string) error {
+func (c *Context) Init(configFile string, configType ...string) error {
 
 	// load configuration
 	err := c.initConfig(configFile)
@@ -119,10 +119,10 @@ func (c *Context) Init(configFile string) error {
 	return nil
 }
 
-func (c *Context) initConfig(configFile string) error {
+func (c *Context) initConfig(configFile string, configType ...string) error {
 	v := config_viper.New()
 	c.SetCfg(v)
-	return v.Init(configFile)
+	return v.LoadFile(configFile, configType...)
 }
 
 func (c *Context) initLog(configPath string) error {
