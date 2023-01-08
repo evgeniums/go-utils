@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/config/config_viper"
@@ -14,19 +15,21 @@ type embeddedConfig1 struct {
 
 type config1 struct {
 	embeddedConfig1
-	FIELD_INT     int
-	FIELD_INT8    int8
-	FIELD_INT16   int16
-	FIELD_INT32   int32
-	FIELD_INT64   int64
-	FIELD_UINT    uint
-	FIELD_UINT8   uint8
-	FIELD_UINT16  uint16
-	FIELD_UINT32  uint32 `default:"200"`
-	FIELD_UINT64  uint64
-	FIELD_BOOL    bool `default:"true"`
-	FIELD_FLOAT32 float32
-	FIELD_FLOAT64 float64
+	FIELD_INT          int
+	FIELD_INT8         int8
+	FIELD_INT16        int16
+	FIELD_INT32        int32
+	FIELD_INT64        int64
+	FIELD_UINT         uint
+	FIELD_UINT8        uint8
+	FIELD_UINT16       uint16
+	FIELD_UINT32       uint32 `default:"200"`
+	FIELD_UINT64       uint64
+	FIELD_BOOL         bool `default:"true"`
+	FIELD_FLOAT32      float32
+	FIELD_FLOAT64      float64
+	FIELD_SLICE_INT    []int
+	FIELD_SLICE_STRING []string
 }
 
 type sample1 struct {
@@ -79,7 +82,9 @@ func TestObjectConfig(t *testing.T) {
 		"field_uint64":204,
 		"field_bool":false,
 		"field_float32":1000.01,
-		"field_float64":2000.02
+		"field_float64":2000.02,
+		"field_slice_int":[1,2,3,4],
+		"field_slice_string":["a","b","c","d"]
 	}
 `
 	cfg2 := config_viper.New()
@@ -136,5 +141,13 @@ func TestObjectConfig(t *testing.T) {
 	}
 	if !utils.FloatAlmostEqual(s2.FIELD_FLOAT64, 2000.02) {
 		t.Errorf("invalid field_float64: expected %s, got %s", utils.FloatToStr2(2000.02), utils.FloatToStr2(s2.FIELD_FLOAT64))
+	}
+
+	if !reflect.DeepEqual(s2.FIELD_SLICE_INT, []int{1, 2, 3, 4}) {
+		t.Errorf("invalid field_slice_int: expected %v, got %v", []int{1, 2, 3, 4}, s2.FIELD_BOOL)
+	}
+
+	if !reflect.DeepEqual(s2.FIELD_SLICE_STRING, []string{"a", "b", "c", "d"}) {
+		t.Errorf("invalid field_slice_string: expected %v, got %v", []string{"a", "b", "c", "d"}, s2.FIELD_SLICE_STRING)
 	}
 }
