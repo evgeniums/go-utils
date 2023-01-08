@@ -20,7 +20,7 @@ var Time = "unknown"
 var Revision = "unknown"
 
 type contextConfig struct {
-	testing bool
+	TESTING bool
 }
 
 type Context struct {
@@ -48,7 +48,7 @@ func (c *Context) Validator() validator.Validator {
 }
 
 func (c *Context) Testing() bool {
-	return c.testing
+	return c.TESTING
 }
 
 func (c *Context) TestParameters() map[string]interface{} {

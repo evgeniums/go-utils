@@ -14,9 +14,9 @@ import (
 )
 
 type logrusConfig struct {
-	destination string `defaul:"stdout" validate:"oneof=stdout file" vmessage:"logger destination must be one of: stdout | file"`
-	file        string `validate:"required" vmessage:"path of logger file must be set"`
-	log_level   string `validate:"omitempty,oneof=panic fatal error warn info debug trace" vmessage:"invalid log level, must be one of: panic | fatal | error | warn | info | debug | trace"`
+	DESTINATION string `defaul:"stdout" validate:"oneof=stdout file" vmessage:"logger destination must be one of: stdout | file"`
+	FILE        string `validate:"required" vmessage:"path of logger file must be set"`
+	LOG_LEVEL   string `validate:"omitempty,oneof=panic fatal error warn info debug trace" vmessage:"invalid log level, must be one of: panic | fatal | error | warn | info | debug | trace"`
 }
 
 type LogrusLogger struct {
@@ -98,13 +98,13 @@ func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPa
 	l.logRus = logrus.New()
 
 	// setup output
-	if l.destination == "file" {
-		writer := &utils.FileWriteReopen{Path: l.file}
-		writer.File, err = os.OpenFile(l.file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if l.DESTINATION == "file" {
+		writer := &utils.FileWriteReopen{Path: l.FILE}
+		writer.File, err = os.OpenFile(l.FILE, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err == nil {
 			l.logRus.Out = writer
 			logrus.SetOutput(writer)
-			fmt.Printf("Using log file %v\n", l.file)
+			fmt.Printf("Using log file %v\n", l.FILE)
 		} else {
 			fmt.Println("Failed to log to file, using default console")
 		}
@@ -114,8 +114,8 @@ func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPa
 	}
 
 	// setup log level
-	if l.log_level != "" {
-		logLevel, err := logrus.ParseLevel(l.log_level)
+	if l.LOG_LEVEL != "" {
+		logLevel, err := logrus.ParseLevel(l.LOG_LEVEL)
 		if err != nil {
 			fmt.Printf("Invalid log level %v\n", err.Error())
 		} else {
