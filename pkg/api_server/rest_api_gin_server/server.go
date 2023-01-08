@@ -19,13 +19,13 @@ import (
 )
 
 type ServerConfig struct {
-	api_version  string `validate:"required"`
-	multitenancy bool
+	API_VERSION  string `validate:"required"`
+	MULTITENANCY bool
 	common.WithNameBaseConfig
 
-	host            string `validate:"omitempty,ip" default:"127.0.0.1"`
-	port            uint16 `validate:"required"`
-	trusted_proxies []string
+	HOST            string `validate:"omitempty,ip" default:"127.0.0.1"`
+	PORT            uint16 `validate:"required"`
+	TRUSTED_PROXIES []string
 }
 
 type Server struct {
@@ -47,11 +47,11 @@ func (s *Server) Config() interface{} {
 }
 
 func (s *Server) ApiVersion() string {
-	return s.api_version
+	return s.API_VERSION
 }
 
 func (s *Server) IsMultiTenancy() bool {
-	return s.multitenancy
+	return s.MULTITENANCY
 }
 
 func (s *Server) Tenancy(id string) (api_server.Tenancy, error) {
@@ -71,12 +71,12 @@ func (s *Server) RemoveTenancy(id string) error {
 }
 
 func (s *Server) address() string {
-	a := fmt.Sprintf("%s:%d", s.host, s.port)
+	a := fmt.Sprintf("%s:%d", s.HOST, s.PORT)
 	return a
 }
 
 func (s *Server) apiPath() string {
-	p := fmt.Sprintf("/%s", s.api_version)
+	p := fmt.Sprintf("/%s", s.API_VERSION)
 	return p
 }
 
@@ -158,7 +158,7 @@ func (s *Server) Init(ctx app_context.Context, configPath ...string) error {
 	// init gin router
 	s.ginEngine = gin.New()
 	// trusted proxies are needed for correct logging of client IP address
-	s.ginEngine.SetTrustedProxies(s.trusted_proxies)
+	s.ginEngine.SetTrustedProxies(s.TRUSTED_PROXIES)
 	// use default logger for unhandled paths and then use recovery middleware
 	s.ginEngine.Use(ginDefaultLogger(ctx.Logger()), gin.Recovery())
 

@@ -36,15 +36,15 @@ type WithPathParent interface {
 }
 
 type WithNameBaseConfig struct {
-	name string `default:"noname"`
+	NAME string `default:"noname"`
 }
 
 func (e *WithNameBaseConfig) Init(name string) {
-	e.name = name
+	e.NAME = name
 }
 
 func (w *WithNameBaseConfig) Name() string {
-	return w.name
+	return w.NAME
 }
 
 type WithNameBase = WithNameBaseConfig
