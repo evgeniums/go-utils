@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+type Float interface {
+	float32 | float64
+}
+
 func StrToFloat(s string) (float64, error) {
 	if s == "" {
 		return 0, nil
@@ -21,25 +25,24 @@ func StrToFloat(s string) (float64, error) {
 	return float64(f), nil
 }
 
-func FloatToStr(val float64) string {
-	v := math.Round(float64(val)*100) / 100
-	str := strconv.FormatFloat(float64(v), 'f', -1, 32)
+func FloatToStr[T Float](val T) string {
+	str := strconv.FormatFloat(float64(val), 'f', -1, 64)
 	return str
 }
 
-func FloatToStr2(val float64) string {
+func FloatToStr2[T Float](val T) string {
 	v := math.Round(float64(val)*100) / 100
-	str := strconv.FormatFloat(float64(v), 'f', 2, 32)
+	str := strconv.FormatFloat(v, 'f', 2, 64)
 	return str
 }
 
-func FloatToStr2Comma(val float64) string {
+func FloatToStr2Comma[T Float](val T) string {
 	str := FloatToStr2(val)
 	str = strings.ReplaceAll(str, ".", ",")
 	return str
 }
 
-func FloatToStr2Hyphen(val float64) string {
+func FloatToStr2Hyphen[T Float](val T) string {
 	str := FloatToStr2(val)
 	str = strings.ReplaceAll(str, ".", "-")
 	return str
@@ -98,6 +101,6 @@ func StrToInt(s string) (int, error) {
 
 const float64EqualityThreshold = 1e-9
 
-func FloatAlmostEqual(a, b float64) bool {
-	return math.Abs(a-b) <= float64EqualityThreshold
+func FloatAlmostEqual[T Float](a, b T) bool {
+	return math.Abs(float64(a)-float64(b)) <= float64EqualityThreshold
 }
