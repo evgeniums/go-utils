@@ -5,9 +5,13 @@ type WithApp interface {
 }
 
 type WithAppBase struct {
-	AppInterface Context
+	app Context
+}
+
+func (w *WithAppBase) Init(app Context) {
+	w.app = app
 }
 
 func (w *WithAppBase) App() Context {
-	return w.AppInterface
+	return w.app
 }

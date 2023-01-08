@@ -128,3 +128,7 @@ func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPa
 	// done
 	return err
 }
+
+func (l *LogrusLogger) Native() interface{} {
+	return l.logRus
+}

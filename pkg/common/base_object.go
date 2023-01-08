@@ -53,7 +53,7 @@ func (w *CreatedAtBase) SetCreatedAt(t time.Time) {
 type Object interface {
 	ID
 	CreatedAt
-	Init()
+	InitObject()
 }
 
 type ObjectBase struct {
@@ -61,7 +61,7 @@ type ObjectBase struct {
 	CreatedAtBase
 }
 
-func (o *ObjectBase) Init() {
+func (o *ObjectBase) InitObject() {
 	o.GenerateID()
 	o.InitCreatedAt()
 }

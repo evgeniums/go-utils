@@ -35,17 +35,19 @@ type WithPathParent interface {
 	AddChild(child WithPath)
 }
 
-type WithNameBase struct {
-	name string
+type WithNameBaseConfig struct {
+	name string `default:"noname"`
 }
 
-func (e *WithNameBase) Init(name string) {
+func (e *WithNameBaseConfig) Init(name string) {
 	e.name = name
 }
 
-func (w *WithNameBase) Name() string {
+func (w *WithNameBaseConfig) Name() string {
 	return w.name
 }
+
+type WithNameBase = WithNameBaseConfig
 
 // Base type for types having name and path.
 type WithPathBase struct {

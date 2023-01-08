@@ -1,5 +1,7 @@
 package api_server
 
+import finish "github.com/evgeniums/go-finish-service"
+
 // Interface of generic server that implements some API.
 type Server interface {
 
@@ -7,7 +9,7 @@ type Server interface {
 	ApiVersion() string
 
 	// Run server.
-	Run()
+	Run(fin *finish.Finisher)
 
 	// Add a service to server.
 	AddService(service Service)
@@ -15,11 +17,11 @@ type Server interface {
 	// Check if server supports multiple tenancies
 	IsMultiTenancy() bool
 
-	// Add tenancy.
-	AddTenancy(tenancy Tenancy) error
-
 	// Find tenancy by ID.
 	Tenancy(id string) (Tenancy, error)
+
+	// Add tenancy.
+	AddTenancy(id string) error
 
 	// Remove tenance.
 	RemoveTenancy(id string) error

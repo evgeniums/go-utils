@@ -36,6 +36,8 @@ type Logger interface {
 	Fatal(message string, err error, fields ...Fields) error
 
 	ErrorRaw(...interface{})
+
+	Native() interface{}
 }
 
 type WithLogger interface {
