@@ -11,4 +11,16 @@ type Server interface {
 
 	// Add a service to server.
 	AddService(service Service)
+
+	// Check if server supports multiple tenancies
+	IsMultiTenancy() bool
+
+	// Add tenancy.
+	AddTenancy(tenancy Tenancy) error
+
+	// Find tenancy by ID.
+	Tenancy(id string) (Tenancy, error)
+
+	// Remove tenance.
+	RemoveTenancy(id string) error
 }

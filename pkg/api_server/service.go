@@ -8,6 +8,4 @@ type Service interface {
 
 	// Add endpoint to default service group.
 	AddEndpoint(endpoint Endpoint) error
-
-	IsMultiTenance() bool
 }
