@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/gin-gonic/gin"
@@ -19,12 +19,11 @@ import (
 )
 
 type ServerConfig struct {
-	API_VERSION  string `validate:"required"`
-	MULTITENANCY bool
-	common.WithNameBaseConfig
+	api_server.ServerBaseConfig
 
-	HOST            string `validate:"omitempty,ip" default:"127.0.0.1"`
+	HOST            string `validate:"ip" default:"127.0.0.1"`
 	PORT            uint16 `validate:"required"`
+	PATH_PREFIX     string `default:"/api"`
 	TRUSTED_PROXIES []string
 }
 
@@ -44,14 +43,6 @@ func NewServer() *Server {
 
 func (s *Server) Config() interface{} {
 	return &s.ServerConfig
-}
-
-func (s *Server) ApiVersion() string {
-	return s.API_VERSION
-}
-
-func (s *Server) IsMultiTenancy() bool {
-	return s.MULTITENANCY
 }
 
 func (s *Server) Tenancy(id string) (api_server.Tenancy, error) {
@@ -75,32 +66,25 @@ func (s *Server) address() string {
 	return a
 }
 
-func (s *Server) apiPath() string {
-	p := fmt.Sprintf("/%s", s.API_VERSION)
-	return p
-}
-
-func ginDefaultLogger(log logger.Logger, notLogged ...string) gin.HandlerFunc {
+func ginDefaultLogger(log logger.Logger) gin.HandlerFunc {
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = "unknow"
 	}
 
-	var skip map[string]struct{}
-
-	if length := len(notLogged); length > 0 {
-		skip = make(map[string]struct{}, length)
-
-		for _, p := range notLogged {
-			skip[p] = struct{}{}
-		}
-	}
-
 	return func(c *gin.Context) {
-		// other handler can change c.Path so:
+
 		path := c.Request.URL.Path
 		start := time.Now()
+
 		c.Next()
+
+		// skip if request was already logged
+		_, logged := c.Get("logged")
+		if logged {
+			return
+		}
+
 		stop := time.Since(start)
 		latency := int(math.Ceil(float64(stop.Nanoseconds()) / 1000000.0))
 		statusCode := c.Writer.Status()
@@ -110,10 +94,6 @@ func ginDefaultLogger(log logger.Logger, notLogged ...string) gin.HandlerFunc {
 		dataLength := c.Writer.Size()
 		if dataLength < 0 {
 			dataLength = 0
-		}
-
-		if _, ok := skip[path]; ok {
-			return
 		}
 
 		msg := "Unknown GIN handler"
@@ -156,10 +136,10 @@ func (s *Server) Init(ctx app_context.Context, configPath ...string) error {
 	}
 
 	// init gin router
-	s.ginEngine = gin.New()
+	s.ginEngine = gin.Default()
 	// trusted proxies are needed for correct logging of client IP address
 	s.ginEngine.SetTrustedProxies(s.TRUSTED_PROXIES)
-	// use default logger for unhandled paths and then use recovery middleware
+	// use default logger for unhandled paths, use recovery middleware to catch panic failures
 	s.ginEngine.Use(ginDefaultLogger(ctx.Logger()), gin.Recovery())
 
 	// done
@@ -181,7 +161,29 @@ func (s *Server) Run(fin *finish.Finisher) {
 	}()
 }
 
-func (s *Server) AddService(id string) error {
+func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// create and init request with operation context
+		// extract tenancy if applicable
+		// setup logger
+		// process auth
+		// call endpoint's request handler
 
-	return errors.New("not implemented yet")
+		// handler was logged
+		c.Set("logged", true)
+	}
+}
+
+func (s *Server) AddEndpoint(ep api_server.Endpoint) {
+
+	method := access_control.Access2HttpMethod(ep.AccessType())
+
+	var fullPath string
+	if !s.IsMultiTenancy() {
+		fullPath = fmt.Sprintf("%s/%s/%s", s.PATH_PREFIX, s.ApiVersion(), ep.FullPath())
+	} else {
+		fullPath = fmt.Sprintf("%s/%s/:tenancy:/%s", s.PATH_PREFIX, s.ApiVersion(), ep.FullPath())
+	}
+
+	s.ginEngine.Handle(method, fullPath, requestHandler(s, ep))
 }

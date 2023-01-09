@@ -1,11 +1,21 @@
 package api_server
 
-import "github.com/evgeniums/go-backend-helpers/pkg/common"
+type ServiceEachEndpointHandler = func(ep Endpoint)
 
 // Interface of service that implements one or more groups of API endpoints.
 type Service interface {
-	common.WithNameAndPath
+	Group
 
-	// Add endpoint to default service group.
-	AddEndpoint(endpoint Endpoint) error
+	// Attach service to server.
+	AttachToServer(server Server)
+}
+
+type ServiceBase struct {
+	GroupBase
+}
+
+func (s *ServiceBase) AttachToServer(server Server) {
+	for _, ep := range s.endpoints {
+		server.AddEndpoint(ep)
+	}
 }

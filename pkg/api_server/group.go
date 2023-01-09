@@ -4,23 +4,28 @@ import "github.com/evgeniums/go-backend-helpers/pkg/common"
 
 // Interface of group of API endpoints.
 type Group interface {
-	common.WithPathParent
+	common.WithNameAndPath
 
-	// Add endpoint to the group.
-	AddEndpoint(endpoint Endpoint) error
+	// Add endpoints to group.
+	AddEndpoint(ep ...Endpoint) Group
 
-	// Implement this method in derived types.
-	DoAddEndpoint(endpoint Endpoint) error
+	// Add subgroup.
+	AddGroup(group Group) Group
 }
 
 // Base type of group of API endpoints.
 type GroupBase struct {
-	Group
 	common.WithNameAndPathParentBase
+	endpoints []Endpoint
 }
 
-// Add endpoint to the group.
-func (g *GroupBase) AddEndpoint(endpoint Endpoint) error {
+func (g *GroupBase) addEndpoint(endpoint Endpoint) {
 	g.WithNameAndPathParentBase.AddChild(endpoint)
-	return g.DoAddEndpoint(endpoint)
+	g.endpoints = append(g.endpoints, endpoint)
+}
+
+func (g *GroupBase) AddEndpoints(endpoints ...Endpoint) {
+	for _, ep := range endpoints {
+		g.addEndpoint(ep)
+	}
 }

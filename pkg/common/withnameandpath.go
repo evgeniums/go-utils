@@ -122,3 +122,8 @@ type WithNameAndPathParentBase struct {
 	WithNameBase
 	WithPathParentBase
 }
+
+func (e *WithNameAndPathParentBase) Init(path string, name string, separator ...string) {
+	e.WithNameBase.Init(name)
+	e.WithPathParentBase.Init(path, separator...)
+}

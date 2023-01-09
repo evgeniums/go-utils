@@ -1,6 +1,9 @@
 package api_server
 
-import finish "github.com/evgeniums/go-finish-service"
+import (
+	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	finish "github.com/evgeniums/go-finish-service"
+)
 
 // Interface of generic server that implements some API.
 type Server interface {
@@ -11,8 +14,8 @@ type Server interface {
 	// Run server.
 	Run(fin *finish.Finisher)
 
-	// Add a service to server.
-	AddService(service Service)
+	// Add endpoint to server.
+	AddEndpoint(ep Endpoint)
 
 	// Check if server supports multiple tenancies
 	IsMultiTenancy() bool
@@ -25,4 +28,22 @@ type Server interface {
 
 	// Remove tenance.
 	RemoveTenancy(id string) error
+}
+
+func AddServiceToServer(s Server, service Service) {
+	service.AttachToServer(s)
+}
+
+type ServerBaseConfig struct {
+	API_VERSION  string `validate:"required"`
+	MULTITENANCY bool
+	common.WithNameBaseConfig
+}
+
+func (s *ServerBaseConfig) ApiVersion() string {
+	return s.API_VERSION
+}
+
+func (s *ServerBaseConfig) IsMultiTenancy() bool {
+	return s.MULTITENANCY
 }
