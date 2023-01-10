@@ -42,6 +42,22 @@ type DB interface {
 	FinWithFilter(filter *Filter, obj interface{}) (bool, error)
 }
 
+type WithDB interface {
+	DB()
+}
+
+type WithDBBase struct {
+	db DB
+}
+
+func (w *WithDBBase) DB() DB {
+	return w.db
+}
+
+func (w *WithDBBase) Init(db DB) {
+	w.db = db
+}
+
 func CheckFound(notfound bool, err *error) bool {
 	ok := *err == nil && !notfound
 	if notfound {
