@@ -1,7 +1,15 @@
 package generic_error
 
 // Generic error that can be forwarded from place of arising to place of user reporting.
-type Error struct {
+type Error interface {
+	error
+	Code() string
+	Message() string
+	Details() string
+	Original() error
+}
+
+type ErrorBase struct {
 	code     string
 	message  string
 	details  string
@@ -11,8 +19,8 @@ type Error struct {
 const UnknownError string = "unknown_error"
 
 // Create new error from code and message.
-func New(code string, message ...string) *Error {
-	e := &Error{code: code}
+func New(code string, message ...string) *ErrorBase {
+	e := &ErrorBase{code: code}
 	if len(message) > 0 {
 		e.message = message[0]
 	}
@@ -20,39 +28,39 @@ func New(code string, message ...string) *Error {
 }
 
 // Create new error from code and message taken from other "native error".
-func NewFromErr(code string, err error) *Error {
+func NewFromErr(code string, err error) *ErrorBase {
 	return New(code, err.Error())
 }
 
 // Create new error from code, message and some other "original error" with keeping native error.
-func NewFromOriginal(code string, message string, original error) *Error {
-	e := &Error{code: code, message: message, original: original}
+func NewFromOriginal(code string, message string, original error) *ErrorBase {
+	e := &ErrorBase{code: code, message: message, original: original}
 	return e
 }
 
 // Create new error from message.
-func NewFromMessage(message string) *Error {
-	e := &Error{code: UnknownError, message: message}
+func NewFromMessage(message string) *ErrorBase {
+	e := &ErrorBase{code: UnknownError, message: message}
 	return e
 }
 
 // Convert error to string for error interface.
-func (e *Error) Error() string {
+func (e *ErrorBase) Error() string {
 	return e.message
 }
 
 // Get error code.
-func (e *Error) Code() string {
+func (e *ErrorBase) Code() string {
 	return e.code
 }
 
 // Get error details.
-func (e *Error) Details() string {
+func (e *ErrorBase) Details() string {
 	return e.details
 }
 
 // Get original error.
-func (e *Error) Original() error {
+func (e *ErrorBase) Original() error {
 	return e.original
 }
 
@@ -61,7 +69,7 @@ func Code(e error) string {
 	if e == nil {
 		return ""
 	}
-	err, ok := e.(*Error)
+	err, ok := e.(Error)
 	if !ok {
 		return UnknownError
 	}
@@ -73,7 +81,7 @@ func Message(e error) string {
 	if e == nil {
 		return ""
 	}
-	err, ok := e.(*Error)
+	err, ok := e.(Error)
 	if !ok {
 		return e.Error()
 	}
@@ -85,7 +93,7 @@ func Details(e error) string {
 	if e == nil {
 		return ""
 	}
-	err, ok := e.(*Error)
+	err, ok := e.(Error)
 	if !ok {
 		return ""
 	}
@@ -97,7 +105,7 @@ func Original(e error) error {
 	if e == nil {
 		return nil
 	}
-	err, ok := e.(*Error)
+	err, ok := e.(Error)
 	if !ok {
 		return err
 	}
