@@ -6,17 +6,18 @@ type AccessType uint32
 type Operation uint32
 
 const (
-	Create AccessType = 1
+	ReadContent AccessType = 1
+	ReadMeta    AccessType = 2
+	ReadOptions AccessType = 4
+	Read        AccessType = ReadContent | ReadMeta | ReadOptions
 
-	ReadContent AccessType = 2
-	ReadMeta    AccessType = 4
-	Read        AccessType = ReadContent | ReadMeta
+	Create AccessType = 8
 
-	UpdateWhole   AccessType = 8
-	UpdatePartial AccessType = 10
-	Update        AccessType = UpdateWhole | UpdatePartial
+	UpdateReplace AccessType = 10
+	UpdatePartial AccessType = 20
+	Update        AccessType = UpdateReplace | UpdatePartial
 
-	Delete AccessType = 20
+	Delete AccessType = 40
 
 	All AccessType = 0xFFFFFFFF
 )
@@ -55,10 +56,11 @@ func (a *AccessBase) Mask() uint32 {
 var httpMethods2AccessTypes = map[string]AccessType{
 	http.MethodGet:     ReadContent,
 	http.MethodPost:    Create,
-	http.MethodPut:     UpdateWhole,
+	http.MethodPut:     UpdateReplace,
 	http.MethodPatch:   UpdatePartial,
 	http.MethodDelete:  Delete,
-	http.MethodOptions: ReadMeta,
+	http.MethodOptions: ReadOptions,
+	http.MethodHead:    ReadMeta,
 }
 
 func HttpMethod2Access(method string) AccessType {
@@ -72,10 +74,11 @@ func HttpMethod2Access(method string) AccessType {
 var accessTypes2HttpMethods = map[AccessType]string{
 	ReadContent:   http.MethodGet,
 	Create:        http.MethodPost,
-	UpdateWhole:   http.MethodPut,
+	UpdateReplace: http.MethodPut,
 	UpdatePartial: http.MethodPatch,
 	Delete:        http.MethodDelete,
-	ReadMeta:      http.MethodOptions,
+	ReadMeta:      http.MethodHead,
+	ReadOptions:   http.MethodOptions,
 }
 
 func Access2HttpMethod(access AccessType) string {
