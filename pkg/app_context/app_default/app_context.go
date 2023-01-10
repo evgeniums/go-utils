@@ -84,7 +84,7 @@ func (c *Context) Init(configFile string, configType ...string) error {
 
 	// setup logger
 	logConfigPath := "log"
-	err = c.initLog(logConfigPath)
+	l, err := c.initLog(logConfigPath)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (c *Context) Init(configFile string, configType ...string) error {
 	log.Info("Build configuration", logger.Fields{"build_time": Time, "package_version": Version, "git_revision": Revision})
 
 	// log logger configuration
-	object_config.Info(log, log, logConfigPath)
+	object_config.Info(log, l, logConfigPath)
 
 	// load top level application configuration
 	err = object_config.LoadLogValidate(c.Cfg(), log, c.validator, c, "")
@@ -125,10 +125,10 @@ func (c *Context) initConfig(configFile string, configType ...string) error {
 	return v.LoadFile(configFile, configType...)
 }
 
-func (c *Context) initLog(configPath string) error {
+func (c *Context) initLog(configPath string) (*logger_logrus.LogrusLogger, error) {
 	l := logger_logrus.New()
-	c.SetLogger(l)
-	return l.Init(c.Cfg(), c.validator, configPath)
+	c.WithLoggerBase.Init(l)
+	return l, l.Init(c.Cfg(), c.validator, configPath)
 }
 
 func (c *Context) initDb() error {

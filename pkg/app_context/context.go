@@ -10,8 +10,8 @@ import (
 type Context interface {
 	logger.WithLogger
 	config.WithCfg
+	db.WithDB
 
-	DB() db.DB
 	Validator() validator.Validator
 
 	Testing() bool

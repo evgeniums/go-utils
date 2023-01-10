@@ -40,7 +40,7 @@ func (w *WithBackgroundWorkerBase) Worker() *BackgroundWorker {
 
 func New(log logger.Logger, jobRunner JobRunner, period int) *BackgroundWorker {
 	b := &BackgroundWorker{RunJob: jobRunner, Period: period}
-	b.SetLogger(log)
+	b.WithLoggerBase.Init(log)
 	b.CondChan = condchan.New(&sync.Mutex{})
 	b.Finished = make(chan bool, 1)
 	return b

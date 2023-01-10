@@ -36,24 +36,16 @@ func (l *LogrusLogger) ErrorRaw(data ...interface{}) {
 	l.logRus.Error(data)
 }
 
-func appendFields(f *logger.Fields, fields ...logger.Fields) {
-	if len(fields) > 0 {
-		*f = utils.AppendMap(*f, fields[0])
-	}
-}
-
-func newFields(fields ...logger.Fields) logger.Fields {
-	f := logger.Fields{}
-	appendFields(&f, fields...)
-	return f
-}
-
 func (l *LogrusLogger) Log(level logger.Level, message string, fields ...logger.Fields) {
-	l.logRus.WithFields(newFields(fields...)).Log(logrus.Level(int(level)), message)
+	l.logRus.WithFields(logger.NewFields(fields...)).Log(logrus.Level(int(level)), message)
 }
 
 func (l *LogrusLogger) Debug(message string, fields ...logger.Fields) {
-	l.logRus.WithFields(newFields(fields...)).Debug(message)
+	l.logRus.WithFields(logger.NewFields(fields...)).Debug(message)
+}
+
+func (l *LogrusLogger) Trace(message string, fields ...logger.Fields) {
+	l.logRus.WithFields(logger.NewFields(fields...)).Trace(message)
 }
 
 func (l *LogrusLogger) Error(message string, err error, fields ...logger.Fields) error {
@@ -61,7 +53,7 @@ func (l *LogrusLogger) Error(message string, err error, fields ...logger.Fields)
 	if err == nil {
 		f = logger.Fields{}
 	}
-	appendFields(&f, fields...)
+	f = logger.AppendFields(f, fields...)
 	l.logRus.WithFields(f).Error(message)
 
 	if err == nil {
@@ -72,15 +64,15 @@ func (l *LogrusLogger) Error(message string, err error, fields ...logger.Fields)
 }
 
 func (l *LogrusLogger) Warn(message string, fields ...logger.Fields) {
-	l.logRus.WithFields(newFields(fields...)).Warn(message)
+	l.logRus.WithFields(logger.NewFields(fields...)).Warn(message)
 }
 
 func (l *LogrusLogger) Info(message string, fields ...logger.Fields) {
-	l.logRus.WithFields(newFields(fields...)).Info(message)
+	l.logRus.WithFields(logger.NewFields(fields...)).Info(message)
 }
 
 func (l *LogrusLogger) Fatal(message string, err error, fields ...logger.Fields) error {
-	f := newFields(fields...)
+	f := logger.NewFields(fields...)
 	f["error"] = err
 	l.logRus.WithFields(f).Fatal(message)
 	return fmt.Errorf("%s: %s", message, err)

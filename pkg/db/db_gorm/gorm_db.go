@@ -37,7 +37,7 @@ func (g *GormDB) Config() interface{} {
 
 func New(log logger.Logger) *GormDB {
 	g := &GormDB{}
-	g.SetLogger(log)
+	g.WithLoggerBase.Init(log)
 	return g
 }
 

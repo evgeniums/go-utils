@@ -1,5 +1,9 @@
 package logger
 
+import (
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+)
+
 type Fields = map[string]interface{}
 type Level int
 
@@ -25,14 +29,13 @@ const (
 )
 
 type Logger interface {
-	Config() interface{}
-
 	Log(level Level, message string, fields ...Fields)
 
 	Error(message string, err error, fields ...Fields) error
 	Warn(message string, fields ...Fields)
 	Debug(message string, fields ...Fields)
 	Info(message string, fields ...Fields)
+	Trace(message string, fields ...Fields)
 	Fatal(message string, err error, fields ...Fields) error
 
 	ErrorRaw(...interface{})
@@ -52,6 +55,18 @@ func (w *WithLoggerBase) Logger() Logger {
 	return w.logger
 }
 
-func (w *WithLoggerBase) SetLogger(logger Logger) {
+func (w *WithLoggerBase) Init(logger Logger) {
 	w.logger = logger
+}
+
+func AppendFields(f Fields, fields ...Fields) Fields {
+	newFields := NewFields(fields...)
+	if len(fields) > 0 {
+		newFields = utils.AppendMap(newFields, fields[0])
+	}
+	return newFields
+}
+
+func NewFields(fields ...Fields) Fields {
+	return utils.OptionalArg(Fields{}, fields...)
 }
