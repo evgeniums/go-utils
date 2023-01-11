@@ -2,11 +2,13 @@ package api_server
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	finish "github.com/evgeniums/go-finish-service"
 )
 
 // Interface of generic server that implements some API.
 type Server interface {
+	multitenancy.Multitenancy
 
 	// Get API version.
 	ApiVersion() string
@@ -16,18 +18,6 @@ type Server interface {
 
 	// Add endpoint to server.
 	AddEndpoint(ep Endpoint)
-
-	// Check if server supports multiple tenancies
-	IsMultiTenancy() bool
-
-	// Find tenancy by ID.
-	Tenancy(id string) (Tenancy, error)
-
-	// Add tenancy.
-	AddTenancy(id string) error
-
-	// Remove tenance.
-	RemoveTenancy(id string) error
 }
 
 func AddServiceToServer(s Server, service Service) {
@@ -35,15 +25,11 @@ func AddServiceToServer(s Server, service Service) {
 }
 
 type ServerBaseConfig struct {
-	API_VERSION  string `validate:"required"`
-	MULTITENANCY bool
+	API_VERSION string `validate:"required"`
 	common.WithNameBaseConfig
+	multitenancy.MultitenancyBaseConfig
 }
 
 func (s *ServerBaseConfig) ApiVersion() string {
 	return s.API_VERSION
-}
-
-func (s *ServerBaseConfig) IsMultiTenancy() bool {
-	return s.MULTITENANCY
 }

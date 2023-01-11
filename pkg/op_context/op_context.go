@@ -72,7 +72,7 @@ type Context interface {
 
 	ID() string
 
-	TraceInMethod(methodName string) CallContext
+	TraceInMethod(methodName string, fields ...logger.Fields) CallContext
 	TraceOutMethod()
 
 	SetGenericError(err generic_error.Error, override ...bool)
@@ -138,7 +138,7 @@ func (c *ContextBase) ID() string {
 	return c.id
 }
 
-func (c *ContextBase) ContextDB() db.DB {
+func (c *ContextBase) MainDB() db.DB {
 	return c.WithDBBase.DB()
 }
 

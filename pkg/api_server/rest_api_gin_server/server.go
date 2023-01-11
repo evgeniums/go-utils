@@ -12,11 +12,15 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/gin-gonic/gin"
 
 	finish "github.com/evgeniums/go-finish-service"
 )
+
+const TenancyParameter string = "tenancy"
 
 type ServerConfig struct {
 	api_server.ServerBaseConfig
@@ -29,12 +33,12 @@ type ServerConfig struct {
 
 type Server struct {
 	ServerConfig
+	multitenancy.MultitenancyBase
 	app_context.WithAppBase
 
-	tenanciesById   map[string]*Tenancy
-	tenanciesByPath map[string]*Tenancy
-
-	ginEngine *gin.Engine
+	ginEngine     *gin.Engine
+	notFoundError *ResponseError
+	hostname      string
 }
 
 func NewServer() *Server {
@@ -45,92 +49,89 @@ func (s *Server) Config() interface{} {
 	return &s.ServerConfig
 }
 
-func (s *Server) Tenancy(id string) (api_server.Tenancy, error) {
-	tenancy, ok := s.tenanciesById[id]
-	if !ok {
-		return nil, errors.New("unknown tenancy")
-	}
-	return tenancy, nil
-}
-
-func (s *Server) AddTenancy(id string) error {
-	return errors.New("not implemented yet")
-}
-
-func (s *Server) RemoveTenancy(id string) error {
-	return errors.New("not implemented yet")
-}
-
 func (s *Server) address() string {
 	a := fmt.Sprintf("%s:%d", s.HOST, s.PORT)
 	return a
 }
 
-func ginDefaultLogger(log logger.Logger) gin.HandlerFunc {
-	hostname, err := os.Hostname()
-	if err != nil {
-		hostname = "unknow"
+func (s *Server) logGinRequest(log logger.Logger, path string, start time.Time, ginCtx *gin.Context) {
+
+	stop := time.Since(start)
+	latency := int(math.Ceil(float64(stop.Nanoseconds()) / 1000000.0))
+	statusCode := ginCtx.Writer.Status()
+	clientIP := ginCtx.ClientIP()
+	clientUserAgent := ginCtx.Request.UserAgent()
+	referer := ginCtx.Request.Referer()
+	dataLength := ginCtx.Writer.Size()
+	if dataLength < 0 {
+		dataLength = 0
 	}
 
-	return func(c *gin.Context) {
+	msg := "GIN"
+	fields := logger.Fields{
+		"hostname":   s.hostname,
+		"statusCode": statusCode,
+		"latency":    latency, // time to process
+		"clientIP":   clientIP,
+		"method":     ginCtx.Request.Method,
+		"path":       path,
+		"referer":    referer,
+		"dataLength": dataLength,
+		"userAgent":  clientUserAgent,
+	}
 
-		path := c.Request.URL.Path
+	if len(ginCtx.Errors) > 0 {
+		log.Error(msg, errors.New(ginCtx.Errors.ByType(gin.ErrorTypePrivate).String()), fields)
+	} else {
+		if statusCode >= http.StatusInternalServerError {
+			log.Error(msg, errors.New("internal server error"), fields)
+		} else if statusCode >= http.StatusBadRequest {
+			log.Warn(msg, fields)
+		} else {
+			log.Info(msg, fields)
+		}
+	}
+
+	ginCtx.Set("logged", true)
+}
+
+func (s *Server) ginDefaultLogger() gin.HandlerFunc {
+	return func(ginCtx *gin.Context) {
+
+		path := ginCtx.Request.URL.Path
 		start := time.Now()
 
-		c.Next()
+		ginCtx.Next()
 
 		// skip if request was already logged
-		_, logged := c.Get("logged")
+		_, logged := ginCtx.Get("logged")
 		if logged {
 			return
 		}
 
-		stop := time.Since(start)
-		latency := int(math.Ceil(float64(stop.Nanoseconds()) / 1000000.0))
-		statusCode := c.Writer.Status()
-		clientIP := c.ClientIP()
-		clientUserAgent := c.Request.UserAgent()
-		referer := c.Request.Referer()
-		dataLength := c.Writer.Size()
-		if dataLength < 0 {
-			dataLength = 0
-		}
+		s.logGinRequest(s.App().Logger(), path, start, ginCtx)
+	}
+}
 
-		msg := "Unknown GIN handler"
-		fields := logger.Fields{
-			"hostname":   hostname,
-			"statusCode": statusCode,
-			"latency":    latency, // time to process
-			"clientIP":   clientIP,
-			"method":     c.Request.Method,
-			"path":       path,
-			"referer":    referer,
-			"dataLength": dataLength,
-			"userAgent":  clientUserAgent,
-		}
-
-		if len(c.Errors) > 0 {
-			log.Error(msg, errors.New(c.Errors.ByType(gin.ErrorTypePrivate).String()), fields)
-		} else {
-			if statusCode >= http.StatusInternalServerError {
-				log.Error(msg, errors.New("internal server error"), fields)
-			} else if statusCode >= http.StatusBadRequest {
-				log.Warn(msg, fields)
-			} else {
-				log.Info(msg, fields)
-			}
-		}
+func (s *Server) NoRoute() gin.HandlerFunc {
+	return func(ginCtx *gin.Context) {
+		ginCtx.JSON(http.StatusNotFound, s.notFoundError)
 	}
 }
 
 func (s *Server) Init(ctx app_context.Context, configPath ...string) error {
 
-	ctx.Logger().Info("Init REST API gin server")
+	var err error
+	s.hostname, err = os.Hostname()
+	if err != nil {
+		s.hostname = "unknow"
+	}
+	ctx.Logger().Info("Init REST API gin server", logger.Fields{"hostname": s.hostname})
 
 	s.WithAppBase.Init(ctx)
 
 	// load configuration
-	err := object_config.LoadLogValidate(ctx.Cfg(), ctx.Logger(), ctx.Validator(), s, "api_server", configPath...)
+	err = object_config.LoadLogValidate(ctx.Cfg(), ctx.Logger(), ctx.Validator(), s, "api_server", configPath...)
 	if err != nil {
 		return ctx.Logger().Fatal("failed to load server configuration", err, logger.Fields{"name": s.Name()})
 	}
@@ -140,7 +141,11 @@ func (s *Server) Init(ctx app_context.Context, configPath ...string) error {
 	// trusted proxies are needed for correct logging of client IP address
 	s.ginEngine.SetTrustedProxies(s.TRUSTED_PROXIES)
 	// use default logger for unhandled paths, use recovery middleware to catch panic failures
-	s.ginEngine.Use(ginDefaultLogger(ctx.Logger()), gin.Recovery())
+	s.ginEngine.Use(s.ginDefaultLogger(), gin.Recovery())
+
+	// set noroute
+	s.notFoundError = &ResponseError{Code: "not_found", Message: "Requested resource was not found"}
+	s.ginEngine.NoRoute(s.NoRoute())
 
 	// done
 	return nil
@@ -162,15 +167,36 @@ func (s *Server) Run(fin *finish.Finisher) {
 }
 
 func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// create and init request with operation context
-		// extract tenancy if applicable
-		// setup logger
-		// process auth
-		// call endpoint's request handler
+	return func(ginCtx *gin.Context) {
 
-		// handler was logged
-		c.Set("logged", true)
+		var err error
+
+		// create and init request
+		request := &Request{}
+		request.Init(s, ginCtx)
+		request.SetName(ep.Name())
+
+		// extract tenancy if applicable
+		if s.IsMultiTenancy() {
+			tenancyInPath := request.TenancyInPath()
+			tenancy, err := s.TenancyByPath(tenancyInPath)
+			if err != nil {
+				// TODO report tenancy not found
+			}
+			request.SetTenancy(tenancy)
+		}
+
+		// process request
+		if err == nil {
+
+			// TODO process auth
+
+			// call endpoint's request handler
+			ep.HandleRequest(request) // do we need to handle error return here?
+		}
+
+		// close context with sending response to client
+		request.Close()
 	}
 }
 
@@ -182,8 +208,14 @@ func (s *Server) AddEndpoint(ep api_server.Endpoint) {
 	if !s.IsMultiTenancy() {
 		fullPath = fmt.Sprintf("%s/%s/%s", s.PATH_PREFIX, s.ApiVersion(), ep.FullPath())
 	} else {
-		fullPath = fmt.Sprintf("%s/%s/:tenancy:/%s", s.PATH_PREFIX, s.ApiVersion(), ep.FullPath())
+		fullPath = fmt.Sprintf("%s/%s/:%s:/%s", s.PATH_PREFIX, TenancyParameter, s.ApiVersion(), ep.FullPath())
 	}
 
 	s.ginEngine.Handle(method, fullPath, requestHandler(s, ep))
+}
+
+func (s *Server) MakeResponseError(gerr generic_error.Error) (int, *ResponseError) {
+	err := &ResponseError{Code: gerr.Code(), Message: gerr.Message(), Details: gerr.Details()}
+	code := http.StatusBadRequest
+	return code, err
 }

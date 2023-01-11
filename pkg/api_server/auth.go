@@ -1,13 +1,11 @@
 package api_server
 
-import "github.com/evgeniums/go-backend-helpers/pkg/common"
-
-// Interface of auth part of request and response.
-type Auth interface {
-	common.WithParameters
+// Interface of auth part of request.
+type AuthRequest interface {
+	GetAuthParameter(key string) string
 }
 
-// Base interface for types wuth auth section.
-type WithAuth interface {
-	Auth() Auth
+// Interface of auth part of response.
+type AuthResponse interface {
+	SetAuthParameter(key string, value string)
 }

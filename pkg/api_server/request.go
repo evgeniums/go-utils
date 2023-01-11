@@ -5,17 +5,20 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/message"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/parameter"
 )
 
 // Interface of request to server API.
 type Request interface {
-	op_context.WithCtx
+	op_context.Context
+	parameter.WithParameters
 
 	Server() Server
-	Tenancy() Tenancy
+	Tenancy() multitenancy.Tenancy
 
-	WithAuth
+	AuthRequest
 	message.WithMessage
 
 	Response() Response
@@ -24,7 +27,7 @@ type Request interface {
 type RequestBase struct {
 	op_context.ContextBase
 
-	tenancy Tenancy
+	tenancy multitenancy.Tenancy
 }
 
 func (r *RequestBase) Init(app app_context.Context, log logger.Logger, db db.DB, fields ...logger.Fields) {
@@ -38,11 +41,11 @@ func (r *RequestBase) DB() db.DB {
 	return r.ContextBase.DB()
 }
 
-func (r *RequestBase) Tenancy() Tenancy {
+func (r *RequestBase) Tenancy() multitenancy.Tenancy {
 	return r.tenancy
 }
 
-func (r *RequestBase) SetTenancy(tenancy Tenancy) {
+func (r *RequestBase) SetTenancy(tenancy multitenancy.Tenancy) {
 	r.tenancy = tenancy
 	r.SetLoggerField("tenancy", tenancy.Name())
 }

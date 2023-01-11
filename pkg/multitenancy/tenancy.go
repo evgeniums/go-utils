@@ -1,4 +1,4 @@
-package api_server
+package multitenancy
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
@@ -18,12 +18,24 @@ type TenancyObjectBase struct {
 	common.ObjectBase
 	db.DBConfig
 
-	path string `gorm:"uniqueIndex"`
 	name string `gorm:"index"`
+	path string `gorm:"uniqueIndex"`
+}
+
+func (TenancyObjectBase) TableName() string {
+	return "tenancies"
 }
 
 func (t *TenancyObjectBase) SetDbConfig(cfg db.DBConfig) {
 	t.DBConfig = cfg
+}
+
+func (t *TenancyObjectBase) Path() string {
+	return t.path
+}
+
+func (t *TenancyObjectBase) Name() string {
+	return t.name
 }
 
 type TenancyBase struct {
