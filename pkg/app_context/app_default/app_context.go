@@ -132,7 +132,7 @@ func (c *Context) initLog(configPath string) (*logger_logrus.LogrusLogger, error
 }
 
 func (c *Context) initDb() error {
-	d := db_gorm.New(c.Logger())
+	d := db_gorm.New()
 	c.db = d
-	return d.Init(c.Cfg(), c.validator, "psql")
+	return d.Init(c, c.Cfg(), c.validator, "psql")
 }

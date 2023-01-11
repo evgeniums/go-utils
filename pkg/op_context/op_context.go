@@ -3,6 +3,7 @@ package op_context
 import (
 	"fmt"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
@@ -15,6 +16,10 @@ type CallContext interface {
 	Error() error
 	Message() string
 	Fields() logger.Fields
+
+	SetError(err error)
+	SetMessage(msg string)
+	Check(err error) error
 
 	Logger() logger.Logger
 }
@@ -33,6 +38,9 @@ func (t *CallContextBase) Method() string {
 func (t *CallContextBase) Error() error {
 	return t.error_
 }
+func (t *CallContextBase) Err() *error {
+	return &t.error_
+}
 func (t *CallContextBase) Message() string {
 	return t.message
 }
@@ -42,21 +50,39 @@ func (t *CallContextBase) Fields() logger.Fields {
 func (t *CallContextBase) Logger() logger.Logger {
 	return t.proxyLogger
 }
+func (t *CallContextBase) SetError(err error) {
+	t.error_ = err
+}
+func (t *CallContextBase) Check(err error) error {
+	t.error_ = err
+	return err
+}
+func (t *CallContextBase) SetMessage(msg string) {
+	t.message = msg
+}
 
 type Context interface {
+	app_context.WithApp
 	common.WithName
 	logger.WithLogger
 	db.WithDB
 
+	MainDB() db.DB
+	MainLogger() logger.Logger
+
 	ID() string
 
-	TraceInMethod(methodName string, ctxBuilder ...CallContextBuilder) CallContext
+	TraceInMethod(methodName string) CallContext
 	TraceOutMethod()
 
 	SetGenericError(err generic_error.Error, override ...bool)
 	GenericError() generic_error.Error
 
 	Tr(phrase string) string
+
+	SetLoggerField(name string, value interface{})
+	LoggerFields() logger.Fields
+	UnsetLoggerField(name string)
 
 	Close()
 }
@@ -73,6 +99,7 @@ func DefaultCallContextBuilder(methodName string, parentLogger logger.Logger, fi
 }
 
 type ContextBase struct {
+	app_context.WithAppBase
 	logger.WithLoggerBase
 	db.WithDBBase
 
@@ -86,7 +113,9 @@ type ContextBase struct {
 	callContextBuilder CallContextBuilder
 }
 
-func (c *ContextBase) Init(log logger.Logger, db db.DB, fields ...logger.Fields) {
+func (c *ContextBase) Init(app app_context.Context, log logger.Logger, db db.DB, fields ...logger.Fields) {
+
+	c.WithAppBase.Init(app)
 
 	c.callContextBuilder = DefaultCallContextBuilder
 	c.WithDBBase.Init(db)
@@ -109,13 +138,21 @@ func (c *ContextBase) ID() string {
 	return c.id
 }
 
+func (c *ContextBase) ContextDB() db.DB {
+	return c.WithDBBase.DB()
+}
+
 func (c *ContextBase) Name() string {
 	return c.name
 }
 
+func (c *ContextBase) MainLogger() logger.Logger {
+	return c.proxyLogger.NextLogger()
+}
+
 func (c *ContextBase) SetName(name string) {
 	c.name = name
-	c.proxyLogger.SetField("op", c.name)
+	c.SetLoggerField("op", c.name)
 	c.Logger().Trace("name op context")
 }
 
@@ -139,7 +176,7 @@ func (c *ContextBase) TraceInMethod(methodName string, fields ...logger.Fields) 
 	ctx := c.callContextBuilder(methodName, c.proxyLogger, fields...)
 
 	c.stack = append(c.stack, ctx)
-	c.proxyLogger.SetField("stack", stackPath(c.stack))
+	c.SetLoggerField("stack", stackPath(c.stack))
 
 	c.Logger().Trace("begin")
 
@@ -172,9 +209,9 @@ func (c *ContextBase) TraceOutMethod() {
 
 	c.stack = c.stack[:len(c.stack)-1]
 	if len(c.stack) == 0 {
-		c.proxyLogger.UnsetField("stack")
+		c.UnsetLoggerField("stack")
 	} else {
-		c.proxyLogger.SetField("stack", stackPath(c.stack))
+		c.SetLoggerField("stack", stackPath(c.stack))
 	}
 }
 
@@ -208,11 +245,23 @@ func (c *ContextBase) Close() {
 			}
 		}
 		c.stack = c.errorStack
-		c.proxyLogger.SetField("stack", stackPath(c.stack))
+		c.SetLoggerField("stack", stackPath(c.stack))
 		c.Logger().Error(msg, err)
 		c.stack = []CallContext{}
-		c.proxyLogger.UnsetField("stack")
+		c.UnsetLoggerField("stack")
 	}
 
 	c.Logger().Trace("close op context")
+}
+
+func (c *ContextBase) SetLoggerField(name string, value interface{}) {
+	c.proxyLogger.SetStaticField(name, value)
+}
+
+func (c *ContextBase) LoggerFields() logger.Fields {
+	return c.proxyLogger.StaticFields()
+}
+
+func (c *ContextBase) UnsetLoggerField(name string) {
+	c.proxyLogger.UnsetStaticField(name)
 }

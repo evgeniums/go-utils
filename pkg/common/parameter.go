@@ -9,11 +9,10 @@ type Parameter interface {
 
 // Base interface for types with parameters.
 type WithParameters interface {
+	Parameter(name string) interface{}
 	AddParameter(param Parameter)
-	GetParameter(name string) Parameter
 	SetParameter(name string, value interface{})
 	HasParameter(name string) bool
-	ParameterValue(name string) interface{}
 }
 
 // Base parameter type.

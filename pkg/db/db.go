@@ -4,46 +4,61 @@ import (
 	"errors"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
+type DBConfig struct {
+	DbProvider    string `gorm:"index"`
+	DbHost        string `gorm:"index"`
+	DbPort        uint16 `gorm:"index"`
+	DbLogin       string `gorm:"index"`
+	DbPassword    string
+	DbExtraConfig string
+}
+
 type Transaction interface {
-	FindByField(field string, value string, obj interface{}) (bool, error)
-	FindByFields(fields map[string]interface{}, obj interface{}) (bool, error)
-	Create(obj common.Object) error
-	DeleteByField(field string, value interface{}, obj interface{}) error
-	DeleteByFields(fields map[string]interface{}, obj interface{}) error
+	FindByField(ctx logger.WithLogger, field string, value string, obj interface{}) (bool, error)
+	FindByFields(ctx logger.WithLogger, fields map[string]interface{}, obj interface{}) (bool, error)
+	Create(ctx logger.WithLogger, obj common.Object) error
+	DeleteByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}) error
+	DeleteByFields(ctx logger.WithLogger, fields map[string]interface{}, obj interface{}) error
 }
 
 type TransactionHandler = func(tx Transaction) error
 
 type Cursor interface {
-	Next() (bool, error)
-	Close() error
-	Scan(obj interface{}) error
+	Next(ctx logger.WithLogger) (bool, error)
+	Close(ctx logger.WithLogger) error
+	Scan(ctx logger.WithLogger, obj interface{}) error
 }
 
 type DB interface {
-	FindByField(field string, value string, obj interface{}) (bool, error)
-	FindByFields(fields map[string]interface{}, obj interface{}) (bool, error)
-	Create(obj common.Object) error
-	DeleteByField(field string, value interface{}, obj interface{}) error
-	DeleteByFields(fields map[string]interface{}, obj interface{}) error
+	NewDB() DB
 
-	RowsWithFilter(filter *Filter, obj interface{}) (Cursor, error)
-	AllRows(obj interface{}) (Cursor, error)
+	InitWithConfig(ctx logger.WithLogger, vld validator.Validator, cfg *DBConfig) error
 
-	UpdateFields(obj interface{}, fields map[string]interface{}) error
+	FindByField(ctx logger.WithLogger, field string, value string, obj interface{}) (bool, error)
+	FindByFields(ctx logger.WithLogger, fields map[string]interface{}, obj interface{}) (bool, error)
+	Create(ctx logger.WithLogger, obj common.Object) error
+	DeleteByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}) error
+	DeleteByFields(ctx logger.WithLogger, fields map[string]interface{}, obj interface{}) error
+
+	RowsWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) (Cursor, error)
+	AllRows(ctx logger.WithLogger, obj interface{}) (Cursor, error)
+
+	UpdateFields(ctx logger.WithLogger, obj interface{}, fields map[string]interface{}) error
 
 	Transaction(handler TransactionHandler) error
 
 	EnableDebug(bool)
 	EnableVerboseErrors(bool)
 
-	FinWithFilter(filter *Filter, obj interface{}) (bool, error)
+	FinWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) (bool, error)
 }
 
 type WithDB interface {
-	DB()
+	DB() DB
 }
 
 type WithDBBase struct {
