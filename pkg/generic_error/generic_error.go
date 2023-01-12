@@ -7,6 +7,10 @@ type Error interface {
 	Message() string
 	Details() string
 	Original() error
+
+	SetMessage(msg string)
+	SetDetails(details string)
+	SetOriginal(err error)
 }
 
 type ErrorBase struct {
@@ -15,8 +19,6 @@ type ErrorBase struct {
 	details  string
 	original error
 }
-
-const UnknownError string = "unknown_error"
 
 // Create new error from code and message.
 func New(code string, message ...string) *ErrorBase {
@@ -40,7 +42,7 @@ func NewFromOriginal(code string, message string, original error) *ErrorBase {
 
 // Create new error from message.
 func NewFromMessage(message string) *ErrorBase {
-	e := &ErrorBase{code: UnknownError, message: message}
+	e := &ErrorBase{code: ErrorCodeUnknown, message: message}
 	return e
 }
 
@@ -54,14 +56,34 @@ func (e *ErrorBase) Code() string {
 	return e.code
 }
 
+// Convert error message.
+func (e *ErrorBase) Message() string {
+	return e.message
+}
+
+// Set error message.
+func (e *ErrorBase) SetMessage(message string) {
+	e.message = message
+}
+
 // Get error details.
 func (e *ErrorBase) Details() string {
 	return e.details
 }
 
+// Set error details.
+func (e *ErrorBase) SetDetails(details string) {
+	e.details = details
+}
+
 // Get original error.
 func (e *ErrorBase) Original() error {
 	return e.original
+}
+
+// Set original error.
+func (e *ErrorBase) SetOriginal(err error) {
+	e.original = err
 }
 
 // Extract code from the error. If error is not of Error type then code is unknown_error.
@@ -71,7 +93,7 @@ func Code(e error) string {
 	}
 	err, ok := e.(Error)
 	if !ok {
-		return UnknownError
+		return ErrorCodeUnknown
 	}
 	return err.Code()
 }

@@ -14,7 +14,7 @@ func CopyMap(m map[string]interface{}) map[string]interface{} {
 	return cp
 }
 
-func AppendMap(m1 map[string]interface{}, m2 map[string]interface{}) map[string]interface{} {
+func AppendMap[T any](m1 map[string]T, m2 map[string]T) map[string]T {
 	for k, v := range m2 {
 		m1[k] = v
 	}

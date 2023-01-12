@@ -35,6 +35,7 @@ type Server struct {
 	ServerConfig
 	multitenancy.MultitenancyBase
 	app_context.WithAppBase
+	generic_error.ErrorManagerBaseHttp
 
 	ginEngine     *gin.Engine
 	notFoundError *ResponseError
@@ -147,6 +148,9 @@ func (s *Server) Init(ctx app_context.Context, configPath ...string) error {
 	s.notFoundError = &ResponseError{Code: "not_found", Message: "Requested resource was not found"}
 	s.ginEngine.NoRoute(s.NoRoute())
 
+	// init error manager
+	s.ErrorManagerBaseHttp.Init()
+
 	// done
 	return nil
 }
@@ -181,9 +185,12 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 			tenancyInPath := request.TenancyInPath()
 			tenancy, err := s.TenancyByPath(tenancyInPath)
 			if err != nil {
-				// TODO report tenancy not found
+				// report that tenancy was not found
+				request.SetGenericError(s.MakeGenericError(generic_error.ErrorCodeNotFound, request.Tr))
+				request.Logger().ErrorNative(err, logger.Fields{"tenancy_path": tenancyInPath})
+			} else {
+				request.SetTenancy(tenancy)
 			}
-			request.SetTenancy(tenancy)
 		}
 
 		// process request
@@ -216,6 +223,6 @@ func (s *Server) AddEndpoint(ep api_server.Endpoint) {
 
 func (s *Server) MakeResponseError(gerr generic_error.Error) (int, *ResponseError) {
 	err := &ResponseError{Code: gerr.Code(), Message: gerr.Message(), Details: gerr.Details()}
-	code := http.StatusBadRequest
+	code := s.ErrorProtocolCode(gerr.Code())
 	return code, err
 }

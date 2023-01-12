@@ -48,19 +48,17 @@ func (l *LogrusLogger) Trace(message string, fields ...logger.Fields) {
 	l.logRus.WithFields(logger.NewFields(fields...)).Trace(message)
 }
 
-func (l *LogrusLogger) Error(message string, err error, fields ...logger.Fields) error {
+func (l *LogrusLogger) Error(message string, err error, fields ...logger.Fields) {
 	f := logger.Fields{"error": err}
 	if err == nil {
 		f = logger.Fields{}
 	}
 	f = logger.AppendFields(f, fields...)
-	l.logRus.WithFields(f).Error(message)
-
-	if err == nil {
-		return errors.New(message)
+	if message != "" {
+		l.logRus.WithFields(f).Error(message)
+	} else {
+		l.logRus.WithFields(f).Error()
 	}
-
-	return fmt.Errorf("%s: %s", message, err)
 }
 
 func (l *LogrusLogger) Warn(message string, fields ...logger.Fields) {
@@ -72,10 +70,21 @@ func (l *LogrusLogger) Info(message string, fields ...logger.Fields) {
 }
 
 func (l *LogrusLogger) Fatal(message string, err error, fields ...logger.Fields) error {
-	f := logger.NewFields(fields...)
-	f["error"] = err
-	l.logRus.WithFields(f).Fatal(message)
-	return fmt.Errorf("%s: %s", message, err)
+	e := err
+	if e == nil {
+		if message != "" {
+			e = errors.New(message)
+		} else {
+			e = errors.New("unknown error")
+		}
+	}
+	f := logger.AppendFields(logger.Fields{"error": e}, fields...)
+	if message != "" && err != nil {
+		l.logRus.WithFields(f).Fatal(message)
+	} else {
+		l.logRus.WithFields(f).Fatal()
+	}
+	return e
 }
 
 func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPath ...string) error {
@@ -123,4 +132,14 @@ func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPa
 
 func (l *LogrusLogger) Native() interface{} {
 	return l.logRus
+}
+
+func (l *LogrusLogger) ErrorNative(err error, fields ...logger.Fields) {
+	f := logger.AppendFields(logger.Fields{"error": err}, fields...)
+	l.logRus.WithFields(f).Error()
+}
+
+func (l *LogrusLogger) ErrorMessage(message string, fields ...logger.Fields) {
+	err := errors.New(message)
+	l.ErrorNative(err, fields...)
 }

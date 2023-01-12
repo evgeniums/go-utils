@@ -2,12 +2,14 @@ package api_server
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	finish "github.com/evgeniums/go-finish-service"
 )
 
 // Interface of generic server that implements some API.
 type Server interface {
+	generic_error.ErrorManager
 	multitenancy.Multitenancy
 
 	// Get API version.

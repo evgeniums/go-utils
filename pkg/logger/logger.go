@@ -31,7 +31,10 @@ const (
 type Logger interface {
 	Log(level Level, message string, fields ...Fields)
 
-	Error(message string, err error, fields ...Fields) error
+	Error(message string, err error, fields ...Fields)
+	ErrorNative(err error, fields ...Fields)
+	ErrorMessage(message string, fields ...Fields)
+
 	Warn(message string, fields ...Fields)
 	Debug(message string, fields ...Fields)
 	Info(message string, fields ...Fields)
