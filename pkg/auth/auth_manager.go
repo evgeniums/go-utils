@@ -5,7 +5,6 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
-	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
@@ -131,7 +130,7 @@ func (a *AuthManagerBase) Handle(ctx AuthContext, schema string, paramsResolver 
 
 	handler, err := a.store.Handler(schema)
 	if err != nil {
-		ctx.SetGenericError(generic_error.New(ErrorCodeInvalidAuthSchema))
+		ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeInvalidAuthSchema))
 		return c.Check(err)
 	}
 	return handler.Handle(ctx, paramsResolver)

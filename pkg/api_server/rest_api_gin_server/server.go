@@ -199,6 +199,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		// process auth
 		if err == nil {
 			err = s.Auth().HandleRequest(request, ep.FullPath(), ep.AccessType(), request.makeAuthParamsResolver)
+			request.SetGenericError(s.MakeGenericError(auth.ErrorCodeUnauthorized, request.Tr))
 			// errors must be processed in handler
 		}
 

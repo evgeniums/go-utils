@@ -70,6 +70,11 @@ type Context interface {
 	MainDB() db.DB
 	MainLogger() logger.Logger
 
+	ErrorManager() generic_error.ErrorManager
+	SetErrorManager(manager generic_error.ErrorManager)
+
+	MakeGenericError(code string) generic_error.Error
+
 	ID() string
 
 	TraceInMethod(methodName string, fields ...logger.Fields) CallContext
@@ -103,6 +108,8 @@ type ContextBase struct {
 	logger.WithLoggerBase
 	db.WithDBBase
 
+	errorManager generic_error.ErrorManager
+
 	id           string
 	name         string
 	stack        []CallContext
@@ -132,6 +139,10 @@ func (c *ContextBase) Init(app app_context.Context, log logger.Logger, db db.DB,
 
 func (c *ContextBase) SetCallContextBuilder(builder CallContextBuilder) {
 	c.callContextBuilder = builder
+}
+
+func (c *ContextBase) SetErrorManager(manager generic_error.ErrorManager) {
+	c.errorManager = manager
 }
 
 func (c *ContextBase) ID() string {
@@ -264,4 +275,12 @@ func (c *ContextBase) LoggerFields() logger.Fields {
 
 func (c *ContextBase) UnsetLoggerField(name string) {
 	c.proxyLogger.UnsetStaticField(name)
+}
+
+func (c *ContextBase) ErrorManager() generic_error.ErrorManager {
+	return c.errorManager
+}
+
+func (c *ContextBase) MakeGenericError(code string) generic_error.Error {
+	return c.errorManager.MakeGenericError(code, c.Tr)
 }

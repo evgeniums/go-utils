@@ -6,7 +6,6 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
-	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
@@ -110,7 +109,7 @@ func (a *AuthSchema) Handle(ctx AuthContext, paramsResolver AuthParameterResolve
 	for _, handler := range a.handlers {
 		err := handler.Handle(ctx, paramsResolver)
 		if err != nil {
-			ctx.SetGenericError(generic_error.New(ErrorCodeUnauthorized))
+			ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeUnauthorized))
 			return c.Check(err)
 		}
 		if a.aggregation == Or {

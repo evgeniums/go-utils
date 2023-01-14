@@ -45,6 +45,10 @@ func (a *AccessBase) Revoke(accessType AccessType) {
 	a.mask = a.mask & ^uint32(accessType)
 }
 
+func Check(accessMask AccessType, accessType AccessType) bool {
+	return (uint32(accessMask) & uint32(accessType)) != 0
+}
+
 func (a *AccessBase) Check(accessType AccessType) bool {
 	return (a.mask & uint32(accessType)) != 0
 }

@@ -45,7 +45,7 @@ func (a *AuthBase) Init(log logger.Logger, cfg config.Config, vld validator.Vali
 	return nil
 }
 
-func (a *AuthBase) HandleRequest(ctx AuthContext, path string, access access_control.Access, paramsResolver AuthParameterResolver) error {
+func (a *AuthBase) HandleRequest(ctx AuthContext, path string, access access_control.AccessType, paramsResolver AuthParameterResolver) error {
 
 	ctx.TraceInMethod("AuthBase.HandleRequest")
 	defer ctx.TraceOutMethod()

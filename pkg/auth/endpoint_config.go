@@ -10,7 +10,7 @@ import (
 )
 
 type EndpointsAuthConfig interface {
-	Schema(path string, accessType access_control.Access) (string, bool)
+	Schema(path string, accessType access_control.AccessType) (string, bool)
 	DefaultSchema() string
 }
 
@@ -37,7 +37,7 @@ func (e *EndpointsAuthConfigBase) Config() interface{} {
 	return &e.EndpointsAuthConfigBaseConfig
 }
 
-func (e *EndpointsAuthConfigBase) Schema(path string, access access_control.Access) (string, bool) {
+func (e *EndpointsAuthConfigBase) Schema(path string, access access_control.AccessType) (string, bool) {
 
 	ep, ok := e.endpoints[path]
 	if !ok {
@@ -45,7 +45,7 @@ func (e *EndpointsAuthConfigBase) Schema(path string, access access_control.Acce
 	}
 
 	for _, epSchema := range ep {
-		if access.Check(epSchema.ACCESS) {
+		if access_control.Check(epSchema.ACCESS, access) {
 			return epSchema.SCHEMA, true
 		}
 	}

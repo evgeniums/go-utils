@@ -29,6 +29,7 @@ func (r *Request) Init(s *Server, ginCtx *gin.Context, fields ...logger.Fields) 
 	r.start = time.Now()
 
 	r.ContextBase.Init(s.App(), s.App().Logger(), s.App().DB(), fields...)
+	r.ContextBase.SetErrorManager(s)
 
 	r.ginCtx = ginCtx
 	r.response = &Response{request: r, httpCode: http.StatusOK}
