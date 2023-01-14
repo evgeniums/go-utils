@@ -1,7 +1,8 @@
 package rest_api_gin_server
 
 import (
-	"io/ioutil"
+	"bytes"
+	"io"
 	"net/http"
 	"time"
 
@@ -81,9 +82,12 @@ func (a *AuthParameters) GetAuthParameter(key string) string {
 }
 
 func (a *AuthParameters) GetRequestContent() []byte {
-	// TODO check if body is accessible after that
-	b, _ := ioutil.ReadAll(a.request.ginCtx.Request.Body)
-	return b
+	if a.request.ginCtx.Request.Body != nil {
+		b, _ := io.ReadAll(a.request.ginCtx.Request.Body)
+		a.request.ginCtx.Request.Body = io.NopCloser(bytes.NewBuffer(b))
+		return b
+	}
+	return nil
 }
 
 func (r *Request) makeAuthParamsResolver(authProtocolName string) auth.AuthParameters {
