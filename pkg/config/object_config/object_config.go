@@ -16,11 +16,19 @@ type Object interface {
 	Config() interface{}
 }
 
+func KeyInt(path string, key int) string {
+	k := fmt.Sprintf("%d", key)
+	if path == "" {
+		return k
+	}
+	return fmt.Sprintf("%s.%s", path, k)
+}
+
 func Key(path string, key string) string {
 	if path == "" {
 		return key
 	}
-	return fmt.Sprintf("%v.%v", path, key)
+	return fmt.Sprintf("%s.%s", path, key)
 }
 
 func Load(cfg config.Config, configPath string, obj Object) error {

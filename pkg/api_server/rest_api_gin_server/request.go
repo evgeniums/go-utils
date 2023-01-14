@@ -1,10 +1,12 @@
 package rest_api_gin_server
 
 import (
+	"io/ioutil"
 	"net/http"
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/api_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/message/message_json"
 	"github.com/gin-gonic/gin"
@@ -46,10 +48,6 @@ func (r *Request) SetParameter(key string, value any) {
 	r.ginCtx.Set(key, value)
 }
 
-func (r *Request) GetAuthParameter(key string) string {
-	return r.ginCtx.GetHeader(key)
-}
-
 func (r *Request) Response() api_server.Response {
 	return r.response
 }
@@ -67,4 +65,26 @@ func (r *Request) Close() {
 
 func (r *Request) TenancyInPath() string {
 	return r.ginCtx.Param(TenancyParameter)
+}
+
+type AuthParameters struct {
+	request *Request
+}
+
+func (a *AuthParameters) SetAuthParameter(key string, value string) {
+	a.request.ginCtx.Header(key, value)
+}
+
+func (a *AuthParameters) GetAuthParameter(key string) string {
+	return a.request.ginCtx.GetHeader(key)
+}
+
+func (a *AuthParameters) GetRequestContent() []byte {
+	// TODO check if body is accessible after that
+	b, _ := ioutil.ReadAll(a.request.ginCtx.Request.Body)
+	return b
+}
+
+func (r *Request) makeAuthParamsResolver(authProtocolName string) auth.AuthParameters {
+	return &AuthParameters{request: r}
 }

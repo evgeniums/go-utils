@@ -6,6 +6,5 @@ import (
 
 // Interface of response of server API.
 type Response interface {
-	AuthResponse
 	message.WithMessage
 }

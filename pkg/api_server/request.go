@@ -2,6 +2,7 @@ package api_server
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/message"
@@ -12,20 +13,21 @@ import (
 
 // Interface of request to server API.
 type Request interface {
-	op_context.Context
+	auth.AuthContext
 	parameter.WithParameters
 
 	Server() Server
 	Tenancy() multitenancy.Tenancy
 
-	AuthRequest
 	message.WithMessage
 
 	Response() Response
+	User() User
 }
 
 type RequestBase struct {
 	op_context.ContextBase
+	user *UserBase
 
 	tenancy multitenancy.Tenancy
 }
@@ -48,4 +50,12 @@ func (r *RequestBase) Tenancy() multitenancy.Tenancy {
 func (r *RequestBase) SetTenancy(tenancy multitenancy.Tenancy) {
 	r.tenancy = tenancy
 	r.SetLoggerField("tenancy", tenancy.Name())
+}
+
+func (r *RequestBase) AuthUser() auth.User {
+	return r.user
+}
+
+func (r *RequestBase) User() User {
+	return r.user
 }

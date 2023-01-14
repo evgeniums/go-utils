@@ -11,6 +11,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
@@ -36,6 +37,7 @@ type Server struct {
 	multitenancy.MultitenancyBase
 	app_context.WithAppBase
 	generic_error.ErrorManagerBaseHttp
+	auth.WithAuthBase
 
 	ginEngine     *gin.Engine
 	notFoundError *ResponseError
@@ -120,7 +122,7 @@ func (s *Server) NoRoute() gin.HandlerFunc {
 	}
 }
 
-func (s *Server) Init(ctx app_context.Context, configPath ...string) error {
+func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...string) error {
 
 	var err error
 	s.hostname, err = os.Hostname()
@@ -130,6 +132,7 @@ func (s *Server) Init(ctx app_context.Context, configPath ...string) error {
 	ctx.Logger().Info("Init REST API gin server", logger.Fields{"hostname": s.hostname})
 
 	s.WithAppBase.Init(ctx)
+	s.WithAuthBase.Init(auth)
 
 	// load configuration
 	err = object_config.LoadLogValidate(ctx.Cfg(), ctx.Logger(), ctx.Validator(), s, "api_server", configPath...)
@@ -193,12 +196,19 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 			}
 		}
 
-		// process request
+		// process auth
 		if err == nil {
+			err = s.Auth().HandleRequest(request, ep.FullPath(), ep.AccessType(), request.makeAuthParamsResolver)
+			// errors must be processed in handler
+		}
 
-			// TODO process auth
+		// TODO process access control
+		if err == nil {
+			// errors must be processed in handler
+		}
 
-			// call endpoint's request handler
+		// call endpoint's request handler
+		if err == nil {
 			ep.HandleRequest(request) // do we need to handle error return here?
 		}
 

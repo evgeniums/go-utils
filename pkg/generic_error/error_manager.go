@@ -21,6 +21,10 @@ type ErrorManager interface {
 	DefaultErrorProtocolCode() int
 }
 
+type ErrorDefinitions interface {
+	AttachToErrorManafer(manager ErrorManager)
+}
+
 type ErrorManagerBase struct {
 	descriptions        map[string]string
 	protocolCodes       map[string]int

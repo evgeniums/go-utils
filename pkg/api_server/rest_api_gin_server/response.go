@@ -11,10 +11,6 @@ type Response struct {
 	request  *Request
 }
 
-func (r *Response) SetAuthParameter(key string, value string) {
-	r.request.ginCtx.Header(key, value)
-}
-
 type ResponseError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`

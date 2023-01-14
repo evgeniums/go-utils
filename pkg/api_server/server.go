@@ -1,6 +1,7 @@
 package api_server
 
 import (
+	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
@@ -11,6 +12,7 @@ import (
 type Server interface {
 	generic_error.ErrorManager
 	multitenancy.Multitenancy
+	auth.WithAuth
 
 	// Get API version.
 	ApiVersion() string
