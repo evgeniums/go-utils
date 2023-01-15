@@ -133,5 +133,6 @@ func (a *AuthManagerBase) Handle(ctx AuthContext, schema string) error {
 		ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeInvalidAuthSchema))
 		return c.Check(err)
 	}
-	return handler.Handle(ctx)
+	_, err = handler.Handle(ctx)
+	return err
 }

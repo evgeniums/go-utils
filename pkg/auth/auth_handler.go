@@ -33,7 +33,7 @@ type AuthContext interface {
 
 type AuthHandler interface {
 	common.WithName
-	Handle(ctx AuthContext) error
+	Handle(ctx AuthContext) (bool, error)
 	Init(log logger.Logger, cfg config.Config, vld validator.Validator, configPath ...string) error
 
 	ErrorDescriptions() map[string]string

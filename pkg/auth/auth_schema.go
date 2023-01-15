@@ -101,20 +101,30 @@ func (a *AuthSchema) InitSchema(log logger.Logger, cfg config.Config, vld valida
 	return nil
 }
 
-func (a *AuthSchema) Handle(ctx AuthContext) error {
+func (a *AuthSchema) Handle(ctx AuthContext) (bool, error) {
 
 	c := ctx.TraceInMethod("AuthSchema.Handle")
 	defer ctx.TraceOutMethod()
 
+	authMethodFound := false
 	for _, handler := range a.handlers {
-		err := handler.Handle(ctx)
+		sectionFound, err := handler.Handle(ctx)
+		if !sectionFound && a.aggregation == Or {
+			continue
+		}
 		if err != nil {
 			ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeUnauthorized))
-			return c.Check(err)
+			return sectionFound, c.Check(err)
 		}
 		if a.aggregation == Or {
-			return nil
+			return sectionFound, nil
 		}
+		authMethodFound = true
 	}
-	return nil
+	if len(a.handlers) != 0 && !authMethodFound {
+		err := errors.New("no auth section was found in request")
+		ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeUnauthorized))
+		return authMethodFound, c.Check(err)
+	}
+	return authMethodFound, nil
 }
