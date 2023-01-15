@@ -21,7 +21,7 @@ type HandlerFactory interface {
 }
 
 type AuthManager interface {
-	Handle(ctx AuthContext, schema string, paramsResolver AuthParameterResolver) error
+	Handle(ctx AuthContext, schema string) error
 	Store() HandlerStore
 	ErrorDescriptions() map[string]string
 	ErrorProtocolCodes() map[string]int
@@ -124,7 +124,7 @@ func (a *AuthManagerBase) ErrorProtocolCodes() map[string]int {
 	return m
 }
 
-func (a *AuthManagerBase) Handle(ctx AuthContext, schema string, paramsResolver AuthParameterResolver) error {
+func (a *AuthManagerBase) Handle(ctx AuthContext, schema string) error {
 	c := ctx.TraceInMethod("AuthManagerBase.Handle", logger.Fields{"schema": schema})
 	defer ctx.TraceOutMethod()
 
@@ -133,5 +133,5 @@ func (a *AuthManagerBase) Handle(ctx AuthContext, schema string, paramsResolver 
 		ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeInvalidAuthSchema))
 		return c.Check(err)
 	}
-	return handler.Handle(ctx, paramsResolver)
+	return handler.Handle(ctx)
 }

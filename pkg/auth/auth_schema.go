@@ -101,13 +101,13 @@ func (a *AuthSchema) InitSchema(log logger.Logger, cfg config.Config, vld valida
 	return nil
 }
 
-func (a *AuthSchema) Handle(ctx AuthContext, paramsResolver AuthParameterResolver) error {
+func (a *AuthSchema) Handle(ctx AuthContext) error {
 
 	c := ctx.TraceInMethod("AuthSchema.Handle")
 	defer ctx.TraceOutMethod()
 
 	for _, handler := range a.handlers {
-		err := handler.Handle(ctx, paramsResolver)
+		err := handler.Handle(ctx)
 		if err != nil {
 			ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeUnauthorized))
 			return c.Check(err)

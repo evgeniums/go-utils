@@ -8,30 +8,32 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
-// Accessor request's parameters used in auth handler.
-type AuthParameters interface {
-	SetAuthParameter(key string, value string)
-	GetAuthParameter(key string) string
-	GetRequestContent() []byte
-}
-
-// Type used to resolve AuthParameters for specific auth method.
-type AuthParameterResolver = func(methodProtocol string) AuthParameters
-
 type User interface {
 	common.Object
 	Display() string
-	GetAuthParameter(key string) string
+	GetAuthParameter(methodProtocol string, key string) string
+}
+
+type AuthDataAccessor interface {
+	Set(key string, value string)
+	Get(key string) string
 }
 
 type AuthContext interface {
 	op_context.Context
+
+	GetRequestContent() []byte
+	CheckRequestContent(authDataAccessor ...AuthDataAccessor) error
+
 	AuthUser() User
+
+	SetAuthParameter(authMethodProtocol string, key string, value string)
+	GetAuthParameter(authMethodProtocol string, key string) string
 }
 
 type AuthHandler interface {
 	common.WithName
-	Handle(ctx AuthContext, paramsResolver AuthParameterResolver) error
+	Handle(ctx AuthContext) error
 	Init(log logger.Logger, cfg config.Config, vld validator.Validator, configPath ...string) error
 
 	ErrorDescriptions() map[string]string

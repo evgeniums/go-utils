@@ -25,7 +25,7 @@ func (u *UserBase) Display() string {
 	return u.login
 }
 
-func (u *UserBase) GetAuthParameter(key string) string {
+func (u *UserBase) GetAuthParameter(authMethodProtocol string, key string) string {
 	// TODO return basic fields
 	return ""
 }

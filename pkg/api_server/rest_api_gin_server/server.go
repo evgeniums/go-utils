@@ -32,6 +32,9 @@ type ServerConfig struct {
 	TRUSTED_PROXIES []string
 }
 
+type AuthParameterGetter = func(r *Request, key string) string
+type AuthParameterSetter = func(r *Request, key string, value string)
+
 type Server struct {
 	ServerConfig
 	multitenancy.MultitenancyBase
@@ -42,10 +45,14 @@ type Server struct {
 	ginEngine     *gin.Engine
 	notFoundError *ResponseError
 	hostname      string
+
+	authParamsGetters map[string]AuthParameterGetter
+	authParamsSetters map[string]AuthParameterSetter
 }
 
 func NewServer() *Server {
-	return &Server{}
+	s := &Server{}
+	return s
 }
 
 func (s *Server) Config() interface{} {
@@ -124,6 +131,9 @@ func (s *Server) NoRoute() gin.HandlerFunc {
 
 func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...string) error {
 
+	s.authParamsGetters = make(map[string]AuthParameterGetter)
+	s.authParamsSetters = make(map[string]AuthParameterSetter)
+
 	var err error
 	s.hostname, err = os.Hostname()
 	if err != nil {
@@ -180,7 +190,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 
 		// create and init request
 		request := &Request{}
-		request.Init(s, ginCtx)
+		request.Init(s, ginCtx, ep)
 		request.SetName(ep.Name())
 
 		// extract tenancy if applicable
@@ -198,7 +208,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 
 		// process auth
 		if err == nil {
-			err = s.Auth().HandleRequest(request, ep.FullPath(), ep.AccessType(), request.makeAuthParamsResolver)
+			err = s.Auth().HandleRequest(request, ep.FullPath(), ep.AccessType())
 			request.SetGenericError(s.MakeGenericError(auth.ErrorCodeUnauthorized, request.Tr))
 			// errors must be processed in handler
 		}
@@ -236,4 +246,20 @@ func (s *Server) MakeResponseError(gerr generic_error.Error) (int, *ResponseErro
 	err := &ResponseError{Code: gerr.Code(), Message: gerr.Message(), Details: gerr.Details()}
 	code := s.ErrorProtocolCode(gerr.Code())
 	return code, err
+}
+
+func (s *Server) AuthParameterGetter(authMethodProtocol string) AuthParameterGetter {
+	handler, ok := s.authParamsGetters[authMethodProtocol]
+	if !ok {
+		return nil
+	}
+	return handler
+}
+
+func (s *Server) AuthParameterSetter(authMethodProtocol string) AuthParameterSetter {
+	handler, ok := s.authParamsSetters[authMethodProtocol]
+	if !ok {
+		return nil
+	}
+	return handler
 }

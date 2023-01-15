@@ -2,6 +2,7 @@ package api_server
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
@@ -21,11 +22,8 @@ type Endpoint interface {
 	// Handle request to server API.
 	HandleRequest(request Request) error
 
-	// Check if 2-factor authorization is enabled by default for this endpoint.
-	Is2FaDefault() bool
-
-	// Precheck request before asking for 2-factor authorization.
-	PrecheckRequestBefore2Fa(request Request) error
+	// Precheck request before some authorization methods
+	PrecheckRequestBeforeAuth(request Request, authDataAccessor ...auth.AuthDataAccessor) error
 }
 
 type EndpointHandler = func(request Request)

@@ -16,7 +16,7 @@ type Auth interface {
 	Manager() AuthManager
 	EndpointsConfig() EndpointsAuthConfig
 
-	HandleRequest(ctx AuthContext, path string, access access_control.AccessType, paramsResolver AuthParameterResolver) error
+	HandleRequest(ctx AuthContext, path string, access access_control.AccessType) error
 }
 
 type AuthBase struct {
@@ -45,7 +45,7 @@ func (a *AuthBase) Init(log logger.Logger, cfg config.Config, vld validator.Vali
 	return nil
 }
 
-func (a *AuthBase) HandleRequest(ctx AuthContext, path string, access access_control.AccessType, paramsResolver AuthParameterResolver) error {
+func (a *AuthBase) HandleRequest(ctx AuthContext, path string, access access_control.AccessType) error {
 
 	ctx.TraceInMethod("AuthBase.HandleRequest")
 	defer ctx.TraceOutMethod()
@@ -55,7 +55,7 @@ func (a *AuthBase) HandleRequest(ctx AuthContext, path string, access access_con
 		schema = a.endpointsConfig.DefaultSchema()
 	}
 
-	return a.manager.Handle(ctx, schema, paramsResolver)
+	return a.manager.Handle(ctx, schema)
 }
 
 func (a *AuthBase) AttachToErrorManager(errManager generic_error.ErrorManager) {

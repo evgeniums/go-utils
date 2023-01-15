@@ -23,19 +23,23 @@ type Request struct {
 
 	initialPath string
 	start       time.Time
+
+	endpoint api_server.Endpoint
 }
 
-func (r *Request) Init(s *Server, ginCtx *gin.Context, fields ...logger.Fields) {
+func (r *Request) Init(s *Server, ginCtx *gin.Context, ep api_server.Endpoint, fields ...logger.Fields) {
 
 	r.start = time.Now()
 
-	r.ContextBase.Init(s.App(), s.App().Logger(), s.App().DB(), fields...)
-	r.ContextBase.SetErrorManager(s)
+	r.RequestBase.Init(s.App(), s.App().Logger(), s.App().DB(), fields...)
+	r.RequestBase.SetErrorManager(s)
 
 	r.ginCtx = ginCtx
 	r.response = &Response{request: r, httpCode: http.StatusOK}
 
 	r.initialPath = ginCtx.Request.URL.Path
+
+	r.endpoint = ep
 }
 
 func (r *Request) Server() api_server.Server {
@@ -69,27 +73,32 @@ func (r *Request) TenancyInPath() string {
 	return r.ginCtx.Param(TenancyParameter)
 }
 
-type AuthParameters struct {
-	request *Request
-}
-
-func (a *AuthParameters) SetAuthParameter(key string, value string) {
-	a.request.ginCtx.Header(key, value)
-}
-
-func (a *AuthParameters) GetAuthParameter(key string) string {
-	return a.request.ginCtx.GetHeader(key)
-}
-
-func (a *AuthParameters) GetRequestContent() []byte {
-	if a.request.ginCtx.Request.Body != nil {
-		b, _ := io.ReadAll(a.request.ginCtx.Request.Body)
-		a.request.ginCtx.Request.Body = io.NopCloser(bytes.NewBuffer(b))
+func (r *Request) GetRequestContent() []byte {
+	if r.ginCtx.Request.Body != nil {
+		b, _ := io.ReadAll(r.ginCtx.Request.Body)
+		r.ginCtx.Request.Body = io.NopCloser(bytes.NewBuffer(b))
 		return b
 	}
 	return nil
 }
 
-func (r *Request) makeAuthParamsResolver(authProtocolName string) auth.AuthParameters {
-	return &AuthParameters{request: r}
+func (r *Request) SetAuthParameter(authMethodProtocol string, key string, value string) {
+	handler := r.server.AuthParameterSetter(authMethodProtocol)
+	if handler != nil {
+		handler(r, key, value)
+		return
+	}
+	r.ginCtx.Header(key, value)
+}
+
+func (r *Request) GetAuthParameter(authMethodProtocol string, key string) string {
+	handler := r.server.AuthParameterGetter(authMethodProtocol)
+	if handler != nil {
+		return handler(r, key)
+	}
+	return r.ginCtx.GetHeader(key)
+}
+
+func (r *Request) CheckRequestContent(authDataAccessor ...auth.AuthDataAccessor) error {
+	return r.endpoint.PrecheckRequestBeforeAuth(r, authDataAccessor...)
 }
