@@ -114,7 +114,7 @@ func (a *AuthSchema) Handle(ctx AuthContext) (bool, error) {
 		}
 		if err != nil {
 			ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeUnauthorized))
-			return sectionFound, c.Check(err)
+			return sectionFound, c.SetError(err)
 		}
 		if a.aggregation == Or {
 			return sectionFound, nil
@@ -124,7 +124,7 @@ func (a *AuthSchema) Handle(ctx AuthContext) (bool, error) {
 	if len(a.handlers) != 0 && !authMethodFound {
 		err := errors.New("no auth section was found in request")
 		ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeUnauthorized))
-		return authMethodFound, c.Check(err)
+		return authMethodFound, c.SetError(err)
 	}
 	return authMethodFound, nil
 }

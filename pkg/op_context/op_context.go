@@ -17,9 +17,8 @@ type CallContext interface {
 	Message() string
 	Fields() logger.Fields
 
-	SetError(err error)
+	SetError(err error) error
 	SetMessage(msg string)
-	Check(err error) error
 
 	Logger() logger.Logger
 }
@@ -50,12 +49,9 @@ func (t *CallContextBase) Fields() logger.Fields {
 func (t *CallContextBase) Logger() logger.Logger {
 	return t.proxyLogger
 }
-func (t *CallContextBase) SetError(err error) {
+func (t *CallContextBase) SetError(err error) error {
 	t.error_ = err
-}
-func (t *CallContextBase) Check(err error) error {
-	t.error_ = err
-	return err
+	return t.error_
 }
 func (t *CallContextBase) SetMessage(msg string) {
 	t.message = msg
