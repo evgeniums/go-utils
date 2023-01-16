@@ -91,15 +91,21 @@ func NewGet(ctx op_context.Context, url string, msg interface{}, format ...strin
 func (r *Request) Send(ctx op_context.Context) error {
 
 	c := ctx.TraceInMethod("Request.Send", logger.Fields{"url": r.NativeRequest.URL.String(), "method": r.NativeRequest.Method})
-	defer ctx.TraceOutMethod()
 
 	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
 
 	client := &http.Client{}
 	r.NativeResponse, err = client.Do(r.NativeRequest)
 	if err != nil {
 		c.SetMessage("failed to send request")
-		return c.SetError(err)
+		return err
 	}
 	if r.NativeResponse != nil {
 		r.ResponseStatus = r.NativeResponse.StatusCode
@@ -137,7 +143,7 @@ func (r *Request) Send(ctx op_context.Context) error {
 			if err != nil {
 				c.Fields()["response_content"] = r.ResponseContent
 				c.Fields()["response_status"] = r.ResponseStatus
-				return c.SetError(err)
+				return err
 			}
 		}
 	}
@@ -149,7 +155,7 @@ func (r *Request) AddHeader(key string, value string) {
 	r.NativeRequest.Header.Add(key, value)
 }
 
-func (r *Request) AddAuthHeader(key string, value string) {
+func (r *Request) SetAuthHeader(key string, value string) {
 	str := fmt.Sprintf("%s %s", key, value)
 	r.AddHeader("Authorization", str)
 }
