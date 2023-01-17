@@ -13,19 +13,19 @@ type ID interface {
 }
 
 type IDBase struct {
-	id string `gorm:"primary_key"`
+	ID string `gorm:"primary_key" json:"id"`
 }
 
 func (o *IDBase) GetID() string {
-	return o.id
+	return o.ID
 }
 
 func (o *IDBase) GenerateID() {
-	o.id = utils.GenerateID()
+	o.ID = utils.GenerateID()
 }
 
 func (o *IDBase) SetID(id string) {
-	o.id = id
+	o.ID = id
 }
 
 type CreatedAt interface {
@@ -35,19 +35,19 @@ type CreatedAt interface {
 }
 
 type CreatedAtBase struct {
-	created_at time.Time `gorm:"index"`
+	CREATED_AT time.Time `gorm:"index" json:"created_at"`
 }
 
 func (w *CreatedAtBase) InitCreatedAt() {
-	w.created_at = time.Now().UTC()
+	w.CREATED_AT = time.Now().UTC()
 }
 
 func (w *CreatedAtBase) GetCreatedAt() time.Time {
-	return w.created_at
+	return w.CREATED_AT
 }
 
 func (w *CreatedAtBase) SetCreatedAt(t time.Time) {
-	w.created_at = t
+	w.CREATED_AT = t
 }
 
 type Object interface {

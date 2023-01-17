@@ -36,7 +36,7 @@ type WithPathParent interface {
 }
 
 type WithNameBaseConfig struct {
-	NAME string `default:"noname"`
+	NAME string `json:"name"`
 }
 
 func (e *WithNameBaseConfig) Init(name string) {
