@@ -13,6 +13,8 @@ import (
 
 type Aggregation = string
 
+const AggregationProtocol = "aggregation"
+
 const (
 	And Aggregation = "and"
 	Or  Aggregation = "or"
@@ -53,7 +55,7 @@ func (a *AuthSchema) Handlers() []AuthHandler {
 	return a.handlers
 }
 
-func (a *AuthSchema) Init(log logger.Logger, cfg config.Config, vld validator.Validator, configPath ...string) error {
+func (a *AuthSchema) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 	return errors.New("use AuthSchema.InitSchema for initialization")
 }
 
@@ -127,4 +129,8 @@ func (a *AuthSchema) Handle(ctx AuthContext) (bool, error) {
 		return authMethodFound, c.SetError(err)
 	}
 	return authMethodFound, nil
+}
+
+func (a *AuthSchema) Protocol() string {
+	return AggregationProtocol
 }

@@ -24,19 +24,19 @@ type AuthBase struct {
 	endpointsConfig EndpointsAuthConfig
 }
 
-func (a *AuthBase) Init(log logger.Logger, cfg config.Config, vld validator.Validator, handlerFactory HandlerFactory, configPath ...string) error {
+func (a *AuthBase) Init(cfg config.Config, log logger.Logger, vld validator.Validator, handlerFactory HandlerFactory, configPath ...string) error {
 
 	path := utils.OptionalArg("auth", configPath...)
 
 	manager := &AuthManagerBase{}
-	err := manager.Init(log, cfg, vld, handlerFactory, object_config.Key(path, "manager"))
+	err := manager.Init(cfg, log, vld, handlerFactory, object_config.Key(path, "manager"))
 	if err != nil {
 		return err
 	}
 	a.manager = manager
 
 	epConfig := &EndpointsAuthConfigBase{}
-	err = epConfig.Init(log, cfg, vld, object_config.Key(path, "endpoints_config"))
+	err = epConfig.Init(cfg, log, vld, object_config.Key(path, "endpoints_config"))
 	if err != nil {
 		return err
 	}

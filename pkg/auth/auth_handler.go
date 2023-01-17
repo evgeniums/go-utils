@@ -33,8 +33,11 @@ type AuthContext interface {
 
 type AuthHandler interface {
 	common.WithName
+
+	Protocol() string
+
 	Handle(ctx AuthContext) (bool, error)
-	Init(log logger.Logger, cfg config.Config, vld validator.Validator, configPath ...string) error
+	Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error
 
 	ErrorDescriptions() map[string]string
 	ErrorProtocolCodes() map[string]int

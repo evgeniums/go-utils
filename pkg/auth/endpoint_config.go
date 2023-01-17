@@ -53,7 +53,7 @@ func (e *EndpointsAuthConfigBase) Schema(path string, access access_control.Acce
 	return "", false
 }
 
-func (e *EndpointsAuthConfigBase) Init(log logger.Logger, cfg config.Config, vld validator.Validator, configPath ...string) error {
+func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
 	path := utils.OptionalArg("endpoints_auth_config", configPath...)
 	fields := logger.Fields{"where": "EndpointsAuthConfigBase.Init", "config_path": path}

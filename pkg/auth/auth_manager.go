@@ -57,7 +57,7 @@ type AuthManagerBase struct {
 	store HandlerStore
 }
 
-func (a *AuthManagerBase) Init(log logger.Logger, cfg config.Config, vld validator.Validator, handlerFactory HandlerFactory, configPath ...string) error {
+func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validator.Validator, handlerFactory HandlerFactory, configPath ...string) error {
 
 	path := utils.OptionalArg("auth_manager", configPath...)
 	fields := logger.Fields{"where": "AuthManagerBase.Init", "config_path": path}
@@ -76,7 +76,7 @@ func (a *AuthManagerBase) Init(log logger.Logger, cfg config.Config, vld validat
 		if err != nil {
 			return log.Fatal("failed to create authorization method", err, fields)
 		}
-		err = handler.Init(log, cfg, vld, methodPath)
+		err = handler.Init(cfg, log, vld, methodPath)
 		if err != nil {
 			return log.Fatal("failed to initialize authorization method", err, fields)
 		}
