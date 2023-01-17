@@ -51,7 +51,7 @@ func (s *SmsGatewayapi) Init(cfg config.Config, log logger.Logger, vld validator
 	return nil
 }
 
-func (s *SmsGatewayapi) Send(ctx op_context.Context, message string, recipient string, smsID ...string) (string, error) {
+func (s *SmsGatewayapi) Send(ctx op_context.Context, message string, recipient string, smsID ...string) (*sms.ProviderResponse, error) {
 
 	c := ctx.TraceInMethod("SmsGatewayapi.Send", logger.Fields{"recipient": recipient})
 	var err error
@@ -73,7 +73,7 @@ func (s *SmsGatewayapi) Send(ctx op_context.Context, message string, recipient s
 
 	request, err := http_request.NewPost(ctx, s.sendUrl, msg)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	request.SetAuthHeader("Basic", s.TOKEN)
 
@@ -84,14 +84,14 @@ func (s *SmsGatewayapi) Send(ctx op_context.Context, message string, recipient s
 	c.Fields()["response_content"] = request.ResponseContent
 	c.Fields()["response_status"] = request.ResponseStatus
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	providerMsgId := ""
+	result := &sms.ProviderResponse{RawContent: request.ResponseContent}
 	if len(response.Ids) > 0 {
-		providerMsgId = response.Ids[0]
+		result.ProviderMessageID = response.Ids[0]
 	}
 
 	c.Logger().Debug("success")
-	return providerMsgId, nil
+	return result, nil
 }
