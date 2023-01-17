@@ -57,7 +57,7 @@ func (s *SmsGatewayapi) Send(ctx op_context.Context, message string, recipient s
 	var err error
 	onExit := func() {
 		if err != nil {
-			ctx.SetGenericError(ctx.MakeGenericError(sms.ErrorCodeSmsSendingFailed))
+			ctx.SetGenericErrorCode(sms.ErrorCodeSmsSendingFailed)
 			c.SetError(err)
 		}
 		ctx.TraceOutMethod()

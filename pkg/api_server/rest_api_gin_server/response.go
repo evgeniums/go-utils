@@ -1,11 +1,9 @@
 package rest_api_gin_server
 
-import (
-	"github.com/evgeniums/go-backend-helpers/pkg/message/message_json"
-)
+import "github.com/evgeniums/go-backend-helpers/pkg/api_server"
 
 type Response struct {
-	message_json.WithMessageJson
+	api_server.ResponseBase
 
 	httpCode int
 	request  *Request

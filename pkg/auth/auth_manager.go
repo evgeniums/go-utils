@@ -130,7 +130,7 @@ func (a *AuthManagerBase) Handle(ctx AuthContext, schema string) error {
 
 	handler, err := a.store.Handler(schema)
 	if err != nil {
-		ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeInvalidAuthSchema))
+		ctx.SetGenericErrorCode(ErrorCodeInvalidAuthSchema)
 		return c.SetError(err)
 	}
 	_, err = handler.Handle(ctx)

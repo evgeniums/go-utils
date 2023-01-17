@@ -5,7 +5,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/message"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/parameter"
@@ -19,7 +18,7 @@ type Request interface {
 	Server() Server
 	Tenancy() multitenancy.Tenancy
 
-	message.WithMessage
+	// message.WithMessage
 
 	Response() Response
 	User() User

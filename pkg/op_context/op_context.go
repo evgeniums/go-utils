@@ -78,6 +78,7 @@ type Context interface {
 
 	SetGenericError(err generic_error.Error, override ...bool)
 	GenericError() generic_error.Error
+	SetGenericErrorCode(code string, override ...bool)
 
 	Tr(phrase string) string
 
@@ -279,4 +280,8 @@ func (c *ContextBase) ErrorManager() generic_error.ErrorManager {
 
 func (c *ContextBase) MakeGenericError(code string) generic_error.Error {
 	return c.errorManager.MakeGenericError(code, c.Tr)
+}
+
+func (c *ContextBase) SetGenericErrorCode(code string, override ...bool) {
+	c.SetGenericError(c.MakeGenericError(code), override...)
 }

@@ -16,7 +16,7 @@ type Pbkdf2Config struct {
 }
 
 func DefaultPbkdfConfig() Pbkdf2Config {
-	return Pbkdf2Config{32, sha256.New}
+	return Pbkdf2Config{256, sha256.New}
 }
 
 type PbkdfFnc = func(password []byte, salt []byte, keySize int) []byte
@@ -34,28 +34,32 @@ type AEADConfig struct {
 	KeySize   int
 }
 
+func DefaultAEADConfig(pbkdfCfg Pbkdf2Config) AEADConfig {
+	cfg := AEADConfig{}
+	cfg.MakeAead = chacha20poly1305.NewX
+	cfg.KeySize = chacha20poly1305.KeySize
+	cfg.DeriveKey = func(password []byte, salt []byte, keySize int) []byte {
+		return pbkdf2.Key(password, salt, pbkdfCfg.Iter, keySize, pbkdfCfg.HashBuilder)
+	}
+	return cfg
+}
+
 type AEAD struct {
 	Cipher cipher.AEAD
 }
 
-func NewAEAD(secret string, salt string, config ...*AEADConfig) (*AEAD, error) {
+func NewAEAD(secret string, salt []byte, config ...AEADConfig) (*AEAD, error) {
 	var err error
 	a := &AEAD{}
 
-	var cfg *AEADConfig
+	var cfg AEADConfig
 	if len(config) == 1 {
 		cfg = config[0]
 	} else {
-		cfg = &AEADConfig{}
-		cfg.MakeAead = chacha20poly1305.NewX
-		cfg.KeySize = chacha20poly1305.KeySize
-		cfg.DeriveKey = func(password []byte, salt []byte, keySize int) []byte {
-			pbkdfCfg := DefaultPbkdfConfig()
-			return pbkdf2.Key(password, salt, pbkdfCfg.Iter, keySize, pbkdfCfg.HashBuilder)
-		}
+		cfg = DefaultAEADConfig(DefaultPbkdfConfig())
 	}
 
-	key := cfg.DeriveKey([]byte(secret), []byte(salt), cfg.KeySize)
+	key := cfg.DeriveKey([]byte(secret), salt, cfg.KeySize)
 	a.Cipher, err = cfg.MakeAead(key)
 	if err != nil {
 		return nil, err
@@ -87,11 +91,12 @@ func (a *AEAD) Decrypt(ciphertext []byte, additionalData ...[]byte) ([]byte, err
 	}
 
 	// split nonce and ciphertext
-	nonce, ciphertext := ciphertext[:a.Cipher.NonceSize()], ciphertext[a.Cipher.NonceSize():]
+	nonce := ciphertext[:a.Cipher.NonceSize()]
+	ciphertextSplit := ciphertext[a.Cipher.NonceSize():]
 
 	// decrypt the message and check it wasn't tampered with
 	extraData := OptionalArg(nil, additionalData...)
-	plaintext, err := a.Cipher.Open(nil, nonce, ciphertext, extraData)
+	plaintext, err := a.Cipher.Open(nil, nonce, ciphertextSplit, extraData)
 	if err != nil {
 		return nil, err
 	}

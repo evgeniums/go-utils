@@ -9,13 +9,11 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/message/message_json"
 	"github.com/gin-gonic/gin"
 )
 
 type Request struct {
 	api_server.RequestBase
-	message_json.WithMessageJson
 
 	server   *Server
 	ginCtx   *gin.Context
@@ -56,6 +54,10 @@ func (r *Request) SetParameter(key string, value any) {
 
 func (r *Request) Response() api_server.Response {
 	return r.response
+}
+
+func (r *Request) GetRequestPath() string {
+	return r.endpoint.FullPath()
 }
 
 func (r *Request) Close() {

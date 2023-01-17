@@ -1,10 +1,14 @@
 package api_server
 
-import (
-	"github.com/evgeniums/go-backend-helpers/pkg/message"
-)
-
 // Interface of response of server API.
 type Response interface {
-	message.WithMessage
+	Message() interface{}
+}
+
+type ResponseBase struct {
+	message interface{}
+}
+
+func (r *ResponseBase) Message() interface{} {
+	return r.message
 }

@@ -125,7 +125,7 @@ func (a *AuthSchema) Handle(ctx AuthContext) (bool, error) {
 	}
 	if len(a.handlers) != 0 && !authMethodFound {
 		err := errors.New("no auth section was found in request")
-		ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeUnauthorized))
+		ctx.SetGenericErrorCode(ErrorCodeUnauthorized)
 		return authMethodFound, c.SetError(err)
 	}
 	return authMethodFound, nil
