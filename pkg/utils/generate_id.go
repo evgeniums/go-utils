@@ -1,6 +1,7 @@
 package utils
 
 import (
+	cryptorand "crypto/rand"
 	"fmt"
 	"math/rand"
 	"sync/atomic"
@@ -23,4 +24,13 @@ func GenerateRand64() string {
 	r1 := rand.Int63()
 	id := fmt.Sprintf("%016x", r1)
 	return id
+}
+
+func GenerateCryptoRand(size int) ([]byte, error) {
+	b := make([]byte, size)
+	_, err := cryptorand.Read(b)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
