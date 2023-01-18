@@ -34,8 +34,10 @@ func (h *Hmac) Sum() []byte {
 	return h.Hash.Sum(nil)
 }
 
-func (h *Hmac) Calc(data []byte) []byte {
-	h.Hash.Write(data)
+func (h *Hmac) Calc(data ...[]byte) []byte {
+	for _, block := range data {
+		h.Hash.Write(block)
+	}
 	return h.Hash.Sum(nil)
 }
 

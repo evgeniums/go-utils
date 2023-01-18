@@ -25,6 +25,7 @@ type AuthContext interface {
 	GetRequestContent() []byte
 	CheckRequestContent(authDataAccessor ...AuthDataAccessor) error
 	GetRequestPath() string
+	GetRequestMethod() string
 
 	AuthUser() User
 

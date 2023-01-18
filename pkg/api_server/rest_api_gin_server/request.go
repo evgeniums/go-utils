@@ -60,6 +60,10 @@ func (r *Request) GetRequestPath() string {
 	return r.endpoint.FullPath()
 }
 
+func (r *Request) GetRequestMethod() string {
+	return r.ginCtx.Request.Method
+}
+
 func (r *Request) Close() {
 	r.RequestBase.Close()
 	if r.GenericError() == nil {
