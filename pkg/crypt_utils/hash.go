@@ -41,6 +41,12 @@ func (h *Hash) CalcStrStr(data ...string) string {
 	return h.CalcStr()
 }
 
+func (h *Hash) CalcStrIn(data ...string) {
+	for _, d := range data {
+		h.Add([]byte(d))
+	}
+}
+
 func (h *Hash) Check(sum []byte) bool {
 	return hmac.Equal(h.Sum(), sum)
 }

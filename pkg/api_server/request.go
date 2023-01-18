@@ -18,8 +18,6 @@ type Request interface {
 	Server() Server
 	Tenancy() multitenancy.Tenancy
 
-	// message.WithMessage
-
 	Response() Response
 	User() User
 }

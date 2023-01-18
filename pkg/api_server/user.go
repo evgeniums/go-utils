@@ -26,6 +26,10 @@ func (u *UserBase) Display() string {
 	return u.baseDb.Login
 }
 
+func (u *UserBase) Login() string {
+	return u.baseDb.Login
+}
+
 func (u *UserBase) GetID() string {
 	return u.baseDb.GetID()
 }

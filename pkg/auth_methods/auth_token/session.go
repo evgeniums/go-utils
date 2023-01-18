@@ -15,6 +15,7 @@ type AuthTokenSession struct {
 	UpdatedAt   time.Time `gorm:"index"`
 	UserId      string    `gorm:"index"`
 	UserDisplay string    `gorm:"index"`
+	UserLogin   string    `gorm:"index"`
 	Valid       bool      `gorm:"index"`
 	Expiration  time.Time `gorm:"index"`
 }
@@ -40,6 +41,7 @@ func CreateSession(ctx auth.AuthContext, expiration time.Time) (*AuthTokenSessio
 	session.UpdatedAt = session.GetCreatedAt()
 	session.UserId = ctx.AuthUser().GetID()
 	session.UserDisplay = ctx.AuthUser().Display()
+	session.UserLogin = ctx.AuthUser().Login()
 	session.Valid = true
 	session.Expiration = expiration
 
@@ -121,6 +123,7 @@ func UpdateSessionClient(ctx auth.AuthContext) error {
 		}
 	}
 
+	ctx.AuthUser().SetClientId(client.GetID())
 	ctx.SetLoggerField("client", client.GetID())
 	return nil
 }

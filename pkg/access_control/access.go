@@ -19,6 +19,8 @@ const (
 
 	Delete AccessType = 40
 
+	Post = Create
+
 	All AccessType = 0xFFFFFFFF
 )
 

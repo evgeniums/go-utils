@@ -11,6 +11,7 @@ import (
 type User interface {
 	GetID() string
 	Display() string
+	Login() string
 	GetAuthParameter(methodProtocol string, key string) string
 	GetSessionId() string
 	SetSessionId(id string)
@@ -56,6 +57,8 @@ type AuthContext interface {
 	GetRequestUserAgent() string
 
 	AuthUser() User
+	LoadUser(login string) (bool, error)
+	UnloadUser()
 
 	SetAuthParameter(authMethodProtocol string, key string, value string)
 	GetAuthParameter(authMethodProtocol string, key string) string

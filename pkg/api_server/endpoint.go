@@ -4,7 +4,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 // Interface of API endpoint.
@@ -32,17 +31,13 @@ type EndpointHandler = func(request Request)
 type EndpointBase struct {
 	common.WithNameAndPathBase
 
-	enable2FaDefault bool
-	service          Service
+	service    Service
+	accessType access_control.AccessType
 }
 
-func (e *EndpointBase) Is2FaDefault() bool {
-	return e.enable2FaDefault
-}
-
-func (e *EndpointBase) Init(path string, name string, enable2FaDefault ...bool) {
+func (e *EndpointBase) Init(path string, name string, accessType access_control.AccessType) {
 	e.WithNameAndPathBase.Init(name, path)
-	e.enable2FaDefault = utils.OptionalArg(false, enable2FaDefault...)
+	e.accessType = accessType
 }
 
 func (e *EndpointBase) Service() Service {
@@ -51,4 +46,21 @@ func (e *EndpointBase) Service() Service {
 
 func (e *EndpointBase) SetService(service Service) {
 	e.service = service
+}
+
+func (e *EndpointBase) AccessType() access_control.AccessType {
+	return e.accessType
+}
+
+func (e *EndpointBase) PrecheckRequestBeforeAuth(request Request, authDataAccessor ...auth.AuthDataAccessor) error {
+	return nil
+}
+
+// Base type for API endpoints with empty handlers.
+type EndpointNoHandler struct {
+	EndpointBase
+}
+
+func (e *EndpointNoHandler) HandleRequest(request Request) error {
+	return nil
 }
