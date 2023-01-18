@@ -64,6 +64,14 @@ func (r *Request) GetRequestMethod() string {
 	return r.ginCtx.Request.Method
 }
 
+func (r *Request) GetRequestClientIp() string {
+	return r.ginCtx.ClientIP()
+}
+
+func (r *Request) GetRequestUserAgent() string {
+	return r.ginCtx.Request.UserAgent()
+}
+
 func (r *Request) Close() {
 	r.RequestBase.Close()
 	if r.GenericError() == nil {

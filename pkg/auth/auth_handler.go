@@ -9,9 +9,34 @@ import (
 )
 
 type User interface {
-	common.Object
+	GetID() string
 	Display() string
 	GetAuthParameter(methodProtocol string, key string) string
+	GetSessionId() string
+	SetSessionId(id string)
+	GetClientId() string
+	SetClientId(id string)
+}
+
+type UserBase struct {
+	session string
+	client  string
+}
+
+func (u *UserBase) GetSessionId() string {
+	return u.session
+}
+
+func (u *UserBase) SetSessionId(id string) {
+	u.session = id
+}
+
+func (u *UserBase) GetClientId() string {
+	return u.client
+}
+
+func (u *UserBase) SetClientId(id string) {
+	u.client = id
 }
 
 type AuthDataAccessor interface {
@@ -26,6 +51,9 @@ type AuthContext interface {
 	CheckRequestContent(authDataAccessor ...AuthDataAccessor) error
 	GetRequestPath() string
 	GetRequestMethod() string
+
+	GetRequestClientIp() string
+	GetRequestUserAgent() string
 
 	AuthUser() User
 

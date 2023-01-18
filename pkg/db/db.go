@@ -8,6 +8,8 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
+type Fields = map[string]interface{}
+
 type DBConfig struct {
 	DbProvider    string `gorm:"index"`
 	DbHost        string `gorm:"index"`
@@ -19,10 +21,10 @@ type DBConfig struct {
 
 type Transaction interface {
 	FindByField(ctx logger.WithLogger, field string, value string, obj interface{}) (bool, error)
-	FindByFields(ctx logger.WithLogger, fields map[string]interface{}, obj interface{}) (bool, error)
+	FindByFields(ctx logger.WithLogger, fields Fields, obj interface{}) (bool, error)
 	Create(ctx logger.WithLogger, obj common.Object) error
 	DeleteByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}) error
-	DeleteByFields(ctx logger.WithLogger, fields map[string]interface{}, obj interface{}) error
+	DeleteByFields(ctx logger.WithLogger, fields Fields, obj interface{}) error
 }
 
 type TransactionHandler = func(tx Transaction) error
@@ -39,15 +41,17 @@ type DB interface {
 	InitWithConfig(ctx logger.WithLogger, vld validator.Validator, cfg *DBConfig) error
 
 	FindByField(ctx logger.WithLogger, field string, value string, obj interface{}) (bool, error)
-	FindByFields(ctx logger.WithLogger, fields map[string]interface{}, obj interface{}) (bool, error)
+	FindByFields(ctx logger.WithLogger, fields Fields, obj interface{}) (bool, error)
 	Create(ctx logger.WithLogger, obj common.Object) error
 	DeleteByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}) error
-	DeleteByFields(ctx logger.WithLogger, fields map[string]interface{}, obj interface{}) error
+	DeleteByFields(ctx logger.WithLogger, fields Fields, obj interface{}) error
 
 	RowsWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) (Cursor, error)
 	AllRows(ctx logger.WithLogger, obj interface{}) (Cursor, error)
 
-	UpdateFields(ctx logger.WithLogger, obj interface{}, fields map[string]interface{}) error
+	Update(ctx logger.WithLogger, obj interface{}, fields Fields) error
+	UpdateWithFilter(ctx logger.WithLogger, obj interface{}, filter Fields, fields Fields) error
+	UpdateAll(ctx logger.WithLogger, obj interface{}, newFields Fields) error
 
 	Transaction(handler TransactionHandler) error
 

@@ -28,7 +28,7 @@ func FindByField(db *gorm.DB, fieldName string, fieldValue interface{}, doc inte
 	return false, nil
 }
 
-func FindByFields(db *gorm.DB, fields map[string]interface{}, doc interface{}) (bool, error) {
+func FindByFields(db *gorm.DB, fields db.Fields, doc interface{}) (bool, error) {
 	result := db.Where(fields).First(doc)
 	if result.Error != nil {
 		notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
@@ -38,7 +38,7 @@ func FindByFields(db *gorm.DB, fields map[string]interface{}, doc interface{}) (
 	return false, nil
 }
 
-func RowsByFields(db *gorm.DB, fields map[string]interface{}, doc interface{}) (*sql.Rows, error) {
+func RowsByFields(db *gorm.DB, fields db.Fields, doc interface{}) (*sql.Rows, error) {
 	return db.Model(doc).Where(fields).Rows()
 }
 
@@ -177,7 +177,7 @@ func SumWithFilter(db *gorm.DB, filter *Filter, fields map[string]string, doc in
 	return r.Error
 }
 
-func FindAllByFields(db *gorm.DB, fields map[string]interface{}, docs interface{}) error {
+func FindAllByFields(db *gorm.DB, fields db.Fields, docs interface{}) error {
 	result := db.Where(fields).Find(docs)
 	if result.Error != nil {
 		return result.Error
@@ -185,7 +185,7 @@ func FindAllByFields(db *gorm.DB, fields map[string]interface{}, docs interface{
 	return nil
 }
 
-func FindNotIn(db *gorm.DB, fields map[string]interface{}, docs interface{}) error {
+func FindNotIn(db *gorm.DB, fields db.Fields, docs interface{}) error {
 	result := db.Not(fields).Find(docs)
 	if result.Error != nil {
 		return result.Error
@@ -193,7 +193,7 @@ func FindNotIn(db *gorm.DB, fields map[string]interface{}, docs interface{}) err
 	return nil
 }
 
-func FindSelectNotIn(db *gorm.DB, fields map[string]interface{}, docModel interface{}, docs interface{}) error {
+func FindSelectNotIn(db *gorm.DB, fields db.Fields, docModel interface{}, docs interface{}) error {
 	result := db.Model(docModel).Not(fields).Find(docs)
 	if result.Error != nil {
 		return result.Error
@@ -216,7 +216,7 @@ func Create(db *gorm.DB, doc interface{}) error {
 	return result.Error
 }
 
-func UpdateFields(db *gorm.DB, fields map[string]interface{}, doc interface{}) error {
+func UpdateFields(db *gorm.DB, fields db.Fields, doc interface{}) error {
 	result := db.Model(doc).Updates(fields)
 	return result.Error
 }
@@ -266,12 +266,22 @@ func ObjectTypeName(obj interface{}) string {
 	return t.Name()
 }
 
-func UpdateFieldMulti(db *gorm.DB, fields map[string]interface{}, doc interface{}, field string, value interface{}) error {
+func UpdateFieldMulti(db *gorm.DB, fields db.Fields, doc interface{}, field string, value interface{}) error {
 	result := db.Model(doc).Where(fields).Update(field, value)
 	return result.Error
 }
 
-func DeleteAllByFields(db *gorm.DB, fields map[string]interface{}, docs interface{}) error {
+func UpdateFielsdMulti(db *gorm.DB, filter db.Fields, doc interface{}, newFields db.Fields) error {
+	result := db.Model(doc).Where(filter).Updates(newFields)
+	return result.Error
+}
+
+func UpdateFieldsAll(db *gorm.DB, doc interface{}, newFields db.Fields) error {
+	result := db.Model(doc).Where("1 = 1").Updates(newFields)
+	return result.Error
+}
+
+func DeleteAllByFields(db *gorm.DB, fields db.Fields, docs interface{}) error {
 	result := db.Where(fields).Delete(docs)
 	if result.Error != nil {
 		return result.Error

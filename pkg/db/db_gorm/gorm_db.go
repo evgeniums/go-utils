@@ -138,7 +138,7 @@ func (g *GormDB) FindByField(ctx logger.WithLogger, field string, value string, 
 	return notFound, err
 }
 
-func (g *GormDB) FindByFields(ctx logger.WithLogger, fields map[string]interface{}, obj interface{}) (bool, error) {
+func (g *GormDB) FindByFields(ctx logger.WithLogger, fields db.Fields, obj interface{}) (bool, error) {
 	notFound, err := FindByFields(g.db_(), fields, obj)
 	if err != nil && g.VERBOSE_ERRORS && !notFound {
 		e := fmt.Errorf("failed to FindByFields %v", ObjectTypeName(obj))
@@ -147,7 +147,7 @@ func (g *GormDB) FindByFields(ctx logger.WithLogger, fields map[string]interface
 	return notFound, err
 }
 
-func (g *GormDB) RowsByFields(ctx logger.WithLogger, fields map[string]interface{}, obj interface{}) (db.Cursor, error) {
+func (g *GormDB) RowsByFields(ctx logger.WithLogger, fields db.Fields, obj interface{}) (db.Cursor, error) {
 
 	var err error
 	cursor := &GormCursor{gormDB: g}
@@ -195,7 +195,7 @@ func (g *GormDB) DeleteByField(ctx logger.WithLogger, field string, value interf
 	return err
 }
 
-func (g *GormDB) DeleteByFields(ctx logger.WithLogger, fields map[string]interface{}, obj interface{}) error {
+func (g *GormDB) DeleteByFields(ctx logger.WithLogger, fields db.Fields, obj interface{}) error {
 	err := DeleteAllByFields(g.db_(), fields, obj)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to DeleteByFields %v", ObjectTypeName(obj))
@@ -204,7 +204,7 @@ func (g *GormDB) DeleteByFields(ctx logger.WithLogger, fields map[string]interfa
 	return err
 }
 
-func (g *GormDB) UpdateFields(ctx logger.WithLogger, obj interface{}, fields map[string]interface{}) error {
+func (g *GormDB) Update(ctx logger.WithLogger, obj interface{}, fields db.Fields) error {
 	err := UpdateFields(g.db_(), fields, obj)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to UpdateFields %v", ObjectTypeName(obj))
@@ -245,4 +245,22 @@ func (g *GormDB) FinWithFilter(ctx logger.WithLogger, filter *Filter, obj interf
 		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
 	}
 	return notFound, err
+}
+
+func (g *GormDB) UpdateWithFilter(ctx logger.WithLogger, obj interface{}, filter db.Fields, newFields db.Fields) error {
+	err := UpdateFielsdMulti(g.db_(), filter, obj, newFields)
+	if err != nil && g.VERBOSE_ERRORS {
+		e := fmt.Errorf("failed to UpdateFieldsWithFilter %v", ObjectTypeName(obj))
+		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+	}
+	return err
+}
+
+func (g *GormDB) UpdateAll(ctx logger.WithLogger, obj interface{}, newFields db.Fields) error {
+	err := UpdateFieldsAll(g.db_(), obj, newFields)
+	if err != nil && g.VERBOSE_ERRORS {
+		e := fmt.Errorf("failed to UpdateAll %v", ObjectTypeName(obj))
+		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+	}
+	return err
 }

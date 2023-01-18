@@ -11,18 +11,23 @@ type User interface {
 	access_control.Subject
 }
 
-type UserBase struct {
+type UserBaseDB struct {
 	common.ObjectBase
+	Login    string `gorm:"uniqueIndex"`
+	Password string
+}
 
-	login string `gorm:"uniqueIndex"`
-	// password string
-	// phone    string `gorm:"index"`
-	// pubkey   string
-	// email    string `gorm:"index"`
+type UserBase struct {
+	auth.UserBase
+	baseDb UserBaseDB
 }
 
 func (u *UserBase) Display() string {
-	return u.login
+	return u.baseDb.Login
+}
+
+func (u *UserBase) GetID() string {
+	return u.baseDb.GetID()
 }
 
 func (u *UserBase) GetAuthParameter(authMethodProtocol string, key string) string {

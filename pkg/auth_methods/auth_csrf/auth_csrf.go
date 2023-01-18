@@ -29,7 +29,7 @@ type AuthCsrf struct {
 }
 
 func (a *AuthCsrf) Config() interface{} {
-	return a
+	return a.AuthCsrfConfig
 }
 
 func (a *AuthCsrf) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {

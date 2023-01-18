@@ -27,7 +27,7 @@ type AuthParameterEncryptionBaseConfig struct {
 type AuthParameterEncryptionBase struct {
 	AuthParameterEncryptionBaseConfig
 	Serializer   message.Serializer
-	StringCoding utils.StringCoding
+	StringCoding crypt_utils.StringCoding
 }
 
 func (a *AuthParameterEncryptionBase) Config() interface{} {
@@ -36,7 +36,7 @@ func (a *AuthParameterEncryptionBase) Config() interface{} {
 
 func (a *AuthParameterEncryptionBase) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 	a.Serializer = &message_json.JsonSerializer{}
-	a.StringCoding = &utils.Base64StringCoding{}
+	a.StringCoding = &crypt_utils.Base64StringCoding{}
 
 	err := object_config.LoadLogValidate(cfg, log, vld, a, "auth.params_encryption", configPath...)
 	if err != nil {

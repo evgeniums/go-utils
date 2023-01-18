@@ -8,8 +8,8 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
+	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
@@ -95,7 +95,7 @@ func (a *AuthHmac) Handle(ctx auth.AuthContext) (bool, error) {
 	}
 
 	// check hmac
-	hmac := utils.NewHmac(secret)
+	hmac := crypt_utils.NewHmac(secret)
 	hmac.Calc([]byte(ctx.GetRequestMethod()), []byte(ctx.GetRequestPath()), ctx.GetRequestContent())
 	err = hmac.CheckStr(requestHmac)
 	if err != nil {
