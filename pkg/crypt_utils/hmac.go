@@ -3,29 +3,12 @@ package crypt_utils
 import (
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"hash"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
-
-type StringCoding interface {
-	Encode(data []byte) string
-	Decode(data string) ([]byte, error)
-}
-
-type Base64StringCoding struct {
-}
-
-func (b *Base64StringCoding) Encode(data []byte) string {
-	return base64.RawStdEncoding.WithPadding(base64.StdPadding).EncodeToString(data)
-}
-
-func (b *Base64StringCoding) Decode(data string) ([]byte, error) {
-	return base64.RawStdEncoding.WithPadding(base64.StdPadding).DecodeString(data)
-}
 
 type Hmac struct {
 	Hash         hash.Hash
