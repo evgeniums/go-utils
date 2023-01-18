@@ -5,6 +5,7 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
+	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/message"
 	"github.com/evgeniums/go-backend-helpers/pkg/message/message_json"
@@ -44,11 +45,11 @@ func (a *AuthParameterEncryptionBase) Init(cfg config.Config, log logger.Logger,
 	return nil
 }
 
-func (a *AuthParameterEncryptionBase) createCipher(salt []byte) (*utils.AEAD, error) {
-	pbkdfCfg := utils.DefaultPbkdfConfig()
+func (a *AuthParameterEncryptionBase) createCipher(salt []byte) (*crypt_utils.AEAD, error) {
+	pbkdfCfg := crypt_utils.DefaultPbkdfConfig()
 	pbkdfCfg.Iter = int(a.PBKDF2_ITERATIONS)
-	aeadCfg := utils.DefaultAEADConfig(pbkdfCfg)
-	cipher, err := utils.NewAEAD(a.SECRET, salt, aeadCfg)
+	aeadCfg := crypt_utils.DefaultAEADConfig(pbkdfCfg)
+	cipher, err := crypt_utils.NewAEAD(a.SECRET, salt, aeadCfg)
 	return cipher, err
 }
 

@@ -1,4 +1,4 @@
-package utils
+package crypt_utils
 
 import (
 	"crypto/hmac"
@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"hash"
+
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type StringCoding interface {
@@ -70,7 +72,7 @@ func (h *Hmac) CheckStr(sum string) error {
 type DigestBuilder = func() hash.Hash
 
 func NewHmac(secret string, digestBuilder ...DigestBuilder) *Hmac {
-	var builder = OptionalArg(sha256.New, digestBuilder...)
+	var builder = utils.OptionalArg(sha256.New, digestBuilder...)
 	hm := hmac.New(builder, []byte(secret))
 	h := &Hmac{Hash: hm}
 	h.StringCoding = &Base64StringCoding{}

@@ -1,4 +1,4 @@
-package utils
+package crypt_utils
 
 import (
 	"crypto/cipher"
@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"errors"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -76,7 +77,7 @@ func (a *AEAD) Encrypt(plaintext []byte, additionalData ...[]byte) ([]byte, erro
 	}
 
 	// encrypt and seal data
-	extraData := OptionalArg(nil, additionalData...)
+	extraData := utils.OptionalArg(nil, additionalData...)
 	ciphertext := a.Cipher.Seal(nonce, nonce, plaintext, extraData)
 
 	// done
@@ -95,7 +96,7 @@ func (a *AEAD) Decrypt(ciphertext []byte, additionalData ...[]byte) ([]byte, err
 	ciphertextSplit := ciphertext[a.Cipher.NonceSize():]
 
 	// decrypt the message and check it wasn't tampered with
-	extraData := OptionalArg(nil, additionalData...)
+	extraData := utils.OptionalArg(nil, additionalData...)
 	plaintext, err := a.Cipher.Open(nil, nonce, ciphertextSplit, extraData)
 	if err != nil {
 		return nil, err
