@@ -2,7 +2,6 @@ package api_server
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 )
 
@@ -22,7 +21,7 @@ type Endpoint interface {
 	HandleRequest(request Request) error
 
 	// Precheck request before some authorization methods
-	PrecheckRequestBeforeAuth(request Request, authDataAccessor ...auth.AuthDataAccessor) error
+	PrecheckRequestBeforeAuth(request Request, smsMessage *string) error
 }
 
 type EndpointHandler = func(request Request)
@@ -52,7 +51,7 @@ func (e *EndpointBase) AccessType() access_control.AccessType {
 	return e.accessType
 }
 
-func (e *EndpointBase) PrecheckRequestBeforeAuth(request Request, authDataAccessor ...auth.AuthDataAccessor) error {
+func (e *EndpointBase) PrecheckRequestBeforeAuth(request Request, smsMessage *string) error {
 	return nil
 }
 

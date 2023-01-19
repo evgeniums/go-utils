@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/api_server"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -114,8 +113,8 @@ func (r *Request) GetAuthParameter(authMethodProtocol string, key string) string
 	return r.ginCtx.GetHeader(key)
 }
 
-func (r *Request) CheckRequestContent(authDataAccessor ...auth.AuthDataAccessor) error {
-	return r.endpoint.PrecheckRequestBeforeAuth(r, authDataAccessor...)
+func (r *Request) CheckRequestContent(smsMessage *string) error {
+	return r.endpoint.PrecheckRequestBeforeAuth(r, smsMessage)
 }
 
 func (r *Request) LoadUser(login string) (bool, error) {

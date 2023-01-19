@@ -49,7 +49,7 @@ type AuthContext interface {
 	op_context.Context
 
 	GetRequestContent() []byte
-	CheckRequestContent(authDataAccessor ...AuthDataAccessor) error
+	CheckRequestContent(smsMessage *string) error
 	GetRequestPath() string
 	GetRequestMethod() string
 
