@@ -54,6 +54,7 @@ type AuthSmsConfig struct {
 	SMS_DELAY_SECONDS int    `default:"30" validate:"gt=0"`
 	SECRET            string `validate:"required" mask:"true"`
 	MAX_TRIES         int    `default:"3" validate:"gt=1"`
+	CODE_LENGTH       int    `default:"5" validate:"gte=4"`
 }
 
 type AuthSms struct {
@@ -345,8 +346,9 @@ func (a *AuthSms) smsTokenCacheKey(userId string) string {
 }
 
 func (a *AuthSms) genCode() string {
-	r := uint16(rand.Uint32())
-	return fmt.Sprintf("%d", r)
+	r := rand.Uint32()
+	str := fmt.Sprintf("%08d", r)
+	return str[len(str)-a.CODE_LENGTH:]
 }
 
 func (a *AuthSms) setToken(ctx auth.AuthContext, c op_context.CallContext, cacheToken *SmsCacheToken, requestToken *SmsToken) error {
