@@ -28,16 +28,15 @@ func (c InmemCache[T]) Set(key string, value T, ttlSeconds ...int) error {
 	return nil
 }
 
-func (c InmemCache[T]) Get(key string) (T, bool, error) {
-
-	var val T
+func (c InmemCache[T]) Get(key string, value *T) (bool, error) {
 
 	item := c.cache.Get(key)
 	if item == nil || item.IsExpired() {
-		return val, false, nil
+		return false, nil
 	}
 
-	return item.Value(), true, nil
+	*value = item.Value()
+	return true, nil
 }
 
 func (c InmemCache[T]) Unset(key string) error {
