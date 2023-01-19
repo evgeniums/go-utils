@@ -12,7 +12,7 @@ import (
 
 type Hmac struct {
 	Hash         hash.Hash
-	StringCoding StringCoding
+	StringCoding utils.StringCoding
 }
 
 func (h *Hmac) Sum() []byte {
@@ -26,8 +26,19 @@ func (h *Hmac) Calc(data ...[]byte) []byte {
 	return h.Hash.Sum(nil)
 }
 
+func (h *Hmac) CalcStrings(data ...string) []byte {
+	for _, block := range data {
+		h.Hash.Write([]byte(block))
+	}
+	return h.Hash.Sum(nil)
+}
+
 func (h *Hmac) CalcStr(data []byte) string {
 	return h.StringCoding.Encode(h.Calc(data))
+}
+
+func (h *Hmac) SumStr() string {
+	return h.StringCoding.Encode(h.Hash.Sum(nil))
 }
 
 func (h *Hmac) CalcStrStr(data string) string {
@@ -58,6 +69,6 @@ func NewHmac(secret string, digestBuilder ...DigestBuilder) *Hmac {
 	var builder = utils.OptionalArg(sha256.New, digestBuilder...)
 	hm := hmac.New(builder, []byte(secret))
 	h := &Hmac{Hash: hm}
-	h.StringCoding = &Base64StringCoding{}
+	h.StringCoding = &utils.Base64StringCoding{}
 	return h
 }

@@ -12,7 +12,7 @@ import (
 
 type Hash struct {
 	Hash         hash.Hash
-	StringCoding StringCoding
+	StringCoding utils.StringCoding
 }
 
 func (h *Hash) Sum() []byte {
@@ -67,6 +67,6 @@ func (h *Hash) CheckStr(sum string) error {
 
 func NewHash(digestBuilder ...DigestBuilder) *Hash {
 	var builder = utils.OptionalArg(sha256.New, digestBuilder...)
-	h := &Hash{Hash: builder(), StringCoding: &Base64StringCoding{}}
+	h := &Hash{Hash: builder(), StringCoding: &utils.Base64StringCoding{}}
 	return h
 }

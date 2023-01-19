@@ -1,4 +1,4 @@
-package crypt_utils
+package utils
 
 import "encoding/base64"
 

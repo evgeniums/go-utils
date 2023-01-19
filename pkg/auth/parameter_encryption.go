@@ -27,7 +27,7 @@ type AuthParameterEncryptionBaseConfig struct {
 type AuthParameterEncryptionBase struct {
 	AuthParameterEncryptionBaseConfig
 	Serializer   message.Serializer
-	StringCoding crypt_utils.StringCoding
+	StringCoding utils.StringCoding
 }
 
 func (a *AuthParameterEncryptionBase) Config() interface{} {
@@ -36,7 +36,7 @@ func (a *AuthParameterEncryptionBase) Config() interface{} {
 
 func (a *AuthParameterEncryptionBase) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 	a.Serializer = &message_json.JsonSerializer{}
-	a.StringCoding = &crypt_utils.Base64StringCoding{}
+	a.StringCoding = &utils.Base64StringCoding{}
 
 	err := object_config.LoadLogValidate(cfg, log, vld, a, "auth.params_encryption", configPath...)
 	if err != nil {
@@ -74,7 +74,7 @@ func (a *AuthParameterEncryptionBase) SetAuthParameter(ctx AuthContext, authMeth
 	}
 
 	// generate salt
-	salt, err := utils.GenerateCryptoRand(a.SALT_SIZE)
+	salt, err := crypt_utils.GenerateCryptoRand(a.SALT_SIZE)
 	if err != nil {
 		c.SetMessage("failed to generate salt")
 		return err
