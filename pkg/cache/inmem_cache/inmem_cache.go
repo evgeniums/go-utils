@@ -33,7 +33,7 @@ func (c InmemCache[T]) Get(key string) (T, bool, error) {
 	var val T
 
 	item := c.cache.Get(key)
-	if item == nil {
+	if item == nil || item.IsExpired() {
 		return val, false, nil
 	}
 
