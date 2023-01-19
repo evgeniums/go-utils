@@ -22,7 +22,6 @@ const PasswordHashName = "login-phash"
 
 type LoginHandlerConfig struct {
 	common.WithNameBaseConfig
-	EXPIRATION_SECONDS int `default:"300" validate:"gt=0"`
 }
 
 // Auth handler for login processing. The AuthTokenHandler MUST ALWAYS follow this handler in session scheme with AND conjunction.

@@ -22,12 +22,12 @@ const RefreshTokenName = "refresh-token"
 
 type AuthTokenHandlerConfig struct {
 	common.WithNameBaseConfig
-	ACCESS_EXPIRATION_SECONDS  int    `default:"900" validate:"gt=0"`
-	REFRESH_EXPIRATION_MINUTES int    `default:"720" validate:"gt=0"`
-	AUTO_PROLONGATE_ACCESS     bool   `default:"true"`
-	AUTO_PROLONGATE_REFRESH    bool   `default:"true"`
-	REFRESH_PATH               string `default:"/auth/refresh"`
-	LOGOUT_PATH                string `default:"/auth/logout"`
+	ACCESS_TOKEN_TTL_SECONDS  int    `default:"900" validate:"gt=0"`
+	REFRESH_TOKEN_TTL_MINUTES int    `default:"720" validate:"gt=0"`
+	AUTO_PROLONGATE_ACCESS    bool   `default:"true"`
+	AUTO_PROLONGATE_REFRESH   bool   `default:"true"`
+	REFRESH_PATH              string `default:"/auth/refresh"`
+	LOGOUT_PATH               string `default:"/auth/logout"`
 }
 
 type AuthTokenHandler struct {
@@ -263,7 +263,7 @@ func (a *AuthTokenHandler) GenAccessToken(ctx auth.AuthContext) error {
 	c := ctx.TraceInMethod("AuthTokenHandler.GenAccessToken")
 	defer ctx.TraceOutMethod()
 
-	return c.SetError(a.GenToken(ctx, AccessTokenName, a.ACCESS_EXPIRATION_SECONDS))
+	return c.SetError(a.GenToken(ctx, AccessTokenName, a.ACCESS_TOKEN_TTL_SECONDS))
 }
 
 func (a *AuthTokenHandler) GenRefreshToken(ctx auth.AuthContext, session *AuthTokenSession) error {
@@ -277,7 +277,7 @@ func (a *AuthTokenHandler) GenRefreshToken(ctx auth.AuthContext, session *AuthTo
 	}
 	defer onExit()
 
-	expirationSeconds := a.REFRESH_EXPIRATION_MINUTES * 60
+	expirationSeconds := a.REFRESH_TOKEN_TTL_MINUTES * 60
 	session.Expiration = a.SessionExpiration()
 	err = UpdateSessionExpiration(ctx, session)
 	if err != nil {
@@ -303,6 +303,6 @@ func (a *AuthTokenHandler) GenToken(ctx auth.AuthContext, paramName string, expi
 }
 
 func (a *AuthTokenHandler) SessionExpiration() time.Time {
-	expirationSeconds := a.REFRESH_EXPIRATION_MINUTES * 60
+	expirationSeconds := a.REFRESH_TOKEN_TTL_MINUTES * 60
 	return time.Now().Add(time.Second * time.Duration(expirationSeconds))
 }

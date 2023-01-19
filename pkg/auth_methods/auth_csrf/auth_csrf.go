@@ -17,8 +17,8 @@ const AntiCsrfTokenName = "csrf-token"
 
 type AuthCsrfConfig struct {
 	common.WithNameBaseConfig
-	EXPIRATION_SECONDS int `default:"300" validate:"gt=0"`
-	IGNORE_PATHS       []string
+	TOKEN_TTL_SECONDS int `default:"300" validate:"gt=0"`
+	IGNORE_PATHS      []string
 }
 
 type AuthCsrf struct {
@@ -118,7 +118,7 @@ func (a *AuthCsrf) Handle(ctx auth.AuthContext) (bool, error) {
 
 	// set token in response
 	next := &auth.ExpireToken{}
-	next.SetTTL(a.EXPIRATION_SECONDS)
+	next.SetTTL(a.TOKEN_TTL_SECONDS)
 	err = a.Encryption.SetAuthParameter(ctx, a.Protocol(), AntiCsrfTokenName, next)
 	if err != nil {
 		c.SetMessage("failed to set encrypted auth parameter")

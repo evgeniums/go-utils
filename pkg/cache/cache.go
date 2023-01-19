@@ -1,6 +1,6 @@
 package cache
 
-type Cache[T any] interface {
+type GenericCache[T any] interface {
 	Set(key string, value T, ttlSeconds ...int) error
 	Get(key string) (T, bool, error)
 	Unset(key string) error
@@ -8,3 +8,5 @@ type Cache[T any] interface {
 	Keys() ([]string, error)
 	Clear() error
 }
+
+type Cache = GenericCache[interface{}]
