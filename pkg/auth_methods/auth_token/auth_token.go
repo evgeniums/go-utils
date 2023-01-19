@@ -118,7 +118,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 			// create session
 			session, err = CreateSession(ctx, a.SessionExpiration())
 			if err != nil {
-				ctx.SetGenericErrorCode(generic_error.ErrorCodeExternalServiceError)
+				ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 				return true, err
 			}
 			ctx.AuthUser().SetSessionId(session.GetID())
