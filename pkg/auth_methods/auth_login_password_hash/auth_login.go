@@ -15,7 +15,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
-const LoginProtocol = "login_with_token"
+const LoginProtocol = "login_password_hash"
 const LoginName = "login"
 const SaltName = "login-salt"
 const PasswordHashName = "login-phash"
