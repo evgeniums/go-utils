@@ -218,7 +218,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 		// check SMS code
 		if code != cacheToken.Code {
 
-			// bad code
+			// bad SMS code
 
 			// regenerate token
 			token.GenerateID()
@@ -237,7 +237,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 			return true, err
 		}
 
-		// good code
+		// good SMS code
 
 		// unset SMS delay
 		a.cache.Unset(a.smsDelayCacheKey(userId))
@@ -246,7 +246,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 		return true, nil
 	}
 
-	// code is not set in request
+	// SMS code is not set in request
 
 	// check if SMS delay expired
 	delayCacheKey := a.smsDelayCacheKey(userId)
