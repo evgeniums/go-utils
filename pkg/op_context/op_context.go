@@ -129,14 +129,14 @@ func (c *ContextBase) Init(app app_context.Context, log logger.Logger, db db.DB,
 	c.WithDBBase.Init(db)
 
 	c.id = utils.GenerateID()
-	c.stack = make([]CallContext, 0)
 
-	staticLoggerFields := logger.AppendFields(logger.Fields{"op_context": c.id})
+	staticLoggerFields := logger.AppendFields(logger.Fields{"context": c.id})
 	c.proxyLogger = logger.NewProxy(log, logger.AppendFields(staticLoggerFields, fields...))
 	c.WithLoggerBase.Init(c.proxyLogger)
 	c.cache = app.Cache()
 
-	c.stack[len(c.stack)-1].Logger().Trace("open op context")
+	c.stack = make([]CallContext, 0)
+	c.Logger().Trace("open")
 }
 
 func (c *ContextBase) SetCallContextBuilder(builder CallContextBuilder) {
@@ -170,7 +170,7 @@ func (c *ContextBase) MainLogger() logger.Logger {
 func (c *ContextBase) SetName(name string) {
 	c.name = name
 	c.SetLoggerField("op", c.name)
-	c.Logger().Trace("name op context")
+	c.Logger().Trace("name")
 }
 
 func (c *ContextBase) Tr(phrase string) string {
@@ -180,7 +180,7 @@ func (c *ContextBase) Tr(phrase string) string {
 func stackPath(stack []CallContext) string {
 	path := ""
 	for _, method := range stack {
-		if path == "" {
+		if path != "" {
 			path += ":"
 		}
 		path += method.Method()
@@ -195,7 +195,7 @@ func (c *ContextBase) TraceInMethod(methodName string, fields ...logger.Fields) 
 	c.stack = append(c.stack, ctx)
 	c.SetLoggerField("stack", stackPath(c.stack))
 
-	c.Logger().Trace("begin")
+	c.Logger().Trace("callin")
 
 	return ctx
 }
@@ -213,7 +213,7 @@ func (c *ContextBase) Logger() logger.Logger {
 
 func (c *ContextBase) TraceOutMethod() {
 
-	c.Logger().Trace("end")
+	c.Logger().Trace("callout")
 
 	if len(c.stack) == 0 {
 		return
@@ -268,7 +268,7 @@ func (c *ContextBase) Close() {
 		c.UnsetLoggerField("stack")
 	}
 
-	c.Logger().Trace("close op context")
+	c.Logger().Trace("close")
 }
 
 func (c *ContextBase) SetLoggerField(name string, value interface{}) {

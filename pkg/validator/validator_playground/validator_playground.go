@@ -68,11 +68,11 @@ func (v *PlaygroundValdator) doValidation(s interface{}) (string, string, error)
 			var f reflect.StructField
 			if len(names) > 2 {
 				f, found = v.validationSubfield(f1, names[2:])
+				if !found {
+					return fieldErr.Field(), "", err
+				}
 			} else {
 				f = f1
-			}
-			if !found {
-				return fieldErr.Field(), "", err
 			}
 
 			name = f.Name

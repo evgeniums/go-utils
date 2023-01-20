@@ -49,8 +49,8 @@ func (p *ProxyLogger) Trace(message string, fields ...Fields) {
 	p.logger.Trace(message, AppendFields(p.staticFields, fields...))
 }
 
-func (p *ProxyLogger) Error(message string, err error, fields ...Fields) {
-	p.logger.Error(message, err, AppendFields(p.staticFields, fields...))
+func (p *ProxyLogger) Error(message string, err error, fields ...Fields) error {
+	return p.logger.Error(message, err, AppendFields(p.staticFields, fields...))
 }
 
 func (p *ProxyLogger) ErrorNative(err error, fields ...Fields) {

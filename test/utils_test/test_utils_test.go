@@ -13,4 +13,5 @@ func TestGlobalTestVars(t *testing.T) {
 	t.Logf("Current values:")
 	t.Logf("test_utils.Testing=%v", test_utils.Testing)
 	t.Logf("test_utils.ExternalConfigPath=%s", test_utils.ExternalConfigPath)
+	t.Logf("test_utils.Phone=%v", test_utils.Phone)
 }

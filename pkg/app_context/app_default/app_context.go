@@ -1,6 +1,7 @@
 package app_default
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -46,6 +47,10 @@ func (c *Context) DB() db.DB {
 	return c.db
 }
 
+func (c *Context) Cache() cache.Cache {
+	return c.cache
+}
+
 func (c *Context) Validator() validator.Validator {
 	return c.validator
 }
@@ -86,13 +91,14 @@ func New(cache_ ...cache.Cache) *Context {
 func (c *Context) Init(configFile string, configType ...string) error {
 
 	// load configuration
+	fmt.Printf("Using configuration file %s\n", configFile)
 	err := c.initConfig(configFile)
 	if err != nil {
 		return err
 	}
 
 	// setup logger
-	logConfigPath := "log"
+	logConfigPath := "logger"
 	l, err := c.initLog(logConfigPath)
 	if err != nil {
 		return err
@@ -112,12 +118,6 @@ func (c *Context) Init(configFile string, configType ...string) error {
 		return log.Fatal("failed to load application configuration", err)
 	}
 
-	// init main application database
-	err = c.initDb()
-	if err != nil {
-		return err
-	}
-
 	// setup testing
 	if c.Testing() {
 		log.Info("Running in test mode")
@@ -131,7 +131,12 @@ func (c *Context) Init(configFile string, configType ...string) error {
 func (c *Context) initConfig(configFile string, configType ...string) error {
 	v := config_viper.New()
 	c.SetCfg(v)
-	return v.LoadFile(configFile, configType...)
+	err := v.LoadFile(configFile, configType...)
+	if err != nil {
+		return err
+	}
+	object_config.Load(v, "", c)
+	return nil
 }
 
 func (c *Context) initLog(configPath string) (*logger_logrus.LogrusLogger, error) {
@@ -140,8 +145,8 @@ func (c *Context) initLog(configPath string) (*logger_logrus.LogrusLogger, error
 	return l, l.Init(c.Cfg(), c.validator, configPath)
 }
 
-func (c *Context) initDb() error {
-	d := db_gorm.New()
+func (c *Context) InitDB(gormDbConnector ...db_gorm.DbConnector) error {
+	d := db_gorm.New(gormDbConnector...)
 	c.db = d
 	return d.Init(c, c.Cfg(), c.validator, "psql")
 }

@@ -40,12 +40,11 @@ func NewPost(ctx op_context.Context, url string, msg interface{}, format ...stri
 	var cmdByte []byte
 	var err error
 
+	// TODO use message serializer
 	if r.Format == FormatXml {
 		cmdByte, err = xml.Marshal(msg)
-		r.NativeRequest.Header.Set("Content-Type", "application/xml;charset=UTF-8")
 	} else {
 		cmdByte, err = json.Marshal(msg)
-		r.NativeRequest.Header.Set("Content-Type", "application/json;charset=UTF-8")
 	}
 	if err != nil {
 		c.SetMessage("failed to marshal message")
@@ -56,6 +55,13 @@ func NewPost(ctx op_context.Context, url string, msg interface{}, format ...stri
 	if err != nil {
 		c.SetMessage("failed to create request")
 		return nil, c.SetError(err)
+	}
+
+	if r.Format == FormatXml {
+		r.NativeRequest.Header.Set("Content-Type", "application/xml;charset=UTF-8")
+	} else {
+		r.NativeRequest.Header.Set("Content-Type", "application/json")
+		r.NativeRequest.Header.Set("Accept", "application/json")
 	}
 
 	return r, nil
@@ -157,5 +163,5 @@ func (r *Request) AddHeader(key string, value string) {
 
 func (r *Request) SetAuthHeader(key string, value string) {
 	str := fmt.Sprintf("%s %s", key, value)
-	r.AddHeader("Authorization", str)
+	r.NativeRequest.Header.Set("Authorization", str)
 }

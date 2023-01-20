@@ -31,7 +31,7 @@ const (
 type Logger interface {
 	Log(level Level, message string, fields ...Fields)
 
-	Error(message string, err error, fields ...Fields)
+	Error(message string, err error, fields ...Fields) error
 	ErrorNative(err error, fields ...Fields)
 	ErrorMessage(message string, fields ...Fields)
 
@@ -63,7 +63,7 @@ func (w *WithLoggerBase) Init(logger Logger) {
 }
 
 func AppendFields(f Fields, fields ...Fields) Fields {
-	newFields := NewFields(fields...)
+	newFields := utils.CopyMap(f)
 	if len(fields) > 0 {
 		newFields = utils.AppendMap(newFields, fields[0])
 	}
@@ -71,5 +71,8 @@ func AppendFields(f Fields, fields ...Fields) Fields {
 }
 
 func NewFields(fields ...Fields) Fields {
-	return utils.OptionalArg(Fields{}, fields...)
+	if len(fields) > 0 {
+		return utils.CopyMap(fields[0])
+	}
+	return Fields{}
 }

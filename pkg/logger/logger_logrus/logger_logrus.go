@@ -14,9 +14,9 @@ import (
 )
 
 type logrusConfig struct {
-	DESTINATION string `defaul:"stdout" validate:"oneof=stdout file" vmessage:"logger destination must be one of: stdout | file"`
-	FILE        string `validate:"required" vmessage:"path of logger file must be set"`
-	LOG_LEVEL   string `validate:"omitempty,oneof=panic fatal error warn info debug trace" vmessage:"invalid log level, must be one of: panic | fatal | error | warn | info | debug | trace"`
+	DESTINATION string `default:"stdout" validate:"oneof=stdout file" vmessage:"logger destination must be one of: stdout | file"`
+	FILE        string
+	LEVEL       string `validate:"omitempty,oneof=panic fatal error warn info debug trace" vmessage:"invalid log level, must be one of: panic | fatal | error | warn | info | debug | trace"`
 }
 
 type LogrusLogger struct {
@@ -48,17 +48,22 @@ func (l *LogrusLogger) Trace(message string, fields ...logger.Fields) {
 	l.logRus.WithFields(logger.NewFields(fields...)).Trace(message)
 }
 
-func (l *LogrusLogger) Error(message string, err error, fields ...logger.Fields) {
-	f := logger.Fields{"error": err}
-	if err == nil {
-		f = logger.Fields{}
+func (l *LogrusLogger) Error(message string, err error, fields ...logger.Fields) error {
+	e := err
+	if e == nil {
+		if message != "" {
+			e = errors.New(message)
+		} else {
+			e = errors.New("unknown error")
+		}
 	}
-	f = logger.AppendFields(f, fields...)
-	if message != "" {
+	f := logger.AppendFields(logger.Fields{"error": e}, fields...)
+	if message != "" && err != nil {
 		l.logRus.WithFields(f).Error(message)
 	} else {
 		l.logRus.WithFields(f).Error()
 	}
+	return e
 }
 
 func (l *LogrusLogger) Warn(message string, fields ...logger.Fields) {
@@ -80,9 +85,9 @@ func (l *LogrusLogger) Fatal(message string, err error, fields ...logger.Fields)
 	}
 	f := logger.AppendFields(logger.Fields{"error": e}, fields...)
 	if message != "" && err != nil {
-		l.logRus.WithFields(f).Fatal(message)
+		l.logRus.WithFields(f).Log(logrus.FatalLevel, message)
 	} else {
-		l.logRus.WithFields(f).Fatal()
+		l.logRus.WithFields(f).Log(logrus.FatalLevel)
 	}
 	return e
 }
@@ -115,8 +120,8 @@ func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPa
 	}
 
 	// setup log level
-	if l.LOG_LEVEL != "" {
-		logLevel, err := logrus.ParseLevel(l.LOG_LEVEL)
+	if l.LEVEL != "" {
+		logLevel, err := logrus.ParseLevel(l.LEVEL)
 		if err != nil {
 			fmt.Printf("Invalid log level %v\n", err.Error())
 		} else {
