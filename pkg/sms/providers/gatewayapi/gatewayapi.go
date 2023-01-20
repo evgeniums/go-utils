@@ -27,13 +27,17 @@ type GoodResponse struct {
 }
 
 type SmsGatewayapiConfig struct {
-	URL   string `validation:"required,url"`
-	TOKEN string `validation:"required"`
+	URL   string `validate:"required,url"`
+	TOKEN string `validate:"required" mask:"true"`
 }
 
 type SmsGatewayapi struct {
 	SmsGatewayapiConfig
 	sendUrl string
+}
+
+func New() *SmsGatewayapi {
+	return &SmsGatewayapi{}
 }
 
 func (s *SmsGatewayapi) Config() interface{} {
@@ -42,7 +46,7 @@ func (s *SmsGatewayapi) Config() interface{} {
 
 func (s *SmsGatewayapi) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
-	err := object_config.LoadLogValidate(cfg, log, vld, s, "sms.gatewayapi")
+	err := object_config.LoadLogValidate(cfg, log, vld, s, "sms.gatewayapi", configPath...)
 	if err != nil {
 		return log.Fatal("failed to init SmsGatewayapi", err)
 	}
@@ -92,6 +96,5 @@ func (s *SmsGatewayapi) Send(ctx op_context.Context, message string, recipient s
 		result.ProviderMessageID = response.Ids[0]
 	}
 
-	c.Logger().Debug("success")
 	return result, nil
 }

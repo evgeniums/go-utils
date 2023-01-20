@@ -2,6 +2,8 @@ package test_utils
 
 import (
 	"path/filepath"
+
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 var Testing = ""
@@ -12,9 +14,13 @@ func IsTesting() bool {
 	return Testing == "true"
 }
 
-func ExternalConfigFile(path string) string {
+func ExternalConfigFilePath(path string) string {
 	if ExternalConfigPath == "" {
 		return path
 	}
 	return filepath.Join(ExternalConfigPath, path)
+}
+
+func ExternalConfigFileExists(path string) bool {
+	return utils.FileExists(ExternalConfigFilePath(path))
 }
