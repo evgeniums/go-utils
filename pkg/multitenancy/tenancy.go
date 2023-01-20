@@ -1,6 +1,7 @@
 package multitenancy
 
 import (
+	"github.com/evgeniums/go-backend-helpers/pkg/cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
@@ -9,6 +10,8 @@ import (
 type Tenancy interface {
 	common.Object
 	db.WithDB
+
+	Cache() cache.Cache
 
 	Name() string
 	Path() string
@@ -42,6 +45,7 @@ type TenancyBase struct {
 	TenancyObjectBase
 
 	db.WithDBBase
+	Cache cache.Cache
 }
 
 func (t *TenancyBase) ConnectDB(ctx op_context.Context) error {

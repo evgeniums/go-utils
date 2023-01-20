@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
@@ -61,7 +60,6 @@ type AuthSms struct {
 	auth.AuthHandlerBase
 	AuthSmsConfig
 	Encryption auth.AuthParameterEncryption
-	cache      cache.Cache
 	smsManager sms.SmsManager
 }
 
@@ -69,9 +67,8 @@ func (a *AuthSms) Config() interface{} {
 	return a.AuthSmsConfig
 }
 
-func NewAuthSms(smsManager sms.SmsManager, cache cache.Cache) *AuthSms {
+func NewAuthSms(smsManager sms.SmsManager) *AuthSms {
 	a := &AuthSms{}
-	a.cache = cache
 	a.smsManager = smsManager
 	return a
 }
@@ -186,7 +183,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 		// find corresponding cache token
 		cacheToken := &SmsCacheToken{}
 		oldCacheKey := a.smsTokenCacheKey(token.GetID())
-		found, err := a.cache.Get(oldCacheKey, cacheToken)
+		found, err := ctx.Cache().Get(oldCacheKey, cacheToken)
 		if err != nil {
 			c.SetMessage("failed to get cache token")
 			ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
@@ -197,7 +194,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 			ctx.SetGenericErrorCode(ErrorCodeTokenExpired)
 			return true, err
 		}
-		a.cache.Unset(oldCacheKey)
+		ctx.Cache().Unset(oldCacheKey)
 
 		// check tries count
 		if cacheToken.Try >= a.MAX_TRIES {
@@ -240,7 +237,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 		// good SMS code
 
 		// unset SMS delay
-		a.cache.Unset(a.smsDelayCacheKey(userId))
+		ctx.Cache().Unset(a.smsDelayCacheKey(userId))
 
 		// done
 		return true, nil
@@ -251,7 +248,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 	// check if SMS delay expired
 	delayCacheKey := a.smsDelayCacheKey(userId)
 	delayItem := &SmsDelay{}
-	found, err := a.cache.Get(delayCacheKey, delayItem)
+	found, err := ctx.Cache().Get(delayCacheKey, delayItem)
 	if err != nil {
 		c.SetMessage("failed to get delay item from cache")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
@@ -319,7 +316,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 
 	// save SMS delay in cache
 	delayItem.InitCreatedAt()
-	err1 := a.cache.Set(delayCacheKey, delayItem, a.SMS_DELAY_SECONDS)
+	err1 := ctx.Cache().Set(delayCacheKey, delayItem, a.SMS_DELAY_SECONDS)
 	if err1 != nil {
 		c.Logger().Error("failed to save SMS delay item in cache", err1)
 	}
@@ -355,7 +352,7 @@ func (a *AuthSms) setToken(ctx auth.AuthContext, c op_context.CallContext, cache
 
 	// keep in cache
 	newCacheKey := a.smsTokenCacheKey(requestToken.GetID())
-	err := a.cache.Set(newCacheKey, cacheToken, a.TOKEN_TTL_SECONDS)
+	err := ctx.Cache().Set(newCacheKey, cacheToken, a.TOKEN_TTL_SECONDS)
 	if err != nil {
 		c.SetMessage("failed to save token in cache")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)

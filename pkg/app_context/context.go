@@ -1,6 +1,7 @@
 package app_context
 
 import (
+	"github.com/evgeniums/go-backend-helpers/pkg/cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
@@ -12,6 +13,7 @@ type Context interface {
 	config.WithCfg
 	db.WithDB
 
+	Cache() cache.Cache
 	Validator() validator.Validator
 
 	Testing() bool

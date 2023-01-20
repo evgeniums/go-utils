@@ -4,6 +4,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/cache"
+	"github.com/evgeniums/go-backend-helpers/pkg/cache/inmem_cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/config_viper"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
@@ -29,6 +31,7 @@ type Context struct {
 
 	db        *db_gorm.GormDB
 	validator *validator_playground.PlaygroundValdator
+	cache     cache.Cache
 
 	contextConfig
 
@@ -64,12 +67,18 @@ func (c *Context) GetTestParameter(key string) (interface{}, bool) {
 	return value, ok
 }
 
-func New() *Context {
+func New(cache_ ...cache.Cache) *Context {
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	c := &Context{}
 	c.validator = validator_playground.New()
+
+	if len(cache_) == 0 {
+		c.cache = cache.New(inmem_cache.New[string]())
+	} else {
+		c.cache = cache_[0]
+	}
 
 	return c
 }

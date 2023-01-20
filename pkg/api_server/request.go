@@ -47,6 +47,9 @@ func (r *RequestBase) Tenancy() multitenancy.Tenancy {
 func (r *RequestBase) SetTenancy(tenancy multitenancy.Tenancy) {
 	r.tenancy = tenancy
 	r.SetLoggerField("tenancy", tenancy.Name())
+	if tenancy.Cache() != nil {
+		r.SetCache(tenancy.Cache())
+	}
 }
 
 func (r *RequestBase) AuthUser() auth.User {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
@@ -66,6 +67,8 @@ type Context interface {
 	MainDB() db.DB
 	MainLogger() logger.Logger
 
+	Cache() cache.Cache
+
 	ErrorManager() generic_error.ErrorManager
 	SetErrorManager(manager generic_error.ErrorManager)
 
@@ -115,6 +118,7 @@ type ContextBase struct {
 
 	proxyLogger        *logger.ProxyLogger
 	callContextBuilder CallContextBuilder
+	cache              cache.Cache
 }
 
 func (c *ContextBase) Init(app app_context.Context, log logger.Logger, db db.DB, fields ...logger.Fields) {
@@ -130,12 +134,17 @@ func (c *ContextBase) Init(app app_context.Context, log logger.Logger, db db.DB,
 	staticLoggerFields := logger.AppendFields(logger.Fields{"op_context": c.id})
 	c.proxyLogger = logger.NewProxy(log, logger.AppendFields(staticLoggerFields, fields...))
 	c.WithLoggerBase.Init(c.proxyLogger)
+	c.cache = app.Cache()
 
 	c.stack[len(c.stack)-1].Logger().Trace("open op context")
 }
 
 func (c *ContextBase) SetCallContextBuilder(builder CallContextBuilder) {
 	c.callContextBuilder = builder
+}
+
+func (c *ContextBase) SetCache(cache cache.Cache) {
+	c.cache = cache
 }
 
 func (c *ContextBase) SetErrorManager(manager generic_error.ErrorManager) {
@@ -284,4 +293,8 @@ func (c *ContextBase) MakeGenericError(code string) generic_error.Error {
 
 func (c *ContextBase) SetGenericErrorCode(code string, override ...bool) {
 	c.SetGenericError(c.MakeGenericError(code), override...)
+}
+
+func (c *ContextBase) Cache() cache.Cache {
+	return c.cache
 }
