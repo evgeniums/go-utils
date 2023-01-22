@@ -6,6 +6,8 @@ import (
 
 func AbortError(ctx Context, msg string, err error) {
 	err = fmt.Errorf("%v: %s", msg, err)
-	ctx.Logger().ErrorRaw(err.Error())
+	if ctx.Logger() != nil {
+		ctx.Logger().ErrorRaw(err.Error())
+	}
 	panic(err)
 }
