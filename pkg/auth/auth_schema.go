@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
@@ -21,7 +22,7 @@ const (
 )
 
 type AuthSchemaConfig struct {
-	NAME        string
+	common.WithNameBaseConfig
 	AGGREGATION string `default:"and" validate:"omitempty,oneof=and or"`
 }
 
@@ -43,16 +44,20 @@ func (a *AuthSchema) Config() interface{} {
 	return a.config
 }
 
-func (a *AuthSchema) Name() string {
-	return a.config.NAME
-}
-
 func (a *AuthSchema) Aggregation() Aggregation {
 	return a.config.AGGREGATION
 }
 
+func (a *AuthSchema) SetAggregation(aggregation Aggregation) {
+	a.config.AGGREGATION = aggregation
+}
+
 func (a *AuthSchema) Handlers() []AuthHandler {
 	return a.handlers
+}
+
+func (a *AuthSchema) AppendHandlers(handler ...AuthHandler) {
+	a.handlers = append(a.handlers, handler...)
 }
 
 func (a *AuthSchema) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {

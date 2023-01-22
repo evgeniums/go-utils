@@ -76,7 +76,16 @@ type AuthHandler interface {
 	ErrorProtocolCodes() map[string]int
 }
 
-type AuthHandlerBase struct{}
+type AuthHandlerBase struct {
+	common.WithNameBase
+
+	protocol string
+}
+
+func (a *AuthHandlerBase) Init(protocol string) {
+	a.protocol = protocol
+	a.WithNameBase.Init(protocol)
+}
 
 func (a *AuthHandlerBase) ErrorDescriptions() map[string]string {
 	return map[string]string{}
@@ -84,4 +93,8 @@ func (a *AuthHandlerBase) ErrorDescriptions() map[string]string {
 
 func (a *AuthHandlerBase) ErrorProtocolCodes() map[string]int {
 	return map[string]int{}
+}
+
+func (a *AuthHandlerBase) Protocol() string {
+	return a.protocol
 }

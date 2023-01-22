@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
@@ -21,7 +20,6 @@ const AccessTokenName = "access-token"
 const RefreshTokenName = "refresh-token"
 
 type AuthTokenHandlerConfig struct {
-	common.WithNameBaseConfig
 	ACCESS_TOKEN_TTL_SECONDS  int    `default:"900" validate:"gt=0"`
 	REFRESH_TOKEN_TTL_MINUTES int    `default:"720" validate:"gt=0"`
 	AUTO_PROLONGATE_ACCESS    bool   `default:"true"`
@@ -50,6 +48,8 @@ func (a *AuthTokenHandler) Config() interface{} {
 
 func (a *AuthTokenHandler) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
+	a.AuthHandlerBase.Init(TokenProtocol)
+
 	err := object_config.LoadLogValidate(cfg, log, vld, a, "auth.methods.token", configPath...)
 	if err != nil {
 		return log.Fatal("failed to load configuration of TOKEN handler", err)
@@ -63,10 +63,6 @@ func (a *AuthTokenHandler) Init(cfg config.Config, log logger.Logger, vld valida
 	a.Encryption = encryption
 
 	return nil
-}
-
-func (a *AuthTokenHandler) Protocol() string {
-	return TokenProtocol
 }
 
 const ErrorCodeTokenExpired = "auth_token_expired"

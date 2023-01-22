@@ -1,13 +1,11 @@
-package auth_token
+package auth_login_phash
 
 import (
 	"errors"
 	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
-	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
@@ -15,37 +13,21 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
-const LoginProtocol = "login_password_hash"
+const LoginProtocol = "login_phash"
 const LoginName = "login"
 const SaltName = "login-salt"
 const PasswordHashName = "login-phash"
 
-type LoginHandlerConfig struct {
-	common.WithNameBaseConfig
-}
-
 // Auth handler for login processing. The AuthTokenHandler MUST ALWAYS follow this handler in session scheme with AND conjunction.
 type LoginHandler struct {
 	auth.AuthHandlerBase
-	LoginHandlerConfig
-}
-
-func (l *LoginHandler) Config() interface{} {
-	return l.LoginHandlerConfig
 }
 
 func (l *LoginHandler) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
-	err := object_config.LoadLogValidate(cfg, log, vld, l, "auth.methods.login", configPath...)
-	if err != nil {
-		return log.Fatal("failed to load configuration of LOGIN handler", err)
-	}
+	l.AuthHandlerBase.Init(LoginProtocol)
 
 	return nil
-}
-
-func (a *LoginHandler) Protocol() string {
-	return LoginProtocol
 }
 
 const ErrorCodeLoginFailed = "login_failed"

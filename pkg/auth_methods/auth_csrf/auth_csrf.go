@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
@@ -16,7 +15,6 @@ const AntiCsrfProtocol = "csrf"
 const AntiCsrfTokenName = "csrf-token"
 
 type AuthCsrfConfig struct {
-	common.WithNameBaseConfig
 	TOKEN_TTL_SECONDS int `default:"300" validate:"gt=0"`
 	IGNORE_PATHS      []string
 }
@@ -33,6 +31,8 @@ func (a *AuthCsrf) Config() interface{} {
 }
 
 func (a *AuthCsrf) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
+
+	a.AuthHandlerBase.Init(AntiCsrfProtocol)
 
 	err := object_config.LoadLogValidate(cfg, log, vld, a, "auth.methods.csrf", configPath...)
 	if err != nil {
@@ -52,10 +52,6 @@ func (a *AuthCsrf) Init(cfg config.Config, log logger.Logger, vld validator.Vali
 	}
 
 	return nil
-}
-
-func (a *AuthCsrf) Protocol() string {
-	return AntiCsrfProtocol
 }
 
 const ErrorCodeAntiCsrfRequired = "anti_csrf_token_required"

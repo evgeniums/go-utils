@@ -63,6 +63,14 @@ func (a *AuthBase) AttachToErrorManager(errManager generic_error.ErrorManager) {
 	errManager.AddErrorProtocolCodes(a.manager.ErrorProtocolCodes())
 }
 
+func (a *AuthBase) EndpointsConfig() EndpointsAuthConfig {
+	return a.endpointsConfig
+}
+
+func (a *AuthBase) Manager() AuthManager {
+	return a.manager
+}
+
 type WithAuth interface {
 	Auth() Auth
 }

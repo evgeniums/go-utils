@@ -17,7 +17,7 @@ type HandlerStore interface {
 }
 
 type HandlerFactory interface {
-	Create(name string) (AuthHandler, error)
+	Create(protocol string) (AuthHandler, error)
 }
 
 type AuthManager interface {
@@ -69,10 +69,10 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 	methodsPath := object_config.Key(path, "methods")
 	methodsSection := cfg.Get(methodsPath)
 	methods := methodsSection.(map[string]interface{})
-	for methodName := range methods {
-		methodPath := object_config.Key(path, methodName)
-		fields := utils.AppendMapNew(fields, logger.Fields{"method": methodName, "method_path": methodPath})
-		handler, err := handlerFactory.Create(methodName)
+	for methodProtocol := range methods {
+		methodPath := object_config.Key(path, methodProtocol)
+		fields := utils.AppendMapNew(fields, logger.Fields{"method": methodProtocol, "method_path": methodPath})
+		handler, err := handlerFactory.Create(methodProtocol)
 		if err != nil {
 			return log.Fatal("failed to create authorization method", err, fields)
 		}

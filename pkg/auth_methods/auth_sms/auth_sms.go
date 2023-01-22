@@ -48,7 +48,6 @@ type SmsToken struct {
 }
 
 type AuthSmsConfig struct {
-	common.WithNameBaseConfig
 	TOKEN_TTL_SECONDS int    `default:"300" validate:"gt=0"`
 	SMS_DELAY_SECONDS int    `default:"30" validate:"gt=0"`
 	SECRET            string `validate:"required" mask:"true"`
@@ -75,6 +74,8 @@ func NewAuthSms(smsManager sms.SmsManager) *AuthSms {
 
 func (a *AuthSms) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
+	a.AuthHandlerBase.Init(SmsProtocol)
+
 	err := object_config.LoadLogValidate(cfg, log, vld, a, "auth.methods.sms", configPath...)
 	if err != nil {
 		return log.Fatal("failed to load configuration of auth SMS handler", err)
@@ -88,10 +89,6 @@ func (a *AuthSms) Init(cfg config.Config, log logger.Logger, vld validator.Valid
 	a.Encryption = encryption
 
 	return nil
-}
-
-func (a *AuthSms) Protocol() string {
-	return SmsProtocol
 }
 
 const ErrorCodeSmsConfirmationRequired = "sms_confirmation_required"

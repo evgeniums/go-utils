@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
@@ -17,7 +16,6 @@ const HmacProtocol = "hmac"
 const HmacParameter = "hmac"
 
 type AuthHmacConfig struct {
-	common.WithNameBaseConfig
 }
 
 type AuthHmac struct {
@@ -31,15 +29,13 @@ func (a *AuthHmac) Config() interface{} {
 
 func (a *AuthHmac) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
+	a.AuthHandlerBase.Init(HmacProtocol)
+
 	err := object_config.LoadLogValidate(cfg, log, vld, a, "auth.methods.hmac", configPath...)
 	if err != nil {
 		return log.Fatal("failed to load configuration of HMAC auth handler", err)
 	}
 	return nil
-}
-
-func (a *AuthHmac) Protocol() string {
-	return HmacProtocol
 }
 
 const ErrorCodeInvalidHmac = "hmac_invalid"
