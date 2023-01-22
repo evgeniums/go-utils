@@ -22,7 +22,7 @@ type ErrorManager interface {
 }
 
 type ErrorDefinitions interface {
-	AttachToErrorManafer(manager ErrorManager)
+	AttachToErrorManager(manager ErrorManager)
 }
 
 type ErrorManagerBase struct {
