@@ -20,4 +20,6 @@ type Context interface {
 	TestParameters() map[string]interface{}
 	SetTestParameter(key string, value interface{})
 	GetTestParameter(key string) (interface{}, bool)
+
+	Close()
 }

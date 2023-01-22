@@ -30,9 +30,10 @@ type Context struct {
 	logger.WithLoggerBase
 	config.WithCfgBase
 
-	db        *db_gorm.GormDB
-	validator *validator_playground.PlaygroundValdator
-	cache     cache.Cache
+	db         *db_gorm.GormDB
+	validator  *validator_playground.PlaygroundValdator
+	cache      cache.Cache
+	inmemCache *inmem_cache.InmemCache[string]
 
 	contextConfig
 
@@ -80,7 +81,9 @@ func New(cache_ ...cache.Cache) *Context {
 	c.validator = validator_playground.New()
 
 	if len(cache_) == 0 {
-		c.cache = cache.New(inmem_cache.New[string]())
+		c.inmemCache = inmem_cache.New[string]()
+		c.cache = cache.New(c.inmemCache)
+		c.inmemCache.Start()
 	} else {
 		c.cache = cache_[0]
 	}
@@ -126,6 +129,12 @@ func (c *Context) Init(configFile string, configType ...string) error {
 
 	// done
 	return nil
+}
+
+func (c *Context) Close() {
+	if c.inmemCache != nil {
+		c.inmemCache.Stop()
+	}
 }
 
 func (c *Context) initConfig(configFile string, configType ...string) error {
