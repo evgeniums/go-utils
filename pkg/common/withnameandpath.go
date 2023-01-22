@@ -8,6 +8,7 @@ import (
 
 type WithName interface {
 	Name() string
+	SetName(name string)
 }
 
 func ConstructPath(sections []string, separator string) string {
@@ -45,6 +46,10 @@ func (e *WithNameBaseConfig) Init(name string) {
 
 func (w *WithNameBaseConfig) Name() string {
 	return w.NAME
+}
+
+func (w *WithNameBaseConfig) SetName(name string) {
+	w.NAME = name
 }
 
 type WithNameBase = WithNameBaseConfig
