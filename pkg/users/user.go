@@ -9,7 +9,7 @@ import (
 
 type User interface {
 	auth.User
-	auth_login_phash.UserWithPasswordHash
+	auth_login_phash.User
 	auth_sms.UserWithPhone
 
 	DbUser() interface{}
@@ -17,37 +17,34 @@ type User interface {
 
 type UserBaseDB struct {
 	common.ObjectBase
-	Login        string `gorm:"uniqueIndex"`
-	PasswordHash string
-	PasswordSalt string
-	Phone        string `gorm:"uniqueIndex"`
+	auth_login_phash.UserBase
+	LOGIN   string `gorm:"uniqueIndex"`
+	PHONE   string `gorm:"uniqueIndex"`
+	BLOCKED bool   `gorm:"index"`
+}
+
+func (u *UserBaseDB) Display() string {
+	return u.LOGIN
+}
+
+func (u *UserBaseDB) Login() string {
+	return u.LOGIN
+}
+
+func (u *UserBaseDB) Phone() string {
+	return u.PHONE
 }
 
 type UserBase struct {
 	auth.UserBase
-	dbUser UserBaseDB
+	UserBaseDB
 }
 
-func (u *UserBase) Display() string {
-	return u.dbUser.Login
+func NewUser() *UserBase {
+	u := &UserBase{}
+	return u
 }
 
-func (u *UserBase) Login() string {
-	return u.dbUser.Login
-}
-
-func (u *UserBase) GetID() string {
-	return u.dbUser.GetID()
-}
-
-func (u *UserBase) PasswordHash() string {
-	return u.dbUser.PasswordHash
-}
-
-func (u *UserBase) PasswordSalt() string {
-	return u.dbUser.PasswordSalt
-}
-
-func (u *UserBase) Phone() string {
-	return u.dbUser.Phone
+func (u *UserBase) DbUser() interface{} {
+	return &u.UserBaseDB
 }

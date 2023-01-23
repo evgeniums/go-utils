@@ -12,6 +12,7 @@ require (
 )
 
 require (
+	github.com/dchest/uniuri v1.2.0 // indirect
 	github.com/evgeniums/go-finish-service v0.0.0-20230108111731-b6307469e51d // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect

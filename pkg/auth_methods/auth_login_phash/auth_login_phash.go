@@ -18,9 +18,33 @@ const LoginName = "login"
 const SaltName = "login-salt"
 const PasswordHashName = "login-phash"
 
-type UserWithPasswordHash interface {
+type User interface {
 	PasswordHash() string
 	PasswordSalt() string
+	SetPassword(password string, salt string) string
+	CheckPasswordHash(phash string) bool
+}
+
+type UserBase struct {
+	PASSWORD_HASH string
+	PASSWORD_SALT string
+}
+
+func (u *UserBase) PasswordHash() string {
+	return u.PASSWORD_HASH
+}
+
+func (u *UserBase) PasswordSalt() string {
+	return u.PASSWORD_SALT
+}
+
+func (u *UserBase) SetPassword(password string) {
+	u.PASSWORD_SALT = crypt_utils.GenerateString()
+	u.PASSWORD_HASH = Phash(password, u.PASSWORD_SALT)
+}
+
+func (u *UserBase) CheckPasswordHash(phash string) bool {
+	return crypt_utils.Check(u.PASSWORD_HASH, phash)
 }
 
 // Auth handler for login processing. The AuthTokenHandler MUST ALWAYS follow this handler in session scheme with AND conjunction.
@@ -88,8 +112,8 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	}
 	ctx.SetLoggerField("user", ctx.AuthUser().Display())
 
-	// user must be of UserWithPasswordHash interface
-	user, ok := ctx.AuthUser().(UserWithPasswordHash)
+	// user must be of User interface
+	user, ok := ctx.AuthUser().(User)
 	if !ok {
 		c.SetMessage("user must be of UserWithPasswordHash interface")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
@@ -127,4 +151,9 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 
 	// done
 	return true, errors.New("credentials not provided yet")
+}
+
+func Phash(password string, salt string) string {
+	h := crypt_utils.NewHash()
+	return h.CalcStrStr(salt, password)
 }

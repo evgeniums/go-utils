@@ -8,6 +8,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/parameter"
+	"github.com/evgeniums/go-backend-helpers/pkg/users"
 )
 
 // Interface of request to server API.
@@ -19,12 +20,12 @@ type Request interface {
 	Tenancy() multitenancy.Tenancy
 
 	Response() Response
-	User() User
+	User() users.User
 }
 
 type RequestBase struct {
 	op_context.ContextBase
-	user *UserBase
+	user users.User
 
 	tenancy multitenancy.Tenancy
 }
@@ -56,6 +57,6 @@ func (r *RequestBase) AuthUser() auth.User {
 	return r.user
 }
 
-func (r *RequestBase) User() User {
+func (r *RequestBase) User() users.User {
 	return r.user
 }

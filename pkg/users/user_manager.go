@@ -12,7 +12,7 @@ type UserManager interface {
 	Update(ctx op_context.Context, user common.Object, fields db.Fields) error
 }
 
-func FindByLogin[User struct{}](manager UserManager, ctx op_context.Context, login string, user interface{}) (bool, error) {
+func FindByLogin(manager UserManager, ctx op_context.Context, login string, user interface{}) (bool, error) {
 	return manager.Find(ctx, db.Fields{"login": login}, user)
 }
 
