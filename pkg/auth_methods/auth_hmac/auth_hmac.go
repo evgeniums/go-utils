@@ -8,12 +8,17 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
 const HmacProtocol = "hmac"
 const HmacParameter = "hmac"
+
+type UserWithHmacSecret interface {
+	HmacSecret() string
+}
 
 type AuthHmacConfig struct {
 }
@@ -83,7 +88,15 @@ func (a *AuthHmac) Handle(ctx auth.AuthContext) (bool, error) {
 		ctx.SetGenericErrorCode(auth.ErrorCodeUnauthorized)
 		return true, err
 	}
-	secret := ctx.AuthUser().GetAuthParameter(a.Protocol(), "secret")
+	// user must be of UserWithPasswordHash interface
+	user, ok := ctx.AuthUser().(UserWithHmacSecret)
+	if !ok {
+		c.SetMessage("user must be of UserWithHmacSecret interface")
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
+		return true, err
+	}
+
+	secret := user.HmacSecret()
 	if secret == "" {
 		err := errors.New("hmac secret is not set for user")
 		ctx.SetGenericErrorCode(auth.ErrorCodeUnauthorized)

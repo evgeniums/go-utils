@@ -19,12 +19,25 @@ type DBConfig struct {
 	DbExtraConfig string
 }
 
-type Transaction interface {
+type DBHandlers interface {
 	FindByField(ctx logger.WithLogger, field string, value string, obj interface{}) (bool, error)
 	FindByFields(ctx logger.WithLogger, fields Fields, obj interface{}) (bool, error)
+	FinWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) (bool, error)
+
 	Create(ctx logger.WithLogger, obj common.Object) error
 	DeleteByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}) error
 	DeleteByFields(ctx logger.WithLogger, fields Fields, obj interface{}) error
+
+	RowsWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) (Cursor, error)
+	AllRows(ctx logger.WithLogger, obj interface{}) (Cursor, error)
+
+	Update(ctx logger.WithLogger, obj interface{}, fields Fields) error
+	UpdateWithFilter(ctx logger.WithLogger, obj interface{}, filter Fields, fields Fields) error
+	UpdateAll(ctx logger.WithLogger, obj interface{}, newFields Fields) error
+}
+
+type Transaction interface {
+	DBHandlers
 }
 
 type TransactionHandler = func(tx Transaction) error
@@ -40,25 +53,12 @@ type DB interface {
 
 	InitWithConfig(ctx logger.WithLogger, vld validator.Validator, cfg *DBConfig) error
 
-	FindByField(ctx logger.WithLogger, field string, value string, obj interface{}) (bool, error)
-	FindByFields(ctx logger.WithLogger, fields Fields, obj interface{}) (bool, error)
-	Create(ctx logger.WithLogger, obj common.Object) error
-	DeleteByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}) error
-	DeleteByFields(ctx logger.WithLogger, fields Fields, obj interface{}) error
-
-	RowsWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) (Cursor, error)
-	AllRows(ctx logger.WithLogger, obj interface{}) (Cursor, error)
-
-	Update(ctx logger.WithLogger, obj interface{}, fields Fields) error
-	UpdateWithFilter(ctx logger.WithLogger, obj interface{}, filter Fields, fields Fields) error
-	UpdateAll(ctx logger.WithLogger, obj interface{}, newFields Fields) error
+	DBHandlers
 
 	Transaction(handler TransactionHandler) error
 
 	EnableDebug(bool)
 	EnableVerboseErrors(bool)
-
-	FinWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) (bool, error)
 
 	AutoMigrate(ctx logger.WithLogger, models []interface{}) error
 }

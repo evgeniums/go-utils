@@ -18,6 +18,11 @@ const LoginName = "login"
 const SaltName = "login-salt"
 const PasswordHashName = "login-phash"
 
+type UserWithPasswordHash interface {
+	PasswordHash() string
+	PasswordSalt() string
+}
+
 // Auth handler for login processing. The AuthTokenHandler MUST ALWAYS follow this handler in session scheme with AND conjunction.
 type LoginHandler struct {
 	auth.AuthHandlerBase
@@ -83,15 +88,23 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	}
 	ctx.SetLoggerField("user", ctx.AuthUser().Display())
 
+	// user must be of UserWithPasswordHash interface
+	user, ok := ctx.AuthUser().(UserWithPasswordHash)
+	if !ok {
+		c.SetMessage("user must be of UserWithPasswordHash interface")
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
+		return true, err
+	}
+
 	// extract user salt
-	salt := ctx.AuthUser().GetAuthParameter(l.Protocol(), "password_salt")
+	salt := user.PasswordSalt()
 
 	// get password hash from request
 	phash := ctx.GetAuthParameter(l.Protocol(), PasswordHashName)
 	if phash != "" {
 
 		// extract user password
-		password := ctx.AuthUser().GetAuthParameter(l.Protocol(), "password")
+		password := user.PasswordHash()
 
 		// check password hash
 		hash := crypt_utils.NewHash()

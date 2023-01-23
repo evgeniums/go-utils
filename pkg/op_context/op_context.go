@@ -67,6 +67,8 @@ type Context interface {
 	MainDB() db.DB
 	MainLogger() logger.Logger
 
+	DbTransaction() db.DBHandlers
+
 	Cache() cache.Cache
 
 	ErrorManager() generic_error.ErrorManager
@@ -108,7 +110,8 @@ type ContextBase struct {
 	logger.WithLoggerBase
 	db.WithDBBase
 
-	errorManager generic_error.ErrorManager
+	dbTransaction db.Transaction
+	errorManager  generic_error.ErrorManager
 
 	id           string
 	name         string
@@ -297,4 +300,15 @@ func (c *ContextBase) SetGenericErrorCode(code string, override ...bool) {
 
 func (c *ContextBase) Cache() cache.Cache {
 	return c.cache
+}
+
+func (c *ContextBase) DbTransaction() db.DBHandlers {
+	return c.dbTransaction
+}
+
+func DB(c Context) db.DBHandlers {
+	if c.DbTransaction() != nil {
+		return c.DbTransaction()
+	}
+	return c.DB()
 }

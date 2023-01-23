@@ -206,6 +206,8 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 			}
 		}
 
+		// TODO process CSRF
+
 		// process auth
 		if err == nil {
 			err = s.Auth().HandleRequest(request, ep.FullPath(), ep.AccessType())

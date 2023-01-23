@@ -21,8 +21,6 @@ import (
 
 const SmsProtocol = "sms"
 
-const PhoneNumberKey = "phone"
-
 const TokenName = "sms-token"
 const PhoneName = "sms-phone"
 const DelayName = "sms-delay"
@@ -30,6 +28,10 @@ const CodeName = "sms-code"
 
 const SmsDelayCacheKey = "sms-delay"
 const SmsTokenCacheKey = "sms-token"
+
+type UserWithPhone interface {
+	Phone() string
+}
 
 type SmsDelay struct {
 	common.CreatedAtBase
@@ -276,8 +278,16 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 		return true, err
 	}
 
+	// user must be of UserWithPasswordHash interface
+	user, ok := ctx.AuthUser().(UserWithPhone)
+	if !ok {
+		c.SetMessage("user must be of UserWithPhone interface")
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
+		return true, err
+	}
+
 	// get user's phone number
-	phone := ctx.AuthUser().GetAuthParameter(SmsProtocol, PhoneNumberKey)
+	phone := user.Phone()
 	if phone == "" {
 		c.SetMessage("unknown phone number")
 		ctx.SetGenericErrorCode(ErrorCodeInvalidPhone)

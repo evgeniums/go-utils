@@ -145,7 +145,7 @@ func InvalidateSession(ctx op_context.Context, userId string, sessionId string) 
 	c := ctx.TraceInMethod("auth_token.InvalidateSession")
 	defer ctx.TraceOutMethod()
 
-	err := ctx.DB().UpdateWithFilter(ctx, &AuthTokenSession{}, db.Fields{"id": sessionId, "user_id": userId}, db.Fields{"valid": false, "updated_at": time.Now()})
+	err := ctx.DB().UpdateWithFilter(ctx, &AuthTokenSession{}, db.Fields{"id": sessionId, "user_id": userId}, db.Fields{"valid": false})
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -157,7 +157,7 @@ func InvalidateUserSessions(ctx op_context.Context, userId string) error {
 	c := ctx.TraceInMethod("auth_token.InvalidateUserSessions")
 	defer ctx.TraceOutMethod()
 
-	err := ctx.DB().UpdateWithFilter(ctx, &AuthTokenSession{}, db.Fields{"user_id": userId}, db.Fields{"valid": false, "updated_at": time.Now()})
+	err := ctx.DB().UpdateWithFilter(ctx, &AuthTokenSession{}, db.Fields{"user_id": userId}, db.Fields{"valid": false})
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -168,7 +168,7 @@ func InvalidateAllSessions(ctx op_context.Context) error {
 	c := ctx.TraceInMethod("auth_token.InvalidateAllSessions")
 	defer ctx.TraceOutMethod()
 
-	err := ctx.DB().UpdateAll(ctx, &AuthTokenSession{}, db.Fields{"valid": false, "updated_at": time.Now()})
+	err := ctx.DB().UpdateAll(ctx, &AuthTokenSession{}, db.Fields{"valid": false})
 	if err != nil {
 		return c.SetError(err)
 	}

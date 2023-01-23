@@ -12,7 +12,6 @@ type User interface {
 	GetID() string
 	Display() string
 	Login() string
-	GetAuthParameter(methodProtocol string, key string) string
 	GetSessionId() string
 	SetSessionId(id string)
 	GetClientId() string

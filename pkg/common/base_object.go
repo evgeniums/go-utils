@@ -50,15 +50,29 @@ func (w *CreatedAtBase) SetCreatedAt(t time.Time) {
 	w.CREATED_AT = t
 }
 
+type UpdatedAt interface {
+	GetUpdatedAt() time.Time
+}
+
+type UpdatedAtBase struct {
+	UPDATED_AT time.Time `gorm:"index" json:"updated_at"`
+}
+
+func (w *UpdatedAtBase) GetUpdatedAt() time.Time {
+	return w.UPDATED_AT
+}
+
 type Object interface {
 	ID
 	CreatedAt
+	UpdatedAt
 	InitObject()
 }
 
 type ObjectBase struct {
 	IDBase
 	CreatedAtBase
+	UpdatedAtBase
 }
 
 func (o *ObjectBase) InitObject() {

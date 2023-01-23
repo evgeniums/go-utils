@@ -213,6 +213,7 @@ func (g *GormDB) DeleteByFields(ctx logger.WithLogger, fields db.Fields, obj int
 }
 
 func (g *GormDB) Update(ctx logger.WithLogger, obj interface{}, fields db.Fields) error {
+	// gorm automatically updates field updated_at
 	err := UpdateFields(g.db_(), fields, obj)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to UpdateFields %v", ObjectTypeName(obj))
@@ -256,6 +257,7 @@ func (g *GormDB) FinWithFilter(ctx logger.WithLogger, filter *Filter, obj interf
 }
 
 func (g *GormDB) UpdateWithFilter(ctx logger.WithLogger, obj interface{}, filter db.Fields, newFields db.Fields) error {
+	// gorm automatically updates field updated_at
 	err := UpdateFielsdMulti(g.db_(), filter, obj, newFields)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to UpdateFieldsWithFilter %v", ObjectTypeName(obj))
@@ -265,6 +267,7 @@ func (g *GormDB) UpdateWithFilter(ctx logger.WithLogger, obj interface{}, filter
 }
 
 func (g *GormDB) UpdateAll(ctx logger.WithLogger, obj interface{}, newFields db.Fields) error {
+	// gorm automatically updates field updated_at
 	err := UpdateFieldsAll(g.db_(), obj, newFields)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to UpdateAll %v", ObjectTypeName(obj))
