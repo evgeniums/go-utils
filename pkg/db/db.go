@@ -59,6 +59,8 @@ type DB interface {
 	EnableVerboseErrors(bool)
 
 	FinWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) (bool, error)
+
+	AutoMigrate(ctx logger.WithLogger, models []interface{}) error
 }
 
 type WithDB interface {

@@ -129,6 +129,14 @@ func (g *GormDB) Connect(ctx logger.WithLogger) error {
 	return nil
 }
 
+func (g *GormDB) AutoMigrate(ctx logger.WithLogger, models []interface{}) error {
+	err := g.db_().AutoMigrate(models...)
+	if err != nil {
+		return ctx.Logger().Fatal("failed to migrate database", err)
+	}
+	return nil
+}
+
 func (g *GormDB) FindByField(ctx logger.WithLogger, field string, value string, obj interface{}) (bool, error) {
 	notFound, err := FindByField(g.db_(), field, value, obj)
 	if err != nil && g.VERBOSE_ERRORS && !notFound {
