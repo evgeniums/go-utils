@@ -17,6 +17,8 @@ type Config interface {
 	SetDefault(key string, value interface{})
 	Set(key string, value interface{})
 
+	IsSet(key string) bool
+
 	AllKeys() []string
 }
 
