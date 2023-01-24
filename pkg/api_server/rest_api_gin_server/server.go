@@ -12,10 +12,12 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_csrf"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/gin-gonic/gin"
 
 	finish "github.com/evgeniums/go-finish-service"
@@ -48,6 +50,8 @@ type Server struct {
 
 	authParamsGetters map[string]AuthParameterGetter
 	authParamsSetters map[string]AuthParameterSetter
+
+	csrf *auth_csrf.AuthCsrf
 }
 
 func NewServer() *Server {
@@ -150,6 +154,16 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 		return ctx.Logger().Fatal("Failed to load server configuration", err, logger.Fields{"name": s.Name()})
 	}
 
+	// load CSRF configuration
+	csrfKey := object_config.Key(utils.OptionalArg("api_server", configPath...), "csrf")
+	if ctx.Cfg().IsSet(csrfKey) {
+		s.csrf = auth_csrf.New()
+		err = s.csrf.Init(ctx.Cfg(), ctx.Logger(), ctx.Validator(), csrfKey)
+		if err != nil {
+			return ctx.Logger().Fatal("Failed to load anti-CSRF configuration", err)
+		}
+	}
+
 	// init gin router
 	s.ginEngine = gin.Default()
 	// trusted proxies are needed for correct logging of client IP address
@@ -206,7 +220,10 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 			}
 		}
 
-		// TODO process CSRF
+		// process CSRF
+		if s.csrf != nil {
+			_, err = s.csrf.Handle(request)
+		}
 
 		// process auth
 		if err == nil {

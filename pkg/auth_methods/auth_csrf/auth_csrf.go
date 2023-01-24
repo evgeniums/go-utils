@@ -1,6 +1,7 @@
 package auth_csrf
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
@@ -26,6 +27,11 @@ type AuthCsrf struct {
 	skipPaths  map[string]bool
 }
 
+func New() *AuthCsrf {
+	a := &AuthCsrf{}
+	return a
+}
+
 func (a *AuthCsrf) Config() interface{} {
 	return a.AuthCsrfConfig
 }
@@ -47,6 +53,10 @@ func (a *AuthCsrf) Init(cfg config.Config, log logger.Logger, vld validator.Vali
 	a.Encryption = encryption
 
 	a.skipPaths = make(map[string]bool)
+	if len(a.IGNORE_PATHS) == 0 {
+		// skip default status service
+		a.skipPaths["/status"] = true
+	}
 	for _, path := range a.IGNORE_PATHS {
 		a.skipPaths[path] = true
 	}
@@ -95,7 +105,7 @@ func (a *AuthCsrf) Handle(ctx auth.AuthContext) (bool, error) {
 		prev := &auth.ExpireToken{}
 		exists, err := a.Encryption.GetAuthParameter(ctx, a.Protocol(), AntiCsrfTokenName, prev)
 		if !exists {
-			c.SetMessage("CSRF token not found")
+			err = errors.New("CSRF token not found")
 			ctx.SetGenericErrorCode(ErrorCodeAntiCsrfRequired)
 			return false, err
 		}
