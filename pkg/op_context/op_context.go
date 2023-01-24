@@ -247,8 +247,8 @@ func (c *ContextBase) GenericError() generic_error.Error {
 
 func (c *ContextBase) Close() {
 
-	// log errors
 	if c.errorStack != nil {
+		// log error
 		var msg string
 		var err error
 		for _, item := range c.errorStack {
@@ -269,9 +269,10 @@ func (c *ContextBase) Close() {
 		c.Logger().Error(msg, err)
 		c.stack = []CallContext{}
 		c.UnsetLoggerField("stack")
+	} else {
+		// log success
+		c.Logger().Info("success")
 	}
-
-	c.Logger().Trace("close")
 }
 
 func (c *ContextBase) SetLoggerField(name string, value interface{}) {
