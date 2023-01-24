@@ -8,6 +8,12 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
+type BuildConfig struct {
+	Version  string
+	Time     string
+	Revision string
+}
+
 type Context interface {
 	logger.WithLogger
 	config.WithCfg

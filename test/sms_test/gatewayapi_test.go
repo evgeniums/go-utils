@@ -20,7 +20,7 @@ func TestGatewayapi(t *testing.T) {
 	configFile = test_utils.ExternalConfigFilePath(configFile)
 	phone := test_utils.Phone
 
-	app := app_default.New()
+	app := app_default.New(nil)
 	err := app.Init(configFile)
 	if err != nil {
 		t.Fatalf("Failed to init application context: %s", err)

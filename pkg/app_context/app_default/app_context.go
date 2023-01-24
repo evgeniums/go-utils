@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/cache/inmem_cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
@@ -73,7 +74,13 @@ func (c *Context) GetTestParameter(key string) (interface{}, bool) {
 	return value, ok
 }
 
-func New(cache_ ...cache.Cache) *Context {
+func New(buildConfig *app_context.BuildConfig, cache_ ...cache.Cache) *Context {
+
+	if buildConfig != nil {
+		Version = buildConfig.Version
+		Time = buildConfig.Time
+		Revision = buildConfig.Revision
+	}
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
@@ -111,6 +118,7 @@ func (c *Context) Init(configFile string, configType ...string) error {
 
 	// log build version
 	log.Info("Build configuration", logger.Fields{"build_time": Time, "package_version": Version, "git_revision": Revision})
+	fmt.Printf("Build configuration: build_time=%s, package_version=%s, get_revision=%s\n", Time, Version, Revision)
 
 	// log logger configuration
 	object_config.Info(log, l, logConfigPath)
