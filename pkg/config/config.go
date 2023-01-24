@@ -13,7 +13,9 @@ type Config interface {
 	GetFloat64(key string) float64
 	GetIntSlice(key string) []int
 	GetStringSlice(key string) []string
+
 	SetDefault(key string, value interface{})
+	Set(key string, value interface{})
 
 	AllKeys() []string
 }

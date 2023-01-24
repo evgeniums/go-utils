@@ -48,6 +48,7 @@ type Logger interface {
 
 type WithLogger interface {
 	Logger() Logger
+	SetLogger(logger Logger)
 }
 
 type WithLoggerBase struct {
@@ -59,6 +60,10 @@ func (w *WithLoggerBase) Logger() Logger {
 }
 
 func (w *WithLoggerBase) Init(logger Logger) {
+	w.logger = logger
+}
+
+func (w *WithLoggerBase) SetLogger(logger Logger) {
 	w.logger = logger
 }
 
