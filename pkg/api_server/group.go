@@ -7,10 +7,10 @@ type Group interface {
 	common.WithNameAndPath
 
 	// Add endpoints to group.
-	AddEndpoint(ep ...Endpoint) Group
+	AddEndpoints(ep ...Endpoint)
 
-	// Add subgroup.
-	AddGroup(group Group) Group
+	// TODO implement adding subgroup.
+	// AddGroup(group Group) Group
 }
 
 // Base type of group of API endpoints.

@@ -55,7 +55,7 @@ func (a *AuthCsrf) Init(cfg config.Config, log logger.Logger, vld validator.Vali
 	a.skipPaths = make(map[string]bool)
 	if len(a.IGNORE_PATHS) == 0 {
 		// skip default status service
-		a.skipPaths["/status"] = true
+		a.skipPaths["/status/check"] = true
 	}
 	for _, path := range a.IGNORE_PATHS {
 		a.skipPaths[path] = true
