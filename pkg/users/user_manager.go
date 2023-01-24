@@ -49,7 +49,7 @@ func (m *UserManagerBase) Update(ctx op_context.Context, user common.Object, fie
 	c := ctx.TraceInMethod("UserManagerBase.Update")
 	defer ctx.TraceOutMethod()
 
-	err := op_context.DB(ctx).Update(ctx, user, fields)
+	err := db.Update(op_context.DB(ctx), ctx, user, fields)
 	if err != nil {
 		return c.SetError(err)
 	}

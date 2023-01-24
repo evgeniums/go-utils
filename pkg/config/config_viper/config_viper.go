@@ -26,7 +26,7 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 	c.Viper.AddConfigPath(".")
 	err := c.Viper.ReadInConfig()
 	if err != nil {
-		msg := fmt.Errorf("fatal error while reafing config file: %s", err)
+		msg := fmt.Errorf("fatal error while reading config file: %s", err)
 		return msg
 	}
 

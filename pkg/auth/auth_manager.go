@@ -74,11 +74,11 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 		fields := utils.AppendMapNew(fields, logger.Fields{"method": methodProtocol, "method_path": methodPath})
 		handler, err := handlerFactory.Create(methodProtocol)
 		if err != nil {
-			return log.Fatal("failed to create authorization method", err, fields)
+			return log.Fatal("Failed to create authorization method", err, fields)
 		}
 		err = handler.Init(cfg, log, vld, methodPath)
 		if err != nil {
-			return log.Fatal("failed to initialize authorization method", err, fields)
+			return log.Fatal("Failed to initialize authorization method", err, fields)
 		}
 		a.store.AddHandler(handler)
 	}
@@ -93,7 +93,7 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 		schema := NewAuthSchema()
 		err := schema.InitSchema(log, cfg, vld, a.store, schemaPath)
 		if err != nil {
-			return log.Fatal("failed to initialize authorization schema", err, fields)
+			return log.Fatal("Failed to initialize authorization schema", err, fields)
 		}
 		a.store.AddHandler(schema)
 	}

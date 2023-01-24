@@ -40,7 +40,7 @@ func (a *AuthParameterEncryptionBase) Init(cfg config.Config, log logger.Logger,
 
 	err := object_config.LoadLogValidate(cfg, log, vld, a, "auth.params_encryption", configPath...)
 	if err != nil {
-		return log.Fatal("failed to load configuration of auth parameters encryption", err)
+		return log.Fatal("Failed to load configuration of auth parameters encryption", err)
 	}
 	return nil
 }

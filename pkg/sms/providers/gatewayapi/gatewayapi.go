@@ -48,7 +48,7 @@ func (s *SmsGatewayapi) Init(cfg config.Config, log logger.Logger, vld validator
 
 	err := object_config.LoadLogValidate(cfg, log, vld, s, "sms.gatewayapi", configPath...)
 	if err != nil {
-		return log.Fatal("failed to init SmsGatewayapi", err)
+		return log.Fatal("Failed to init SmsGatewayapi", err)
 	}
 
 	s.sendUrl = fmt.Sprintf("%s/rest/mtsms", s.URL)

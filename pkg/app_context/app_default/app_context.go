@@ -118,7 +118,7 @@ func (c *Context) Init(configFile string, configType ...string) error {
 	// load top level application configuration
 	err = object_config.LoadLogValidate(c.Cfg(), log, c.validator, c, "")
 	if err != nil {
-		return log.Fatal("failed to load application configuration", err)
+		return log.Fatal("Failed to load application configuration", err)
 	}
 
 	// setup testing
@@ -154,8 +154,8 @@ func (c *Context) initLog(configPath string) (*logger_logrus.LogrusLogger, error
 	return l, l.Init(c.Cfg(), c.validator, configPath)
 }
 
-func (c *Context) InitDB(gormDbConnector ...db_gorm.DbConnector) error {
+func (c *Context) InitDB(configPath string, gormDbConnector ...db_gorm.DbConnector) error {
 	d := db_gorm.New(gormDbConnector...)
 	c.db = d
-	return d.Init(c, c.Cfg(), c.validator, "psql")
+	return d.Init(c, c.Cfg(), c.validator, configPath)
 }

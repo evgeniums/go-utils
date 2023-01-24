@@ -116,7 +116,7 @@ func UpdateSessionClient(ctx auth.AuthContext) error {
 
 	// update client
 	if tryUpdate {
-		err = ctx.DB().Update(ctx, client, db.Fields{"updated_at": time.Now()})
+		err = db.Update(ctx.DB(), ctx, client, db.Fields{"updated_at": time.Now()})
 		if err != nil {
 			c.SetMessage("failed to update client in database")
 			return err
@@ -133,7 +133,7 @@ func UpdateSessionExpiration(ctx auth.AuthContext, session *AuthTokenSession) er
 	c := ctx.TraceInMethod("auth_token.UpdateSessionExpiration")
 	defer ctx.TraceOutMethod()
 
-	err := ctx.DB().Update(ctx, session, db.Fields{"expiration": session.Expiration})
+	err := db.Update(ctx.DB(), ctx, session, db.Fields{"expiration": session.Expiration})
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -145,7 +145,7 @@ func InvalidateSession(ctx op_context.Context, userId string, sessionId string) 
 	c := ctx.TraceInMethod("auth_token.InvalidateSession")
 	defer ctx.TraceOutMethod()
 
-	err := ctx.DB().UpdateWithFilter(ctx, &AuthTokenSession{}, db.Fields{"id": sessionId, "user_id": userId}, db.Fields{"valid": false})
+	err := ctx.DB().Update(ctx, &AuthTokenSession{}, db.Fields{"id": sessionId, "user_id": userId}, db.Fields{"valid": false, "updated_at": time.Now()})
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -157,7 +157,7 @@ func InvalidateUserSessions(ctx op_context.Context, userId string) error {
 	c := ctx.TraceInMethod("auth_token.InvalidateUserSessions")
 	defer ctx.TraceOutMethod()
 
-	err := ctx.DB().UpdateWithFilter(ctx, &AuthTokenSession{}, db.Fields{"user_id": userId}, db.Fields{"valid": false})
+	err := ctx.DB().Update(ctx, &AuthTokenSession{}, db.Fields{"user_id": userId}, db.Fields{"valid": false, "updated_at": time.Now()})
 	if err != nil {
 		return c.SetError(err)
 	}

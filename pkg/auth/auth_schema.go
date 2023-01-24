@@ -72,7 +72,7 @@ func (a *AuthSchema) InitSchema(log logger.Logger, cfg config.Config, vld valida
 	// load plain configuration
 	err := object_config.LoadLogValidate(cfg, log, vld, a, path)
 	if err != nil {
-		return log.Fatal("failed to load configuration of authorization schema", err, fields)
+		return log.Fatal("Failed to load configuration of authorization schema", err, fields)
 	}
 
 	// load handlers
@@ -88,7 +88,7 @@ func (a *AuthSchema) InitSchema(log logger.Logger, cfg config.Config, vld valida
 			fields["handler"] = handlerName
 			handler, err := handlerStore.Handler(handlerName)
 			if err != nil {
-				return log.Fatal("failed to find authorization handler in handlers store", err, fields)
+				return log.Fatal("Failed to find authorization handler in handlers store", err, fields)
 			}
 			a.handlers = append(a.handlers, handler)
 		} else {

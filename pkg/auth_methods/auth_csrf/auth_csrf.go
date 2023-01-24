@@ -36,13 +36,13 @@ func (a *AuthCsrf) Init(cfg config.Config, log logger.Logger, vld validator.Vali
 
 	err := object_config.LoadLogValidate(cfg, log, vld, a, "auth.methods.csrf", configPath...)
 	if err != nil {
-		return log.Fatal("failed to load configuration of CSRF handler", err)
+		return log.Fatal("Failed to load configuration of CSRF handler", err)
 	}
 
 	encryption := &auth.AuthParameterEncryptionBase{}
 	err = object_config.LoadLogValidate(cfg, log, vld, encryption, "auth.methods.csrf", configPath...)
 	if err != nil {
-		return log.Fatal("failed to load configuration of CSRF encryption", err)
+		return log.Fatal("Failed to load configuration of CSRF encryption", err)
 	}
 	a.Encryption = encryption
 

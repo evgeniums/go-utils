@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
@@ -87,7 +86,7 @@ func (g *GormDB) Init(ctx logger.WithLogger, cfg config.Config, vld validator.Va
 	// load configuration
 	err := object_config.LoadLogValidate(cfg, ctx.Logger(), vld, g, "psql", configPath...)
 	if err != nil {
-		return ctx.Logger().Fatal("failed to load GormDB configuration", err)
+		return ctx.Logger().Fatal("Failed to load GormDB configuration", err)
 	}
 
 	// connect database
@@ -105,7 +104,7 @@ func (g *GormDB) InitWithConfig(ctx logger.WithLogger, vld validator.Validator, 
 	// validate configuration
 	err := vld.Validate(g.Config())
 	if err != nil {
-		return ctx.Logger().Fatal("failed to validate GormDB configuration", err)
+		return ctx.Logger().Fatal("Failed to validate GormDB configuration", err)
 	}
 
 	// connect database
@@ -118,11 +117,11 @@ func (g *GormDB) Connect(ctx logger.WithLogger) error {
 	dsn := fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable", g.HOST, g.PORT, g.USER, g.DBNAME, g.PASSWORD)
 	dbDialector, err := g.dbConnector(g.PROVIDER, dsn)
 	if err != nil {
-		return ctx.Logger().Fatal("failed to connect to database", err)
+		return ctx.Logger().Fatal("Failed to connect to database", err)
 	}
 	g.db, err = ConnectDB(dbDialector)
 	if err != nil {
-		return ctx.Logger().Fatal("failed to connect to database", err)
+		return ctx.Logger().Fatal("Failed to connect to database", err)
 	}
 
 	// done
@@ -132,7 +131,7 @@ func (g *GormDB) Connect(ctx logger.WithLogger) error {
 func (g *GormDB) AutoMigrate(ctx logger.WithLogger, models []interface{}) error {
 	err := g.db_().AutoMigrate(models...)
 	if err != nil {
-		return ctx.Logger().Fatal("failed to migrate database", err)
+		return ctx.Logger().Fatal("Failed to migrate database", err)
 	}
 	return nil
 }
@@ -185,7 +184,7 @@ func (g *GormDB) AllRows(ctx logger.WithLogger, obj interface{}) (db.Cursor, err
 	return cursor, err
 }
 
-func (g *GormDB) Create(ctx logger.WithLogger, obj common.Object) error {
+func (g *GormDB) Create(ctx logger.WithLogger, obj interface{}) error {
 	err := Create(g.db_(), obj)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to Create %v", ObjectTypeName(obj))
@@ -208,16 +207,6 @@ func (g *GormDB) DeleteByFields(ctx logger.WithLogger, fields db.Fields, obj int
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to DeleteByFields %v", ObjectTypeName(obj))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
-	}
-	return err
-}
-
-func (g *GormDB) Update(ctx logger.WithLogger, obj interface{}, fields db.Fields) error {
-	// gorm automatically updates field updated_at
-	err := UpdateFields(g.db_(), fields, obj)
-	if err != nil && g.VERBOSE_ERRORS {
-		e := fmt.Errorf("failed to UpdateFields %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
 	}
 	return err
 }
@@ -256,8 +245,7 @@ func (g *GormDB) FinWithFilter(ctx logger.WithLogger, filter *Filter, obj interf
 	return notFound, err
 }
 
-func (g *GormDB) UpdateWithFilter(ctx logger.WithLogger, obj interface{}, filter db.Fields, newFields db.Fields) error {
-	// gorm automatically updates field updated_at
+func (g *GormDB) Update(ctx logger.WithLogger, obj interface{}, filter db.Fields, newFields db.Fields) error {
 	err := UpdateFielsdMulti(g.db_(), filter, obj, newFields)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to UpdateFieldsWithFilter %v", ObjectTypeName(obj))
@@ -267,7 +255,6 @@ func (g *GormDB) UpdateWithFilter(ctx logger.WithLogger, obj interface{}, filter
 }
 
 func (g *GormDB) UpdateAll(ctx logger.WithLogger, obj interface{}, newFields db.Fields) error {
-	// gorm automatically updates field updated_at
 	err := UpdateFieldsAll(g.db_(), obj, newFields)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to UpdateAll %v", ObjectTypeName(obj))

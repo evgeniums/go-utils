@@ -61,7 +61,7 @@ func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld
 
 	err := object_config.LoadLogValidate(cfg, log, vld, e, path)
 	if err != nil {
-		return log.Fatal("failed to load configuration", err, fields)
+		return log.Fatal("Failed to load configuration", err, fields)
 	}
 
 	e.endpoints = make(map[string][]endpointSchema)
@@ -82,7 +82,7 @@ func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld
 			epSchema := endpointSchema{}
 			err := object_config.Load(cfg, schemaPath, &epSchema)
 			if err != nil {
-				return log.Fatal("failed to load endpoint authorization schema", err, fields)
+				return log.Fatal("Failed to load endpoint authorization schema", err, fields)
 			}
 			if epSchema.HTTP_METHOD != "" {
 				epSchema.ACCESS = access_control.HttpMethod2Access(epSchema.HTTP_METHOD)

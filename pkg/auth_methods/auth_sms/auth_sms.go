@@ -80,13 +80,13 @@ func (a *AuthSms) Init(cfg config.Config, log logger.Logger, vld validator.Valid
 
 	err := object_config.LoadLogValidate(cfg, log, vld, a, "auth.methods.sms", configPath...)
 	if err != nil {
-		return log.Fatal("failed to load configuration of auth SMS handler", err)
+		return log.Fatal("Failed to load configuration of auth SMS handler", err)
 	}
 
 	encryption := &auth.AuthParameterEncryptionBase{}
 	err = object_config.LoadLogValidate(cfg, log, vld, encryption, "auth.methods.sms", configPath...)
 	if err != nil {
-		return log.Fatal("failed to load configuration of auth SMS encryption", err)
+		return log.Fatal("Failed to load configuration of auth SMS encryption", err)
 	}
 	a.Encryption = encryption
 

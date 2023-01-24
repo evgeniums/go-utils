@@ -147,7 +147,7 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 	// load configuration
 	err = object_config.LoadLogValidate(ctx.Cfg(), ctx.Logger(), ctx.Validator(), s, "api_server", configPath...)
 	if err != nil {
-		return ctx.Logger().Fatal("failed to load server configuration", err, logger.Fields{"name": s.Name()})
+		return ctx.Logger().Fatal("Failed to load server configuration", err, logger.Fields{"name": s.Name()})
 	}
 
 	// init gin router
