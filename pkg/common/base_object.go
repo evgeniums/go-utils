@@ -78,4 +78,5 @@ type ObjectBase struct {
 func (o *ObjectBase) InitObject() {
 	o.GenerateID()
 	o.InitCreatedAt()
+	o.UPDATED_AT = o.CREATED_AT
 }

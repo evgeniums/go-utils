@@ -2,7 +2,6 @@ package rest_api_gin_server
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"net/http"
 	"time"
@@ -115,12 +114,4 @@ func (r *Request) GetAuthParameter(authMethodProtocol string, key string) string
 
 func (r *Request) CheckRequestContent(smsMessage *string) error {
 	return r.endpoint.PrecheckRequestBeforeAuth(r, smsMessage)
-}
-
-func (r *Request) LoadUser(login string) (bool, error) {
-	return false, errors.New("not implemented yet")
-}
-
-func (r *Request) UnloadUser() {
-	// TODO implemet
 }

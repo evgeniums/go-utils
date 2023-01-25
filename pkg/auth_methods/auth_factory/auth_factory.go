@@ -8,22 +8,24 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_token"
+	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 )
 
 type DefaultAuthFactory struct {
+	Users user_manager.WithSessionManager
 }
 
 func (f *DefaultAuthFactory) Create(protocol string) (auth.AuthHandler, error) {
 
 	switch protocol {
 	case LoginphashTokenProtocol:
-		return &LoginphashToken{}, nil
+		return NewLoginphashToken(f.Users), nil
 	case LoginphashSmsTokenProtocol:
-		return &LoginphashSmsToken{}, nil
+		return NewLoginphashSmsToken(f.Users), nil
 	case auth_login_phash.LoginProtocol:
-		return &auth_login_phash.LoginHandler{}, nil
+		return auth_login_phash.New(f.Users), nil
 	case auth_token.TokenProtocol:
-		return &auth_token.AuthTokenHandler{}, nil
+		return auth_token.New(f.Users), nil
 	case auth_hmac.HmacProtocol:
 		return &auth_hmac.AuthHmac{}, nil
 	case auth_sms.SmsProtocol:

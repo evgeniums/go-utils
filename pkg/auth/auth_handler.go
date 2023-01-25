@@ -12,30 +12,34 @@ type User interface {
 	GetID() string
 	Display() string
 	Login() string
+	IsBlocked() bool
+}
+
+type Session interface {
 	GetSessionId() string
 	SetSessionId(id string)
 	GetClientId() string
 	SetClientId(id string)
 }
 
-type UserBase struct {
+type SessionBase struct {
 	session string
 	client  string
 }
 
-func (u *UserBase) GetSessionId() string {
+func (u *SessionBase) GetSessionId() string {
 	return u.session
 }
 
-func (u *UserBase) SetSessionId(id string) {
+func (u *SessionBase) SetSessionId(id string) {
 	u.session = id
 }
 
-func (u *UserBase) GetClientId() string {
+func (u *SessionBase) GetClientId() string {
 	return u.client
 }
 
-func (u *UserBase) SetClientId(id string) {
+func (u *SessionBase) SetClientId(id string) {
 	u.client = id
 }
 
@@ -46,6 +50,7 @@ type AuthDataAccessor interface {
 
 type AuthContext interface {
 	op_context.Context
+	Session
 
 	GetRequestContent() []byte
 	CheckRequestContent(smsMessage *string) error
@@ -56,8 +61,7 @@ type AuthContext interface {
 	GetRequestUserAgent() string
 
 	AuthUser() User
-	LoadUser(login string) (bool, error)
-	UnloadUser()
+	SetAuthUser(user User)
 
 	SetAuthParameter(authMethodProtocol string, key string, value string)
 	GetAuthParameter(authMethodProtocol string, key string) string

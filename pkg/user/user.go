@@ -1,4 +1,4 @@
-package users
+package user
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
@@ -35,8 +35,11 @@ func (u *UserBaseDB) Phone() string {
 	return u.PHONE
 }
 
+func (u *UserBaseDB) IsBlocked() bool {
+	return u.BLOCKED
+}
+
 type UserBase struct {
-	auth.UserBase
 	UserBaseDB
 }
 

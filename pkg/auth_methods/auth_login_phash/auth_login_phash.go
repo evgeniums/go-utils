@@ -10,6 +10,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
@@ -50,6 +51,13 @@ func (u *UserBase) CheckPasswordHash(phash string) bool {
 // Auth handler for login processing. The AuthTokenHandler MUST ALWAYS follow this handler in session scheme with AND conjunction.
 type LoginHandler struct {
 	auth.AuthHandlerBase
+	users user_manager.WithUserManager
+}
+
+func New(users user_manager.WithUserManager) *LoginHandler {
+	l := &LoginHandler{}
+	l.users = users
+	return l
 }
 
 func (l *LoginHandler) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
@@ -62,7 +70,7 @@ func (l *LoginHandler) Init(cfg config.Config, log logger.Logger, vld validator.
 const ErrorCodeLoginFailed = "login_failed"
 const ErrorCodeCredentialsRequired = "login_credentials_required"
 
-func (a *LoginHandler) ErrorDescriptions() map[string]string {
+func (l *LoginHandler) ErrorDescriptions() map[string]string {
 	m := map[string]string{
 		ErrorCodeLoginFailed:         "Invalid login or password",
 		ErrorCodeCredentialsRequired: "Credentials hash must be provided in request",
@@ -70,7 +78,7 @@ func (a *LoginHandler) ErrorDescriptions() map[string]string {
 	return m
 }
 
-func (a *LoginHandler) ErrorProtocolCodes() map[string]int {
+func (l *LoginHandler) ErrorProtocolCodes() map[string]int {
 	m := map[string]int{
 		ErrorCodeLoginFailed:         http.StatusUnauthorized,
 		ErrorCodeCredentialsRequired: http.StatusUnauthorized,
@@ -99,7 +107,8 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	ctx.SetLoggerField("login", login)
 
 	// load user
-	notfound, err := ctx.LoadUser(login)
+	dbUser := l.users.UserManager().MakeUser()
+	notfound, err := user_manager.FindByLogin(l.users.UserManager(), ctx, login, dbUser)
 	if !db.CheckFoundNoError(notfound, &err) {
 		if err != nil {
 			c.SetMessage("failed to load user")
@@ -110,10 +119,20 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		ctx.SetGenericErrorCode(ErrorCodeLoginFailed)
 		return true, err
 	}
-	ctx.SetLoggerField("user", ctx.AuthUser().Display())
+	ctx.SetLoggerField("user", dbUser.Display())
+
+	// check if user blocked
+	if dbUser.IsBlocked() {
+		err = errors.New("user blocked")
+		ctx.SetGenericErrorCode(auth.ErrorCodeUnauthorized)
+		return true, err
+	}
+
+	// set context user
+	ctx.SetAuthUser(dbUser)
 
 	// user must be of User interface
-	user, ok := ctx.AuthUser().(User)
+	phashUser, ok := dbUser.(User)
 	if !ok {
 		c.SetMessage("user must be of UserWithPasswordHash interface")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
@@ -121,21 +140,21 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	}
 
 	// extract user salt
-	salt := user.PasswordSalt()
+	salt := phashUser.PasswordSalt()
 
 	// get password hash from request
 	phash := ctx.GetAuthParameter(l.Protocol(), PasswordHashName)
 	if phash != "" {
 
 		// extract user password
-		password := user.PasswordHash()
+		password := phashUser.PasswordHash()
 
 		// check password hash
 		hash := crypt_utils.NewHash()
 		hash.CalcStrIn(login, password, salt)
 		err = hash.CheckStr(phash)
 		if err != nil {
-			ctx.UnloadUser()
+			ctx.SetAuthUser(nil)
 			c.SetMessage("invalid password hash")
 			ctx.SetGenericErrorCode(ErrorCodeLoginFailed)
 			return true, err

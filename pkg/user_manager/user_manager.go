@@ -1,15 +1,21 @@
-package users
+package user_manager
 
 import (
+	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
 type UserManager interface {
+	MakeUser() auth.User
 	Find(ctx op_context.Context, fields db.Fields, user interface{}) (bool, error)
 	Create(ctx op_context.Context, user common.Object) error
 	Update(ctx op_context.Context, user common.Object, fields db.Fields) error
+}
+
+type WithUserManager interface {
+	UserManager() UserManager
 }
 
 func FindByLogin(manager UserManager, ctx op_context.Context, login string, user interface{}) (bool, error) {

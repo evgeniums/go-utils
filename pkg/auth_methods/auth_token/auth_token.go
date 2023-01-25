@@ -11,6 +11,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
@@ -31,7 +32,8 @@ type AuthTokenHandlerConfig struct {
 type AuthTokenHandler struct {
 	auth.AuthHandlerBase
 	AuthTokenHandlerConfig
-	Encryption auth.AuthParameterEncryption
+	users      user_manager.WithSessionManager
+	encryption auth.AuthParameterEncryption
 }
 
 type Token struct {
@@ -44,6 +46,12 @@ type Token struct {
 
 func (a *AuthTokenHandler) Config() interface{} {
 	return a.AuthTokenHandlerConfig
+}
+
+func New(users user_manager.WithSessionManager) *AuthTokenHandler {
+	a := &AuthTokenHandler{}
+	a.users = users
+	return a
 }
 
 func (a *AuthTokenHandler) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
@@ -60,7 +68,7 @@ func (a *AuthTokenHandler) Init(cfg config.Config, log logger.Logger, vld valida
 	if err != nil {
 		return log.Fatal("Failed to load configuration of TOKEN encryption", err)
 	}
-	a.Encryption = encryption
+	a.encryption = encryption
 
 	return nil
 }
@@ -108,19 +116,19 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 
 		// user was authenticated, just create or update session client and add tokens
 
-		sessionId := ctx.AuthUser().GetSessionId()
-		var session *AuthTokenSession
+		sessionId := ctx.GetSessionId()
+		var session user_manager.Session
 		if sessionId == "" {
 			// create session
-			session, err = CreateSession(ctx, a.SessionExpiration())
+			session, err = a.users.SessionManager().CreateSession(ctx, a.SessionExpiration())
 			if err != nil {
 				ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 				return true, err
 			}
-			ctx.AuthUser().SetSessionId(session.GetID())
+			ctx.SetSessionId(session.GetID())
 		} else {
 			// find session
-			session, err = FindSession(ctx, sessionId)
+			session, err = a.users.SessionManager().FindSession(ctx, sessionId)
 			if err != nil {
 				ctx.SetGenericErrorCode(ErrorCodeSessionExpired)
 				return true, err
@@ -128,7 +136,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		}
 
 		// update session client
-		err = UpdateSessionClient(ctx)
+		err = a.users.SessionManager().UpdateSessionClient(ctx)
 		if err != nil {
 			ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 			return true, err
@@ -163,7 +171,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 
 	// check token in request
 	prev := &Token{}
-	exists, err := a.Encryption.GetAuthParameter(ctx, a.Protocol(), tokenName, prev)
+	exists, err := a.encryption.GetAuthParameter(ctx, a.Protocol(), tokenName, prev)
 	if !exists {
 		return false, err
 	}
@@ -183,26 +191,27 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	now := time.Now()
 
 	// find session
-	session, err := FindSession(ctx, prev.SessionId)
+	session, err := a.users.SessionManager().FindSession(ctx, prev.SessionId)
 	if err != nil {
 		ctx.SetGenericErrorCode(ErrorCodeSessionExpired)
 		return true, err
 	}
 
 	// check if session is valid
-	if !session.Valid {
+	if !session.IsValid() {
 		err = errors.New("session invalidated")
 		ctx.SetGenericErrorCode(ErrorCodeSessionExpired)
 		return true, err
 	}
-	if now.After(session.Expiration) {
+	if now.After(session.GetExpiration()) {
 		err = errors.New("session expired")
 		ctx.SetGenericErrorCode(ErrorCodeSessionExpired)
 		return true, err
 	}
 
 	// load user
-	notfound, err := ctx.LoadUser(session.UserLogin)
+	user := a.users.UserManager().MakeUser()
+	notfound, err := user_manager.FindByLogin(a.users.UserManager(), ctx, session.GetUserLogin(), user)
 	if !db.CheckFoundNoError(notfound, &err) {
 		if err != nil {
 			c.SetMessage("failed to load user")
@@ -213,11 +222,23 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		ctx.SetGenericErrorCode(ErrorCodeUnknownUser)
 		return true, err
 	}
+	ctx.SetLoggerField("user", user.Display())
+
+	// check if user blocked
+	if user.IsBlocked() {
+		err = errors.New("user blocked")
+		ctx.SetGenericErrorCode(auth.ErrorCodeUnauthorized)
+		return true, err
+	}
+
+	// set contect user
+	ctx.SetAuthUser(user)
+
 	// set user session
-	ctx.AuthUser().SetSessionId(session.GetID())
+	ctx.SetSessionId(session.GetID())
 
 	// update session client
-	err = UpdateSessionClient(ctx)
+	err = a.users.SessionManager().UpdateSessionClient(ctx)
 	if err != nil {
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return true, err
@@ -244,7 +265,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		}
 	} else {
 		// invalidate session on logout path
-		err = InvalidateSession(ctx, session.UserId, session.GetID())
+		err = a.users.SessionManager().InvalidateSession(ctx, session.GetUserId(), session.GetID())
 		if err != nil {
 			ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 			return true, err
@@ -262,7 +283,7 @@ func (a *AuthTokenHandler) GenAccessToken(ctx auth.AuthContext) error {
 	return c.SetError(a.GenToken(ctx, AccessTokenName, a.ACCESS_TOKEN_TTL_SECONDS))
 }
 
-func (a *AuthTokenHandler) GenRefreshToken(ctx auth.AuthContext, session *AuthTokenSession) error {
+func (a *AuthTokenHandler) GenRefreshToken(ctx auth.AuthContext, session user_manager.Session) error {
 	c := ctx.TraceInMethod("AuthTokenHandler.GenRefreshToken")
 	var err error
 	onExit := func() {
@@ -274,8 +295,8 @@ func (a *AuthTokenHandler) GenRefreshToken(ctx auth.AuthContext, session *AuthTo
 	defer onExit()
 
 	expirationSeconds := a.REFRESH_TOKEN_TTL_MINUTES * 60
-	session.Expiration = a.SessionExpiration()
-	err = UpdateSessionExpiration(ctx, session)
+	session.SetExpiration(a.SessionExpiration())
+	err = a.users.SessionManager().UpdateSessionExpiration(ctx, session)
 	if err != nil {
 		c.SetMessage("failed to update session expiration")
 		return err
@@ -291,11 +312,11 @@ func (a *AuthTokenHandler) GenToken(ctx auth.AuthContext, paramName string, expi
 
 	token := &Token{}
 	token.Id = utils.GenerateRand64()
-	token.SessionId = ctx.AuthUser().GetSessionId()
+	token.SessionId = ctx.GetSessionId()
 	token.UserDisplay = ctx.AuthUser().Display()
 	token.UserId = ctx.AuthUser().GetID()
 	token.SetTTL(expirationSeconds)
-	return c.SetError(a.Encryption.SetAuthParameter(ctx, a.Protocol(), paramName, token))
+	return c.SetError(a.encryption.SetAuthParameter(ctx, a.Protocol(), paramName, token))
 }
 
 func (a *AuthTokenHandler) SessionExpiration() time.Time {
