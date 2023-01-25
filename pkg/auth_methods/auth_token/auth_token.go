@@ -42,6 +42,7 @@ type Token struct {
 	UserId      string `json:"user_id"`
 	UserDisplay string `json:"user_display"`
 	SessionId   string `json:"session_id"`
+	Tenancy     string `json:"tenancy"`
 }
 
 func (a *AuthTokenHandler) Config() interface{} {
@@ -188,7 +189,16 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		ctx.SetGenericErrorCode(ErrorCodeTokenExpired)
 		return true, err
 	}
-	now := time.Now()
+
+	// check tenancy
+	if ctx.Tenancy() != nil || prev.Tenancy != "" {
+		if ctx.Tenancy() == nil || prev.Tenancy != ctx.Tenancy().GetID() {
+			err = errors.New("invalid tenancy")
+			c.Fields()["token_tenancy"] = prev.Tenancy
+			ctx.SetGenericErrorCode(ErrorCodeSessionExpired)
+			return true, err
+		}
+	}
 
 	// find session
 	session, err := a.users.SessionManager().FindSession(ctx, prev.SessionId)
@@ -203,6 +213,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		ctx.SetGenericErrorCode(ErrorCodeSessionExpired)
 		return true, err
 	}
+	now := time.Now()
 	if now.After(session.GetExpiration()) {
 		err = errors.New("session expired")
 		ctx.SetGenericErrorCode(ErrorCodeSessionExpired)
@@ -231,7 +242,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		return true, err
 	}
 
-	// set contect user
+	// set auth user
 	ctx.SetAuthUser(user)
 
 	// set user session
@@ -246,6 +257,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 
 	// add tokens if applicable
 	if path != a.LOGOUT_PATH {
+
 		if refresh || !refresh && a.AUTO_PROLONGATE_ACCESS {
 			// generate access token
 			err = a.GenAccessToken(ctx)
@@ -263,7 +275,11 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 				}
 			}
 		}
+
 	} else {
+
+		ctx.SetAuthUser(nil)
+
 		// invalidate session on logout path
 		err = a.users.SessionManager().InvalidateSession(ctx, session.GetUserId(), session.GetID())
 		if err != nil {
@@ -315,6 +331,10 @@ func (a *AuthTokenHandler) GenToken(ctx auth.AuthContext, paramName string, expi
 	token.SessionId = ctx.GetSessionId()
 	token.UserDisplay = ctx.AuthUser().Display()
 	token.UserId = ctx.AuthUser().GetID()
+	if ctx.Tenancy() != nil {
+		token.Tenancy = ctx.Tenancy().GetID()
+	}
+
 	token.SetTTL(expirationSeconds)
 	return c.SetError(a.encryption.SetAuthParameter(ctx, a.Protocol(), paramName, token))
 }

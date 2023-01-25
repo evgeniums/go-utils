@@ -16,8 +16,6 @@ type Request interface {
 	parameter.WithParameters
 
 	Server() Server
-	Tenancy() multitenancy.Tenancy
-
 	Response() Response
 }
 

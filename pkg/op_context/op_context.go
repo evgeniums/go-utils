@@ -91,6 +91,8 @@ type Context interface {
 	LoggerFields() logger.Fields
 	UnsetLoggerField(name string)
 
+	// TODO add event logger
+
 	Close()
 }
 

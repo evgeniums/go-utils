@@ -4,6 +4,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
@@ -65,6 +66,8 @@ type AuthContext interface {
 
 	SetAuthParameter(authMethodProtocol string, key string, value string)
 	GetAuthParameter(authMethodProtocol string, key string) string
+
+	Tenancy() multitenancy.Tenancy
 }
 
 type AuthHandler interface {
