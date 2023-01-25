@@ -46,7 +46,7 @@ type Token struct {
 }
 
 func (a *AuthTokenHandler) Config() interface{} {
-	return a.AuthTokenHandlerConfig
+	return &a.AuthTokenHandlerConfig
 }
 
 func New(users user_manager.WithSessionManager) *AuthTokenHandler {

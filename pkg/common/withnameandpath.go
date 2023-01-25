@@ -96,9 +96,9 @@ func (w *WithPathBase) SetParent(parent WithPath) {
 	ps := parent.Sections()
 	last := ps[len(ps)-1]
 	if last == "" {
-		w.sections = append(ps[:len(ps)-1], w.sections[1:]...)
+		w.sections = append(ps[:len(ps)-1], w.sections[0:]...)
 	} else {
-		w.sections = append(ps, w.sections[1:]...)
+		w.sections = append(ps, w.sections[0:]...)
 	}
 }
 

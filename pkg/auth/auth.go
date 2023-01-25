@@ -19,24 +19,38 @@ type Auth interface {
 	HandleRequest(ctx AuthContext, path string, access access_control.AccessType) error
 }
 
+type AuthBaseConfig struct {
+	DEFAULT_SCHEMA string `default:"token"`
+}
+
 type AuthBase struct {
+	AuthBaseConfig
 	manager         AuthManager
 	endpointsConfig EndpointsAuthConfig
+}
+
+func (a *AuthBase) Config() interface{} {
+	return &a.AuthBaseConfig
 }
 
 func (a *AuthBase) Init(cfg config.Config, log logger.Logger, vld validator.Validator, handlerFactory HandlerFactory, configPath ...string) error {
 
 	path := utils.OptionalArg("auth", configPath...)
 
+	err := object_config.LoadLogValidate(cfg, log, vld, a, path)
+	if err != nil {
+		return log.Fatal("Failed to load auth configuration", err)
+	}
+
 	manager := &AuthManagerBase{}
-	err := manager.Init(cfg, log, vld, handlerFactory, object_config.Key(path, "manager"))
+	err = manager.Init(cfg, log, vld, handlerFactory, object_config.Key(path, "manager"))
 	if err != nil {
 		return err
 	}
 	a.manager = manager
 
 	epConfig := &EndpointsAuthConfigBase{}
-	err = epConfig.Init(cfg, log, vld, object_config.Key(path, "endpoints_config"))
+	err = epConfig.Init(cfg, log, vld, object_config.Key(path, "endpoints"))
 	if err != nil {
 		return err
 	}
@@ -52,7 +66,7 @@ func (a *AuthBase) HandleRequest(ctx AuthContext, path string, access access_con
 
 	schema, ok := a.endpointsConfig.Schema(path, access)
 	if !ok {
-		schema = a.endpointsConfig.DefaultSchema()
+		schema = a.DEFAULT_SCHEMA
 	}
 
 	return a.manager.Handle(ctx, schema)

@@ -66,12 +66,17 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 	a.store = NewHandlerStore()
 
 	// create and init auth methods
+	log.Debug("Init auth methods")
 	methodsPath := object_config.Key(path, "methods")
 	methodsSection := cfg.Get(methodsPath)
-	methods := methodsSection.(map[string]interface{})
+	methods, ok := methodsSection.(map[string]interface{})
+	if !ok {
+		return log.Fatal("Failed to initialize authorization methods", errors.New("invalid methods section"), fields)
+	}
 	for methodProtocol := range methods {
-		methodPath := object_config.Key(path, methodProtocol)
-		fields := utils.AppendMapNew(fields, logger.Fields{"method": methodProtocol, "method_path": methodPath})
+		methodPath := object_config.Key(methodsPath, methodProtocol)
+		fields := utils.AppendMapNew(fields, logger.Fields{"auth_method": methodProtocol, "auth_method_path": methodPath})
+		log.Debug("Init auth method", fields)
 		handler, err := handlerFactory.Create(methodProtocol)
 		if err != nil {
 			return log.Fatal("Failed to create authorization method", err, fields)
@@ -84,18 +89,25 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 	}
 
 	// create and init auth schemas
+	log.Debug("Init auth schemas")
 	schemasPath := object_config.Key(path, "schemas")
-	schemasSection := cfg.Get(schemasPath)
-	schemas := schemasSection.([]interface{})
-	for i := range schemas {
-		schemaPath := object_config.KeyInt(path, i)
-		fields := utils.AppendMapNew(fields, logger.Fields{"schema_path": schemaPath})
-		schema := NewAuthSchema()
-		err := schema.InitSchema(log, cfg, vld, a.store, schemaPath)
-		if err != nil {
-			return log.Fatal("Failed to initialize authorization schema", err, fields)
+	if cfg.IsSet("schemas") {
+		schemasSection := cfg.Get(schemasPath)
+		schemas, ok := schemasSection.([]interface{})
+		if !ok {
+			return log.Fatal("Failed to initialize authorization schemas", errors.New("invalid schemas section"), fields)
 		}
-		a.store.AddHandler(schema)
+		for i := range schemas {
+			schemaPath := object_config.KeyInt(path, i)
+			fields := utils.AppendMapNew(fields, logger.Fields{"schema_path": schemaPath})
+			log.Debug("Init auth schema", fields)
+			schema := NewAuthSchema()
+			err := schema.InitSchema(log, cfg, vld, a.store, schemaPath)
+			if err != nil {
+				return log.Fatal("Failed to initialize authorization schema", err, fields)
+			}
+			a.store.AddHandler(schema)
+		}
 	}
 
 	// done

@@ -35,9 +35,13 @@ type AuthSchema struct {
 
 func NewAuthSchema() *AuthSchema {
 	s := &AuthSchema{}
+	s.Setup()
+	return s
+}
+
+func (s *AuthSchema) Setup() {
 	s.config = &AuthSchemaConfig{}
 	s.handlers = make([]AuthHandler, 0)
-	return s
 }
 
 func (a *AuthSchema) Config() interface{} {

@@ -35,7 +35,7 @@ type EndpointBase struct {
 }
 
 func (e *EndpointBase) Init(path string, name string, accessType access_control.AccessType) {
-	e.WithNameAndPathBase.Init(name, path)
+	e.WithNameAndPathBase.Init(path, name)
 	e.accessType = accessType
 }
 

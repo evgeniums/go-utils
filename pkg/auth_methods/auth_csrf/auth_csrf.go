@@ -33,20 +33,20 @@ func New() *AuthCsrf {
 }
 
 func (a *AuthCsrf) Config() interface{} {
-	return a.AuthCsrfConfig
+	return &a.AuthCsrfConfig
 }
 
 func (a *AuthCsrf) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
 	a.AuthHandlerBase.Init(AntiCsrfProtocol)
 
-	err := object_config.LoadLogValidate(cfg, log, vld, a, "auth.methods.csrf", configPath...)
+	err := object_config.LoadLogValidate(cfg, log, vld, a, "csrf", configPath...)
 	if err != nil {
 		return log.Fatal("Failed to load configuration of CSRF handler", err)
 	}
 
 	encryption := &auth.AuthParameterEncryptionBase{}
-	err = object_config.LoadLogValidate(cfg, log, vld, encryption, "auth.methods.csrf", configPath...)
+	err = object_config.LoadLogValidate(cfg, log, vld, encryption, "csrf", configPath...)
 	if err != nil {
 		return log.Fatal("Failed to load configuration of CSRF encryption", err)
 	}

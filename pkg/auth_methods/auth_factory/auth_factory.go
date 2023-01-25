@@ -8,6 +8,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_token"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/noauth"
 	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 )
 
@@ -30,6 +31,8 @@ func (f *DefaultAuthFactory) Create(protocol string) (auth.AuthHandler, error) {
 		return &auth_hmac.AuthHmac{}, nil
 	case auth_sms.SmsProtocol:
 		return &auth_hmac.AuthHmac{}, nil
+	case noauth.NoAuthProtocol:
+		return &noauth.NoAuth{}, nil
 
 	}
 

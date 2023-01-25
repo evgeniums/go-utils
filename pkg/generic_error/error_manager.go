@@ -33,6 +33,8 @@ type ErrorManagerBase struct {
 
 func (e *ErrorManagerBase) Init(defaultProtocolCode int) {
 	e.defaultProtocolCode = defaultProtocolCode
+	e.descriptions = make(map[string]string)
+	e.protocolCodes = make(map[string]int)
 	e.AddErrorDescriptions(CommonErrorDescriptions)
 }
 

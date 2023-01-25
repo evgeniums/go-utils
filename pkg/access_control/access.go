@@ -20,7 +20,7 @@ const (
 	Delete AccessType = 40
 
 	Post = Create
-	Get  = Read
+	Get  = ReadContent
 
 	All AccessType = 0xFFFFFFFF
 )
@@ -78,17 +78,37 @@ func HttpMethod2Access(method string) AccessType {
 	return at
 }
 
-var accessTypes2HttpMethods = map[AccessType]string{
-	ReadContent:   http.MethodGet,
-	Create:        http.MethodPost,
-	UpdateReplace: http.MethodPut,
-	UpdatePartial: http.MethodPatch,
-	Delete:        http.MethodDelete,
-	ReadMeta:      http.MethodHead,
-	ReadOptions:   http.MethodOptions,
-}
-
 func Access2HttpMethod(access AccessType) string {
-	method := accessTypes2HttpMethods[access]
-	return method
+
+	a := NewAccess(uint32(access))
+
+	if a.Check(ReadContent) {
+		return http.MethodGet
+	}
+
+	if a.Check(Create) {
+		return http.MethodPost
+	}
+
+	if a.Check(UpdateReplace) {
+		return http.MethodPut
+	}
+
+	if a.Check(UpdatePartial) {
+		return http.MethodPatch
+	}
+
+	if a.Check(Delete) {
+		return http.MethodDelete
+	}
+
+	if a.Check(ReadMeta) {
+		return http.MethodHead
+	}
+
+	if a.Check(ReadOptions) {
+		return http.MethodOptions
+	}
+
+	return ""
 }

@@ -66,7 +66,7 @@ type AuthSms struct {
 }
 
 func (a *AuthSms) Config() interface{} {
-	return a.AuthSmsConfig
+	return &a.AuthSmsConfig
 }
 
 func NewAuthSms(smsManager sms.SmsManager) *AuthSms {

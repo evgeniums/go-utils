@@ -29,7 +29,7 @@ type AuthHmac struct {
 }
 
 func (a *AuthHmac) Config() interface{} {
-	return a
+	return &a.AuthHmacConfig
 }
 
 func (a *AuthHmac) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {

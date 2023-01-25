@@ -31,7 +31,7 @@ type AuthParameterEncryptionBase struct {
 }
 
 func (a *AuthParameterEncryptionBase) Config() interface{} {
-	return a.AuthParameterEncryptionBaseConfig
+	return &a.AuthParameterEncryptionBaseConfig
 }
 
 func (a *AuthParameterEncryptionBase) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {

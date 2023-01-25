@@ -148,14 +148,16 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 	s.WithAppBase.Init(ctx)
 	s.WithAuthBase.Init(auth)
 
+	defaultPath := "rest_api_server"
+
 	// load configuration
-	err = object_config.LoadLogValidate(ctx.Cfg(), ctx.Logger(), ctx.Validator(), s, "api_server", configPath...)
+	err = object_config.LoadLogValidate(ctx.Cfg(), ctx.Logger(), ctx.Validator(), s, defaultPath, configPath...)
 	if err != nil {
 		return ctx.Logger().Fatal("Failed to load server configuration", err, logger.Fields{"name": s.Name()})
 	}
 
 	// load CSRF configuration
-	csrfKey := object_config.Key(utils.OptionalArg("api_server", configPath...), "csrf")
+	csrfKey := object_config.Key(utils.OptionalArg(defaultPath, configPath...), "csrf")
 	if ctx.Cfg().IsSet(csrfKey) {
 		s.csrf = auth_csrf.New()
 		err = s.csrf.Init(ctx.Cfg(), ctx.Logger(), ctx.Validator(), csrfKey)
@@ -165,7 +167,7 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 	}
 
 	// init gin router
-	s.ginEngine = gin.Default()
+	s.ginEngine = gin.New()
 	// trusted proxies are needed for correct logging of client IP address
 	s.ginEngine.SetTrustedProxies(s.TRUSTED_PROXIES)
 	// use default logger for unhandled paths, use recovery middleware to catch panic failures
@@ -250,6 +252,9 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 func (s *Server) AddEndpoint(ep api_server.Endpoint) {
 
 	method := access_control.Access2HttpMethod(ep.AccessType())
+	if method == "" {
+		panic(fmt.Sprintf("Invalid HTTP method in endpoint %s for access %d", ep.Name(), ep.AccessType()))
+	}
 
 	var fullPath string
 	if !s.IsMultiTenancy() {

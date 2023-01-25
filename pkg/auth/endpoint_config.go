@@ -11,7 +11,6 @@ import (
 
 type EndpointsAuthConfig interface {
 	Schema(path string, accessType access_control.AccessType) (string, bool)
-	DefaultSchema() string
 }
 
 type endpointSchema struct {
@@ -24,17 +23,8 @@ func (e *endpointSchema) Config() interface{} {
 	return e
 }
 
-type EndpointsAuthConfigBaseConfig struct {
-	DEFAULT_SCHEMA string `default:"jwt"`
-}
-
 type EndpointsAuthConfigBase struct {
-	EndpointsAuthConfigBaseConfig
 	endpoints map[string][]endpointSchema
-}
-
-func (e *EndpointsAuthConfigBase) Config() interface{} {
-	return &e.EndpointsAuthConfigBaseConfig
 }
 
 func (e *EndpointsAuthConfigBase) Schema(path string, access access_control.AccessType) (string, bool) {
@@ -59,15 +49,9 @@ func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld
 	fields := logger.Fields{"where": "EndpointsAuthConfigBase.Init", "config_path": path}
 	log.Info("Init configuration of endpoints authorization", fields)
 
-	err := object_config.LoadLogValidate(cfg, log, vld, e, path)
-	if err != nil {
-		return log.Fatal("Failed to load configuration", err, fields)
-	}
-
 	e.endpoints = make(map[string][]endpointSchema)
 
-	endpointsPath := object_config.Key(path, "endpoints")
-	endpointsSection := cfg.Get(endpointsPath)
+	endpointsSection := cfg.Get(path)
 	endpoints := endpointsSection.(map[string]interface{})
 	for endpoint := range endpoints {
 		endpointPath := object_config.Key(path, endpoint)
@@ -96,8 +80,4 @@ func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld
 	// TODO log configuration
 
 	return nil
-}
-
-func (e *EndpointsAuthConfigBase) DefaultSchema() string {
-	return e.DEFAULT_SCHEMA
 }
