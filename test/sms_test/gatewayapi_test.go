@@ -1,9 +1,11 @@
 package sms_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context/app_default"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms/providers/gatewayapi"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
@@ -38,8 +40,11 @@ func TestGatewayapi(t *testing.T) {
 
 	opCtx := &op_context.ContextBase{}
 	opCtx.Init(app, app.Logger(), app.DB())
+	errManager := &generic_error.ErrorManagerBase{}
+	errManager.Init(http.StatusBadRequest)
+	opCtx.SetErrorManager(errManager)
 
-	resp, err := sender.Send(opCtx, "Test message", phone)
+	resp, err := sender.Send(opCtx, "Confirmation code 9350", phone)
 	opCtx.Close()
 	if resp != nil {
 		t.Logf("Response: %+v", resp)

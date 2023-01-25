@@ -20,15 +20,22 @@ type Message struct {
 	Message    string      `json:"message"`
 	Recipients []Recipient `json:"recipients"`
 	Usereref   string      `json:"userref"`
+	Sender     string      `json:"sender"`
+}
+
+type MessageWithSender struct {
+	Message
+	Sender string `json:"sender"`
 }
 
 type GoodResponse struct {
-	Ids []string `json:"ids"`
+	Ids []int `json:"ids"`
 }
 
 type SmsGatewayapiConfig struct {
-	URL   string `validate:"required,url"`
-	TOKEN string `validate:"required" mask:"true"`
+	URL    string `validate:"required,url"`
+	TOKEN  string `validate:"required" mask:"true"`
+	SENDER string
 }
 
 type SmsGatewayapi struct {
@@ -51,7 +58,7 @@ func (s *SmsGatewayapi) Init(cfg config.Config, log logger.Logger, vld validator
 		return log.Fatal("Failed to init SmsGatewayapi", err)
 	}
 
-	s.sendUrl = fmt.Sprintf("%s/rest/mtsms", s.URL)
+	s.sendUrl = fmt.Sprintf("%s/rest/mtsms?token=%s", s.URL, s.TOKEN)
 	return nil
 }
 
@@ -69,17 +76,23 @@ func (s *SmsGatewayapi) Send(ctx op_context.Context, message string, recipient s
 	defer onExit()
 
 	recipients := []Recipient{{Msisdn: recipient}}
-	msg := &Message{Message: message, Recipients: recipients}
+	msg := Message{Message: message, Recipients: recipients}
 	if len(smsID) > 0 {
 		msg.Usereref = smsID[0]
 		c.Fields()["sms_id"] = msg.Usereref
 	}
 
-	request, err := http_request.NewPost(ctx, s.sendUrl, msg)
+	var obj interface{}
+	if s.SENDER != "" {
+		obj = &MessageWithSender{Message: msg, Sender: s.SENDER}
+	} else {
+		obj = &msg
+	}
+
+	request, err := http_request.NewPost(ctx, s.sendUrl, obj)
 	if err != nil {
 		return nil, err
 	}
-	request.SetAuthHeader("Basic", s.TOKEN)
 
 	response := &GoodResponse{}
 	request.GoodResponse = response
@@ -93,7 +106,7 @@ func (s *SmsGatewayapi) Send(ctx op_context.Context, message string, recipient s
 
 	result := &sms.ProviderResponse{RawContent: request.ResponseContent}
 	if len(response.Ids) > 0 {
-		result.ProviderMessageID = response.Ids[0]
+		result.ProviderMessageID = fmt.Sprintf("%d", response.Ids[0])
 	}
 
 	return result, nil
