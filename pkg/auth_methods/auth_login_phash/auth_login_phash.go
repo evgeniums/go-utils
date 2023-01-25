@@ -124,12 +124,9 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	// check if user blocked
 	if dbUser.IsBlocked() {
 		err = errors.New("user blocked")
-		ctx.SetGenericErrorCode(auth.ErrorCodeUnauthorized)
+		ctx.SetGenericErrorCode(ErrorCodeLoginFailed)
 		return true, err
 	}
-
-	// set context user
-	ctx.SetAuthUser(dbUser)
 
 	// user must be of User interface
 	phashUser, ok := dbUser.(User)
@@ -154,11 +151,13 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		hash.CalcStrIn(login, password, salt)
 		err = hash.CheckStr(phash)
 		if err != nil {
-			ctx.SetAuthUser(nil)
 			c.SetMessage("invalid password hash")
 			ctx.SetGenericErrorCode(ErrorCodeLoginFailed)
 			return true, err
 		}
+
+		// set context user
+		ctx.SetAuthUser(dbUser)
 
 		// done
 		return true, nil

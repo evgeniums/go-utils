@@ -227,7 +227,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	// check if user blocked
 	if user.IsBlocked() {
 		err = errors.New("user blocked")
-		ctx.SetGenericErrorCode(auth.ErrorCodeUnauthorized)
+		ctx.SetGenericErrorCode(ErrorCodeSessionExpired)
 		return true, err
 	}
 
