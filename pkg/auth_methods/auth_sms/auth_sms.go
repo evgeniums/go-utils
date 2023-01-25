@@ -16,6 +16,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
@@ -278,7 +279,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 		return true, err
 	}
 
-	// user must be of UserWithPasswordHash interface
+	// user must be of UserWithPhone interface
 	user, ok := ctx.AuthUser().(UserWithPhone)
 	if !ok {
 		c.SetMessage("user must be of UserWithPhone interface")
@@ -293,6 +294,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 		ctx.SetGenericErrorCode(ErrorCodeInvalidPhone)
 		return true, err
 	}
+	ctx.SetAuthParameter(SmsProtocol, PhoneName, utils.MaskPhone(phone))
 
 	// prepare token
 	token := &SmsToken{}
@@ -327,6 +329,8 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 	if err1 != nil {
 		c.Logger().Error("failed to save SMS delay item in cache", err1)
 	}
+	// set delay parameter
+	ctx.SetAuthParameter(SmsProtocol, DelayName, fmt.Sprintf("%d", a.SMS_DELAY_SECONDS))
 
 	// set response code
 	ctx.SetGenericErrorCode(ErrorCodeSmsConfirmationRequired)
