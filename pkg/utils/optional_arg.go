@@ -9,3 +9,10 @@ func OptionalArg[T any](defaultArg T, optional ...T) T {
 	}
 	return arg
 }
+
+func OptionalString(defaultVal string, optional string) string {
+	if optional == "" {
+		return defaultVal
+	}
+	return optional
+}
