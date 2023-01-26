@@ -16,7 +16,7 @@ func TestDate(t *testing.T) {
 
 	d1, err := utils.StrToDate("2022-07-28")
 	if err != nil {
-		t.Fatalf("Failed to parse date: %s", err)
+		t.Fatalf("failed to parse date: %s", err)
 	}
 
 	expected := 20220728

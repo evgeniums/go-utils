@@ -126,7 +126,7 @@ func (c *Context) Init(configFile string, configType ...string) error {
 	// load top level application configuration
 	err = object_config.LoadLogValidate(c.Cfg(), log, c.validator, c, "")
 	if err != nil {
-		return log.Fatal("Failed to load application configuration", err)
+		return log.PushFatalStack("failed to load application configuration", err)
 	}
 
 	// setup testing

@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"errors"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
@@ -44,6 +46,9 @@ type Logger interface {
 	ErrorRaw(...interface{})
 
 	Native() interface{}
+
+	PushFatalStack(message string, err error, fields ...Fields) error
+	CheckFatalStack(Logger)
 }
 
 type WithLogger interface {
@@ -67,10 +72,16 @@ func (w *WithLoggerBase) SetLogger(logger Logger) {
 	w.logger = logger
 }
 
-func AppendFields(f Fields, fields ...Fields) Fields {
+func AppendFields(f Fields, fields ...Fields) {
+	if len(fields) > 0 {
+		utils.AppendMap(f, fields[0])
+	}
+}
+
+func AppendFieldsNew(f Fields, fields ...Fields) Fields {
 	newFields := utils.CopyMap(f)
 	if len(fields) > 0 {
-		newFields = utils.AppendMap(newFields, fields[0])
+		utils.AppendMap(newFields, fields[0])
 	}
 	return newFields
 }
@@ -80,4 +91,64 @@ func NewFields(fields ...Fields) Fields {
 		return utils.CopyMap(fields[0])
 	}
 	return Fields{}
+}
+
+type fatalError struct {
+	messageStack []string
+	deepestError error
+	fields       Fields
+}
+
+type LoggerBase struct {
+	fatalError fatalError
+}
+
+func (l *LoggerBase) Init() {
+	l.fatalError.messageStack = make([]string, 0)
+	l.fatalError.fields = NewFields()
+	l.fatalError.deepestError = nil
+}
+
+func (l *LoggerBase) CheckFatalStack(logger Logger) {
+	if l.fatalError.deepestError != nil {
+		errMsg := ""
+		for i := len(l.fatalError.messageStack) - 1; i >= 0; i-- {
+			msg := l.fatalError.messageStack[i]
+			errMsg += msg
+			if i != 0 {
+				errMsg += ": "
+			}
+		}
+		logger.Fatal(errMsg, l.fatalError.deepestError, l.fatalError.fields)
+		l.Init()
+	}
+}
+
+func (l *LoggerBase) PushFatalStack(message string, err error, fields ...Fields) error {
+	if l.fatalError.messageStack == nil {
+		l.Init()
+	}
+
+	e := err
+	if e == nil {
+		if message == "" {
+			e = errors.New("unknown error")
+		} else {
+			e = errors.New(message)
+		}
+	}
+
+	if l.fatalError.deepestError == nil {
+		l.fatalError.deepestError = e
+	}
+
+	if message != "" {
+		l.fatalError.messageStack = append(l.fatalError.messageStack, message)
+	} else {
+		l.fatalError.messageStack = append(l.fatalError.messageStack, e.Error())
+	}
+
+	AppendFields(l.fatalError.fields, fields...)
+
+	return e
 }

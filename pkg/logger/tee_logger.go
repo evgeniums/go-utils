@@ -92,3 +92,23 @@ func (t *TeeLogger) Fatal(message string, err error, fields ...Fields) error {
 func (t *TeeLogger) Native() interface{} {
 	return t.loggers[0].Native()
 }
+
+func (t *TeeLogger) PushFatalStack(message string, err error, fields ...Fields) error {
+	for _, logger := range t.loggers {
+		logger.PushFatalStack(message, err, fields...)
+	}
+	if err == nil {
+		if message != "" {
+			return errors.New(message)
+		} else {
+			return errors.New("unknown error")
+		}
+	}
+	return err
+}
+
+func (t *TeeLogger) CheckFatalStack(l Logger) {
+	for _, logger := range t.loggers {
+		logger.CheckFatalStack(logger)
+	}
+}

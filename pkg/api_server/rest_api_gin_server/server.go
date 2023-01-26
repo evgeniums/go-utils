@@ -153,7 +153,7 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 	// load configuration
 	err = object_config.LoadLogValidate(ctx.Cfg(), ctx.Logger(), ctx.Validator(), s, defaultPath, configPath...)
 	if err != nil {
-		return ctx.Logger().Fatal("Failed to load server configuration", err, logger.Fields{"name": s.Name()})
+		return ctx.Logger().PushFatalStack("failed to load server configuration", err, logger.Fields{"name": s.Name()})
 	}
 
 	// load CSRF configuration
@@ -162,7 +162,7 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 		s.csrf = auth_csrf.New()
 		err = s.csrf.Init(ctx.Cfg(), ctx.Logger(), ctx.Validator(), csrfKey)
 		if err != nil {
-			return ctx.Logger().Fatal("Failed to load anti-CSRF configuration", err)
+			return ctx.Logger().PushFatalStack("failed to load anti-CSRF configuration", err)
 		}
 	}
 

@@ -1,8 +1,6 @@
 package auth_factory
 
 import (
-	"fmt"
-
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_token"
@@ -40,12 +38,12 @@ func (l *LoginphashToken) InitLoginToken(cfg config.Config, log logger.Logger, v
 
 	err := l.Login.Init(cfg, log, vld, loginCfgPath)
 	if err != nil {
-		return fmt.Errorf("failed to init login handler: %s", err)
+		return log.PushFatalStack("failed to init login handler", err)
 	}
 
 	err = l.Token.Init(cfg, log, vld, tokenCfgPath)
 	if err != nil {
-		return fmt.Errorf("failed to init token handler: %s", err)
+		return log.PushFatalStack("failed to init token handler", err)
 	}
 
 	return nil

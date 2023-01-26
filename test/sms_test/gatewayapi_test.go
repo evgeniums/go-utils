@@ -1,6 +1,7 @@
 package sms_test
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -15,6 +16,7 @@ func TestGatewayapi(t *testing.T) {
 
 	configFile := "gatewayapi_config.json"
 
+	fmt.Printf("config=%s, phone=%s\n", test_utils.ExternalConfigFilePath(configFile), test_utils.Phone)
 	if !test_utils.ExternalConfigFileExists(configFile) || test_utils.Phone == "" {
 		t.Skip("Skip TestGatewayapi because external config or phone not defined")
 	}
@@ -25,7 +27,7 @@ func TestGatewayapi(t *testing.T) {
 	app := app_default.New(nil)
 	err := app.Init(configFile)
 	if err != nil {
-		t.Fatalf("Failed to init application context: %s", err)
+		t.Fatalf("failed to init application context: %s", err)
 	}
 
 	sender := gatewayapi.New()
@@ -33,9 +35,12 @@ func TestGatewayapi(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected failure, got passed")
 	}
+	app.Logger().CheckFatalStack(app.Logger())
+
 	err = sender.Init(app.Cfg(), app.Logger(), app.Validator(), "gatewayapi")
 	if err != nil {
-		t.Fatalf("Failed to init gatewayapi module: %s", err)
+		app.Logger().CheckFatalStack(app.Logger())
+		t.Fatalf("failed to init gatewayapi module")
 	}
 
 	opCtx := &op_context.ContextBase{}
@@ -50,6 +55,6 @@ func TestGatewayapi(t *testing.T) {
 		t.Logf("Response: %+v", resp)
 	}
 	if err != nil {
-		t.Fatalf("Failed to send SMS: %s", err)
+		t.Fatalf("failed to send SMS: %s", err)
 	}
 }

@@ -135,8 +135,8 @@ func (c *ContextBase) Init(app app_context.Context, log logger.Logger, db db.DB,
 
 	c.id = utils.GenerateID()
 
-	staticLoggerFields := logger.AppendFields(logger.Fields{"context": c.id})
-	c.proxyLogger = logger.NewProxy(log, logger.AppendFields(staticLoggerFields, fields...))
+	staticLoggerFields := logger.AppendFieldsNew(logger.Fields{"context": c.id})
+	c.proxyLogger = logger.NewProxy(log, logger.AppendFieldsNew(staticLoggerFields, fields...))
 	c.WithLoggerBase.Init(c.proxyLogger)
 	c.cache = app.Cache()
 

@@ -61,13 +61,13 @@ func (a *AuthTokenHandler) Init(cfg config.Config, log logger.Logger, vld valida
 
 	err := object_config.LoadLogValidate(cfg, log, vld, a, "auth.methods.token", configPath...)
 	if err != nil {
-		return log.Fatal("Failed to load configuration of TOKEN handler", err)
+		return log.PushFatalStack("failed to load configuration of TOKEN handler", err)
 	}
 
 	encryption := &auth.AuthParameterEncryptionBase{}
 	err = object_config.LoadLogValidate(cfg, log, vld, encryption, "auth.methods.csrf", configPath...)
 	if err != nil {
-		return log.Fatal("Failed to load configuration of TOKEN encryption", err)
+		return log.PushFatalStack("failed to load configuration of TOKEN encryption", err)
 	}
 	a.encryption = encryption
 

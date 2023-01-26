@@ -38,41 +38,49 @@ func (p *ProxyLogger) ErrorRaw(data ...interface{}) {
 }
 
 func (p *ProxyLogger) Log(level Level, message string, fields ...Fields) {
-	p.logger.Log(level, message, AppendFields(p.staticFields, fields...))
+	p.logger.Log(level, message, AppendFieldsNew(p.staticFields, fields...))
 }
 
 func (p *ProxyLogger) Debug(message string, fields ...Fields) {
-	p.logger.Debug(message, AppendFields(p.staticFields, fields...))
+	p.logger.Debug(message, AppendFieldsNew(p.staticFields, fields...))
 }
 
 func (p *ProxyLogger) Trace(message string, fields ...Fields) {
-	p.logger.Trace(message, AppendFields(p.staticFields, fields...))
+	p.logger.Trace(message, AppendFieldsNew(p.staticFields, fields...))
 }
 
 func (p *ProxyLogger) Error(message string, err error, fields ...Fields) error {
-	return p.logger.Error(message, err, AppendFields(p.staticFields, fields...))
+	return p.logger.Error(message, err, AppendFieldsNew(p.staticFields, fields...))
 }
 
 func (p *ProxyLogger) ErrorNative(err error, fields ...Fields) {
-	p.logger.ErrorNative(err, AppendFields(p.staticFields, fields...))
+	p.logger.ErrorNative(err, AppendFieldsNew(p.staticFields, fields...))
 }
 
 func (p *ProxyLogger) ErrorMessage(message string, fields ...Fields) {
-	p.logger.ErrorMessage(message, AppendFields(p.staticFields, fields...))
+	p.logger.ErrorMessage(message, AppendFieldsNew(p.staticFields, fields...))
 }
 
 func (p *ProxyLogger) Warn(message string, fields ...Fields) {
-	p.logger.Warn(message, AppendFields(p.staticFields, fields...))
+	p.logger.Warn(message, AppendFieldsNew(p.staticFields, fields...))
 }
 
 func (p *ProxyLogger) Info(message string, fields ...Fields) {
-	p.logger.Info(message, AppendFields(p.staticFields, fields...))
+	p.logger.Info(message, AppendFieldsNew(p.staticFields, fields...))
 }
 
 func (p *ProxyLogger) Fatal(message string, err error, fields ...Fields) error {
-	return p.logger.Fatal(message, err, AppendFields(p.staticFields, fields...))
+	return p.logger.Fatal(message, err, AppendFieldsNew(p.staticFields, fields...))
 }
 
 func (p *ProxyLogger) Native() interface{} {
 	return p.logger.Native()
+}
+
+func (p *ProxyLogger) PushFatalStack(message string, err error, fields ...Fields) error {
+	return p.logger.PushFatalStack(message, err, AppendFieldsNew(p.staticFields, fields...))
+}
+
+func (p *ProxyLogger) CheckFatalStack(l Logger) {
+	p.logger.CheckFatalStack(l)
 }

@@ -39,7 +39,7 @@ func (a *AuthBase) Init(cfg config.Config, log logger.Logger, vld validator.Vali
 
 	err := object_config.LoadLogValidate(cfg, log, vld, a, path)
 	if err != nil {
-		return log.Fatal("Failed to load auth configuration", err)
+		return log.PushFatalStack("failed to load auth configuration", err)
 	}
 
 	manager := &AuthManagerBase{}

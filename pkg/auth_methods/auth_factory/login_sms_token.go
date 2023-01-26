@@ -1,8 +1,6 @@
 package auth_factory
 
 import (
-	"fmt"
-
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_sms"
@@ -37,7 +35,7 @@ func (l *LoginphashSmsToken) InitSms(cfg config.Config, log logger.Logger, vld v
 	sms := &auth_sms.AuthSms{}
 	err := sms.Init(cfg, log, vld, smsCfgPath)
 	if err != nil {
-		return fmt.Errorf("failed to init SMS handler: %s", err)
+		return log.PushFatalStack("failed to init SMS handler", err)
 	}
 	l.Sms = sms
 

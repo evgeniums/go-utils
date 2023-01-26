@@ -20,6 +20,7 @@ type logrusConfig struct {
 }
 
 type LogrusLogger struct {
+	logger.LoggerBase
 	logrusConfig
 	logRus *logrus.Logger
 }
@@ -57,7 +58,7 @@ func (l *LogrusLogger) Error(message string, err error, fields ...logger.Fields)
 			e = errors.New("unknown error")
 		}
 	}
-	f := logger.AppendFields(logger.Fields{"error": e}, fields...)
+	f := logger.AppendFieldsNew(logger.Fields{"error": e}, fields...)
 	if message != "" && err != nil {
 		l.logRus.WithFields(f).Error(message)
 	} else {
@@ -83,7 +84,7 @@ func (l *LogrusLogger) Fatal(message string, err error, fields ...logger.Fields)
 			e = errors.New("unknown error")
 		}
 	}
-	f := logger.AppendFields(logger.Fields{"error": e}, fields...)
+	f := logger.AppendFieldsNew(logger.Fields{"error": e}, fields...)
 	if message != "" && err != nil {
 		l.logRus.WithFields(f).Log(logrus.FatalLevel, message)
 	} else {
@@ -93,6 +94,8 @@ func (l *LogrusLogger) Fatal(message string, err error, fields ...logger.Fields)
 }
 
 func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPath ...string) error {
+
+	l.LoggerBase.Init()
 
 	// load configuration
 	err := object_config.LoadValidate(cfg, vld, l, "logger", configPath...)
@@ -112,7 +115,7 @@ func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPa
 			logrus.SetOutput(writer)
 			fmt.Printf("Using log file %v\n", l.FILE)
 		} else {
-			fmt.Println("Failed to log to file, using default console")
+			fmt.Println("failed to log to file, using default console")
 		}
 	} else {
 		l.logRus.Out = os.Stdout
@@ -140,7 +143,7 @@ func (l *LogrusLogger) Native() interface{} {
 }
 
 func (l *LogrusLogger) ErrorNative(err error, fields ...logger.Fields) {
-	f := logger.AppendFields(logger.Fields{"error": err}, fields...)
+	f := logger.AppendFieldsNew(logger.Fields{"error": err}, fields...)
 	l.logRus.WithFields(f).Error()
 }
 

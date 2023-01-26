@@ -38,7 +38,7 @@ func (a *AuthHmac) Init(cfg config.Config, log logger.Logger, vld validator.Vali
 
 	err := object_config.LoadLogValidate(cfg, log, vld, a, "auth.methods.hmac", configPath...)
 	if err != nil {
-		return log.Fatal("Failed to load configuration of HMAC auth handler", err)
+		return log.PushFatalStack("failed to load configuration of HMAC auth handler", err)
 	}
 	return nil
 }

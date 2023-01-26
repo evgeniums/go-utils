@@ -71,7 +71,7 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 	methodsSection := cfg.Get(methodsPath)
 	methods, ok := methodsSection.(map[string]interface{})
 	if !ok {
-		return log.Fatal("Failed to initialize authorization methods", errors.New("invalid methods section"), fields)
+		return log.PushFatalStack("failed to initialize authorization methods", errors.New("invalid methods section"), fields)
 	}
 	for methodProtocol := range methods {
 		methodPath := object_config.Key(methodsPath, methodProtocol)
@@ -79,11 +79,11 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 		log.Debug("Init auth method", fields)
 		handler, err := handlerFactory.Create(methodProtocol)
 		if err != nil {
-			return log.Fatal("Failed to create authorization method", err, fields)
+			return log.PushFatalStack("failed to create authorization method", err, fields)
 		}
 		err = handler.Init(cfg, log, vld, methodPath)
 		if err != nil {
-			return log.Fatal("Failed to initialize authorization method", err, fields)
+			return log.PushFatalStack("failed to initialize authorization method", err, fields)
 		}
 		a.store.AddHandler(handler)
 	}
@@ -95,7 +95,7 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 		schemasSection := cfg.Get(schemasPath)
 		schemas, ok := schemasSection.([]interface{})
 		if !ok {
-			return log.Fatal("Failed to initialize authorization schemas", errors.New("invalid schemas section"), fields)
+			return log.PushFatalStack("failed to initialize authorization schemas", errors.New("invalid schemas section"), fields)
 		}
 		for i := range schemas {
 			schemaPath := object_config.KeyInt(path, i)
@@ -104,7 +104,7 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 			schema := NewAuthSchema()
 			err := schema.InitSchema(log, cfg, vld, a.store, schemaPath)
 			if err != nil {
-				return log.Fatal("Failed to initialize authorization schema", err, fields)
+				return log.PushFatalStack("failed to initialize authorization schema", err, fields)
 			}
 			a.store.AddHandler(schema)
 		}

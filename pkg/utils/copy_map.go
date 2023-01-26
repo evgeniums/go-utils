@@ -21,11 +21,10 @@ func CopyMapOneLevel[T1 comparable, T2 any](m map[T1]T2) map[T1]T2 {
 	return cp
 }
 
-func AppendMap[T any](m1 map[string]T, m2 map[string]T) map[string]T {
+func AppendMap[T any](m1 map[string]T, m2 map[string]T) {
 	for k, v := range m2 {
 		m1[k] = v
 	}
-	return m1
 }
 
 func AppendMapNew(m1 map[string]interface{}, m2 map[string]interface{}) map[string]interface{} {

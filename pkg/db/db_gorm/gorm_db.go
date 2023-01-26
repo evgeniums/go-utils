@@ -86,7 +86,7 @@ func (g *GormDB) Init(ctx logger.WithLogger, cfg config.Config, vld validator.Va
 	// load configuration
 	err := object_config.LoadLogValidate(cfg, ctx.Logger(), vld, g, "psql", configPath...)
 	if err != nil {
-		return ctx.Logger().Fatal("Failed to load GormDB configuration", err)
+		return ctx.Logger().PushFatalStack("failed to load GormDB configuration", err)
 	}
 
 	// connect database
@@ -104,7 +104,7 @@ func (g *GormDB) InitWithConfig(ctx logger.WithLogger, vld validator.Validator, 
 	// validate configuration
 	err := vld.Validate(g.Config())
 	if err != nil {
-		return ctx.Logger().Fatal("Failed to validate GormDB configuration", err)
+		return ctx.Logger().PushFatalStack("failed to validate GormDB configuration", err)
 	}
 
 	// connect database
@@ -117,11 +117,11 @@ func (g *GormDB) Connect(ctx logger.WithLogger) error {
 	dsn := fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable", g.HOST, g.PORT, g.USER, g.DBNAME, g.PASSWORD)
 	dbDialector, err := g.dbConnector(g.PROVIDER, dsn)
 	if err != nil {
-		return ctx.Logger().Fatal("Failed to connect to database", err)
+		return ctx.Logger().PushFatalStack("failed to connect to database", err)
 	}
 	g.db, err = ConnectDB(dbDialector)
 	if err != nil {
-		return ctx.Logger().Fatal("Failed to connect to database", err)
+		return ctx.Logger().PushFatalStack("failed to connect to database", err)
 	}
 
 	// done
@@ -131,7 +131,7 @@ func (g *GormDB) Connect(ctx logger.WithLogger) error {
 func (g *GormDB) AutoMigrate(ctx logger.WithLogger, models []interface{}) error {
 	err := g.db_().AutoMigrate(models...)
 	if err != nil {
-		return ctx.Logger().Fatal("Failed to migrate database", err)
+		return ctx.Logger().PushFatalStack("failed to migrate database", err)
 	}
 	return nil
 }

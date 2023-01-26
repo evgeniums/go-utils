@@ -81,13 +81,13 @@ func (a *AuthSms) Init(cfg config.Config, log logger.Logger, vld validator.Valid
 
 	err := object_config.LoadLogValidate(cfg, log, vld, a, "auth.methods.sms", configPath...)
 	if err != nil {
-		return log.Fatal("Failed to load configuration of auth SMS handler", err)
+		return log.PushFatalStack("failed to load configuration of auth SMS handler", err)
 	}
 
 	encryption := &auth.AuthParameterEncryptionBase{}
 	err = object_config.LoadLogValidate(cfg, log, vld, encryption, "auth.methods.sms", configPath...)
 	if err != nil {
-		return log.Fatal("Failed to load configuration of auth SMS encryption", err)
+		return log.PushFatalStack("failed to load configuration of auth SMS encryption", err)
 	}
 	a.Encryption = encryption
 
@@ -113,7 +113,7 @@ func (a *AuthSms) ErrorDescriptions() map[string]string {
 		ErrorCodeInvalidSmsCode:          "Invalid SMS code",
 		ErrorCodeWaitDelay:               "Wait before requesting new SMS code",
 		ErrorCodeContentMismatch:         "Content of initial request and content of current request mismatch",
-		ErrorCodeInvalidPhone:            "Failed to send SMS confirmation because of invalid phone number",
+		ErrorCodeInvalidPhone:            "failed to send SMS confirmation because of invalid phone number",
 		ErrorCodeTooManyTries:            "Too many code tries",
 	}
 	return m
