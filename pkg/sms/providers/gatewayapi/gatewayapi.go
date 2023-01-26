@@ -9,8 +9,11 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
+
+const Protocol string = "gatewayapi"
 
 type Recipient struct {
 	Msisdn string `json:"msisdn"`
@@ -36,9 +39,11 @@ type SmsGatewayapiConfig struct {
 	URL    string `validate:"required,url"`
 	TOKEN  string `validate:"required" mask:"true"`
 	SENDER string
+	NAME   string
 }
 
 type SmsGatewayapi struct {
+	sms.ProviderBase
 	SmsGatewayapiConfig
 	sendUrl string
 }
@@ -57,6 +62,8 @@ func (s *SmsGatewayapi) Init(cfg config.Config, log logger.Logger, vld validator
 	if err != nil {
 		return log.PushFatalStack("failed to init SmsGatewayapi", err)
 	}
+
+	s.ProviderBase.Init(Protocol, utils.OptionalString(Protocol, s.NAME))
 
 	s.sendUrl = fmt.Sprintf("%s/rest/mtsms?token=%s", s.URL, s.TOKEN)
 	return nil
@@ -107,6 +114,7 @@ func (s *SmsGatewayapi) Send(ctx op_context.Context, message string, recipient s
 	result := &sms.ProviderResponse{RawContent: request.ResponseContent}
 	if len(response.Ids) > 0 {
 		result.ProviderMessageID = fmt.Sprintf("%d", response.Ids[0])
+		ctx.SetLoggerField("provider_sms_id", result.ProviderMessageID)
 	}
 
 	return result, nil
