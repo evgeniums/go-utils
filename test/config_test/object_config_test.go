@@ -6,11 +6,13 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/config/config_viper"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
+	"github.com/evgeniums/go-backend-helpers/pkg/logger/logger_logrus"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-backend-helpers/pkg/validator/validator_playground"
 )
 
 type embeddedConfig1 struct {
-	FIELD_STRING string `default:"default_value1"`
+	FIELD_EMBEDDED_STRING string `default:"default_value1"`
 }
 
 type config1 struct {
@@ -42,7 +44,7 @@ func (s *sample1) Config() interface{} {
 
 func TestObjectConfig(t *testing.T) {
 
-	sampleConfig1 := `{"field_string":"value1","field_int":100}`
+	sampleConfig1 := `{"field_embedded_string":"value1","field_int":100}`
 	cfg1 := config_viper.New()
 	err := cfg1.LoadString(sampleConfig1)
 	if err != nil {
@@ -55,8 +57,8 @@ func TestObjectConfig(t *testing.T) {
 		t.Fatalf("failed to load object configuration: %s", err)
 	}
 
-	if s1.FIELD_STRING != "value1" {
-		t.Errorf("invalid field_string: expected %s, got %s", "value1", s1.FIELD_STRING)
+	if s1.FIELD_EMBEDDED_STRING != "value1" {
+		t.Errorf("invalid field_embedded_string: expected %s, got %s", "value1", s1.FIELD_EMBEDDED_STRING)
 	}
 	if s1.FIELD_INT != 100 {
 		t.Errorf("invalid field_int: expected %d, got %d", 100, s1.FIELD_INT)
@@ -98,8 +100,8 @@ func TestObjectConfig(t *testing.T) {
 		t.Fatalf("failed to load object 2 configuration: %s", err)
 	}
 
-	if s2.FIELD_STRING != "default_value1" {
-		t.Errorf("invalid field_string: expected %s, got %s", "default_value1", s1.FIELD_STRING)
+	if s2.FIELD_EMBEDDED_STRING != "default_value1" {
+		t.Errorf("invalid field_embedded_string: expected %s, got %s", "default_value1", s1.FIELD_EMBEDDED_STRING)
 	}
 	if s2.FIELD_INT != 100 {
 		t.Errorf("invalid field_int: expected %d, got %d", 100, s2.FIELD_INT)
@@ -149,5 +151,14 @@ func TestObjectConfig(t *testing.T) {
 
 	if !reflect.DeepEqual(s2.FIELD_SLICE_STRING, []string{"a", "b", "c", "d"}) {
 		t.Errorf("invalid field_slice_string: expected %v, got %v", []string{"a", "b", "c", "d"}, s2.FIELD_SLICE_STRING)
+	}
+
+	s3 := &sample1{}
+
+	log := logger_logrus.New()
+	vld := validator_playground.New()
+	err = object_config.LoadLogValidate(cfg2, log, vld, s3, "")
+	if err != nil {
+		t.Fatalf("Failed to load s3 configuration: %s", err)
 	}
 }
