@@ -15,3 +15,10 @@ func AbortError(ctx Context, msg string, err ...error) {
 	}
 	panic(e)
 }
+
+func AbortFatal(ctx Context, msg string, err ...error) {
+	if ctx.Logger().CheckFatalStack(ctx.Logger(), msg) {
+		panic("AbortFatal")
+	}
+	AbortError(ctx, msg, err...)
+}

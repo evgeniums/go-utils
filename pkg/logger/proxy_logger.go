@@ -81,6 +81,6 @@ func (p *ProxyLogger) PushFatalStack(message string, err error, fields ...Fields
 	return p.logger.PushFatalStack(message, err, AppendFieldsNew(p.staticFields, fields...))
 }
 
-func (p *ProxyLogger) CheckFatalStack(l Logger) {
-	p.logger.CheckFatalStack(l)
+func (p *ProxyLogger) CheckFatalStack(logger Logger, message ...string) bool {
+	return p.logger.CheckFatalStack(logger, message...)
 }

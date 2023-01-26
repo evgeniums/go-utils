@@ -48,7 +48,7 @@ type Logger interface {
 	Native() interface{}
 
 	PushFatalStack(message string, err error, fields ...Fields) error
-	CheckFatalStack(Logger)
+	CheckFatalStack(logger Logger, message ...string) bool
 }
 
 type WithLogger interface {
@@ -109,19 +109,23 @@ func (l *LoggerBase) Init() {
 	l.fatalError.deepestError = nil
 }
 
-func (l *LoggerBase) CheckFatalStack(logger Logger) {
+func (l *LoggerBase) CheckFatalStack(logger Logger, message ...string) bool {
 	if l.fatalError.deepestError != nil {
-		errMsg := ""
+		errMsg := utils.OptionalArg("", message...)
+		if errMsg != "" {
+			errMsg += ": "
+		}
 		for i := len(l.fatalError.messageStack) - 1; i >= 0; i-- {
 			msg := l.fatalError.messageStack[i]
 			errMsg += msg
-			if i != 0 {
-				errMsg += ": "
-			}
+			errMsg += ": "
 		}
-		logger.Fatal(errMsg, l.fatalError.deepestError, l.fatalError.fields)
+		errMsg += l.fatalError.deepestError.Error()
+		logger.Fatal(errMsg, errors.New("fatal"), l.fatalError.fields)
 		l.Init()
+		return true
 	}
+	return false
 }
 
 func (l *LoggerBase) PushFatalStack(message string, err error, fields ...Fields) error {

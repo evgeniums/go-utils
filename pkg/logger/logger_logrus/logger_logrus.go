@@ -30,7 +30,10 @@ func (l *LogrusLogger) Config() interface{} {
 }
 
 func New() *LogrusLogger {
-	return &LogrusLogger{}
+	l := &LogrusLogger{}
+	l.logRus = logrus.New()
+	l.LoggerBase.Init()
+	return l
 }
 
 func (l *LogrusLogger) ErrorRaw(data ...interface{}) {
@@ -76,16 +79,18 @@ func (l *LogrusLogger) Info(message string, fields ...logger.Fields) {
 }
 
 func (l *LogrusLogger) Fatal(message string, err error, fields ...logger.Fields) error {
+	f := logger.NewFields(fields...)
 	e := err
-	if e == nil {
-		if message != "" {
-			e = errors.New(message)
-		} else {
-			e = errors.New("unknown error")
-		}
+	if e == nil && message != "" {
+		e = errors.New(message)
+	} else {
+		f["error"] = err
 	}
-	f := logger.AppendFieldsNew(logger.Fields{"error": e}, fields...)
-	if message != "" && err != nil {
+	if e == nil {
+		e = errors.New("unknown error")
+		f["error"] = e
+	}
+	if message != "" {
 		l.logRus.WithFields(f).Log(logrus.FatalLevel, message)
 	} else {
 		l.logRus.WithFields(f).Log(logrus.FatalLevel)
@@ -93,18 +98,31 @@ func (l *LogrusLogger) Fatal(message string, err error, fields ...logger.Fields)
 	return e
 }
 
-func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPath ...string) error {
+// func (l *LogrusLogger) Fatal(message string, err error, fields ...logger.Fields) error {
+// 	e := err
+// 	if e == nil {
+// 		if message != "" {
+// 			e = errors.New(message)
+// 		} else {
+// 			e = errors.New("unknown error")
+// 		}
+// 	}
+// 	f := logger.AppendFieldsNew(logger.Fields{"error": e}, fields...)
+// 	if message != "" && err != nil {
+// 		l.logRus.WithFields(f).Log(logrus.FatalLevel, message)
+// 	} else {
+// 		l.logRus.WithFields(f).Log(logrus.FatalLevel)
+// 	}
+// 	return e
+// }
 
-	l.LoggerBase.Init()
+func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPath ...string) error {
 
 	// load configuration
 	err := object_config.LoadValidate(cfg, vld, l, "logger", configPath...)
 	if err != nil {
 		return err
 	}
-
-	// setup logrus
-	l.logRus = logrus.New()
 
 	// setup output
 	if l.DESTINATION == "file" {

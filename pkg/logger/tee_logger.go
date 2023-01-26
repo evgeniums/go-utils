@@ -107,8 +107,11 @@ func (t *TeeLogger) PushFatalStack(message string, err error, fields ...Fields) 
 	return err
 }
 
-func (t *TeeLogger) CheckFatalStack(l Logger) {
+func (t *TeeLogger) CheckFatalStack(logger Logger, message ...string) bool {
+	yes := false
 	for _, logger := range t.loggers {
-		logger.CheckFatalStack(logger)
+		yes_ := logger.CheckFatalStack(logger, message...)
+		yes = yes || yes_
 	}
+	return yes
 }

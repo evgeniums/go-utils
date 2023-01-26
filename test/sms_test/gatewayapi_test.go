@@ -18,7 +18,7 @@ func TestGatewayapi(t *testing.T) {
 
 	fmt.Printf("config=%s, phone=%s\n", test_utils.ExternalConfigFilePath(configFile), test_utils.Phone)
 	if !test_utils.ExternalConfigFileExists(configFile) || test_utils.Phone == "" {
-		t.Skip("Skip TestGatewayapi because external config or phone not defined")
+		// t.Skip("Skip TestGatewayapi because external config or phone not defined")
 	}
 
 	configFile = test_utils.ExternalConfigFilePath(configFile)

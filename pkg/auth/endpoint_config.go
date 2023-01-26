@@ -46,7 +46,7 @@ func (e *EndpointsAuthConfigBase) Schema(path string, access access_control.Acce
 func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
 	path := utils.OptionalArg("endpoints_auth_config", configPath...)
-	fields := logger.Fields{"where": "EndpointsAuthConfigBase.Init", "config_path": path}
+	fields := logger.Fields{"config_path": path}
 	log.Info("Init configuration of endpoints authorization", fields)
 
 	e.endpoints = make(map[string][]endpointSchema)

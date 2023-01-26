@@ -60,7 +60,7 @@ type AuthManagerBase struct {
 func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validator.Validator, handlerFactory HandlerFactory, configPath ...string) error {
 
 	path := utils.OptionalArg("auth_manager", configPath...)
-	fields := logger.Fields{"where": "AuthManagerBase.Init", "config_path": path}
+	fields := logger.Fields{"config_path": path}
 	log.Info("Init authorization manager", fields)
 
 	a.store = NewHandlerStore()
@@ -75,7 +75,7 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 	}
 	for methodProtocol := range methods {
 		methodPath := object_config.Key(methodsPath, methodProtocol)
-		fields := utils.AppendMapNew(fields, logger.Fields{"auth_method": methodProtocol, "auth_method_path": methodPath})
+		fields := utils.AppendMapNew(fields, logger.Fields{"auth_method": methodProtocol, "config_path": methodPath})
 		log.Debug("Init auth method", fields)
 		handler, err := handlerFactory.Create(methodProtocol)
 		if err != nil {

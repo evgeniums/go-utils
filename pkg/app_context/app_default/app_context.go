@@ -31,10 +31,11 @@ type Context struct {
 	logger.WithLoggerBase
 	config.WithCfgBase
 
-	db         *db_gorm.GormDB
-	validator  *validator_playground.PlaygroundValdator
-	cache      cache.Cache
-	inmemCache *inmem_cache.InmemCache[string]
+	db           *db_gorm.GormDB
+	validator    *validator_playground.PlaygroundValdator
+	cache        cache.Cache
+	inmemCache   *inmem_cache.InmemCache[string]
+	logrusLogger *logger_logrus.LogrusLogger
 
 	contextConfig
 
@@ -95,6 +96,9 @@ func New(buildConfig *app_context.BuildConfig, cache_ ...cache.Cache) *Context {
 		c.cache = cache_[0]
 	}
 
+	c.logrusLogger = logger_logrus.New()
+	c.WithLoggerBase.Init(c.logrusLogger)
+
 	return c
 }
 
@@ -104,29 +108,28 @@ func (c *Context) Init(configFile string, configType ...string) error {
 	fmt.Printf("Using configuration file %s\n", configFile)
 	err := c.initConfig(configFile)
 	if err != nil {
-		return err
+		return c.Logger().PushFatalStack("failed to load application configuration", err)
 	}
 
 	// setup logger
 	logConfigPath := "logger"
-	l, err := c.initLog(logConfigPath)
+	err = c.initLog(logConfigPath)
 	if err != nil {
-		return err
+		return c.Logger().PushFatalStack("failed to init application logger", err)
 	}
 	log := c.Logger()
-	log.Info("Starting...")
 
 	// log build version
 	log.Info("Build configuration", logger.Fields{"build_time": Time, "package_version": Version, "git_revision": Revision})
 	fmt.Printf("Build configuration: build_time=%s, package_version=%s, get_revision=%s\n", Time, Version, Revision)
 
 	// log logger configuration
-	object_config.Info(log, l, logConfigPath)
+	object_config.Info(log, c.logrusLogger, logConfigPath)
 
 	// load top level application configuration
 	err = object_config.LoadLogValidate(c.Cfg(), log, c.validator, c, "")
 	if err != nil {
-		return log.PushFatalStack("failed to load application configuration", err)
+		return log.PushFatalStack("failed to init application configuration", err)
 	}
 
 	// setup testing
@@ -156,10 +159,8 @@ func (c *Context) initConfig(configFile string, configType ...string) error {
 	return nil
 }
 
-func (c *Context) initLog(configPath string) (*logger_logrus.LogrusLogger, error) {
-	l := logger_logrus.New()
-	c.WithLoggerBase.Init(l)
-	return l, l.Init(c.Cfg(), c.validator, configPath)
+func (c *Context) initLog(configPath string) error {
+	return c.logrusLogger.Init(c.Cfg(), c.validator, configPath)
 }
 
 func (c *Context) InitDB(configPath string, gormDbConnector ...db_gorm.DbConnector) error {
