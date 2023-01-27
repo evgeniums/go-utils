@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/exp/constraints"
 )
 
 type Float interface {
@@ -97,6 +99,10 @@ func StrToInt(s string) (int, error) {
 		return 0, err
 	}
 	return int(val), nil
+}
+
+func NumToStr[T constraints.Integer](val T) string {
+	return fmt.Sprintf("%d", val)
 }
 
 const float64EqualityThreshold = 1e-9
