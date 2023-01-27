@@ -6,6 +6,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
@@ -56,6 +57,21 @@ type Server struct {
 
 func NewServer() *Server {
 	s := &Server{}
+
+	csrfKey := func(key string) string {
+		return "X-" + strings.ToUpper(key)
+	}
+
+	s.authParamsSetters = make(map[string]AuthParameterSetter, 0)
+	s.authParamsSetters[auth_csrf.AntiCsrfProtocol] = func(r *Request, key string, value string) {
+		r.ginCtx.Header(csrfKey(key), value)
+	}
+
+	s.authParamsGetters = make(map[string]AuthParameterGetter, 0)
+	s.authParamsGetters[auth_csrf.AntiCsrfProtocol] = func(r *Request, key string) string {
+		return r.ginCtx.GetHeader(csrfKey(key))
+	}
+
 	return s
 }
 

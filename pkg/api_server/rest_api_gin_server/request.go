@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/api_server"
@@ -95,13 +96,19 @@ func (r *Request) GetRequestContent() []byte {
 	return nil
 }
 
+func AuthKey(key string) string {
+	k := strings.ToUpper(key)
+	k = "X-AUTH-" + k
+	return k
+}
+
 func (r *Request) SetAuthParameter(authMethodProtocol string, key string, value string) {
 	handler := r.server.AuthParameterSetter(authMethodProtocol)
 	if handler != nil {
 		handler(r, key, value)
 		return
 	}
-	r.ginCtx.Header(key, value)
+	r.ginCtx.Header(AuthKey(key), value)
 }
 
 func (r *Request) GetAuthParameter(authMethodProtocol string, key string) string {
@@ -109,7 +116,7 @@ func (r *Request) GetAuthParameter(authMethodProtocol string, key string) string
 	if handler != nil {
 		return handler(r, key)
 	}
-	return r.ginCtx.GetHeader(key)
+	return r.ginCtx.GetHeader(AuthKey(key))
 }
 
 func (r *Request) CheckRequestContent(smsMessage *string) error {

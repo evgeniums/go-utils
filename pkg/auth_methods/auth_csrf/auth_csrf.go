@@ -13,7 +13,7 @@ import (
 )
 
 const AntiCsrfProtocol = "csrf"
-const AntiCsrfTokenName = "csrf-token"
+const AntiCsrfTokenName = "csrf"
 
 type AuthCsrfConfig struct {
 	TOKEN_TTL_SECONDS int `default:"300" validate:"gt=0"`
