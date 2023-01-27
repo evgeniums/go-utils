@@ -12,51 +12,23 @@ import (
 
 type Session interface {
 	common.Object
+	auth.WithUser
 
-	SetUserId(userId string)
-	SetUserDisplay(userDisplay string)
-	SetUserLogin(userLogin string)
 	SetValid(valid bool)
 	SetExpiration(exp time.Time)
 
-	GetUserId() string
-	GetUserDisplay() string
-	GetUserLogin() string
 	IsValid() bool
 	GetExpiration() time.Time
 }
 
 type SessionBase struct {
 	common.ObjectBase
+	auth.WithUserBase
 	UserId      string    `gorm:"index"`
 	UserDisplay string    `gorm:"index"`
 	UserLogin   string    `gorm:"index"`
 	Valid       bool      `gorm:"index"`
 	Expiration  time.Time `gorm:"index"`
-}
-
-func (s *SessionBase) SetUserId(userId string) {
-	s.UserId = userId
-}
-
-func (s *SessionBase) GetUserId() string {
-	return s.UserId
-}
-
-func (s *SessionBase) SetUserDisplay(userDisplay string) {
-	s.UserDisplay = userDisplay
-}
-
-func (s *SessionBase) GetUserDisplay() string {
-	return s.UserDisplay
-}
-
-func (s *SessionBase) SetUserLogin(userLogin string) {
-	s.UserLogin = userLogin
-}
-
-func (s *SessionBase) GetUserLogin() string {
-	return s.UserLogin
 }
 
 func (s *SessionBase) SetValid(valid bool) {
@@ -77,16 +49,13 @@ func (s *SessionBase) GetExpiration() time.Time {
 
 type SessionClient interface {
 	common.Object
+	auth.WithUser
 	SetSessionId(userId string)
-	SetUserId(userId string)
-	SetUserDisplay(userDisplay string)
 	SetClientIp(clientIp string)
 	SetUserAgent(userAgent string)
 	SetClientHash(clientHash string)
 
 	GetSessionId() string
-	GetUserId() string
-	GetUserDisplay() string
 	GetClientIp() string
 	GetUserAgent() string
 	GetClientHash() string
@@ -94,12 +63,11 @@ type SessionClient interface {
 
 type SessionClientBase struct {
 	common.ObjectBase
-	SessionId   string `gorm:"index;index:,unique,composite:client_session"`
-	UserId      string `gorm:"index"`
-	UserDisplay string `gorm:"index"`
-	ClientIp    string `gorm:"index"`
-	UserAgent   string
-	ClientHash  string `gorm:"index;index:,unique,composite:client_session"`
+	auth.WithUserBase
+	SessionId  string `gorm:"index;index:,unique,composite:client_session"`
+	ClientIp   string `gorm:"index"`
+	UserAgent  string
+	ClientHash string `gorm:"index;index:,unique,composite:client_session"`
 }
 
 func (s *SessionClientBase) SetSessionId(sessionId string) {
@@ -108,22 +76,6 @@ func (s *SessionClientBase) SetSessionId(sessionId string) {
 
 func (s *SessionClientBase) GetSessionId() string {
 	return s.SessionId
-}
-
-func (s *SessionClientBase) SetUserId(val string) {
-	s.UserId = val
-}
-
-func (s *SessionClientBase) GetUserId() string {
-	return s.UserId
-}
-
-func (s *SessionClientBase) SetUserDisplay(val string) {
-	s.UserDisplay = val
-}
-
-func (s *SessionClientBase) GetUserDisplay() string {
-	return s.UserDisplay
 }
 
 func (s *SessionClientBase) SetClientIp(val string) {
@@ -181,9 +133,7 @@ func (s *SessionManagerBase) CreateSession(ctx auth.AuthContext, expiration time
 
 	session := s.MakeSession()
 	session.InitObject()
-	session.SetUserId(ctx.AuthUser().GetID())
-	session.SetUserDisplay(ctx.AuthUser().Display())
-	session.SetUserLogin(ctx.AuthUser().Login())
+	session.SetUser(ctx.AuthUser())
 	session.SetValid(true)
 	session.SetExpiration(expiration)
 
@@ -245,8 +195,7 @@ func (s *SessionManagerBase) UpdateSessionClient(ctx auth.AuthContext) error {
 		client.SetClientIp(clientIp)
 		client.SetClientHash(clientHash)
 		client.SetSessionId(ctx.GetSessionId())
-		client.SetUserId(ctx.AuthUser().GetID())
-		client.SetUserDisplay(ctx.AuthUser().Display())
+		client.SetUser(ctx.AuthUser())
 		client.SetUserAgent(userAgent)
 		err1 := ctx.DB().Create(ctx, client)
 		if err1 != nil {

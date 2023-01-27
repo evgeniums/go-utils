@@ -8,6 +8,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
@@ -20,10 +21,11 @@ type LoginphashSmsToken struct {
 	Sms auth.AuthHandler
 }
 
-func NewLoginphashSmsToken(users user_manager.WithSessionManager) *LoginphashSmsToken {
+func NewLoginphashSmsToken(users user_manager.WithSessionManager, smsManager sms.SmsManager) *LoginphashSmsToken {
 	l := &LoginphashSmsToken{}
 	l.Login = auth_login_phash.New(users)
 	l.Token = auth_token.New(users)
+	l.Sms = auth_sms.New(smsManager)
 	return l
 }
 
@@ -32,12 +34,10 @@ func (l *LoginphashSmsToken) InitSms(cfg config.Config, log logger.Logger, vld v
 	path := utils.OptionalArg("auth_manager.methods", configPath...)
 	smsCfgPath := object_config.Key(path, auth_sms.SmsProtocol)
 
-	sms := &auth_sms.AuthSms{}
-	err := sms.Init(cfg, log, vld, smsCfgPath)
+	err := l.Sms.Init(cfg, log, vld, smsCfgPath)
 	if err != nil {
 		return log.PushFatalStack("failed to init SMS handler", err)
 	}
-	l.Sms = sms
 
 	return nil
 }

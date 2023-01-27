@@ -75,7 +75,7 @@ func (s *Smsru) Init(cfg config.Config, log logger.Logger, vld validator.Validat
 		return log.PushFatalStack("failed to init SmsGatewayapi", err)
 	}
 
-	s.ProviderBase.Init(Protocol, utils.OptionalString(Protocol, s.NAME))
+	s.ProviderBase.SetProtocolAndName(Protocol, utils.OptionalString(Protocol, s.NAME))
 	return nil
 }
 

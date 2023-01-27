@@ -9,41 +9,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
-type User interface {
-	GetID() string
-	Display() string
-	Login() string
-	IsBlocked() bool
-}
-
-type Session interface {
-	GetSessionId() string
-	SetSessionId(id string)
-	GetClientId() string
-	SetClientId(id string)
-}
-
-type SessionBase struct {
-	session string
-	client  string
-}
-
-func (u *SessionBase) GetSessionId() string {
-	return u.session
-}
-
-func (u *SessionBase) SetSessionId(id string) {
-	u.session = id
-}
-
-func (u *SessionBase) GetClientId() string {
-	return u.client
-}
-
-func (u *SessionBase) SetClientId(id string) {
-	u.client = id
-}
-
 type AuthDataAccessor interface {
 	Set(key string, value string)
 	Get(key string) string
@@ -68,6 +33,13 @@ type AuthContext interface {
 	GetAuthParameter(authMethodProtocol string, key string) string
 
 	Tenancy() multitenancy.Tenancy
+}
+
+func Tenancy(ctx AuthContext) string {
+	if ctx.Tenancy() == nil {
+		return ""
+	}
+	return ctx.Tenancy().GetID()
 }
 
 type AuthHandler interface {

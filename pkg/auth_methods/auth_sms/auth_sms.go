@@ -69,7 +69,7 @@ func (a *AuthSms) Config() interface{} {
 	return &a.AuthSmsConfig
 }
 
-func NewAuthSms(smsManager sms.SmsManager) *AuthSms {
+func New(smsManager sms.SmsManager) *AuthSms {
 	a := &AuthSms{}
 	a.smsManager = smsManager
 	return a
@@ -92,6 +92,10 @@ func (a *AuthSms) Init(cfg config.Config, log logger.Logger, vld validator.Valid
 	a.Encryption = encryption
 
 	return nil
+}
+
+func (a *AuthSms) SetSmsManager(smsManager sms.SmsManager) {
+	a.smsManager = smsManager
 }
 
 const ErrorCodeSmsConfirmationRequired = "sms_confirmation_required"

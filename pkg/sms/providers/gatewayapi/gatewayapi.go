@@ -63,7 +63,7 @@ func (s *SmsGatewayapi) Init(cfg config.Config, log logger.Logger, vld validator
 		return log.PushFatalStack("failed to init SmsGatewayapi", err)
 	}
 
-	s.ProviderBase.Init(Protocol, utils.OptionalString(Protocol, s.NAME))
+	s.ProviderBase.SetProtocolAndName(Protocol, utils.OptionalString(Protocol, s.NAME))
 
 	s.sendUrl = fmt.Sprintf("%s/rest/mtsms?token=%s", s.URL, s.TOKEN)
 	return nil

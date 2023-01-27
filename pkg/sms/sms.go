@@ -1,8 +1,15 @@
 package sms
 
 import (
+	"errors"
+
+	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-backend-helpers/pkg/config"
+	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
+	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
 type ProviderResponse struct {
@@ -11,25 +18,24 @@ type ProviderResponse struct {
 }
 
 type Provider interface {
-	Protocol() string
-	Name() string
+	object_config.Subobject
 	Send(ctx op_context.Context, message string, recipient string, smsID ...string) (*ProviderResponse, error)
 }
 
 type ProviderBase struct {
-	protocol string
-	name     string
+	object_config.WithProtocolBase
+	common.WithNameBase
 }
 
-func (p *ProviderBase) Init(protocol string, name ...string) {
-	p.protocol = protocol
-	p.name = utils.OptionalArg(protocol, name...)
+func (p *ProviderBase) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
+	return errors.New("incomplete provider")
 }
 
-func (p *ProviderBase) Name() string {
-	return p.name
+func (p *ProviderBase) SetProtocolAndName(protocol string, name ...string) {
+	p.PROTOCOL = protocol
+	p.NAME = utils.OptionalArg(protocol, name...)
 }
 
-func (p *ProviderBase) Protocol() string {
-	return p.protocol
+type ProviderFactory interface {
+	Create(provider string) (Provider, error)
 }
