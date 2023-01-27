@@ -27,6 +27,14 @@ func (v *PlaygroundValdator) Validate(s interface{}) error {
 	return nil
 }
 
+func (v *PlaygroundValdator) ValidateValue(value interface{}, rules string) error {
+	err := v.validator.Var(value, rules)
+	if err != nil {
+		return &validator.ValidationError{Field: "value", Err: err}
+	}
+	return nil
+}
+
 func (v *PlaygroundValdator) validationSubfield(structField reflect.StructField, typenames []string) (reflect.StructField, bool) {
 
 	first := utils.OptionalArg("", typenames...)

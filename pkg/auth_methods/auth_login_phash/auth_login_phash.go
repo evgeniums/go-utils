@@ -105,6 +105,12 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		return false, nil
 	}
 	ctx.SetLoggerField("login", login)
+	err = l.users.UserManager().ValidateLogin(login)
+	if err != nil {
+		c.SetMessage("invalid login format")
+		ctx.SetGenericErrorCode(ErrorCodeLoginFailed)
+		return true, err
+	}
 
 	// load user
 	dbUser := l.users.UserManager().MakeUser()

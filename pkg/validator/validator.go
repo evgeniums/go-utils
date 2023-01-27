@@ -4,6 +4,7 @@ import "fmt"
 
 type Validator interface {
 	Validate(s interface{}) error
+	ValidateValue(value interface{}, rules string) error
 }
 
 type ValidationError struct {
