@@ -107,6 +107,9 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 				return log.PushFatalStack("failed to initialize authorization schema", err, fields)
 			}
 			a.store.AddHandler(schema)
+			for _, subhandler := range schema.Handlers() {
+				a.store.AddHandler(subhandler)
+			}
 		}
 	}
 
@@ -137,14 +140,26 @@ func (a *AuthManagerBase) ErrorProtocolCodes() map[string]int {
 }
 
 func (a *AuthManagerBase) Handle(ctx AuthContext, schema string) error {
-	c := ctx.TraceInMethod("AuthManagerBase.Handle", logger.Fields{"schema": schema})
-	defer ctx.TraceOutMethod()
 
+	// setup
+	c := ctx.TraceInMethod("AuthManagerBase.Handle", logger.Fields{"schema": schema})
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
+
+	// find handler
 	handler, err := a.store.Handler(schema)
 	if err != nil {
 		ctx.SetGenericErrorCode(ErrorCodeInvalidAuthSchema)
 		return c.SetError(err)
 	}
+
+	// run handler
 	_, err = handler.Handle(ctx)
 	return err
 }

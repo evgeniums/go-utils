@@ -61,15 +61,26 @@ func (a *AuthBase) Init(cfg config.Config, log logger.Logger, vld validator.Vali
 
 func (a *AuthBase) HandleRequest(ctx AuthContext, path string, access access_control.AccessType) error {
 
-	ctx.TraceInMethod("AuthBase.HandleRequest")
-	defer ctx.TraceOutMethod()
+	// setup
+	c := ctx.TraceInMethod("AuthBase.Handle", logger.Fields{"path": path})
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
 
+	// find schema
 	schema, ok := a.endpointsConfig.Schema(path, access)
 	if !ok {
 		schema = a.DEFAULT_SCHEMA
 	}
 
-	return a.manager.Handle(ctx, schema)
+	// run handler
+	err = a.manager.Handle(ctx, schema)
+	return c.SetError(err)
 }
 
 func (a *AuthBase) AttachToErrorManager(errManager generic_error.ErrorManager) {

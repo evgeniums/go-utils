@@ -49,6 +49,7 @@ type AuthHandler interface {
 
 	Handle(ctx AuthContext) (bool, error)
 	Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error
+	Handlers() []AuthHandler
 
 	ErrorDescriptions() map[string]string
 	ErrorProtocolCodes() map[string]int
@@ -75,4 +76,8 @@ func (a *AuthHandlerBase) ErrorProtocolCodes() map[string]int {
 
 func (a *AuthHandlerBase) Protocol() string {
 	return a.protocol
+}
+
+func (a *AuthHandlerBase) Handlers() []AuthHandler {
+	return nil
 }

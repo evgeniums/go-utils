@@ -9,6 +9,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
@@ -40,13 +41,15 @@ func (a *AuthCsrf) Init(cfg config.Config, log logger.Logger, vld validator.Vali
 
 	a.AuthHandlerBase.Init(AntiCsrfProtocol)
 
-	err := object_config.LoadLogValidate(cfg, log, vld, a, "csrf", configPath...)
+	path := utils.OptionalArg("csrf", configPath...)
+
+	err := object_config.LoadLogValidate(cfg, log, vld, a, path)
 	if err != nil {
 		return log.PushFatalStack("failed to load configuration of CSRF handler", err)
 	}
 
 	encryption := &auth.AuthParameterEncryptionBase{}
-	err = object_config.LoadLogValidate(cfg, log, vld, encryption, "csrf", configPath...)
+	err = encryption.Init(cfg, log, vld, path)
 	if err != nil {
 		return log.PushFatalStack("failed to load configuration of CSRF encryption", err)
 	}
@@ -89,7 +92,7 @@ func (a *AuthCsrf) ErrorProtocolCodes() map[string]int {
 func (a *AuthCsrf) Handle(ctx auth.AuthContext) (bool, error) {
 
 	// setup
-	c := ctx.TraceInMethod("AuthCsrf.Handle")
+	c := ctx.TraceInMethod("AuthCsrf.Handle", logger.Fields{"path": ctx.GetRequestPath()})
 	var err error
 	onExit := func() {
 		if err != nil {
@@ -106,6 +109,7 @@ func (a *AuthCsrf) Handle(ctx auth.AuthContext) (bool, error) {
 		exists, err := a.Encryption.GetAuthParameter(ctx, a.Protocol(), AntiCsrfTokenName, prev)
 		if !exists {
 			err = errors.New("CSRF token not found")
+			c.Logger().Debug("CSRF token not found")
 			ctx.SetGenericErrorCode(ErrorCodeAntiCsrfRequired)
 			return false, err
 		}

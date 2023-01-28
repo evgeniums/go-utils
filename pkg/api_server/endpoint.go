@@ -3,11 +3,13 @@ package api_server
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 )
 
 // Interface of API endpoint.
 type Endpoint interface {
 	common.WithNameAndPath
+	generic_error.ErrorsExtender
 
 	// Get service
 	Service() Service
@@ -29,6 +31,7 @@ type EndpointHandler = func(request Request)
 // Base type for API endpoints.
 type EndpointBase struct {
 	common.WithNameAndPathBase
+	generic_error.ErrorsExtenderBase
 
 	service    Service
 	accessType access_control.AccessType

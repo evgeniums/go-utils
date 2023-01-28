@@ -151,9 +151,6 @@ func (s *Server) NoRoute() gin.HandlerFunc {
 
 func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...string) error {
 
-	s.authParamsGetters = make(map[string]AuthParameterGetter)
-	s.authParamsSetters = make(map[string]AuthParameterSetter)
-
 	var err error
 	s.hostname, err = os.Hostname()
 	if err != nil {
@@ -163,6 +160,7 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 
 	s.WithAppBase.Init(ctx)
 	s.WithAuthBase.Init(auth)
+	auth.AttachToErrorManager(s)
 
 	defaultPath := "rest_api_server"
 
@@ -246,8 +244,10 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		// process auth
 		if err == nil {
 			err = s.Auth().HandleRequest(request, ep.FullPath(), ep.AccessType())
-			request.SetGenericError(s.MakeGenericError(auth.ErrorCodeUnauthorized, request.Tr))
-			// errors must be processed in handler
+			if err != nil {
+				request.SetGenericError(s.MakeGenericError(auth.ErrorCodeUnauthorized, request.Tr))
+				// errors must be processed in handler
+			}
 		}
 
 		// TODO process access control
@@ -266,6 +266,8 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 }
 
 func (s *Server) AddEndpoint(ep api_server.Endpoint) {
+
+	ep.AttachToErrorManager(s)
 
 	method := access_control.Access2HttpMethod(ep.AccessType())
 	if method == "" {

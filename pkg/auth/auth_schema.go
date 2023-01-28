@@ -114,8 +114,16 @@ func (a *AuthSchema) InitSchema(log logger.Logger, cfg config.Config, vld valida
 
 func (a *AuthSchema) Handle(ctx AuthContext) (bool, error) {
 
-	c := ctx.TraceInMethod("AuthSchema.Handle")
-	defer ctx.TraceOutMethod()
+	// setup
+	c := ctx.TraceInMethod("AuthSchema.Handle", logger.Fields{"path": ctx.GetRequestPath()})
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
 
 	authMethodFound := false
 	for _, handler := range a.handlers {
@@ -124,6 +132,7 @@ func (a *AuthSchema) Handle(ctx AuthContext) (bool, error) {
 			continue
 		}
 		if err != nil {
+			c.SetMessage(fmt.Sprintf("failed in %s", handler.Name()))
 			ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeUnauthorized))
 			return sectionFound, c.SetError(err)
 		}

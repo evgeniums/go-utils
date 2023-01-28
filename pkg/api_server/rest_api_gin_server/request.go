@@ -28,6 +28,7 @@ type Request struct {
 func (r *Request) Init(s *Server, ginCtx *gin.Context, ep api_server.Endpoint, fields ...logger.Fields) {
 
 	r.start = time.Now()
+	r.server = s
 
 	r.RequestBase.Init(s.App(), s.App().Logger(), s.App().DB(), fields...)
 	r.RequestBase.SetErrorManager(s)
@@ -73,13 +74,14 @@ func (r *Request) GetRequestUserAgent() string {
 }
 
 func (r *Request) Close() {
-	r.RequestBase.Close()
 	if r.GenericError() == nil {
 		r.ginCtx.JSON(r.response.httpCode, r.response.Message())
 	} else {
 		code, err := r.server.MakeResponseError(r.GenericError())
+		r.SetLoggerField("error_code", code)
 		r.ginCtx.JSON(code, err)
 	}
+	r.RequestBase.Close()
 	r.server.logGinRequest(r.Logger(), r.initialPath, r.start, r.ginCtx)
 }
 

@@ -61,6 +61,13 @@ type WithPathBase struct {
 	separator string
 }
 
+func adjustFirstSection(sections []string) []string {
+	if len(sections) > 0 && sections[0] == "" {
+		return sections[1:]
+	}
+	return sections
+}
+
 func (w *WithPathBase) Init(path string, separator ...string) {
 	w.path = path
 	w.separator = utils.OptionalArg("/", separator...)
@@ -93,6 +100,7 @@ func (w *WithPathBase) FullPath() string {
 
 func (w *WithPathBase) SetParent(parent WithPath) {
 	w.sections = strings.Split(w.path, w.separator)
+	w.sections = adjustFirstSection(w.sections)
 	ps := parent.Sections()
 	last := ps[len(ps)-1]
 	if last == "" {

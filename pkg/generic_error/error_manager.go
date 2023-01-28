@@ -84,11 +84,12 @@ type ErrorManagerBaseHttp struct {
 
 func (e *ErrorManagerBaseHttp) Init() {
 	e.ErrorManagerBase.Init(http.StatusBadRequest)
+	e.AddErrorDescriptions(CommonErrorDescriptions)
 	e.AddErrorProtocolCodes(CommonErrorHttpCodes)
 }
 
 type ErrorsExtender interface {
-	AddToErrorManager(manager ErrorManager)
+	ErrorDefinitions
 }
 
 type ErrorsExtenderBase struct {
@@ -103,7 +104,7 @@ func (e *ErrorsExtenderBase) Init(errorDescriptions map[string]string, errorProt
 	}
 }
 
-func (e *ErrorsExtenderBase) AddToErrorManager(manager ErrorManager) {
+func (e *ErrorsExtenderBase) AttachToErrorManager(manager ErrorManager) {
 	manager.AddErrorDescriptions(e.errorDescriptions)
 	manager.AddErrorProtocolCodes(e.errorProtocolCodes)
 }

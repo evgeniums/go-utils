@@ -61,3 +61,7 @@ func (l *LoginphashToken) Init(cfg config.Config, log logger.Logger, vld validat
 	l.AuthSchema.AppendHandlers(l.Login, l.Token)
 	return nil
 }
+
+func (l *LoginphashToken) Handlers() []auth.AuthHandler {
+	return l.AuthSchema.Handlers()
+}

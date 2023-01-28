@@ -75,7 +75,7 @@ func (s *SmsDestination) Config() interface{} {
 }
 
 func (s *SmsDestination) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
-	err := object_config.LoadLogValidate(cfg, log, vld, s, "sms_destibation", configPath...)
+	err := object_config.LoadLogValidate(cfg, log, vld, s, "sms_destination", configPath...)
 	if err != nil {
 		return log.PushFatalStack("failed to init SMS destination", err)
 	}
