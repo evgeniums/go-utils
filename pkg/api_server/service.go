@@ -16,7 +16,7 @@ type ServiceBase struct {
 
 func (s *ServiceBase) AttachToServer(server Server) {
 	s.AttachToErrorManager(server)
-	for _, ep := range s.endpoints {
+	for _, ep := range s.Endpoints() {
 		server.AddEndpoint(ep)
 	}
 }
