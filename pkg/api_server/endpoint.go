@@ -11,6 +11,8 @@ type Endpoint interface {
 	common.WithNameAndPath
 	generic_error.ErrorsExtender
 
+	Parent() Group
+
 	// Get service
 	Service() Service
 	// Set service
@@ -35,6 +37,7 @@ type EndpointBase struct {
 
 	service    Service
 	accessType access_control.AccessType
+	parent     Group
 }
 
 func (e *EndpointBase) Init(path string, name string, accessType access_control.AccessType) {
@@ -56,6 +59,15 @@ func (e *EndpointBase) AccessType() access_control.AccessType {
 
 func (e *EndpointBase) PrecheckRequestBeforeAuth(request Request, smsMessage *string) error {
 	return nil
+}
+
+func (e *EndpointBase) Parent() Group {
+	return e.parent
+}
+
+func (e *EndpointBase) SetParent(parent common.WithPath) {
+	e.parent = parent.(Group)
+	e.WithNameAndPathBase.SetParent(parent)
 }
 
 // Base type for API endpoints with empty handlers.

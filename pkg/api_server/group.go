@@ -3,6 +3,7 @@ package api_server
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 // Interface of group of API endpoints.
@@ -13,11 +14,21 @@ type Group interface {
 	// Add endpoints to group.
 	AddEndpoints(ep ...Endpoint)
 
-	// Get endpoints
-	// Endpoints() []Endpoint
+	// Get all endpoints including endpoints in subgroups.
+	Endpoints(direct ...bool) []Endpoint
 
-	// TODO implement adding subgroup.
-	// AddGroup(group Group) Group
+	Groups() []Group
+
+	Parent() Group
+
+	// Add subgroup.
+	AddGroup(group Group)
+
+	clearEndpoints()
+	clearGroups()
+}
+
+type WithParentBase struct {
 }
 
 // Base type of group of API endpoints.
@@ -25,16 +36,21 @@ type GroupBase struct {
 	common.WithNameAndPathParentBase
 	generic_error.ErrorsExtenderBase
 
-	endpoints []Endpoint
+	endpoints map[string]Endpoint
+	groups    map[string]Group
+
+	parent Group
 }
 
 func (e *GroupBase) Init(path string, name string) {
 	e.WithNameAndPathParentBase.Init(path, name)
+	e.endpoints = make(map[string]Endpoint)
+	e.groups = make(map[string]Group)
 }
 
-func (g *GroupBase) addEndpoint(endpoint Endpoint) {
-	g.WithNameAndPathParentBase.AddChild(endpoint)
-	g.endpoints = append(g.endpoints, endpoint)
+func (g *GroupBase) addEndpoint(ep Endpoint) {
+	g.AddChild(ep)
+	g.endpoints[ep.Path()] = ep
 }
 
 func (g *GroupBase) AddEndpoints(endpoints ...Endpoint) {
@@ -43,13 +59,65 @@ func (g *GroupBase) AddEndpoints(endpoints ...Endpoint) {
 	}
 }
 
-// func (g *GroupBase) Endpoints() []Endpoint {
-// 	return g.endpoints
-// }
+func (g *GroupBase) Endpoints(direct ...bool) []Endpoint {
+	eps := make([]Endpoint, len(g.endpoints))
+	i := 0
+	for _, ep := range g.endpoints {
+		eps[i] = ep
+		i++
+	}
 
-// func (g *GroupBase) AddGroup(group Group) {
-// 	g.WithNameAndPathParentBase.AddChild(group)
-// 	for _, ep := range group.Endpoints() {
-// 		g.addEndpoint(ep)
-// 	}
-// }
+	directOnly := utils.OptionalArg(false, direct...)
+	if !directOnly {
+		for _, group := range g.groups {
+			eps = append(eps, group.Endpoints()...)
+		}
+	}
+	return eps
+}
+
+func (g *GroupBase) AddGroup(group Group) {
+
+	// add group
+	g.AddChild(group)
+	g.groups[group.Path()] = group
+
+	// re-add endpoints
+	eps := group.Endpoints(true)
+	group.clearEndpoints()
+	group.AddEndpoints(eps...)
+
+	// re-add groups
+	groups := group.Groups()
+	group.clearGroups()
+	for _, gr := range groups {
+		group.AddGroup(gr)
+	}
+}
+
+func (g *GroupBase) clearEndpoints() {
+	g.endpoints = make(map[string]Endpoint)
+}
+
+func (g *GroupBase) clearGroups() {
+	g.groups = make(map[string]Group)
+}
+
+func (g *GroupBase) Groups() []Group {
+	grs := make([]Group, len(g.groups))
+	i := 0
+	for _, gr := range g.groups {
+		grs[i] = gr
+		i++
+	}
+	return grs
+}
+
+func (g *GroupBase) Parent() Group {
+	return g.parent
+}
+
+func (g *GroupBase) SetParent(parent common.WithPath) {
+	g.parent = parent.(Group)
+	g.WithPathBase.SetParent(parent)
+}
