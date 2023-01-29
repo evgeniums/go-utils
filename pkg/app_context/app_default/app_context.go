@@ -163,7 +163,7 @@ func (c *Context) initLog(configPath string) error {
 	return c.logrusLogger.Init(c.Cfg(), c.validator, configPath)
 }
 
-func (c *Context) InitDB(configPath string, gormDbConnector ...db_gorm.DbConnector) error {
+func (c *Context) InitDB(configPath string, gormDbConnector ...*db_gorm.DbConnector) error {
 	d := db_gorm.New(gormDbConnector...)
 	c.db = d
 	return d.Init(c, c.Cfg(), c.validator, configPath)

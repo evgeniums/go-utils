@@ -13,12 +13,14 @@ import (
 type Fields = map[string]interface{}
 
 type DBConfig struct {
-	DbProvider    string `gorm:"index"`
-	DbHost        string `gorm:"index"`
-	DbPort        uint16 `gorm:"index"`
-	DbLogin       string `gorm:"index"`
-	DbPassword    string
-	DbExtraConfig string
+	DB_PROVIDER     string `gorm:"index"`
+	DB_HOST         string `gorm:"index"`
+	DB_PORT         uint16 `gorm:"index"`
+	DB_NAME         string `gorm:"index"`
+	DB_USER         string `gorm:"index"`
+	DB_PASSWORD     string `mask:"true"`
+	DB_EXTRA_CONFIG string
+	DB_DSN          string
 }
 
 type DBHandlers interface {

@@ -8,37 +8,34 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 type gormDBConfig struct {
-	PROVIDER string `default:"postgres"`
-	HOST     string `default:"127.0.0.1"`
-	PORT     uint16 `default:"5432"`
-	USER     string
-	DBNAME   string
-	PASSWORD string `mask:""`
+	db.DBConfig
 
 	ENABLE_DEBUG   bool
 	VERBOSE_ERRORS bool
 }
 
-type DbConnector = func(provider string, dsn string) (gorm.Dialector, error)
+type DbConnector struct {
+	DialectorOpener func(provider string, dsn string) (gorm.Dialector, error)
+	DsnBuilder      func(config *db.DBConfig) (string, error)
+}
 
 type GormDB struct {
 	db *gorm.DB
 	gormDBConfig
-	dbConnector DbConnector
+	dbConnector *DbConnector
 }
 
 func (g *GormDB) Config() interface{} {
 	return &g.gormDBConfig
 }
 
-func DefaultDsnConnector(provider string, dsn string) (gorm.Dialector, error) {
+func PostgresOpener(provider string, dsn string) (gorm.Dialector, error) {
 
 	switch provider {
 	case "postgres":
@@ -54,10 +51,34 @@ func DefaultDsnConnector(provider string, dsn string) (gorm.Dialector, error) {
 	return nil, errors.New("unknown database provider")
 }
 
-func New(dbConnector ...DbConnector) *GormDB {
+func PostgresDsnBuilder(config *db.DBConfig) (string, error) {
+	dsn := fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable", config.DB_HOST, config.DB_PORT, config.DB_USER, config.DB_NAME, config.DB_PASSWORD)
+	return dsn, nil
+}
+
+func postgresDbConnector() *DbConnector {
+	c := &DbConnector{}
+	c.DialectorOpener = PostgresOpener
+	c.DsnBuilder = PostgresDsnBuilder
+	return c
+}
+
+var DefaultDbConnector = postgresDbConnector
+
+func New(dbConnector ...*DbConnector) *GormDB {
 	g := &GormDB{}
-	g.dbConnector = utils.OptionalArg(DefaultDsnConnector, dbConnector...)
+
+	g.dbConnector = DefaultDbConnector()
+
+	if len(dbConnector) != 0 {
+		g.dbConnector = dbConnector[0]
+	}
+
 	return g
+}
+
+func (g *GormDB) NewDB() db.DB {
+	return New(g.dbConnector)
 }
 
 func (g *GormDB) EnableDebug(value bool) {
@@ -73,10 +94,6 @@ func (g *GormDB) db_() *gorm.DB {
 		return g.db.Debug()
 	}
 	return g.db
-}
-
-func (g *GormDB) NewDB() db.DB {
-	return New(g.dbConnector)
 }
 
 func (g *GormDB) Init(ctx logger.WithLogger, cfg config.Config, vld validator.Validator, configPath ...string) error {
@@ -98,8 +115,7 @@ func (g *GormDB) InitWithConfig(ctx logger.WithLogger, vld validator.Validator, 
 	ctx.Logger().Info("Connect GormDB with DBConfig")
 
 	// convert configuration
-	g.gormDBConfig = gormDBConfig{PROVIDER: cfg.DbProvider, HOST: cfg.DbHost, PORT: cfg.DbPort,
-		USER: cfg.DbLogin, PASSWORD: cfg.DbPassword}
+	g.gormDBConfig.DBConfig = *cfg
 
 	// validate configuration
 	err := vld.Validate(g.Config())
@@ -113,12 +129,24 @@ func (g *GormDB) InitWithConfig(ctx logger.WithLogger, vld validator.Validator, 
 
 func (g *GormDB) Connect(ctx logger.WithLogger) error {
 
+	var err error
+
 	// connect database
-	dsn := fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable", g.HOST, g.PORT, g.USER, g.DBNAME, g.PASSWORD)
-	dbDialector, err := g.dbConnector(g.PROVIDER, dsn)
-	if err != nil {
-		return ctx.Logger().PushFatalStack("failed to connect to database", err)
+	var dsn string
+	if g.DB_DSN != "" {
+		dsn = g.DB_DSN
+	} else {
+		dsn, err = g.dbConnector.DsnBuilder(&g.DBConfig)
+		if err != nil {
+			return ctx.Logger().PushFatalStack("failed to build DSN to connect to database", err)
+		}
 	}
+
+	dbDialector, err := g.dbConnector.DialectorOpener(g.DB_PROVIDER, dsn)
+	if err != nil {
+		return ctx.Logger().PushFatalStack("failed open dialector to connect to database", err)
+	}
+
 	g.db, err = ConnectDB(dbDialector)
 	if err != nil {
 		return ctx.Logger().PushFatalStack("failed to connect to database", err)
