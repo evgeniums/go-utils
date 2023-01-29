@@ -1,13 +1,17 @@
 package db
 
 import (
-	"errors"
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
+)
+
+const (
+	SORT_ASC  string = "asc"
+	SORT_DESC string = "desc"
 )
 
 type Fields = map[string]interface{}
@@ -24,9 +28,9 @@ type DBConfig struct {
 }
 
 type DBHandlers interface {
-	FindByField(ctx logger.WithLogger, field string, value string, obj interface{}) (bool, error)
-	FindByFields(ctx logger.WithLogger, fields Fields, obj interface{}) (bool, error)
-	FinWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) (bool, error)
+	FindByField(ctx logger.WithLogger, field string, value string, obj interface{}) (found bool, err error)
+	FindByFields(ctx logger.WithLogger, fields Fields, obj interface{}) (found bool, err error)
+	FinWithFilter(ctx logger.WithLogger, filter *Filter, docs interface{}) error
 
 	Create(ctx logger.WithLogger, obj interface{}) error
 	DeleteByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}) error
@@ -64,6 +68,8 @@ type DB interface {
 	EnableVerboseErrors(bool)
 
 	AutoMigrate(ctx logger.WithLogger, models []interface{}) error
+
+	Close()
 }
 
 type WithDB interface {
@@ -82,29 +88,6 @@ func (w *WithDBBase) Init(db DB) {
 	w.db = db
 }
 
-func CheckFound(notfound bool, err *error) bool {
-	ok := *err == nil && !notfound
-	if notfound {
-		*err = errors.New("not found")
-	}
-	return ok
-}
-
-func CheckFoundNoError(notfound bool, err *error) bool {
-	ok := *err == nil && !notfound
-	if notfound {
-		*err = nil
-	}
-	return ok
-}
-
-func CheckFoundDbError(notfound bool, err error) error {
-	if err != nil && !notfound {
-		return err
-	}
-	return nil
-}
-
 type Interval struct {
 	From interface{}
 	To   interface{}
@@ -121,17 +104,16 @@ func (i *Interval) IsNull() bool {
 }
 
 type Filter struct {
-	PreconditionFields      map[string]interface{}
-	IntervalFields          map[string]*Interval
-	PreconditionFieldsIn    map[string][]interface{}
-	PreconditionFieldsNotIn map[string][]interface{}
+	Fields         Fields
+	FieldsIn       map[string][]interface{}
+	FieldsNotIn    map[string][]interface{}
+	IntervalFields map[string]*Interval
+	BetweenFields  []*BetweenFields
 
 	SortField     string
 	SortDirection string
 	Offset        int
 	Limit         int
-	In            []string
-	Between       []*BetweenFields
 }
 
 func Update(db DBHandlers, ctx logger.WithLogger, obj common.Object, fields Fields) error {

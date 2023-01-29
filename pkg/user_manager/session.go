@@ -182,13 +182,12 @@ func (s *SessionManagerBase) UpdateSessionClient(ctx auth.AuthContext) error {
 	tryUpdate := true
 	client := s.MakeSessionClient()
 	fields := db.Fields{"session_id": ctx.GetSessionId(), "client_hash": clientHash}
-	notfound, err := ctx.DB().FindByFields(ctx, fields, client)
-	if !db.CheckFoundNoError(notfound, &err) {
-		if err != nil {
-			c.SetMessage("failed to find client in database")
-			return err
-		}
-
+	found, err := ctx.DB().FindByFields(ctx, fields, client)
+	if err != nil {
+		c.SetMessage("failed to find client in database")
+		return err
+	}
+	if !found {
 		// create new client
 		tryUpdate = false
 		client.InitObject()

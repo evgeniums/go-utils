@@ -156,6 +156,13 @@ func (g *GormDB) Connect(ctx logger.WithLogger) error {
 	return nil
 }
 
+func (g *GormDB) Close() {
+	db, err := g.db.DB()
+	if err == nil {
+		db.Close()
+	}
+}
+
 func (g *GormDB) AutoMigrate(ctx logger.WithLogger, models []interface{}) error {
 	err := g.db_().AutoMigrate(models...)
 	if err != nil {
@@ -264,13 +271,13 @@ func (g *GormDB) RowsWithFilter(ctx logger.WithLogger, filter *Filter, obj inter
 	return cursor, err
 }
 
-func (g *GormDB) FinWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) (bool, error) {
-	notFound, err := FindWithFilter(g.db_(), filter, obj)
-	if err != nil && g.VERBOSE_ERRORS && !notFound {
+func (g *GormDB) FinWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) error {
+	err := FindWithFilter(g.db_(), filter, obj)
+	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to FinWithFilter %v", ObjectTypeName(obj))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
 	}
-	return notFound, err
+	return err
 }
 
 func (g *GormDB) Update(ctx logger.WithLogger, obj interface{}, filter db.Fields, newFields db.Fields) error {

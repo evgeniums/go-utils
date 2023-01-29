@@ -143,6 +143,9 @@ func (c *Context) Init(configFile string, configType ...string) error {
 }
 
 func (c *Context) Close() {
+	if c.db != nil {
+		c.db.Close()
+	}
 	if c.inmemCache != nil {
 		c.inmemCache.Stop()
 	}

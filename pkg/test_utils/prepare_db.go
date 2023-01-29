@@ -15,11 +15,15 @@ import (
 
 var SqliteFolder string = ""
 
-func SqliteDbPath(fileName string) string {
+func SqliteDatabasesPath() string {
 	if SqliteFolder == "" {
-		return filepath.Join(os.TempDir(), fileName)
+		return filepath.Join(os.TempDir(), "go_sqlite_databases")
 	}
-	return filepath.Join(SqliteFolder, fileName)
+	return SqliteFolder
+}
+
+func SqliteDbPath(fileName string) string {
+	return filepath.Join(SqliteDatabasesPath(), fileName)
 }
 
 func SqlitePath(config *db.DBConfig) string {

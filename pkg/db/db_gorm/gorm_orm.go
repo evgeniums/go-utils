@@ -21,21 +21,25 @@ func ConnectDB(dialector gorm.Dialector) (*gorm.DB, error) {
 func FindByField(db *gorm.DB, fieldName string, fieldValue interface{}, doc interface{}) (bool, error) {
 	result := db.First(doc, fmt.Sprintf("\"%v\" = ?", fieldName), fieldValue)
 	if result.Error != nil {
-		notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
-		return notFound, result.Error
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, result.Error
 	}
 
-	return false, nil
+	return true, nil
 }
 
 func FindByFields(db *gorm.DB, fields db.Fields, doc interface{}) (bool, error) {
 	result := db.Where(fields).First(doc)
 	if result.Error != nil {
-		notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
-		return notFound, result.Error
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, result.Error
 	}
 
-	return false, nil
+	return true, nil
 }
 
 func RowsByFields(db *gorm.DB, fields db.Fields, doc interface{}) (*sql.Rows, error) {
@@ -75,38 +79,34 @@ func prepareInterval(db *gorm.DB, name string, interval *Interval) *gorm.DB {
 func prepareFilter(db *gorm.DB, filter *Filter) *gorm.DB {
 	h := db
 
-	if filter.PreconditionFields != nil {
-		h = db.Where(filter.PreconditionFields)
+	if filter.Fields != nil {
+		h = db.Where(filter.Fields)
 	}
 
-	if filter.PreconditionFieldsIn != nil {
-		for field, values := range filter.PreconditionFieldsIn {
-			h = h.Where(fmt.Sprintf("\"%v\" IN ? ", field), values)
-		}
+	for field, values := range filter.FieldsIn {
+		h = h.Where(fmt.Sprintf("\"%v\" IN ? ", field), values)
 	}
 
-	if filter.PreconditionFieldsNotIn != nil {
-		for field, values := range filter.PreconditionFieldsNotIn {
-			h = h.Where(fmt.Sprintf("\"%v\" NOT IN ? ", field), values)
-		}
+	for field, values := range filter.FieldsNotIn {
+		h = h.Where(fmt.Sprintf("\"%v\" NOT IN ? ", field), values)
 	}
 
 	for name, interval := range filter.IntervalFields {
 		h = prepareInterval(h, name, interval)
 	}
 
-	for _, between := range filter.Between {
+	for _, between := range filter.BetweenFields {
 		h = h.Where(fmt.Sprintf(`? >= "%v" AND ? <= "%v"`, between.FromField, between.ToField), between.Value, between.Value)
 	}
 
 	return h
 }
 
-func FindWithFilter(db *gorm.DB, filter *Filter, doc interface{}) (bool, error) {
+func FindWithFilter(db_ *gorm.DB, filter *Filter, docs interface{}) error {
 
-	h := prepareFilter(db, filter)
+	h := prepareFilter(db_, filter)
 
-	if filter.SortField != "" && (filter.SortDirection == "asc" || filter.SortDirection == "desc") {
+	if filter.SortField != "" && (filter.SortDirection == db.SORT_ASC || filter.SortDirection == db.SORT_DESC) {
 		h = h.Order(fmt.Sprintf("\"%v\" %v", filter.SortField, filter.SortDirection))
 	}
 
@@ -118,13 +118,12 @@ func FindWithFilter(db *gorm.DB, filter *Filter, doc interface{}) (bool, error) 
 		h = h.Limit(filter.Limit)
 	}
 
-	result := h.Find(doc)
-	if result.Error != nil {
-		notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
-		return notFound, result.Error
+	result := h.Find(docs)
+	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return result.Error
 	}
 
-	return false, nil
+	return nil
 }
 
 func RowsWithFilter(db *gorm.DB, filter *Filter, docs interface{}) (*sql.Rows, error) {

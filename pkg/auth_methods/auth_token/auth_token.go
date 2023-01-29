@@ -8,7 +8,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
-	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
@@ -222,13 +221,13 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 
 	// load user
 	user := a.users.UserManager().MakeUser()
-	notfound, err := user_manager.FindByLogin(a.users.UserManager(), ctx, session.GetUserLogin(), user)
-	if !db.CheckFoundNoError(notfound, &err) {
-		if err != nil {
-			c.SetMessage("failed to load user")
-			ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
-			return true, err
-		}
+	found, err := user_manager.FindByLogin(a.users.UserManager(), ctx, session.GetUserLogin(), user)
+	if err != nil {
+		c.SetMessage("failed to load user")
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
+		return true, err
+	}
+	if !found {
 		c.SetMessage("user not found")
 		ctx.SetGenericErrorCode(ErrorCodeUnknownUser)
 		return true, err

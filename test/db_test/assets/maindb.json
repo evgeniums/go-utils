@@ -1,6 +1,6 @@
 {
     "db":{
         "db_provider": "sqlite",
-        "db_extra_config" : "maindb.dat"
+        "db_extra_config" : "maindb.sqlite"
     }
 }
