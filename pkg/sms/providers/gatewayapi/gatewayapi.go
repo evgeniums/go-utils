@@ -36,14 +36,13 @@ type GoodResponse struct {
 }
 
 type SmsGatewayapiConfig struct {
+	sms.ProviderBase
 	URL    string `validate:"required,url"`
 	TOKEN  string `validate:"required" mask:"true"`
 	SENDER string
-	NAME   string
 }
 
 type SmsGatewayapi struct {
-	sms.ProviderBase
 	SmsGatewayapiConfig
 	sendUrl string
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms/providers/gatewayapi"
+	"github.com/evgeniums/go-backend-helpers/pkg/sms/providers/sms_mock"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms/providers/smsru"
 )
 
@@ -17,6 +18,8 @@ func (f *DefaultFactory) Create(protocol string) (sms.Provider, error) {
 		return gatewayapi.New(), nil
 	case smsru.Protocol:
 		return smsru.New(), nil
+	case sms_mock.Protocol:
+		return sms_mock.New(), nil
 	}
 
 	return nil, errors.New("unknown SMS provider")

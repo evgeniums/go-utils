@@ -27,15 +27,14 @@ const (
 )
 
 type SmsruConfig struct {
+	sms.ProviderBase
 	URL    string `validate:"required,url"`
 	API_ID string `validate:"required" mask:"true"`
 	TEST   int
-	NAME   string
 }
 
 type Smsru struct {
 	SmsruConfig
-	sms.ProviderBase
 }
 
 func New() *Smsru {
