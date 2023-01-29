@@ -2,6 +2,7 @@ package sms
 
 import (
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
@@ -149,6 +150,11 @@ func (s *SmsManagerBase) Init(cfg config.Config, log logger.Logger, vld validato
 			return log.PushFatalStack("unknown provider for destination", nil, logger.Fields{"provider": destination.PROVIDER, "destination": destination.PREFIX})
 		}
 	}
+
+	// sort destinations
+	sort.SliceStable(s.destinations, func(i int, j int) bool {
+		return len(s.destinations[i].PREFIX) > len(s.destinations[j].PREFIX)
+	})
 
 	// done
 	return nil
