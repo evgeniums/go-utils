@@ -101,7 +101,7 @@ func (g *GormDB) Init(ctx logger.WithLogger, cfg config.Config, vld validator.Va
 	ctx.Logger().Info("Init GormDB")
 
 	// load configuration
-	err := object_config.LoadLogValidate(cfg, ctx.Logger(), vld, g, "psql", configPath...)
+	err := object_config.LoadLogValidate(cfg, ctx.Logger(), vld, g, "db", configPath...)
 	if err != nil {
 		return ctx.Logger().PushFatalStack("failed to load GormDB configuration", err)
 	}

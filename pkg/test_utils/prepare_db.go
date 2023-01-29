@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"testing"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
@@ -14,14 +15,15 @@ import (
 
 var SqliteFolder string = ""
 
-func SqlitePath(config *db.DBConfig) string {
-	path := config.DB_EXTRA_CONFIG
+func SqliteDbPath(fileName string) string {
 	if SqliteFolder == "" {
-		path = filepath.Join(os.TempDir(), path)
-	} else {
-		path = filepath.Join(SqliteFolder, path)
+		return filepath.Join(os.TempDir(), fileName)
 	}
-	return path
+	return filepath.Join(SqliteFolder, fileName)
+}
+
+func SqlitePath(config *db.DBConfig) string {
+	return SqliteDbPath(config.DB_EXTRA_CONFIG)
 }
 
 func DbGormOpener(provider string, dsn string) (gorm.Dialector, error) {
@@ -36,23 +38,27 @@ func DbGormOpener(provider string, dsn string) (gorm.Dialector, error) {
 	return nil, errors.New("unknown database provider")
 }
 
-func DbDsnBuilder(config *db.DBConfig) (string, error) {
+func DbDsnBuilder(t *testing.T, config *db.DBConfig) (string, error) {
 
 	switch config.DB_PROVIDER {
 	case "postgres":
 		return db_gorm.PostgresDsnBuilder(config)
 	case "sqlite":
-		return SqlitePath(config), nil
+		dsn := SqlitePath(config)
+		t.Logf("Sqlite database DSN: %s", dsn)
+		return dsn, nil
 	}
 
 	return "", errors.New("unknown database provider")
 }
 
-func SetupGormDB() {
+func SetupGormDB(t *testing.T) {
 	db_gorm.DefaultDbConnector = func() *db_gorm.DbConnector {
 		c := &db_gorm.DbConnector{}
 		c.DialectorOpener = DbGormOpener
-		c.DsnBuilder = DbDsnBuilder
+		c.DsnBuilder = func(config *db.DBConfig) (string, error) {
+			return DbDsnBuilder(t, config)
+		}
 		return c
 	}
 }
