@@ -1,6 +1,7 @@
 package sms
 
 import (
+	"errors"
 	"net/http"
 	"sort"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
@@ -21,6 +23,7 @@ type SmsManager interface {
 	generic_error.ErrorDefinitions
 
 	Send(ctx auth.AuthContext, message string, recipient string) (string, error)
+	FindSms(ctx auth.AuthContext, smsId string) (*SmsMessage, error)
 }
 
 const (
@@ -240,4 +243,30 @@ func (s *SmsManagerBase) Send(ctx auth.AuthContext, message string, recipient st
 func (s *SmsManagerBase) AttachToErrorManager(errManager generic_error.ErrorManager) {
 	errManager.AddErrorDescriptions(SmsErrorDescriptions)
 	errManager.AddErrorProtocolCodes(SmsErrorHttpCodes)
+}
+
+func (s *SmsManagerBase) FindSms(ctx op_context.Context, smsId string) (*SmsMessage, error) {
+
+	c := ctx.TraceInMethod("SmsManagerBase.FindSms", logger.Fields{"sms_id": smsId})
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
+
+	msg := &SmsMessage{}
+	found, err := ctx.DB().FindByField(ctx, "id", smsId, msg)
+	if err != nil {
+		c.SetMessage("failed to find SMS in database")
+		return nil, err
+	}
+	if !found {
+		err = errors.New("SMS not found")
+		return nil, err
+	}
+
+	return msg, nil
 }
