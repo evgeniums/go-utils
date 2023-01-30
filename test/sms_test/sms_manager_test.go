@@ -29,7 +29,7 @@ func initSmsManager(t *testing.T, config ...string) (app_context.Context, sms.Sm
 	createDb(t, app)
 
 	manager := sms.NewSmsManager()
-	require.NoErrorf(t, manager.Init(app.Cfg(), app.Logger(), app.Validator(), &sms_provider_factory.DefaultFactory{}, "sms"), "failed to init SMS manager")
+	require.NoErrorf(t, manager.Init(app.Cfg(), app.Logger(), app.Validator(), &sms_provider_factory.MockFactory{}, "sms"), "failed to init SMS manager")
 
 	return app, manager
 }
