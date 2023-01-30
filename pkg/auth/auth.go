@@ -29,6 +29,10 @@ type AuthBase struct {
 	endpointsConfig EndpointsAuthConfig
 }
 
+func NewAuth() *AuthBase {
+	return &AuthBase{}
+}
+
 func (a *AuthBase) Config() interface{} {
 	return &a.AuthBaseConfig
 }
