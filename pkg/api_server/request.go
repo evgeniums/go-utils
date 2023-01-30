@@ -5,7 +5,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/parameter"
 )
@@ -22,8 +21,7 @@ type Request interface {
 type RequestBase struct {
 	op_context.ContextBase
 	auth.SessionBase
-	user    auth.User
-	tenancy multitenancy.Tenancy
+	auth.UserContextBase
 }
 
 func (r *RequestBase) Init(app app_context.Context, log logger.Logger, db db.DB, fields ...logger.Fields) {
@@ -31,28 +29,9 @@ func (r *RequestBase) Init(app app_context.Context, log logger.Logger, db db.DB,
 }
 
 func (r *RequestBase) DB() db.DB {
-	if r.tenancy != nil {
-		return r.tenancy.DB()
+	t := r.GetTenancy()
+	if t != nil {
+		return t.DB()
 	}
 	return r.ContextBase.DB()
-}
-
-func (r *RequestBase) Tenancy() multitenancy.Tenancy {
-	return r.tenancy
-}
-
-func (r *RequestBase) SetTenancy(tenancy multitenancy.Tenancy) {
-	r.tenancy = tenancy
-	r.SetLoggerField("tenancy", tenancy.Name())
-	if tenancy.Cache() != nil {
-		r.SetCache(tenancy.Cache())
-	}
-}
-
-func (r *RequestBase) AuthUser() auth.User {
-	return r.user
-}
-
-func (r *RequestBase) SetAuthUser(user auth.User) {
-	r.user = user
 }

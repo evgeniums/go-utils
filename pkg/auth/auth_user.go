@@ -1,5 +1,10 @@
 package auth
 
+import (
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+)
+
 type User interface {
 	GetID() string
 	Display() string
@@ -64,4 +69,48 @@ func (u *SessionBase) GetClientId() string {
 
 func (u *SessionBase) SetClientId(id string) {
 	u.client = id
+}
+
+type WithAuthUser interface {
+	AuthUser() User
+	SetAuthUser(user User)
+}
+
+type UserContext interface {
+	op_context.Context
+	multitenancy.WithTenancy
+	WithAuthUser
+}
+
+func Tenancy(ctx UserContext) string {
+	if ctx.GetTenancy() == nil {
+		return ""
+	}
+	return ctx.GetTenancy().GetID()
+}
+
+type UserContextBase struct {
+	op_context.ContextBase
+	User    User
+	Tenancy multitenancy.Tenancy
+}
+
+func (u *UserContextBase) AuthUser() User {
+	return u.User
+}
+
+func (u *UserContextBase) SetAuthUser(user User) {
+	u.User = user
+}
+
+func (u *UserContextBase) GetTenancy() multitenancy.Tenancy {
+	return u.Tenancy
+}
+
+func (u *UserContextBase) SetTenancy(tenancy multitenancy.Tenancy) {
+	u.Tenancy = tenancy
+	u.SetLoggerField("tenancy", tenancy.Name())
+	if tenancy.Cache() != nil {
+		u.SetCache(tenancy.Cache())
+	}
 }

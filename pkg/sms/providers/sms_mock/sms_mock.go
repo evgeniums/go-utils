@@ -61,11 +61,12 @@ func (s *SmsMock) Send(ctx op_context.Context, message string, recipient string,
 	result := &sms.ProviderResponse{}
 	result.ProviderMessageID = utils.GenerateID()
 	if s.ALWAYS_FAIL {
-		result.RawContent = "fail"
+		result.RawContent = "failed"
 		err = errors.New("expected failure")
 	} else {
 		LastSmsId = utils.OptionalArg("", smsID...)
-		result.RawContent = "success"
+		result.RawContent = "ok"
+		c.LoggerFields()["provider_sms_id"] = result.ProviderMessageID
 	}
 
 	// return result

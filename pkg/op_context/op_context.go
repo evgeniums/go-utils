@@ -1,8 +1,6 @@
 package op_context
 
 import (
-	"fmt"
-
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
@@ -16,10 +14,13 @@ type CallContext interface {
 	Method() string
 	Error() error
 	Message() string
-	Fields() logger.Fields
 
 	SetError(err error) error
 	SetMessage(msg string)
+
+	SetLoggerField(name string, value interface{})
+	UnsetLoggerField(name string)
+	LoggerFields() logger.Fields
 
 	Logger() logger.Logger
 }
@@ -32,30 +33,40 @@ type CallContextBase struct {
 	proxyLogger *logger.ProxyLogger
 }
 
-func (t *CallContextBase) Method() string {
-	return t.method
+func (c *CallContextBase) Method() string {
+	return c.method
 }
-func (t *CallContextBase) Error() error {
-	return t.error_
+func (c *CallContextBase) Error() error {
+	return c.error_
 }
-func (t *CallContextBase) Err() *error {
-	return &t.error_
+func (c *CallContextBase) Err() *error {
+	return &c.error_
 }
-func (t *CallContextBase) Message() string {
-	return t.message
+func (c *CallContextBase) Message() string {
+	return c.message
 }
-func (t *CallContextBase) Fields() logger.Fields {
-	return t.proxyLogger.StaticFields()
+
+func (c *CallContextBase) SetLoggerField(name string, value interface{}) {
+	c.proxyLogger.SetStaticField(name, value)
 }
-func (t *CallContextBase) Logger() logger.Logger {
-	return t.proxyLogger
+
+func (c *CallContextBase) LoggerFields() logger.Fields {
+	return c.proxyLogger.StaticFields()
 }
-func (t *CallContextBase) SetError(err error) error {
-	t.error_ = err
-	return t.error_
+
+func (c *CallContextBase) UnsetLoggerField(name string) {
+	c.proxyLogger.UnsetStaticField(name)
 }
-func (t *CallContextBase) SetMessage(msg string) {
-	t.message = msg
+
+func (c *CallContextBase) Logger() logger.Logger {
+	return c.proxyLogger
+}
+func (c *CallContextBase) SetError(err error) error {
+	c.error_ = err
+	return c.error_
+}
+func (c *CallContextBase) SetMessage(msg string) {
+	c.message = msg
 }
 
 type Context interface {
@@ -257,9 +268,9 @@ func (c *ContextBase) Close() {
 			// collect messages
 			if item.Message() != "" {
 				if msg != "" {
-					msg += ":"
+					msg = utils.ConcatStrings(msg, ":")
 				}
-				msg += fmt.Sprintf("%s( %s )", item.Method(), item.Message())
+				msg = utils.ConcatStrings(msg, item.Method(), "(", item.Message(), ")")
 			}
 			if item.Error() != nil {
 				// override with deepest error

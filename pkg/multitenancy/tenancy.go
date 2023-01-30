@@ -17,6 +17,10 @@ type Tenancy interface {
 	Path() string
 }
 
+type WithTenancy interface {
+	GetTenancy() Tenancy
+}
+
 type TenancyObjectBase struct {
 	common.ObjectBase
 	db.DBConfig

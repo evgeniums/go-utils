@@ -4,8 +4,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
@@ -15,7 +13,7 @@ type AuthDataAccessor interface {
 }
 
 type AuthContext interface {
-	op_context.Context
+	UserContext
 	Session
 
 	GetRequestContent() []byte
@@ -26,20 +24,8 @@ type AuthContext interface {
 	GetRequestClientIp() string
 	GetRequestUserAgent() string
 
-	AuthUser() User
-	SetAuthUser(user User)
-
 	SetAuthParameter(authMethodProtocol string, key string, value string)
 	GetAuthParameter(authMethodProtocol string, key string) string
-
-	Tenancy() multitenancy.Tenancy
-}
-
-func Tenancy(ctx AuthContext) string {
-	if ctx.Tenancy() == nil {
-		return ""
-	}
-	return ctx.Tenancy().GetID()
 }
 
 type AuthHandler interface {

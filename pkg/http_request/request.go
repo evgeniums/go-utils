@@ -147,8 +147,8 @@ func (r *Request) Send(ctx op_context.Context) error {
 			}
 
 			if err != nil {
-				c.Fields()["response_content"] = r.ResponseContent
-				c.Fields()["response_status"] = r.ResponseStatus
+				c.LoggerFields()["response_content"] = r.ResponseContent
+				c.LoggerFields()["response_status"] = r.ResponseStatus
 				return err
 			}
 		}

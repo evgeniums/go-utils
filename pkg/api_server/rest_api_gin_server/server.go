@@ -6,7 +6,6 @@ import (
 	"math"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
@@ -59,7 +58,7 @@ func NewServer() *Server {
 	s := &Server{}
 
 	csrfKey := func(key string) string {
-		return "X-" + strings.ToUpper(key)
+		return utils.ConcatStrings("x-", key)
 	}
 
 	s.authParamsSetters = make(map[string]AuthParameterSetter, 0)

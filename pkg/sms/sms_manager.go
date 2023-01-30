@@ -22,7 +22,7 @@ import (
 type SmsManager interface {
 	generic_error.ErrorDefinitions
 
-	Send(ctx auth.AuthContext, message string, recipient string) (string, error)
+	Send(ctx auth.UserContext, message string, recipient string) (string, error)
 	FindSms(ctx op_context.Context, smsId string) (*SmsMessage, error)
 }
 
@@ -58,10 +58,10 @@ type SmsMessage struct {
 }
 
 type SmsManagerBaseConfig struct {
-	DEFAULT_PROVIDER       string `validate:"required"`
-	ENCRYPT_MESSAGES_STORE bool
-	SECRET                 string `mask:"true"`
-	SALT                   string `mask:"true"`
+	DEFAULT_PROVIDER      string `validate:"required"`
+	ENCRYPT_MESSAGE_STORE bool
+	SECRET                string `mask:"true"`
+	SALT                  string `mask:"true"`
 }
 
 type SmsDestinationConfig struct {
@@ -111,7 +111,7 @@ func (s *SmsManagerBase) Init(cfg config.Config, log logger.Logger, vld validato
 	}
 
 	// init cipher
-	if s.ENCRYPT_MESSAGES_STORE {
+	if s.ENCRYPT_MESSAGE_STORE {
 		if s.SECRET == "" {
 			return log.PushFatalStack("encryption secret must not be empty", nil)
 		}
@@ -158,6 +158,7 @@ func (s *SmsManagerBase) Init(cfg config.Config, log logger.Logger, vld validato
 		if !ok {
 			return log.PushFatalStack("unknown provider for destination", nil, logger.Fields{"provider": destination.PROVIDER, "destination": destination.PREFIX})
 		}
+		s.destinations = append(s.destinations, destination)
 	}
 
 	// sort destinations
@@ -169,7 +170,7 @@ func (s *SmsManagerBase) Init(cfg config.Config, log logger.Logger, vld validato
 	return nil
 }
 
-func (s *SmsManagerBase) Send(ctx auth.AuthContext, message string, recipient string) (string, error) {
+func (s *SmsManagerBase) Send(ctx auth.UserContext, message string, recipient string) (string, error) {
 
 	// setup
 	c := ctx.TraceInMethod("SmsManagerBase.Send", logger.Fields{"recipient": recipient})
@@ -177,6 +178,8 @@ func (s *SmsManagerBase) Send(ctx auth.AuthContext, message string, recipient st
 	onExit := func() {
 		if err != nil {
 			c.SetError(err)
+		} else {
+			c.Logger().Info("sms sent")
 		}
 		ctx.TraceOutMethod()
 	}
@@ -190,19 +193,20 @@ func (s *SmsManagerBase) Send(ctx auth.AuthContext, message string, recipient st
 			break
 		}
 	}
-	ctx.SetLoggerField("provider", provider.Name())
+	c.SetLoggerField("provider", provider.Name())
+	c.SetLoggerField("user", ctx.AuthUser().Display())
 
 	// keep sms
 	sms := &SmsMessage{}
 	sms.InitObject()
 	sms.SetUser(ctx.AuthUser())
+	sms.Tenancy = auth.Tenancy(ctx)
 	sms.Phone = recipient
 	sms.Operation = ctx.Name()
-	sms.Tenancy = auth.Tenancy(ctx)
 	sms.Provider = provider.Name()
 	sms.Status = StatusSending
-	c.Fields()["sms_id"] = sms.GetID()
-	if s.ENCRYPT_MESSAGES_STORE {
+	c.LoggerFields()["sms_id"] = sms.GetID()
+	if s.ENCRYPT_MESSAGE_STORE {
 		ciphertext, err := s.cipher.Encrypt([]byte(message))
 		if err != nil {
 			c.SetMessage("failed to encrypt message")
@@ -235,10 +239,10 @@ func (s *SmsManagerBase) Send(ctx auth.AuthContext, message string, recipient st
 	}
 
 	// update status in database
-	err1 := db.Update(ctx.DB(), ctx, sms, db.Fields{"status": sms.Status, "raw_response": sms.RawResponse, "foreing_id": sms.ForeignId})
+	err1 := db.Update(ctx.DB(), ctx, sms, db.Fields{"status": sms.Status, "raw_response": sms.RawResponse, "foreign_id": sms.ForeignId})
 	if err1 != nil {
-		c.Fields()["status"] = sms.Status
-		c.Fields()["raw_response"] = sms.RawResponse
+		c.LoggerFields()["status"] = sms.Status
+		c.LoggerFields()["raw_response"] = sms.RawResponse
 		c.Logger().Error("failed to update SMS in database", err1)
 	}
 

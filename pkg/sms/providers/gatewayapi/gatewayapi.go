@@ -85,7 +85,7 @@ func (s *SmsGatewayapi) Send(ctx op_context.Context, message string, recipient s
 	msg := Message{Message: message, Recipients: recipients}
 	if len(smsID) > 0 {
 		msg.Usereref = smsID[0]
-		c.Fields()["sms_id"] = msg.Usereref
+		c.LoggerFields()["sms_id"] = msg.Usereref
 	}
 
 	var obj interface{}
@@ -104,8 +104,8 @@ func (s *SmsGatewayapi) Send(ctx op_context.Context, message string, recipient s
 	request.GoodResponse = response
 
 	err = request.Send(ctx)
-	c.Fields()["response_content"] = request.ResponseContent
-	c.Fields()["response_status"] = request.ResponseStatus
+	c.LoggerFields()["response_content"] = request.ResponseContent
+	c.LoggerFields()["response_status"] = request.ResponseStatus
 	if err != nil {
 		return nil, err
 	}

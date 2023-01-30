@@ -17,7 +17,7 @@ var _, testBasePath, _, _ = runtime.Caller(0)
 var testDir = filepath.Dir(testBasePath)
 
 func TestInitDb(t *testing.T) {
-	app := test_utils.InitAppContext(t, testDir)
+	app := test_utils.InitAppContext(t, testDir, "maindb.json")
 	app.Close()
 }
 
@@ -38,13 +38,13 @@ func createDb(t *testing.T, app app_context.Context) {
 }
 
 func TestCreateDatabase(t *testing.T) {
-	app := test_utils.InitAppContext(t, testDir)
+	app := test_utils.InitAppContext(t, testDir, "maindb.json")
 	defer app.Close()
 	createDb(t, app)
 }
 
 func TestMainDbOperations(t *testing.T) {
-	app := test_utils.InitAppContext(t, testDir)
+	app := test_utils.InitAppContext(t, testDir, "maindb.json")
 	defer app.Close()
 	createDb(t, app)
 

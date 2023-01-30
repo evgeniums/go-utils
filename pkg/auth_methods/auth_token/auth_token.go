@@ -167,7 +167,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	if refresh {
 		tokenName = RefreshTokenName
 	}
-	c.Fields()["refresh"] = refresh
+	c.LoggerFields()["refresh"] = refresh
 
 	// check token in request
 	prev := &Token{}
@@ -180,7 +180,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		ctx.SetGenericErrorCode(ErrorCodeInvalidToken)
 		return true, err
 	}
-	c.Fields()["token"] = prev.Id
+	c.LoggerFields()["token"] = prev.Id
 	ctx.SetLoggerField("user", prev.UserDisplay)
 	ctx.SetLoggerField("session", prev.SessionId)
 	if prev.Expired() {
@@ -190,10 +190,10 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	}
 
 	// check tenancy
-	if ctx.Tenancy() != nil || prev.Tenancy != "" {
-		if ctx.Tenancy() == nil || prev.Tenancy != ctx.Tenancy().GetID() {
+	if ctx.GetTenancy() != nil || prev.Tenancy != "" {
+		if ctx.GetTenancy() == nil || prev.Tenancy != ctx.GetTenancy().GetID() {
 			err = errors.New("invalid tenancy")
-			c.Fields()["token_tenancy"] = prev.Tenancy
+			c.LoggerFields()["token_tenancy"] = prev.Tenancy
 			ctx.SetGenericErrorCode(ErrorCodeSessionExpired)
 			return true, err
 		}
@@ -330,8 +330,8 @@ func (a *AuthTokenHandler) GenToken(ctx auth.AuthContext, paramName string, expi
 	token.SessionId = ctx.GetSessionId()
 	token.UserDisplay = ctx.AuthUser().Display()
 	token.UserId = ctx.AuthUser().GetID()
-	if ctx.Tenancy() != nil {
-		token.Tenancy = ctx.Tenancy().GetID()
+	if ctx.GetTenancy() != nil {
+		token.Tenancy = ctx.GetTenancy().GetID()
 	}
 
 	token.SetTTL(expirationSeconds)

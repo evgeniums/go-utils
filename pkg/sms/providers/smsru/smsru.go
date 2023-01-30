@@ -104,9 +104,9 @@ func (s *Smsru) Send(ctx op_context.Context, message string, recipient string, s
 
 	// send request
 	err = req.Send(ctx)
-	c.Fields()["response_content"] = req.ResponseContent
-	c.Fields()["response_status"] = req.ResponseStatus
-	c.Fields()["status_code"] = resp.StatusCode
+	c.LoggerFields()["response_content"] = req.ResponseContent
+	c.LoggerFields()["response_status"] = req.ResponseStatus
+	c.LoggerFields()["status_code"] = resp.StatusCode
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (s *Smsru) Send(ctx op_context.Context, message string, recipient string, s
 	if ok {
 		result.ProviderMessageID = item.SmsId
 		ctx.SetLoggerField("provider_sms_id", result.ProviderMessageID)
-		c.Fields()["sms_status_code"] = item.StatusCode
+		c.LoggerFields()["sms_status_code"] = item.StatusCode
 		if err == nil && item.StatusCode != CodeOk {
 			err = errors.New("failed item status code")
 		}

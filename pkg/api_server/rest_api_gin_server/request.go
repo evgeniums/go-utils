@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -99,9 +99,7 @@ func (r *Request) GetRequestContent() []byte {
 }
 
 func AuthKey(key string) string {
-	k := strings.ToUpper(key)
-	k = "X-AUTH-" + k
-	return k
+	return utils.ConcatStrings("x-auth-", key)
 }
 
 func (r *Request) SetAuthParameter(authMethodProtocol string, key string, value string) {

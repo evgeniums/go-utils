@@ -1,0 +1,34 @@
+{
+    "db":{
+        "db_provider": "sqlite",
+        "db_extra_config" : "sms_test.sqlite"
+    },
+    "sms": {
+        "default_provider": "mock_default",
+        "encrypt_message_store": true,
+        "secret": "kjh^V3Aj*1oij'oaasd",
+        "salt": "982uJde3",
+        "providers": {
+            "mock_default" : {
+                "protocol": "sms_mock"
+            },
+            "mock_success" : {
+                "protocol": "sms_mock"
+            },
+            "mock_fail" : {
+                "protocol": "sms_mock",
+                "always_fail": true
+            }
+        },
+        "destinations": [
+            {
+                "prefix":"9",
+                "provider":"mock_success"
+            },
+            {
+                "prefix":"999",
+                "provider":"mock_fail"
+            }
+        ]
+    }
+}
