@@ -24,3 +24,7 @@ func ExternalConfigFilePath(path string) string {
 func ExternalConfigFileExists(path string) bool {
 	return utils.FileExists(ExternalConfigFilePath(path))
 }
+
+func AssetsFilePath(testDir string, fileName string) string {
+	return filepath.Join(testDir, "assets", fileName)
+}

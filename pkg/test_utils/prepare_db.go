@@ -6,8 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
+	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -65,4 +67,9 @@ func SetupGormDB(t *testing.T) {
 		}
 		return c
 	}
+}
+
+func CreateDb(t *testing.T, app app_context.Context, models ...interface{}) {
+	modelsList := append([]interface{}{}, models...)
+	require.NoErrorf(t, app.DB().AutoMigrate(app, modelsList), "failed to create database")
 }
