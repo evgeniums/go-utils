@@ -23,7 +23,7 @@ type SmsManager interface {
 	generic_error.ErrorDefinitions
 
 	Send(ctx auth.AuthContext, message string, recipient string) (string, error)
-	FindSms(ctx auth.AuthContext, smsId string) (*SmsMessage, error)
+	FindSms(ctx op_context.Context, smsId string) (*SmsMessage, error)
 }
 
 const (
@@ -112,6 +112,12 @@ func (s *SmsManagerBase) Init(cfg config.Config, log logger.Logger, vld validato
 
 	// init cipher
 	if s.ENCRYPT_MESSAGES_STORE {
+		if s.SECRET == "" {
+			return log.PushFatalStack("encryption secret must not be empty", nil)
+		}
+		if s.SALT == "" {
+			return log.PushFatalStack("encryption salt must not be empty", nil)
+		}
 		s.cipher, err = crypt_utils.NewAEAD(s.SECRET, []byte(s.SALT))
 		if err != nil {
 			return log.PushFatalStack("failed to init cipher for SMS manager", err)
