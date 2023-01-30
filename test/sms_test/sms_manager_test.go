@@ -6,10 +6,12 @@ import (
 	"testing"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms/sms_provider_factory"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,8 +23,8 @@ func createDb(t *testing.T, app app_context.Context) {
 	test_utils.CreateDb(t, app, &sms.SmsMessage{})
 }
 
-func initSmsManager(t *testing.T) (app_context.Context, sms.SmsManager) {
-	app := test_utils.InitAppContext(t, testDir, "sms_test.json")
+func initSmsManager(t *testing.T, config ...string) (app_context.Context, sms.SmsManager) {
+	app := test_utils.InitAppContext(t, testDir, utils.OptionalArg("sms_test.json", config...))
 
 	createDb(t, app)
 
@@ -37,9 +39,7 @@ func TestInitSmsManager(t *testing.T) {
 	defer app.Close()
 }
 
-func TestSendSms(t *testing.T) {
-	app, manager := initSmsManager(t)
-	defer app.Close()
+func testSms(t *testing.T, app app_context.Context, manager sms.SmsManager, encrypted bool) {
 
 	user1 := user.NewUser()
 	user1.InitObject()
@@ -47,9 +47,26 @@ func TestSendSms(t *testing.T) {
 	user1.PHONE = "555000111"
 	ctx1 := test_utils.UserOpContext(app, "TestSendSms", user1)
 	message1 := "Hello world, user1"
-	_, err := manager.Send(ctx1, message1, user1.PHONE)
-	ctx1.Close()
+	smsId1, err := manager.Send(ctx1, message1, user1.PHONE)
 	assert.NoError(t, err, "failed to send SMS")
+
+	sms1, err := manager.FindSms(ctx1, smsId1)
+	assert.NoError(t, err, "failed to find SMS")
+	require.NotNil(t, sms1)
+	assert.Equal(t, "mock_default", sms1.Provider)
+	assert.Equal(t, sms.StatusSuccess, sms1.Status)
+
+	if !encrypted {
+		assert.Equal(t, message1, sms1.Message)
+	} else {
+		assert.NotEqual(t, message1, sms1.Message)
+		m := manager.(*sms.SmsManagerBase)
+		msg1, err := crypt_utils.DecryptStrings(m.SECRET, m.SALT, sms1.Message)
+		assert.NoError(t, err, "failed to decrypt message")
+		assert.Equal(t, message1, string(msg1))
+	}
+
+	ctx1.Close()
 
 	user2 := user.NewUser()
 	user2.InitObject()
@@ -57,9 +74,15 @@ func TestSendSms(t *testing.T) {
 	user2.PHONE = "999000111"
 	ctx2 := test_utils.UserOpContext(app, "TestSendSms", user2)
 	message2 := "Hello world, user2"
-	_, err = manager.Send(ctx2, message2, user2.PHONE)
+	smsId2, err := manager.Send(ctx2, message2, user2.PHONE)
+	assert.Error(t, err, "must fail sending SMS")
+
+	sms2, err := manager.FindSms(ctx2, smsId2)
+	assert.NoError(t, err, "failed to find SMS")
+	require.NotNil(t, sms2)
+	assert.Equal(t, "mock_fail", sms2.Provider)
+	assert.Equal(t, sms.StatusFail, sms2.Status)
 	ctx2.Close()
-	assert.Error(t, err, "msut fail sending SMS")
 
 	user3 := user.NewUser()
 	user3.InitObject()
@@ -67,7 +90,25 @@ func TestSendSms(t *testing.T) {
 	user3.PHONE = "990000111"
 	ctx3 := test_utils.UserOpContext(app, "TestSendSms", user3)
 	message3 := "Hello world, user3"
-	_, err = manager.Send(ctx3, message3, user3.PHONE)
-	ctx3.Close()
+	smsId3, err := manager.Send(ctx3, message3, user3.PHONE)
 	assert.NoError(t, err, "failed to send SMS")
+
+	sms3, err := manager.FindSms(ctx3, smsId3)
+	assert.NoError(t, err, "failed to find SMS")
+	require.NotNil(t, sms3)
+	assert.Equal(t, "mock_success", sms3.Provider)
+	assert.Equal(t, sms.StatusSuccess, sms3.Status)
+	ctx3.Close()
+}
+
+func TestSendSms(t *testing.T) {
+	app, manager := initSmsManager(t)
+	defer app.Close()
+	testSms(t, app, manager, false)
+}
+
+func TestSendSmsEncrypted(t *testing.T) {
+	app, manager := initSmsManager(t, "sms_encrypt_test.json")
+	defer app.Close()
+	testSms(t, app, manager, true)
 }

@@ -5,6 +5,9 @@
     },
     "sms": {
         "default_provider": "mock_default",
+        "encrypt_message_store": true,
+        "secret": "kjh^V3Aj*1oij'oaasd",
+        "salt": "982uJde3",
         "providers": {
             "mock_default" : {
                 "protocol": "sms_mock"
