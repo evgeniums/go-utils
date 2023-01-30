@@ -105,3 +105,32 @@ func (a *AEAD) Decrypt(ciphertext []byte, additionalData ...[]byte) ([]byte, err
 	// done
 	return plaintext, nil
 }
+
+func Decrypt(secret string, salt []byte, ciphertext []byte, additionalData ...[]byte) ([]byte, error) {
+
+	aead, err := NewAEAD(secret, salt)
+	if err != nil {
+		return nil, err
+	}
+
+	return aead.Decrypt(ciphertext, additionalData...)
+}
+
+func DecryptStrings(secret string, salt string, ciphertext string, additionalStrings ...string) ([]byte, error) {
+
+	b64 := utils.Base64StringCoding{}
+	cipherdata, err := b64.Decode(ciphertext)
+	if err != nil {
+		return nil, err
+	}
+	additionalData := make([][]byte, 0, len(additionalStrings))
+	for _, str := range additionalStrings {
+		data, err := b64.Decode(str)
+		if err != nil {
+			return nil, err
+		}
+		additionalData = append(additionalData, data)
+	}
+
+	return Decrypt(secret, []byte(salt), cipherdata, additionalData...)
+}
