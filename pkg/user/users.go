@@ -17,12 +17,6 @@ type Users[UserType User] struct {
 	MakeUser func() UserType
 }
 
-func NewUsersTemplate[UserType User](makeUser func() UserType) *Users[UserType] {
-	u := &Users[UserType]{}
-	u.MakeUser = makeUser
-	return u
-}
-
 func (u *Users[UserType]) Init(app app_context.Context) {
 	u.WithAppBase.Init(app)
 }
@@ -36,7 +30,7 @@ func (u *Users[UserType]) ValidateLogin(login string) error {
 	return u.App().Validator().ValidateValue(login, rules)
 }
 
-func (u *Users[UserType]) Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) error {
+func (u *Users[UserType]) Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error) {
 
 	// setup
 	ctx.SetLoggerField("login", login)
@@ -65,11 +59,12 @@ func (u *Users[UserType]) Add(ctx op_context.Context, login string, password str
 	// create in manager
 	err = u.Create(ctx, user)
 	if err != nil {
-		return err
+		var nilUser UserType
+		return nilUser, err
 	}
 
 	// done
-	return nil
+	return user, nil
 }
 
 func (u *Users[UserType]) FindByLogin(ctx op_context.Context, login string) (UserType, error) {
@@ -88,7 +83,7 @@ func (u *Users[UserType]) FindByLogin(ctx op_context.Context, login string) (Use
 	defer onExit()
 
 	// find user
-	var user UserType
+	user := u.MakeUser()
 	found, err := user_manager.FindByLogin(u, ctx, login, user)
 	if err != nil {
 		c.SetMessage("failed to find user in database")
@@ -165,6 +160,37 @@ func (u *Users[UserType]) SetPhone(ctx op_context.Context, login string, phone s
 	return nil
 }
 
+func (u *Users[UserType]) SetEmail(ctx op_context.Context, login string, email string) error {
+
+	// setup
+	ctx.SetLoggerField("login", login)
+	ctx.SetLoggerField("phone", email)
+	c := ctx.TraceInMethod("Users.SetEmail")
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
+
+	// find user
+	user, err := u.FindByLogin(ctx, login)
+	if err != nil {
+		return err
+	}
+
+	// set password
+	err = u.Update(ctx, user, db.Fields{"email": email})
+	if err != nil {
+		return err
+	}
+
+	// done
+	return nil
+}
+
 func (u *Users[UserType]) SetBlocked(ctx op_context.Context, login string, blocked bool) error {
 
 	// setup
@@ -205,21 +231,6 @@ type UsersWithSession[UserType User, SessionType user_manager.Session, SessionCl
 	user_manager.SessionManagerBase
 }
 
-func NewUsersWithSessionTemplate[UserType User, SessionType user_manager.Session, SessionClientType user_manager.SessionClient](
-	makeUser func() UserType, makeSession func() user_manager.Session, makeSessionClient func() user_manager.SessionClient) *UsersWithSession[UserType, SessionType, SessionClientType] {
-	u := &UsersWithSession[UserType, SessionType, SessionClientType]{}
-	u.MakeUser = makeUser
-	u.MakeSession = makeSession
-	u.MakeSessionClient = makeSessionClient
-	return u
-}
-
 func (m *UsersWithSession[UserType, SessionType, SessionClientType]) SessionManager() user_manager.SessionManager {
 	return m
-}
-
-type UsersBase = UsersWithSession[*UserBase, *user_manager.SessionBase, *user_manager.SessionClientBase]
-
-func NewUsers() *UsersBase {
-	return NewUsersWithSessionTemplate[*UserBase, *user_manager.SessionBase, *user_manager.SessionClientBase](NewUser, user_manager.NewSession, user_manager.NewSessionClient)
 }

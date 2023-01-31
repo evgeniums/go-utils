@@ -1,1 +1,118 @@
 package user_test
+
+import (
+	"path/filepath"
+	"runtime"
+	"testing"
+
+	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
+	"github.com/evgeniums/go-backend-helpers/pkg/user"
+	"github.com/evgeniums/go-backend-helpers/pkg/user/user_default"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+var _, testBasePath, _, _ = runtime.Caller(0)
+var testDir = filepath.Dir(testBasePath)
+
+type User = user_default.User
+
+func createDb(t *testing.T, app app_context.Context) {
+	test_utils.CreateDb(t, app, &User{})
+}
+
+func initTest(t *testing.T, config ...string) (app_context.Context, *user_default.Users, op_context.Context) {
+	app := test_utils.InitAppContext(t, testDir, utils.OptionalArg("user_test.json", config...))
+
+	createDb(t, app)
+
+	users := user_default.NewUsers()
+	users.Init(app)
+
+	ctx := test_utils.SimpleOpContext(app, t.Name())
+
+	return app, users, ctx
+}
+
+func TestInitUsers(t *testing.T) {
+	app, _, _ := initTest(t)
+	app.Close()
+}
+
+func TestUserOperations(t *testing.T) {
+	app, users, ctx := initTest(t)
+	onExit := func() {
+		ctx.Close()
+		app.Close()
+	}
+	defer onExit()
+
+	login1 := "user1"
+	password1 := "password1"
+	phone1 := "1122334455"
+	email1 := "user1@example.com"
+	user1, err := users.Add(ctx, login1, password1, user.Phone(phone1, &User{}), user.Email(email1, &User{}))
+	require.NoErrorf(t, err, "failed to add user")
+	require.NotNil(t, user1)
+	assert.Equal(t, login1, user1.Login())
+	assert.Equal(t, phone1, user1.Phone())
+	assert.Equal(t, email1, user1.Email())
+	phash1 := auth_login_phash.Phash(password1, user1.PasswordSalt())
+	assert.True(t, user1.CheckPasswordHash(phash1))
+	phashBlabla := auth_login_phash.Phash("blabla", user1.PasswordSalt())
+	assert.False(t, user1.CheckPasswordHash(phashBlabla))
+
+	login2 := "user2"
+	password2 := "password2"
+	phone2 := "8822334477"
+	email2 := "user2@example.com"
+	user2, err := users.Add(ctx, login2, password2, user.Phone(phone2, &User{}), user.Email(email2, &User{}))
+	require.NoErrorf(t, err, "failed to add user")
+	require.NotNil(t, user2)
+	assert.Equal(t, login2, user2.Login())
+	assert.Equal(t, phone2, user2.Phone())
+	assert.Equal(t, email2, user2.Email())
+
+	userDb1_1, err := users.FindByLogin(ctx, login1)
+	require.NoErrorf(t, err, "failed to find user")
+	require.NotNil(t, userDb1_1)
+	assert.Equal(t, user1, userDb1_1)
+
+	userNotInDb, err := users.FindByLogin(ctx, "unknown-login")
+	require.Error(t, err)
+	require.Nil(t, userNotInDb)
+
+	newPhone := "999000111"
+	require.NoError(t, users.SetPhone(ctx, login1, newPhone))
+	userDb1_2, err := users.FindByLogin(ctx, login1)
+	require.NoErrorf(t, err, "failed to find user")
+	require.NotNil(t, userDb1_2)
+	assert.Equal(t, newPhone, userDb1_2.Phone())
+	assert.Equal(t, email1, userDb1_2.Email())
+
+	newEmail := "user1_1@example.com"
+	require.NoError(t, users.SetEmail(ctx, login1, newEmail))
+	userDb1_3, err := users.FindByLogin(ctx, login1)
+	require.NoErrorf(t, err, "failed to find user")
+	require.NotNil(t, userDb1_3)
+	assert.Equal(t, newPhone, userDb1_3.Phone())
+	assert.Equal(t, newEmail, userDb1_3.Email())
+
+	require.NoError(t, users.SetBlocked(ctx, login1, true))
+	userDb1_4, err := users.FindByLogin(ctx, login1)
+	require.NoErrorf(t, err, "failed to find user")
+	require.NotNil(t, userDb1_4)
+	assert.True(t, userDb1_4.IsBlocked())
+
+	newPassword := "bla-bla-new"
+	require.NoError(t, users.SetPassword(ctx, login1, newPassword))
+	userDb1_5, err := users.FindByLogin(ctx, login1)
+	require.NoErrorf(t, err, "failed to find user")
+	require.NotNil(t, userDb1_5)
+	phash5 := auth_login_phash.Phash(newPassword, userDb1_5.PasswordSalt())
+	assert.True(t, userDb1_5.CheckPasswordHash(phash5))
+}
