@@ -31,6 +31,10 @@ type SessionBase struct {
 	Expiration  time.Time `gorm:"index"`
 }
 
+func NewSession() Session {
+	return &SessionBase{}
+}
+
 func (s *SessionBase) SetValid(valid bool) {
 	s.Valid = valid
 }
@@ -68,6 +72,10 @@ type SessionClientBase struct {
 	ClientIp   string `gorm:"index"`
 	UserAgent  string
 	ClientHash string `gorm:"index;index:,unique,composite:client_session"`
+}
+
+func NewSessionClient() SessionClient {
+	return &SessionClientBase{}
 }
 
 func (s *SessionClientBase) SetSessionId(sessionId string) {

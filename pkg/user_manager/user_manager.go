@@ -8,7 +8,7 @@ import (
 )
 
 type UserManager interface {
-	MakeUser() auth.User
+	MakeAuthUser() auth.User
 	Find(ctx op_context.Context, fields db.Fields, user interface{}) (bool, error)
 	Create(ctx op_context.Context, user common.Object) error
 	Update(ctx op_context.Context, user common.Object, fields db.Fields) error

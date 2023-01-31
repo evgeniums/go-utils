@@ -8,9 +8,12 @@ import (
 )
 
 type User interface {
+	common.Object
 	auth.User
 	auth_login_phash.User
 	auth_sms.UserWithPhone
+
+	SetLogin(login string)
 
 	DbUser() interface{}
 }
@@ -29,6 +32,10 @@ func (u *UserBaseDB) Display() string {
 
 func (u *UserBaseDB) Login() string {
 	return u.LOGIN
+}
+
+func (u *UserBaseDB) SetLogin(login string) {
+	u.LOGIN = login
 }
 
 func (u *UserBaseDB) Phone() string {

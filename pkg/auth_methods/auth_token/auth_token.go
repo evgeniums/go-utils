@@ -220,7 +220,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	}
 
 	// load user
-	user := a.users.UserManager().MakeUser()
+	user := a.users.UserManager().MakeAuthUser()
 	found, err := user_manager.FindByLogin(a.users.UserManager(), ctx, session.GetUserLogin(), user)
 	if err != nil {
 		c.SetMessage("failed to load user")

@@ -21,7 +21,7 @@ const PasswordHashName = "login-phash"
 type User interface {
 	PasswordHash() string
 	PasswordSalt() string
-	SetPassword(password string, salt string) string
+	SetPassword(password string)
 	CheckPasswordHash(phash string) bool
 }
 
@@ -112,7 +112,7 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	}
 
 	// load user
-	dbUser := l.users.UserManager().MakeUser()
+	dbUser := l.users.UserManager().MakeAuthUser()
 	found, err := user_manager.FindByLogin(l.users.UserManager(), ctx, login, dbUser)
 	if err != nil {
 		c.SetMessage("failed to load user")
