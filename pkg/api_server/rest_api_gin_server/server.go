@@ -158,6 +158,7 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 	ctx.Logger().Info("Init REST API gin server", logger.Fields{"hostname": s.hostname})
 
 	s.WithAppBase.Init(ctx)
+	s.ErrorManagerBaseHttp.Init()
 	s.WithAuthBase.Init(auth)
 	auth.AttachToErrorManager(s)
 
@@ -303,4 +304,8 @@ func (s *Server) AuthParameterSetter(authMethodProtocol string) AuthParameterSet
 		return nil
 	}
 	return handler
+}
+
+func (s *Server) GinEngine() *gin.Engine {
+	return s.ginEngine
 }

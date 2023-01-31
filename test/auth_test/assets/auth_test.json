@@ -1,0 +1,55 @@
+{
+    "db":{
+        "db_provider": "sqlite",
+        "db_extra_config" : "user_test.sqlite"
+    },
+    "sms": {
+        "default_provider": "mock_default",
+        "providers": {
+            "mock_default" : {
+                "protocol": "sms_mock"
+            }
+        }
+    },
+    "auth_server": { 
+        "auth": {
+            "manager" : {
+                "methods": {
+                    "login_phash_token": {
+                        "token": {
+                            "secret": "hdidyuvp98-32kj4p98y"
+                        }
+                    },
+                    "noauth":{}
+                },
+                "schemas":[]
+            },
+            "default_schema": "token",
+            "endpoints": {
+                "/auth/login": [
+                    {
+                        "http_method": "POST",
+                        "schema":"login_phash_token"
+                    }
+                ],
+                "/status/check": [
+                    {
+                        "http_method": "GET",
+                        "schema": "noauth"
+                    }
+                ]
+            }
+        },
+        "rest_api_server": {
+            "name": "Auth server",
+            "api_version" : "1.0.0",
+            "host": "127.0.0.1",
+            "port": 5000,
+            "trusted_proxies": ["127.0.0.1"],
+            "csrf": {
+                "secret": "0000000000000",
+                "ignore_paths": ["/status/check","/just-check-404"]
+            }
+        }
+    }
+}

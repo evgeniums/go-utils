@@ -66,7 +66,8 @@ func (e *EndpointBase) Parent() Group {
 }
 
 func (e *EndpointBase) SetParent(parent common.WithPath) {
-	e.parent = parent.(Group)
+	// TODO fix parent
+	// e.parent = parent.(Group)
 	e.WithNameAndPathBase.SetParent(parent)
 }
 

@@ -34,6 +34,10 @@ type SubobjectFactory[T Subobject] func(protocol string) (T, error)
 
 func LoadLogValidateSubobjectsMap[T Subobject](cfg config.Config, log logger.Logger, vld validator.Validator, configPath string, createSubobjectFnc SubobjectFactory[T], loggerFields ...logger.Fields) (map[string]T, error) {
 
+	if !cfg.IsSet(configPath) {
+		return nil, nil
+	}
+
 	fields := logger.AppendFieldsNew(logger.Fields{"config_path": configPath}, loggerFields...)
 	subobjects := make(map[string]T)
 
@@ -66,13 +70,17 @@ type SubobjectBuilder[T WithInit] func() T
 
 func LoadLogValidateSubobjectsList[T WithInit](cfg config.Config, log logger.Logger, vld validator.Validator, configPath string, createSubobjectFnc SubobjectBuilder[T], loggerFields ...logger.Fields) ([]T, error) {
 
+	if !cfg.IsSet(configPath) {
+		return nil, nil
+	}
+
 	fields := logger.AppendFieldsNew(logger.Fields{"config_path": configPath}, loggerFields...)
 	subobjects := make([]T, 0)
 
 	subobjectsSection := cfg.Get(configPath)
 	subobjectsConfig, ok := subobjectsSection.([]interface{})
 	if !ok {
-		return nil, log.PushFatalStack("invalid subobjects section in configuration", nil, fields)
+		return nil, log.PushFatalStack("invalid subobjects array in configuration", nil, fields)
 	}
 	for i := range subobjectsConfig {
 		path := Key(configPath, utils.NumToStr(i))
