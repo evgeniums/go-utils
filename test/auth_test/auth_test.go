@@ -30,10 +30,10 @@ func initAuthServer(t *testing.T, config ...string) (app_context.Context, *auth_
 	users := user_session_default.NewUsers()
 	users.Init(app)
 
-	authServer := auth_server.NewAuthServer()
-	require.NoErrorf(t, authServer.Init(app, users, &sms_provider_factory.MockFactory{}), "failed to init auth server")
+	server := auth_server.NewAuthServer()
+	require.NoErrorf(t, server.Init(app, users, &sms_provider_factory.MockFactory{}), "failed to init auth server")
 
-	return app, nil
+	return app, server
 }
 
 func TestInitServer(t *testing.T) {

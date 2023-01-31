@@ -52,13 +52,23 @@ type HttpClient struct {
 	BaseUrl      string
 	AccessToken  string
 	RefreshToken string
+	CsrfToken    string
+
+	Gin *gin.Engine
+}
+
+func NewHttpClient(gin *gin.Engine, baseUrl ...string) *HttpClient {
+	c := &HttpClient{}
+	c.BaseUrl = utils.OptionalArg("/api/1.0.0", baseUrl...)
+	c.Gin = gin
+	return c
 }
 
 func (a *HttpClient) Url(path string) string {
 	return a.BaseUrl + path
 }
 
-func (a *HttpClient) Login(t *testing.T, g *gin.Engine, user string, password string, expectedErrorCode ...string) {
+func (a *HttpClient) Login(t *testing.T, user string, password string, expectedErrorCode ...string) {
 
 	errorCode := utils.OptionalArg("", expectedErrorCode...)
 	path := a.Url("/auth/login")
@@ -73,14 +83,14 @@ func (a *HttpClient) Login(t *testing.T, g *gin.Engine, user string, password st
 
 	if errorCode == auth_login_phash.ErrorCodeCredentialsRequired {
 		// request without headers
-		resp, code, message := HttpPost(t, g, path, nil)
+		resp, code, message := HttpPost(t, a.Gin, path, nil)
 		checkInvalidResponse(resp, code, message)
 		return
 	}
 
 	// first step
 	headers := map[string]string{"x-auth-login": user}
-	resp, code, message := HttpPost(t, g, path, nil, headers)
+	resp, code, message := HttpPost(t, a.Gin, path, nil, headers)
 	require.Equal(t, http.StatusUnauthorized, code)
 	errResp := &rest_api_gin_server.ResponseError{}
 	require.NoError(t, json.Unmarshal([]byte(message), errResp))
@@ -92,7 +102,7 @@ func (a *HttpClient) Login(t *testing.T, g *gin.Engine, user string, password st
 	// second
 	phash := auth_login_phash.Phash(password, salt)
 	headers["x-auth-phash"] = phash
-	resp, code, message = HttpPost(t, g, path, nil, headers)
+	resp, code, message = HttpPost(t, a.Gin, path, nil, headers)
 
 	if errorCode != "" {
 		checkInvalidResponse(resp, code, message)
@@ -108,7 +118,13 @@ func (a *HttpClient) Login(t *testing.T, g *gin.Engine, user string, password st
 
 func (a *HttpClient) addToken(headers ...map[string]string) map[string]string {
 
-	h := map[string]string{"x-auth-access-token": a.AccessToken}
+	h := map[string]string{}
+	if a.AccessToken != "" {
+		h["x-auth-access-token"] = a.AccessToken
+	}
+	if a.CsrfToken != "" {
+		h["x-csrf"] = a.CsrfToken
+	}
 	if len(headers) > 0 {
 		utils.AppendMap(h, headers[0])
 	}
@@ -124,48 +140,52 @@ func (a *HttpClient) updateToken(resp *httptest.ResponseRecorder, code int) {
 	if refreshToken != "" {
 		a.RefreshToken = refreshToken
 	}
+	csrfToken := resp.Header().Get("x-csrf")
+	if csrfToken != "" {
+		a.CsrfToken = refreshToken
+	}
 }
 
-func (a *HttpClient) Post(t *testing.T, g *gin.Engine, path string, cmd interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
-	resp, code, message := HttpPost(t, g, path, cmd, a.addToken(headers...))
+func (a *HttpClient) Post(t *testing.T, path string, cmd interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
+	resp, code, message := HttpPost(t, a.Gin, a.Url(path), cmd, a.addToken(headers...))
 	a.updateToken(resp, code)
 	return resp, code, message
 }
 
-func (a *HttpClient) Put(t *testing.T, g *gin.Engine, path string, cmd interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
-	resp, code, message := HttpPut(t, g, path, cmd, a.addToken(headers...))
+func (a *HttpClient) Put(t *testing.T, path string, cmd interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
+	resp, code, message := HttpPut(t, a.Gin, a.Url(path), cmd, a.addToken(headers...))
 	a.updateToken(resp, code)
 	return resp, code, message
 }
 
-func (a *HttpClient) Patch(t *testing.T, g *gin.Engine, path string, cmd interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
-	resp, code, message := HttpPatch(t, g, path, cmd, a.addToken(headers...))
+func (a *HttpClient) Patch(t *testing.T, path string, cmd interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
+	resp, code, message := HttpPatch(t, a.Gin, a.Url(path), cmd, a.addToken(headers...))
 	a.updateToken(resp, code)
 	return resp, code, message
 }
 
-func (a *HttpClient) Get(t *testing.T, g *gin.Engine, path string, cmd interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
-	resp, code, message := HttpGet(t, g, path, cmd, a.addToken(headers...))
+func (a *HttpClient) Get(t *testing.T, path string, cmd interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
+	resp, code, message := HttpGet(t, a.Gin, a.Url(path), cmd, a.addToken(headers...))
 	a.updateToken(resp, code)
 	return resp, code, message
 }
 
-func (a *HttpClient) Delete(t *testing.T, g *gin.Engine, path string, cmd interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
-	resp, code, message := HttpDelete(t, g, path, cmd, a.addToken(headers...))
+func (a *HttpClient) Delete(t *testing.T, path string, cmd interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
+	resp, code, message := HttpDelete(t, a.Gin, a.Url(path), cmd, a.addToken(headers...))
 	a.updateToken(resp, code)
 	return resp, code, message
 }
 
-func (a *HttpClient) Logout(t *testing.T, g *gin.Engine) {
-	a.Post(t, g, "/auth/logout", nil)
+func (a *HttpClient) Logout(t *testing.T) {
+	a.Post(t, "/auth/logout", nil)
 }
 
-func (a *HttpClient) RequestRefreshToken(t *testing.T, g *gin.Engine, expectedErrorCode ...string) {
+func (a *HttpClient) RequestRefreshToken(t *testing.T, expectedErrorCode ...string) {
 
 	errorCode := utils.OptionalArg("", expectedErrorCode...)
 
 	h := map[string]string{"x-auth-refresh-token": a.RefreshToken}
-	resp, code, message := HttpPost(t, g, "/auth/refresh-token", nil, h)
+	resp, code, message := HttpPost(t, a.Gin, "/auth/refresh-token", nil, h)
 
 	if errorCode != "" {
 		require.Equal(t, http.StatusUnauthorized, code)
