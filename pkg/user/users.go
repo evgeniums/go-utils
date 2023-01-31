@@ -36,7 +36,7 @@ func (u *Users[UserType]) ValidateLogin(login string) error {
 	return u.App().Validator().ValidateValue(login, rules)
 }
 
-func (u *Users[UserType]) Add(ctx op_context.Context, login string, password string, setExtraFields ...func(ctx op_context.Context, user UserType) error) error {
+func (u *Users[UserType]) Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) error {
 
 	// setup
 	ctx.SetLoggerField("login", login)
@@ -55,8 +55,8 @@ func (u *Users[UserType]) Add(ctx op_context.Context, login string, password str
 	user.InitObject()
 	user.SetLogin(login)
 	user.SetPassword(password)
-	if len(setExtraFields) > 0 {
-		err = setExtraFields[0](ctx, user)
+	for _, setter := range extraFieldsSetters {
+		err = setter(ctx, user)
 		if err != nil {
 			c.SetMessage("failed to set extra fields")
 		}

@@ -5,6 +5,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
 type User interface {
@@ -14,6 +15,10 @@ type User interface {
 	auth_sms.UserWithPhone
 
 	SetLogin(login string)
+	SetPhone(phone string)
+
+	Email() string
+	SetEmail(email string)
 
 	DbUser() interface{}
 }
@@ -23,6 +28,7 @@ type UserBaseDB struct {
 	auth_login_phash.UserBase
 	LOGIN   string `gorm:"uniqueIndex"`
 	PHONE   string `gorm:"uniqueIndex"`
+	EMAIL   string `gorm:"uniqueIndex"`
 	BLOCKED bool   `gorm:"index"`
 }
 
@@ -42,8 +48,20 @@ func (u *UserBaseDB) Phone() string {
 	return u.PHONE
 }
 
+func (u *UserBaseDB) SetPhone(phone string) {
+	u.PHONE = phone
+}
+
 func (u *UserBaseDB) IsBlocked() bool {
 	return u.BLOCKED
+}
+
+func (u *UserBaseDB) Email() string {
+	return u.EMAIL
+}
+
+func (u *UserBaseDB) SetEmail(email string) {
+	u.EMAIL = email
 }
 
 type UserBase struct {
@@ -57,4 +75,20 @@ func NewUser() *UserBase {
 
 func (u *UserBase) DbUser() interface{} {
 	return &u.UserBaseDB
+}
+
+type SetUserFields[UserType User] func(ctx op_context.Context, user UserType) error
+
+func Phone[UserType User](phone string, userSample ...UserType) SetUserFields[UserType] {
+	return func(ctx op_context.Context, user UserType) error {
+		user.SetPhone(phone)
+		return nil
+	}
+}
+
+func Email[UserType User](email string, userSample ...UserType) SetUserFields[UserType] {
+	return func(ctx op_context.Context, user UserType) error {
+		user.SetEmail(email)
+		return nil
+	}
 }
