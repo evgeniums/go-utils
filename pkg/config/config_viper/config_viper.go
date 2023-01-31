@@ -2,6 +2,7 @@ package config_viper
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
@@ -32,6 +33,15 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 
 	includes := c.Viper.GetStringSlice("include")
 	for _, include := range includes {
+		if !utils.FileExists(include) {
+			// try relative path
+			newInclude := filepath.Join(filepath.Dir(configFile), include)
+			if !utils.FileExists(include) {
+				err = fmt.Errorf("failed to include config file %s or %s", include, newInclude)
+				return err
+			}
+			include = newInclude
+		}
 		c.Viper.SetConfigFile(include)
 		err = c.Viper.MergeInConfig()
 		if err != nil {
