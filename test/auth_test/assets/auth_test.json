@@ -37,6 +37,12 @@
                         "http_method": "GET",
                         "schema": "noauth"
                     }
+                ],
+                "/status/csrf": [
+                    {
+                        "access": 255,
+                        "schema": "noauth"
+                    }
                 ]
             }
         },
@@ -48,6 +54,7 @@
             "trusted_proxies": ["127.0.0.1"],
             "csrf": {
                 "secret": "0000000000000",
+                "token_ttl_seconds": 2,
                 "ignore_paths": ["/status/check","/just-check-404"]
             }
         }

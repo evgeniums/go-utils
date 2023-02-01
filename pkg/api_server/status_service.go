@@ -24,6 +24,22 @@ func (e *CheckStatusEndpoint) HandleRequest(request Request) error {
 	return nil
 }
 
+type CheckAccessEndpoint struct {
+	EndpointBase
+}
+
+func NewCheckAccessEndpoint(path string, name string) *CheckAccessEndpoint {
+	ep := &CheckAccessEndpoint{}
+	ep.EndpointBase.Init(path, name, access_control.Get)
+	return ep
+}
+
+func (e *CheckAccessEndpoint) HandleRequest(request Request) error {
+	resp := &StatusResponse{"success"}
+	request.Response().SetMessage(resp)
+	return nil
+}
+
 type StatusService struct {
 	ServiceBase
 }
@@ -31,6 +47,6 @@ type StatusService struct {
 func NewStatusService() *StatusService {
 	s := &StatusService{}
 	s.GroupBase.Init("/status", "Status")
-	s.AddEndpoints(NewCheckStatusEndpoint())
+	s.AddEndpoints(NewCheckStatusEndpoint(), NewCheckAccessEndpoint("/csrf", "CheckCsrf"), NewCheckAccessEndpoint("/logged", "CheckLogged"))
 	return s
 }

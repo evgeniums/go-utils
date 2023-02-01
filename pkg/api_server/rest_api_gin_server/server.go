@@ -54,6 +54,10 @@ type Server struct {
 	csrf *auth_csrf.AuthCsrf
 }
 
+func getHttpHeader(g *gin.Context, name string) string {
+	return g.GetHeader(name)
+}
+
 func NewServer() *Server {
 	s := &Server{}
 
@@ -68,7 +72,8 @@ func NewServer() *Server {
 
 	s.authParamsGetters = make(map[string]AuthParameterGetter, 0)
 	s.authParamsGetters[auth_csrf.AntiCsrfProtocol] = func(r *Request, key string) string {
-		return r.ginCtx.GetHeader(csrfKey(key))
+		name := csrfKey(key)
+		return getHttpHeader(r.ginCtx, name)
 	}
 
 	return s
@@ -83,7 +88,7 @@ func (s *Server) address() string {
 	return a
 }
 
-func (s *Server) logGinRequest(log logger.Logger, path string, start time.Time, ginCtx *gin.Context) {
+func (s *Server) logGinRequest(log logger.Logger, path string, start time.Time, ginCtx *gin.Context, extraFields ...logger.Fields) {
 
 	stop := time.Since(start)
 	latency := int(math.Ceil(float64(stop.Nanoseconds()) / 1000000.0))
@@ -96,18 +101,19 @@ func (s *Server) logGinRequest(log logger.Logger, path string, start time.Time, 
 		dataLength = 0
 	}
 
-	msg := "GIN"
+	msg := "HTTP request"
 	fields := logger.Fields{
-		"hostname":   s.hostname,
-		"statusCode": statusCode,
-		"latency":    latency, // time to process
-		"clientIP":   clientIP,
-		"method":     ginCtx.Request.Method,
-		"path":       path,
-		"referer":    referer,
-		"dataLength": dataLength,
-		"userAgent":  clientUserAgent,
+		"hostname":    s.hostname,
+		"http_code":   statusCode,
+		"latency":     latency, // time to process
+		"client_ip":   clientIP,
+		"method":      ginCtx.Request.Method,
+		"path":        path,
+		"referer":     referer,
+		"data_length": dataLength,
+		"user_agent":  clientUserAgent,
 	}
+	logger.AppendFields(fields, extraFields...)
 
 	if len(ginCtx.Errors) > 0 {
 		log.Error(msg, errors.New(ginCtx.Errors.ByType(gin.ErrorTypePrivate).String()), fields)
@@ -138,7 +144,7 @@ func (s *Server) ginDefaultLogger() gin.HandlerFunc {
 			return
 		}
 
-		s.logGinRequest(s.App().Logger(), path, start, ginCtx)
+		s.logGinRequest(s.App().Logger(), path, start, ginCtx, logger.Fields{"status": s.notFoundError.Code})
 	}
 }
 
@@ -178,6 +184,9 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 		if err != nil {
 			return ctx.Logger().PushFatalStack("failed to load anti-CSRF configuration", err)
 		}
+
+		s.AddErrorDescriptions(s.csrf.ErrorDescriptions())
+		s.AddErrorProtocolCodes(s.csrf.ErrorProtocolCodes())
 	}
 
 	// init gin router
@@ -190,9 +199,6 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 	// set noroute
 	s.notFoundError = &ResponseError{Code: "not_found", Message: "Requested resource was not found"}
 	s.ginEngine.NoRoute(s.NoRoute())
-
-	// init error manager
-	s.ErrorManagerBaseHttp.Init()
 
 	// done
 	return nil

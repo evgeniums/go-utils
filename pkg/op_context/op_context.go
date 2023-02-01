@@ -104,7 +104,7 @@ type Context interface {
 
 	// TODO add event logger
 
-	Close()
+	Close(successMessage ...string)
 }
 
 type WithCtx interface {
@@ -258,7 +258,7 @@ func (c *ContextBase) GenericError() generic_error.Error {
 	return c.genericError
 }
 
-func (c *ContextBase) Close() {
+func (c *ContextBase) Close(successMessage ...string) {
 
 	if c.errorStack != nil {
 		// log error
@@ -284,7 +284,10 @@ func (c *ContextBase) Close() {
 		c.UnsetLoggerField("stack")
 	} else {
 		// log success
-		c.Logger().Info("success")
+		msg := utils.OptionalArg("success", successMessage...)
+		if msg != "" {
+			c.Logger().Info(msg)
+		}
 	}
 }
 

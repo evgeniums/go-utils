@@ -73,16 +73,17 @@ func (r *Request) GetRequestUserAgent() string {
 	return r.ginCtx.Request.UserAgent()
 }
 
-func (r *Request) Close() {
+func (r *Request) Close(successMessage ...string) {
 	if r.GenericError() == nil {
 		r.ginCtx.JSON(r.response.httpCode, r.response.Message())
+		r.SetLoggerField("status", "success")
 	} else {
 		code, err := r.server.MakeResponseError(r.GenericError())
-		r.SetLoggerField("error_code", code)
+		r.SetLoggerField("status", err.Code)
 		r.ginCtx.JSON(code, err)
 	}
-	r.RequestBase.Close()
 	r.server.logGinRequest(r.Logger(), r.initialPath, r.start, r.ginCtx)
+	r.RequestBase.Close("")
 }
 
 func (r *Request) TenancyInPath() string {
@@ -116,7 +117,7 @@ func (r *Request) GetAuthParameter(authMethodProtocol string, key string) string
 	if handler != nil {
 		return handler(r, key)
 	}
-	return r.ginCtx.GetHeader(AuthKey(key))
+	return getHttpHeader(r.ginCtx, AuthKey(key))
 }
 
 func (r *Request) CheckRequestContent(smsMessage *string) error {

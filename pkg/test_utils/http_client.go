@@ -21,28 +21,33 @@ type Expected struct {
 	HttpCode int
 }
 
-func CheckResponse(t *testing.T, resp *httptest.ResponseRecorder, code int, message string) func(expected *Expected) {
-	return func(expected *Expected) {
-		if expected == nil {
-			assert.Contains(t, []int{http.StatusOK, http.StatusCreated}, code)
-		} else {
-			if expected.HttpCode != 0 {
-				assert.Equal(t, expected.HttpCode, code)
+type HttpResponse struct {
+	Object  *httptest.ResponseRecorder
+	Code    int
+	Message string
+}
+
+func CheckResponse(t *testing.T, resp *HttpResponse, expected *Expected) {
+	require.NotNil(t, resp)
+	if expected == nil {
+		assert.Contains(t, []int{http.StatusOK, http.StatusCreated}, resp.Code)
+	} else {
+		if expected.HttpCode != 0 {
+			assert.Equal(t, expected.HttpCode, resp.Code)
+		}
+		if expected.Error != "" {
+			errResp := &rest_api_gin_server.ResponseError{}
+			require.NoError(t, json.Unmarshal([]byte(resp.Message), errResp))
+			assert.Equal(t, expected.Error, errResp.Code)
+			if expected.Details != "" {
+				assert.Equal(t, expected.Details, errResp.Details)
 			}
-			if expected.Error != "" {
-				errResp := &rest_api_gin_server.ResponseError{}
-				require.NoError(t, json.Unmarshal([]byte(message), errResp))
-				assert.Equal(t, expected.Error, errResp.Code)
-				if expected.Details != "" {
-					assert.Equal(t, expected.Details, errResp.Details)
-				}
-				if expected.Message != "" {
-					assert.Equal(t, expected.Message, errResp.Message)
-				}
-			} else {
-				if expected.Message != "" {
-					assert.Equal(t, expected.Message, message)
-				}
+			if expected.Message != "" {
+				assert.Equal(t, expected.Message, errResp.Message)
+			}
+		} else {
+			if expected.Message != "" {
+				assert.Equal(t, expected.Message, resp.Message)
 			}
 		}
 	}
@@ -116,7 +121,7 @@ func (a *HttpClient) Login(t *testing.T, user string, password string, expectedE
 	}
 }
 
-func (a *HttpClient) addToken(headers ...map[string]string) map[string]string {
+func (a *HttpClient) addTokens(headers ...map[string]string) map[string]string {
 
 	h := map[string]string{}
 	if a.AccessToken != "" {
@@ -142,38 +147,43 @@ func (a *HttpClient) updateToken(resp *httptest.ResponseRecorder, code int) {
 	}
 	csrfToken := resp.Header().Get("x-csrf")
 	if csrfToken != "" {
-		a.CsrfToken = refreshToken
+		a.CsrfToken = csrfToken
 	}
 }
 
-func (a *HttpClient) Post(t *testing.T, path string, cmd interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
-	resp, code, message := HttpPost(t, a.Gin, a.Url(path), cmd, a.addToken(headers...))
+func (a *HttpClient) RequestBody(t *testing.T, method string, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+	h := a.addTokens(headers...)
+	a.addTokens(headers...)
+	resp, code, message := HttpRequestBody(t, a.Gin, method, a.Url(path), cmd, h)
 	a.updateToken(resp, code)
-	return resp, code, message
+	return &HttpResponse{resp, code, message}
 }
 
-func (a *HttpClient) Put(t *testing.T, path string, cmd interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
-	resp, code, message := HttpPut(t, a.Gin, a.Url(path), cmd, a.addToken(headers...))
+func (a *HttpClient) RequestQuery(t *testing.T, method string, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+	h := a.addTokens(headers...)
+	resp, code, message := HttpRequestQuery(t, a.Gin, method, a.Url(path), cmd, h)
 	a.updateToken(resp, code)
-	return resp, code, message
+	return &HttpResponse{resp, code, message}
 }
 
-func (a *HttpClient) Patch(t *testing.T, path string, cmd interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
-	resp, code, message := HttpPatch(t, a.Gin, a.Url(path), cmd, a.addToken(headers...))
-	a.updateToken(resp, code)
-	return resp, code, message
+func (a *HttpClient) Post(t *testing.T, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+	return a.RequestBody(t, http.MethodPost, path, cmd, headers...)
 }
 
-func (a *HttpClient) Get(t *testing.T, path string, cmd interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
-	resp, code, message := HttpGet(t, a.Gin, a.Url(path), cmd, a.addToken(headers...))
-	a.updateToken(resp, code)
-	return resp, code, message
+func (a *HttpClient) Put(t *testing.T, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+	return a.RequestBody(t, http.MethodPut, path, cmd, headers...)
 }
 
-func (a *HttpClient) Delete(t *testing.T, path string, cmd interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
-	resp, code, message := HttpDelete(t, a.Gin, a.Url(path), cmd, a.addToken(headers...))
-	a.updateToken(resp, code)
-	return resp, code, message
+func (a *HttpClient) Patch(t *testing.T, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+	return a.RequestBody(t, http.MethodPatch, path, cmd, headers...)
+}
+
+func (a *HttpClient) Get(t *testing.T, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+	return a.RequestQuery(t, http.MethodGet, path, cmd, headers...)
+}
+
+func (a *HttpClient) Delete(t *testing.T, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+	return a.RequestQuery(t, http.MethodDelete, path, cmd, headers...)
 }
 
 func (a *HttpClient) Logout(t *testing.T) {
