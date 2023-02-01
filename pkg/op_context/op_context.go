@@ -102,6 +102,8 @@ type Context interface {
 	LoggerFields() logger.Fields
 	UnsetLoggerField(name string)
 
+	SetErrorAsWarn(enable bool)
+
 	// TODO add event logger
 
 	Close(successMessage ...string)
@@ -135,6 +137,8 @@ type ContextBase struct {
 	proxyLogger        *logger.ProxyLogger
 	callContextBuilder CallContextBuilder
 	cache              cache.Cache
+
+	errorAsWarn bool
 }
 
 func (c *ContextBase) Init(app app_context.Context, log logger.Logger, db db.DB, fields ...logger.Fields) {
@@ -279,7 +283,11 @@ func (c *ContextBase) Close(successMessage ...string) {
 		}
 		c.stack = c.errorStack
 		c.SetLoggerField("stack", stackPath(c.stack))
-		c.Logger().Error(msg, err)
+		if !c.errorAsWarn {
+			c.Logger().Error(msg, err)
+		} else {
+			c.Logger().Warn(msg, logger.Fields{"error": err})
+		}
 		c.stack = []CallContext{}
 		c.UnsetLoggerField("stack")
 	} else {
@@ -321,6 +329,10 @@ func (c *ContextBase) Cache() cache.Cache {
 
 func (c *ContextBase) DbTransaction() db.DBHandlers {
 	return c.dbTransaction
+}
+
+func (c *ContextBase) SetErrorAsWarn(enable bool) {
+	c.errorAsWarn = enable
 }
 
 func DB(c Context) db.DBHandlers {

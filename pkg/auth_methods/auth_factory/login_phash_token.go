@@ -18,14 +18,14 @@ type LoginphashToken struct {
 	auth.AuthSchema
 
 	Login *auth_login_phash.LoginHandler
-	Token *auth_token.AuthTokenHandler
+	Token *auth_token.AuthNewTokenHandler
 }
 
 func NewLoginphashToken(users user_manager.WithSessionManager) *LoginphashToken {
 	l := &LoginphashToken{}
 	l.Setup()
 	l.Login = auth_login_phash.New(users)
-	l.Token = auth_token.New(users)
+	l.Token = auth_token.NewNewToken(users)
 	return l
 }
 

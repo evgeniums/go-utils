@@ -128,21 +128,22 @@ func (a *AuthSchema) Handle(ctx AuthContext) (bool, error) {
 	authMethodFound := false
 	for _, handler := range a.handlers {
 		sectionFound, err := handler.Handle(ctx)
-		if !sectionFound && a.aggregation == Or {
+		if !handler.IsReal() || !sectionFound && a.aggregation == Or {
 			continue
 		}
 		if err != nil {
-			c.SetMessage(fmt.Sprintf("failed in %s", handler.Name()))
 			ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeUnauthorized))
 			return sectionFound, c.SetError(err)
 		}
 		if a.aggregation == Or {
 			return sectionFound, nil
 		}
-		authMethodFound = true
+		if sectionFound {
+			authMethodFound = true
+		}
 	}
 	if len(a.handlers) != 0 && !authMethodFound {
-		err := errors.New("no auth section was found in request")
+		err := errors.New("no auth section in request")
 		ctx.SetGenericErrorCode(ErrorCodeUnauthorized)
 		return authMethodFound, c.SetError(err)
 	}

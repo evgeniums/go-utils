@@ -9,6 +9,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms/sms_provider_factory"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
+	"github.com/evgeniums/go-backend-helpers/pkg/user/user_default"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_session_default"
 	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
@@ -18,11 +19,13 @@ import (
 var _, testBasePath, _, _ = runtime.Caller(0)
 var testDir = filepath.Dir(testBasePath)
 
+type User = user_default.User
+
 func createDb(t *testing.T, app app_context.Context) {
-	test_utils.CreateDb(t, app, &user_session_default.User{}, &user_manager.SessionBase{}, &user_manager.SessionClientBase{})
+	test_utils.CreateDb(t, app, &User{}, &user_manager.SessionBase{}, &user_manager.SessionClientBase{})
 }
 
-func initAuthServer(t *testing.T, config ...string) (app_context.Context, *auth_server.AuthServerBase) {
+func initAuthServer(t *testing.T, config ...string) (app_context.Context, *user_session_default.Users, *auth_server.AuthServerBase) {
 	app := test_utils.InitAppContext(t, testDir, utils.OptionalArg("auth_test.json", config...))
 
 	createDb(t, app)
@@ -33,10 +36,10 @@ func initAuthServer(t *testing.T, config ...string) (app_context.Context, *auth_
 	server := auth_server.NewAuthServer()
 	require.NoErrorf(t, server.Init(app, users, &sms_provider_factory.MockFactory{}), "failed to init auth server")
 
-	return app, server
+	return app, users, server
 }
 
 func TestInitServer(t *testing.T) {
-	app, _ := initAuthServer(t)
+	app, _, _ := initAuthServer(t)
 	app.Close()
 }

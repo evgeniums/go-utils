@@ -71,6 +71,6 @@ func NewHash(digestBuilder ...DigestBuilder) *Hash {
 	return h
 }
 
-func Check(hash1 string, hash2 string) bool {
+func HashEqual(hash1 string, hash2 string) bool {
 	return hmac.Equal([]byte(hash1), []byte(hash2))
 }

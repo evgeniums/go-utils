@@ -44,7 +44,7 @@ func (u *UserBase) SetPassword(password string) {
 }
 
 func (u *UserBase) CheckPasswordHash(phash string) bool {
-	return crypt_utils.Check(u.PASSWORD_HASH, phash)
+	return crypt_utils.HashEqual(u.PASSWORD_HASH, phash)
 }
 
 // Auth handler for login processing. The AuthTokenHandler MUST ALWAYS follow this handler in session scheme with AND conjunction.
@@ -98,6 +98,9 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	}
 	defer onExit()
 
+	// get password hash from request
+	phash := ctx.GetAuthParameter(l.Protocol(), PasswordHashName)
+
 	// get login from request
 	login := ctx.GetAuthParameter(l.Protocol(), LoginName)
 	if login == "" {
@@ -106,8 +109,14 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	ctx.SetLoggerField("login", login)
 	err = l.users.UserManager().ValidateLogin(login)
 	if err != nil {
-		c.SetMessage("invalid login format")
-		ctx.SetGenericErrorCode(ErrorCodeLoginFailed)
+		err = errors.New("invalid login format")
+		if phash == "" {
+			// forward client to second step anyway with fake salt
+			ctx.SetAuthParameter(l.Protocol(), SaltName, crypt_utils.GenerateString())
+			ctx.SetGenericErrorCode(ErrorCodeCredentialsRequired)
+		} else {
+			ctx.SetGenericErrorCode(ErrorCodeLoginFailed)
+		}
 		return true, err
 	}
 
@@ -121,7 +130,14 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	}
 	if !found {
 		c.SetMessage("user not found")
-		ctx.SetGenericErrorCode(ErrorCodeLoginFailed)
+		if phash == "" {
+			// forward client to second step anyway with fake salt
+			ctx.SetAuthParameter(l.Protocol(), SaltName, crypt_utils.GenerateString())
+			ctx.SetGenericErrorCode(ErrorCodeCredentialsRequired)
+		} else {
+			ctx.SetGenericErrorCode(ErrorCodeLoginFailed)
+		}
+
 		return true, err
 	}
 	ctx.SetLoggerField("user", dbUser.Display())
@@ -144,19 +160,12 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	// extract user salt
 	salt := phashUser.PasswordSalt()
 
-	// get password hash from request
-	phash := ctx.GetAuthParameter(l.Protocol(), PasswordHashName)
+	// check password hash
 	if phash != "" {
 
-		// extract user password
-		password := phashUser.PasswordHash()
-
 		// check password hash
-		hash := crypt_utils.NewHash()
-		hash.CalcStrIn(login, password, salt)
-		err = hash.CheckStr(phash)
-		if err != nil {
-			c.SetMessage("invalid password hash")
+		if !phashUser.CheckPasswordHash(phash) {
+			err = errors.New("invalid password hash")
 			ctx.SetGenericErrorCode(ErrorCodeLoginFailed)
 			return true, err
 		}
@@ -173,7 +182,7 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	ctx.SetGenericErrorCode(ErrorCodeCredentialsRequired)
 
 	// done
-	return true, errors.New("credentials not provided yet")
+	return true, errors.New("credentials not provided")
 }
 
 func Phash(password string, salt string) string {

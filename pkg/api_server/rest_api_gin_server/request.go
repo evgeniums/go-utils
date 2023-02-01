@@ -75,15 +75,22 @@ func (r *Request) GetRequestUserAgent() string {
 
 func (r *Request) Close(successMessage ...string) {
 	if r.GenericError() == nil {
-		r.ginCtx.JSON(r.response.httpCode, r.response.Message())
+		if r.response.Message() != nil {
+			r.ginCtx.JSON(r.response.httpCode, r.response.Message())
+		} else {
+			r.ginCtx.Status(r.response.httpCode)
+		}
 		r.SetLoggerField("status", "success")
 	} else {
 		code, err := r.server.MakeResponseError(r.GenericError())
+		if code < http.StatusInternalServerError {
+			r.SetErrorAsWarn(true)
+		}
 		r.SetLoggerField("status", err.Code)
 		r.ginCtx.JSON(code, err)
 	}
-	r.server.logGinRequest(r.Logger(), r.initialPath, r.start, r.ginCtx)
 	r.RequestBase.Close("")
+	r.server.logGinRequest(r.Logger(), r.initialPath, r.start, r.ginCtx)
 }
 
 func (r *Request) TenancyInPath() string {

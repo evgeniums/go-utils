@@ -86,6 +86,9 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 			return log.PushFatalStack("failed to initialize authorization method", err, fields)
 		}
 		a.store.AddHandler(handler)
+		for _, subHandler := range handler.Handlers() {
+			a.store.AddHandler(subHandler)
+		}
 	}
 
 	// create and init auth schemas

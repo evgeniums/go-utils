@@ -3,6 +3,9 @@
         "db_provider": "sqlite",
         "db_extra_config" : "user_test.sqlite"
     },
+    "logger" : {
+        "level" : "debug"
+    },
     "sms": {
         "default_provider": "mock_default",
         "providers": {
@@ -55,7 +58,7 @@
             "csrf": {
                 "secret": "0000000000000",
                 "token_ttl_seconds": 2,
-                "ignore_paths": ["/status/check","/just-check-404"]
+                "ignore_paths": ["/status/check"]
             }
         }
     }

@@ -6,7 +6,7 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
-	playground "github.com/go-playground/validator"
+	playground "github.com/go-playground/validator/v10"
 )
 
 type PlaygroundValdator struct {

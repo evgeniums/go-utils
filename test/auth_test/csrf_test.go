@@ -10,7 +10,7 @@ import (
 )
 
 func TestCsrf(t *testing.T) {
-	app, server := initAuthServer(t)
+	app, _, server := initAuthServer(t)
 	defer app.Close()
 
 	client := test_utils.NewHttpClient(server.RestApiServer.GinEngine())

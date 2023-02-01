@@ -16,7 +16,10 @@ func HttpRequestSend(t *testing.T, g *gin.Engine, req *http.Request) (*httptest.
 	response := httptest.NewRecorder()
 	g.ServeHTTP(response, req)
 	responseCode := response.Code
-	responseMessage := response.Body.String()
+	responseMessage := ""
+	if response.Body != nil {
+		responseMessage = response.Body.String()
+	}
 	return response, responseCode, responseMessage
 }
 

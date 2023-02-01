@@ -24,7 +24,7 @@ type LoginphashSmsToken struct {
 func NewLoginphashSmsToken(users user_manager.WithSessionManager, smsManager sms.SmsManager) *LoginphashSmsToken {
 	l := &LoginphashSmsToken{}
 	l.Login = auth_login_phash.New(users)
-	l.Token = auth_token.New(users)
+	l.Token = auth_token.NewNewToken(users)
 	l.Sms = auth_sms.New(smsManager)
 	return l
 }

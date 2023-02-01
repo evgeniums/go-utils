@@ -58,15 +58,17 @@ func (a *AuthTokenHandler) Init(cfg config.Config, log logger.Logger, vld valida
 
 	a.AuthHandlerBase.Init(TokenProtocol)
 
-	err := object_config.LoadLogValidate(cfg, log, vld, a, "auth.methods.token", configPath...)
+	path := utils.OptionalArg("auth.methods.token", configPath...)
+
+	err := object_config.LoadLogValidate(cfg, log, vld, a, path)
 	if err != nil {
 		return log.PushFatalStack("failed to load configuration of TOKEN handler", err)
 	}
 
 	encryption := &auth.AuthParameterEncryptionBase{}
-	err = object_config.LoadLogValidate(cfg, log, vld, encryption, "auth.methods.csrf", configPath...)
+	err = encryption.Init(cfg, log, vld, path)
 	if err != nil {
-		return log.PushFatalStack("failed to load configuration of TOKEN encryption", err)
+		return log.PushFatalStack("failed to load configuration of CSRF encryption", err)
 	}
 	a.encryption = encryption
 
@@ -110,55 +112,6 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		ctx.TraceOutMethod()
 	}
 	defer onExit()
-
-	// check if user was already authenticated
-	if ctx.AuthUser() != nil {
-
-		// user was authenticated, just create or update session client and add tokens
-
-		sessionId := ctx.GetSessionId()
-		var session user_manager.Session
-		if sessionId == "" {
-			// create session
-			session, err = a.users.SessionManager().CreateSession(ctx, a.SessionExpiration())
-			if err != nil {
-				ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
-				return true, err
-			}
-			ctx.SetSessionId(session.GetID())
-		} else {
-			// find session
-			session, err = a.users.SessionManager().FindSession(ctx, sessionId)
-			if err != nil {
-				ctx.SetGenericErrorCode(ErrorCodeSessionExpired)
-				return true, err
-			}
-		}
-
-		// update session client
-		err = a.users.SessionManager().UpdateSessionClient(ctx)
-		if err != nil {
-			ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
-			return true, err
-		}
-
-		// generate refresh token
-		err = a.GenRefreshToken(ctx, session)
-		if err != nil {
-			ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
-			return true, err
-		}
-
-		// generate access token
-		err = a.GenAccessToken(ctx)
-		if err != nil {
-			ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
-			return true, err
-		}
-
-		// done
-		return true, nil
-	}
 
 	// chek if it is REFRESH token request or normal access
 	path := ctx.GetRequestPath()
@@ -316,7 +269,7 @@ func (a *AuthTokenHandler) GenRefreshToken(ctx auth.AuthContext, session user_ma
 		c.SetMessage("failed to update session expiration")
 		return err
 	}
-	err = a.GenToken(ctx, AccessTokenName, expirationSeconds)
+	err = a.GenToken(ctx, RefreshTokenName, expirationSeconds)
 	return err
 }
 
