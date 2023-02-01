@@ -27,3 +27,7 @@ func (n *NoAuth) Handle(ctx auth.AuthContext) (bool, error) {
 
 	return true, nil
 }
+
+func (n *NoAuth) SetAuthManager(manager auth.AuthManager) {
+	manager.Schemas().AddHandler(n)
+}

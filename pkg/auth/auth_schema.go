@@ -35,11 +35,11 @@ type AuthSchema struct {
 
 func NewAuthSchema() *AuthSchema {
 	s := &AuthSchema{}
-	s.Setup()
+	s.Construct()
 	return s
 }
 
-func (s *AuthSchema) Setup() {
+func (s *AuthSchema) Construct() {
 	s.config = &AuthSchemaConfig{}
 	s.handlers = make([]AuthHandler, 0)
 }

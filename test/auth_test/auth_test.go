@@ -11,7 +11,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_default"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_session_default"
-	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/stretchr/testify/require"
 )
@@ -22,7 +21,7 @@ var testDir = filepath.Dir(testBasePath)
 type User = user_default.User
 
 func createDb(t *testing.T, app app_context.Context) {
-	test_utils.CreateDb(t, app, &User{}, &user_manager.SessionBase{}, &user_manager.SessionClientBase{})
+	test_utils.CreateDb(t, app, &User{}, &user_session_default.UserSession{}, &user_session_default.UserSessionClient{})
 }
 
 func initAuthServer(t *testing.T, config ...string) (app_context.Context, *user_session_default.Users, *auth_server.AuthServerBase) {

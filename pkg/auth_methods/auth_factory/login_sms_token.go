@@ -59,3 +59,7 @@ func (l *LoginphashSmsToken) Init(cfg config.Config, log logger.Logger, vld vali
 	l.AuthSchema.AppendHandlers(l.Login, l.Sms, l.Token)
 	return nil
 }
+
+func (l *LoginphashSmsToken) SetAuthManager(manager auth.AuthManager) {
+	manager.Schemas().AddHandler(l)
+}

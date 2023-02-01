@@ -27,10 +27,10 @@ func (f *DefaultAuthFactory) Create(protocol string) (auth.AuthHandler, error) {
 		return NewLoginphashSmsToken(f.Users, f.SmsManager), nil
 	case auth_login_phash.LoginProtocol:
 		return auth_login_phash.New(f.Users), nil
-	case auth_token.TokenProtocol:
+	case auth_token.CheckTokenProtocol:
 		return auth_token.New(f.Users), nil
-	case auth_token.NewTokenProtocol:
-		return auth_token.NewNewToken(f.Users), nil
+	case auth_token.TokenProtocol:
+		return auth_token.NewSchema(f.Users), nil
 	case auth_hmac.HmacProtocol:
 		return &auth_hmac.AuthHmac{}, nil
 	case auth_sms.SmsProtocol:

@@ -24,11 +24,8 @@ type Session interface {
 type SessionBase struct {
 	common.ObjectBase
 	auth.WithUserBase
-	UserId      string    `gorm:"index"`
-	UserDisplay string    `gorm:"index"`
-	UserLogin   string    `gorm:"index"`
-	Valid       bool      `gorm:"index"`
-	Expiration  time.Time `gorm:"index"`
+	Valid      bool      `gorm:"index"`
+	Expiration time.Time `gorm:"index"`
 }
 
 func NewSession() Session {
@@ -118,6 +115,9 @@ type SessionManager interface {
 	InvalidateSession(ctx op_context.Context, userId string, sessionId string) error
 	InvalidateUserSessions(ctx op_context.Context, userId string) error
 	InvalidateAllSessions(ctx op_context.Context) error
+
+	GetSessions(ctx op_context.Context, filter *db.Filter, sessions interface{}) error
+	GetSessionClients(ctx op_context.Context, filter *db.Filter, sessionClients interface{}) error
 }
 
 type WithSessionManager interface {
@@ -136,7 +136,7 @@ func NewSessionManager(MakeSession func() Session, MakeSessionClient func() Sess
 
 func (s *SessionManagerBase) CreateSession(ctx auth.AuthContext, expiration time.Time) (Session, error) {
 
-	c := ctx.TraceInMethod("auth_token.CreateSession")
+	c := ctx.TraceInMethod("user_manager.CreateSession")
 	defer ctx.TraceOutMethod()
 
 	session := s.MakeSession()
@@ -155,7 +155,7 @@ func (s *SessionManagerBase) CreateSession(ctx auth.AuthContext, expiration time
 
 func (s *SessionManagerBase) FindSession(ctx op_context.Context, sessionId string) (Session, error) {
 
-	c := ctx.TraceInMethod("auth_token.FindSession")
+	c := ctx.TraceInMethod("user_manager.FindSession")
 	defer ctx.TraceOutMethod()
 
 	session := s.MakeSession()
@@ -170,7 +170,7 @@ func (s *SessionManagerBase) FindSession(ctx op_context.Context, sessionId strin
 func (s *SessionManagerBase) UpdateSessionClient(ctx auth.AuthContext) error {
 
 	// setup
-	c := ctx.TraceInMethod("auth_token.UpdateSessionClient")
+	c := ctx.TraceInMethod("user_manager.UpdateSessionClient")
 	var err error
 	onExit := func() {
 		if err != nil {
@@ -227,7 +227,7 @@ func (s *SessionManagerBase) UpdateSessionClient(ctx auth.AuthContext) error {
 
 func (s *SessionManagerBase) UpdateSessionExpiration(ctx auth.AuthContext, session Session) error {
 
-	c := ctx.TraceInMethod("auth_token.UpdateSessionExpiration")
+	c := ctx.TraceInMethod("user_manager.UpdateSessionExpiration")
 	defer ctx.TraceOutMethod()
 
 	err := db.Update(ctx.DB(), ctx, session, db.Fields{"expiration": session.GetExpiration()})
@@ -239,7 +239,7 @@ func (s *SessionManagerBase) UpdateSessionExpiration(ctx auth.AuthContext, sessi
 
 func (s *SessionManagerBase) InvalidateSession(ctx op_context.Context, userId string, sessionId string) error {
 
-	c := ctx.TraceInMethod("auth_token.InvalidateSession")
+	c := ctx.TraceInMethod("user_manager.InvalidateSession")
 	defer ctx.TraceOutMethod()
 
 	err := ctx.DB().Update(ctx, s.MakeSession(), db.Fields{"id": sessionId, "user_id": userId}, db.Fields{"valid": false, "updated_at": time.Now()})
@@ -251,7 +251,7 @@ func (s *SessionManagerBase) InvalidateSession(ctx op_context.Context, userId st
 }
 
 func (s *SessionManagerBase) InvalidateUserSessions(ctx op_context.Context, userId string) error {
-	c := ctx.TraceInMethod("auth_token.InvalidateUserSessions")
+	c := ctx.TraceInMethod("user_manager.InvalidateUserSessions")
 	defer ctx.TraceOutMethod()
 
 	err := ctx.DB().Update(ctx, s.MakeSession(), db.Fields{"user_id": userId}, db.Fields{"valid": false, "updated_at": time.Now()})
@@ -262,10 +262,34 @@ func (s *SessionManagerBase) InvalidateUserSessions(ctx op_context.Context, user
 }
 
 func (s *SessionManagerBase) InvalidateAllSessions(ctx op_context.Context) error {
-	c := ctx.TraceInMethod("auth_token.InvalidateAllSessions")
+	c := ctx.TraceInMethod("user_manager.InvalidateAllSessions")
 	defer ctx.TraceOutMethod()
 
 	err := ctx.DB().UpdateAll(ctx, s.MakeSession(), db.Fields{"valid": false, "updated_at": time.Now()})
+	if err != nil {
+		return c.SetError(err)
+	}
+	return nil
+}
+
+// Get sessions using filter. Note that sessions argument must be of *[]Session type.
+func (s *SessionManagerBase) GetSessions(ctx op_context.Context, filter *db.Filter, sessions interface{}) error {
+
+	c := ctx.TraceInMethod("user_manager.GetSessions")
+	defer ctx.TraceOutMethod()
+	err := ctx.DB().FinWithFilter(ctx, filter, sessions)
+	if err != nil {
+		return c.SetError(err)
+	}
+	return nil
+}
+
+// Get sessions using filter. Note that sessions argument must be of *[]SessionClient type.
+func (s *SessionManagerBase) GetSessionClients(ctx op_context.Context, filter *db.Filter, sessions interface{}) error {
+
+	c := ctx.TraceInMethod("user_manager.GetSessionClients")
+	defer ctx.TraceOutMethod()
+	err := ctx.DB().FinWithFilter(ctx, filter, sessions)
 	if err != nil {
 		return c.SetError(err)
 	}

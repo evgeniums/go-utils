@@ -1,7 +1,7 @@
 {
     "db":{
         "db_provider": "sqlite",
-        "db_extra_config" : "user_test.sqlite"
+        "db_extra_config" : "auth_test.sqlite"
     },
     "logger" : {
         "level" : "debug"
@@ -18,10 +18,11 @@
         "auth": {
             "manager" : {
                 "methods": {
-                    "login_phash_token": {
-                        "token": {
-                            "secret": "hdidyuvp98-32kj4p98y"
-                        }
+                    "login_phash_token": {},
+                    "token": {
+                        "secret": "hdidyuvp98-32kj4p98y",
+                        "access_token_ttl_seconds" : 3,
+                        "refresh_token_ttl_seconds" : 5
                     },
                     "noauth":{}
                 },

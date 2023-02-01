@@ -1,6 +1,8 @@
 package auth_factory
 
 import (
+	"strings"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_token"
@@ -23,7 +25,7 @@ type LoginphashToken struct {
 
 func NewLoginphashToken(users user_manager.WithSessionManager) *LoginphashToken {
 	l := &LoginphashToken{}
-	l.Setup()
+	l.Construct()
 	l.Login = auth_login_phash.New(users)
 	l.Token = auth_token.NewNewToken(users)
 	return l
@@ -33,8 +35,14 @@ func (l *LoginphashToken) InitLoginToken(cfg config.Config, log logger.Logger, v
 	l.AuthSchema.SetAggregation(auth.And)
 
 	path := utils.OptionalArg("auth_manager.methods", configPath...)
-	loginCfgPath := object_config.Key(path, auth_login_phash.LoginProtocol)
-	tokenCfgPath := object_config.Key(path, auth_token.TokenProtocol)
+
+	pathParts := strings.Split(path, ".")
+	pathParts = pathParts[:len(pathParts)-1]
+
+	parentPath := strings.Join(pathParts, ".")
+
+	loginCfgPath := object_config.Key(parentPath, auth_login_phash.LoginProtocol)
+	tokenCfgPath := object_config.Key(parentPath, auth_token.TokenProtocol)
 
 	err := l.Login.Init(cfg, log, vld, loginCfgPath)
 	if err != nil {
@@ -64,4 +72,8 @@ func (l *LoginphashToken) Init(cfg config.Config, log logger.Logger, vld validat
 
 func (l *LoginphashToken) Handlers() []auth.AuthHandler {
 	return l.AuthSchema.Handlers()
+}
+
+func (l *LoginphashToken) SetAuthManager(manager auth.AuthManager) {
+	manager.Schemas().AddHandler(l)
 }

@@ -36,6 +36,7 @@ type AuthHandler interface {
 	Handle(ctx AuthContext) (bool, error)
 	Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error
 	Handlers() []AuthHandler
+	SetAuthManager(manager AuthManager)
 
 	ErrorDescriptions() map[string]string
 	ErrorProtocolCodes() map[string]int
@@ -72,4 +73,7 @@ func (a *AuthHandlerBase) Handlers() []AuthHandler {
 
 func (a *AuthHandlerBase) IsReal() bool {
 	return true
+}
+
+func (a *AuthHandlerBase) SetAuthManager(manager AuthManager) {
 }

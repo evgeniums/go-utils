@@ -1,6 +1,8 @@
 package user_default
 
-import "github.com/evgeniums/go-backend-helpers/pkg/user"
+import (
+	"github.com/evgeniums/go-backend-helpers/pkg/user"
+)
 
 type User struct {
 	user.UserBase

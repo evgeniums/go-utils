@@ -15,13 +15,14 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
+const CheckTokenProtocol = "check_token"
 const TokenProtocol = "token"
 const AccessTokenName = "access-token"
 const RefreshTokenName = "refresh-token"
 
 type AuthTokenHandlerConfig struct {
 	ACCESS_TOKEN_TTL_SECONDS  int    `default:"900" validate:"gt=0"`
-	REFRESH_TOKEN_TTL_MINUTES int    `default:"720" validate:"gt=0"`
+	REFRESH_TOKEN_TTL_SECONDS int    `default:"43200" validate:"gt=0"`
 	AUTO_PROLONGATE_ACCESS    bool   `default:"true"`
 	AUTO_PROLONGATE_REFRESH   bool   `default:"true"`
 	REFRESH_PATH              string `default:"/auth/refresh"`
@@ -56,7 +57,7 @@ func New(users user_manager.WithSessionManager) *AuthTokenHandler {
 
 func (a *AuthTokenHandler) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
-	a.AuthHandlerBase.Init(TokenProtocol)
+	a.AuthHandlerBase.Init(CheckTokenProtocol)
 
 	path := utils.OptionalArg("auth.methods.token", configPath...)
 
@@ -138,7 +139,11 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	ctx.SetLoggerField("session", prev.SessionId)
 	if prev.Expired() {
 		c.SetMessage("token expired")
-		ctx.SetGenericErrorCode(ErrorCodeTokenExpired)
+		if refresh {
+			ctx.SetGenericErrorCode(ErrorCodeSessionExpired)
+		} else {
+			ctx.SetGenericErrorCode(ErrorCodeTokenExpired)
+		}
 		return true, err
 	}
 
@@ -217,14 +222,16 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 				ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 				return true, err
 			}
+		}
 
-			if refresh && a.AUTO_PROLONGATE_REFRESH {
-				// generate refresh token
-				err = a.GenRefreshToken(ctx, session)
-				if err != nil {
-					ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
-					return true, err
-				}
+		tokenExpirationTime := now.Add(time.Second * time.Duration(a.ACCESS_TOKEN_TTL_SECONDS))
+		regenerateRefreshToken := a.AUTO_PROLONGATE_REFRESH && (refresh || tokenExpirationTime.After(session.GetExpiration()))
+		if regenerateRefreshToken {
+			// generate refresh token
+			err = a.GenRefreshToken(ctx, session)
+			if err != nil {
+				ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
+				return true, err
 			}
 		}
 
@@ -262,7 +269,7 @@ func (a *AuthTokenHandler) GenRefreshToken(ctx auth.AuthContext, session user_ma
 	}
 	defer onExit()
 
-	expirationSeconds := a.REFRESH_TOKEN_TTL_MINUTES * 60
+	expirationSeconds := a.REFRESH_TOKEN_TTL_SECONDS
 	session.SetExpiration(a.SessionExpiration())
 	err = a.users.SessionManager().UpdateSessionExpiration(ctx, session)
 	if err != nil {
@@ -292,6 +299,44 @@ func (a *AuthTokenHandler) GenToken(ctx auth.AuthContext, paramName string, expi
 }
 
 func (a *AuthTokenHandler) SessionExpiration() time.Time {
-	expirationSeconds := a.REFRESH_TOKEN_TTL_MINUTES * 60
+	expirationSeconds := a.REFRESH_TOKEN_TTL_SECONDS
 	return time.Now().Add(time.Second * time.Duration(expirationSeconds))
+}
+
+func (a *AuthTokenHandler) SetAuthManager(manager auth.AuthManager) {
+	manager.Schemas().AddHandler(a)
+}
+
+type TokenSchema struct {
+	auth.AuthSchema
+
+	Token *AuthTokenHandler
+}
+
+func NewSchema(users user_manager.WithSessionManager) *TokenSchema {
+	l := &TokenSchema{}
+	l.Construct()
+	l.Token = New(users)
+	return l
+}
+
+func (t *TokenSchema) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
+
+	t.AuthHandlerBase.Init(TokenProtocol)
+
+	err := t.Token.Init(cfg, log, vld, configPath...)
+	if err != nil {
+		return log.PushFatalStack("failed to init token handler", err)
+	}
+
+	t.AuthSchema.AppendHandlers(t.Token)
+	return nil
+}
+
+func (t *TokenSchema) Handlers() []auth.AuthHandler {
+	return t.AuthSchema.Handlers()
+}
+
+func (t *TokenSchema) SetAuthManager(manager auth.AuthManager) {
+	manager.Schemas().AddHandler(t)
 }

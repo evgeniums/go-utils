@@ -197,20 +197,15 @@ func (c *HttpClient) RequestRefreshToken(t *testing.T, expectedErrorCode ...stri
 	errorCode := utils.OptionalArg("", expectedErrorCode...)
 
 	h := map[string]string{"x-auth-refresh-token": c.RefreshToken}
-	resp, code, message := HttpPost(t, c.Gin, "/auth/refresh-token", nil, h)
+	resp := c.Post(t, "/auth/refresh", nil, h)
 
 	if errorCode != "" {
-		require.Equal(t, http.StatusUnauthorized, code)
-		assert.NotEmpty(t, message)
-		errResp := &rest_api_gin_server.ResponseError{}
-		require.NoError(t, json.Unmarshal([]byte(message), errResp))
-		assert.Equal(t, errorCode, errResp.Code)
+		CheckResponse(t, resp, &Expected{Error: errorCode, HttpCode: http.StatusUnauthorized})
 	} else {
-		require.Equal(t, http.StatusOK, code)
-		assert.Empty(t, message)
-		c.AccessToken = resp.Header().Get("x-auth-access-token")
+		CheckResponse(t, resp, &Expected{HttpCode: http.StatusOK})
+		assert.Empty(t, resp.Message)
+		c.AccessToken = resp.Object.Header().Get("x-auth-access-token")
 		require.NotEmpty(t, c.AccessToken)
-		c.updateToken(resp, code)
 	}
 }
 

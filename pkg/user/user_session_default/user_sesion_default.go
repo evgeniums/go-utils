@@ -8,14 +8,30 @@ import (
 
 type User = user_default.User
 
+type UserSession struct {
+	user_manager.SessionBase
+}
+
+func NewSession() user_manager.Session {
+	return &UserSession{}
+}
+
+type UserSessionClient struct {
+	user_manager.SessionClientBase
+}
+
+func NewSessionClient() user_manager.SessionClient {
+	return &UserSessionClient{}
+}
+
 type Users struct {
-	user.UsersWithSession[*user_default.User, *user_manager.SessionBase, *user_manager.SessionClientBase]
+	user.UsersWithSession[*user_default.User, *UserSession, *UserSessionClient]
 }
 
 func NewUsers() *Users {
 	m := &Users{}
 	m.MakeUser = user_default.NewUser
-	m.MakeSession = user_manager.NewSession
-	m.MakeSessionClient = user_manager.NewSessionClient
+	m.MakeSession = NewSession
+	m.MakeSessionClient = NewSessionClient
 	return m
 }

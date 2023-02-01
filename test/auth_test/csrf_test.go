@@ -48,7 +48,7 @@ func TestCsrf(t *testing.T) {
 		Message:  `{"status":"success"}`})
 	assert.NotEqual(t, prevToken, client.CsrfToken)
 
-	t.Logf("Wait for token expiration for 3 seconds...")
+	t.Logf("Waiting 3 seconds for CSRF token expiration...")
 	time.Sleep(time.Second * 3)
 
 	resp = client.Get(t, "/status/csrf", nil)

@@ -1,16 +1,21 @@
 package auth_test
 
 import (
+	"net/http"
 	"testing"
+	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_token"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_session_default"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -52,15 +57,224 @@ func TestLogin(t *testing.T) {
 	// unknown user
 	client.Login(t, "someuser", password1, auth_login_phash.ErrorCodeLoginFailed)
 
+	// invalid password
+	client.Login(t, login1, ";oiu'oij;lkj", auth_login_phash.ErrorCodeLoginFailed)
+
 	// good login
 	client.Login(t, login1, password1)
 
-	// re-login without headers when authorized
+	// re-login without headers when authenticated
 	client.Login(t, login2, password2, auth.ErrorCodeUnauthorized)
 
-	// good re-login when authorized
+	// good re-login when authenticated
 	client.Login(t, login2, password2)
 
-	// invalid re-login when authorized
+	// invalid re-login when authenticated
 	client.Login(t, "someuser", password1, auth_login_phash.ErrorCodeLoginFailed)
+}
+
+func TestSession(t *testing.T) {
+	app, users, server, opCtx := initOpTest(t)
+	defer app.Close()
+
+	// create user1
+	login1 := "user1"
+	password1 := "password1"
+	user1, err := users.Add(opCtx, login1, password1, user.Phone("12345678", &User{}), user.Email("user1@example.com", &User{}))
+	require.NoErrorf(t, err, "failed to add user")
+	require.NotNil(t, user1)
+
+	// create user2
+	login2 := "user2"
+	password2 := "password2"
+	user2, err := users.Add(opCtx, login2, password2, user.Phone("12345679", &User{}), user.Email("user2@example.com", &User{}))
+	require.NoErrorf(t, err, "failed to add user")
+	require.NotNil(t, user2)
+
+	// prepare client1
+	client1 := test_utils.PrepareHttpClient(t, server.RestApiServer.GinEngine())
+	// prepare client2
+	client2 := test_utils.PrepareHttpClient(t, server.RestApiServer.GinEngine())
+
+	// request before login
+	resp := client1.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Error: auth.ErrorCodeUnauthorized, HttpCode: http.StatusUnauthorized})
+
+	// check sessions after login
+	client1.Login(t, login1, password1)
+	client2.Login(t, login2, password2)
+
+	filter := &db.Filter{}
+	filter.SortDirection = db.SORT_ASC
+	filter.SortField = "user_login"
+
+	sessions := make([]user_session_default.UserSession, 0)
+	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessions))
+	require.Equal(t, 2, len(sessions))
+	assert.True(t, sessions[0].IsValid())
+	assert.True(t, sessions[1].IsValid())
+	assert.Equal(t, user1.GetID(), sessions[0].GetUserId())
+	assert.Equal(t, user2.GetID(), sessions[1].GetUserId())
+	assert.Equal(t, user1.Login(), sessions[0].GetUserLogin())
+	assert.Equal(t, user2.Login(), sessions[1].GetUserLogin())
+	assert.Equal(t, user1.Display(), sessions[0].GetUserDisplay())
+	assert.Equal(t, user2.Display(), sessions[1].GetUserDisplay())
+
+	sessionClients := make([]user_session_default.UserSessionClient, 0)
+	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessionClients))
+	require.Equal(t, 2, len(sessionClients))
+	assert.Equal(t, user1.GetID(), sessionClients[0].GetUserId())
+	assert.Equal(t, user2.GetID(), sessionClients[1].GetUserId())
+	assert.Equal(t, user1.Login(), sessionClients[0].GetUserLogin())
+	assert.Equal(t, user2.Login(), sessionClients[1].GetUserLogin())
+	assert.Equal(t, user1.Display(), sessionClients[0].GetUserDisplay())
+	assert.Equal(t, user2.Display(), sessionClients[1].GetUserDisplay())
+	assert.Equal(t, sessions[0].GetID(), sessionClients[0].GetSessionId())
+	assert.Equal(t, sessions[1].GetID(), sessionClients[1].GetSessionId())
+
+	// request after login
+	resp = client1.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Message: `{"status":"success"}`})
+	resp = client2.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Message: `{"status":"success"}`})
+
+	// request after logout
+	client1.Logout(t)
+	resp = client1.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Error: auth_token.ErrorCodeSessionExpired, HttpCode: http.StatusUnauthorized})
+	resp = client2.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Message: `{"status":"success"}`})
+
+	sessions = make([]user_session_default.UserSession, 0)
+	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessions))
+	require.Equal(t, 2, len(sessions))
+	assert.False(t, sessions[0].IsValid())
+	assert.True(t, sessions[1].IsValid())
+
+	// invalidate session
+	users.SessionManager().InvalidateSession(opCtx, user2.GetID(), sessions[1].GetID())
+	resp = client2.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Error: auth_token.ErrorCodeSessionExpired, HttpCode: http.StatusUnauthorized})
+	sessions = make([]user_session_default.UserSession, 0)
+	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessions))
+	require.Equal(t, 2, len(sessions))
+	assert.False(t, sessions[1].IsValid())
+
+	// invalidate all user sessions
+	client1.Login(t, login1, password1)
+	resp = client1.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Message: `{"status":"success"}`})
+	filter.SortDirection = db.SORT_DESC
+	filter.SortField = "created_at"
+	sessions = make([]user_session_default.UserSession, 0)
+	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessions))
+	require.Equal(t, 3, len(sessions))
+	assert.True(t, sessions[0].IsValid())
+	assert.False(t, sessions[1].IsValid())
+	assert.False(t, sessions[2].IsValid())
+	users.SessionManager().InvalidateUserSessions(opCtx, user1.GetID())
+	resp = client1.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Error: auth_token.ErrorCodeSessionExpired, HttpCode: http.StatusUnauthorized})
+	sessions = make([]user_session_default.UserSession, 0)
+	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessions))
+	require.Equal(t, 3, len(sessions))
+	assert.False(t, sessions[0].IsValid())
+	assert.False(t, sessions[1].IsValid())
+	assert.False(t, sessions[2].IsValid())
+
+	// invalidate all sessions
+	client1.Login(t, login1, password1)
+	client2.Login(t, login1, password1)
+	resp = client1.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Message: `{"status":"success"}`})
+	resp = client2.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Message: `{"status":"success"}`})
+	filter.SortDirection = db.SORT_DESC
+	filter.SortField = "created_at"
+	sessions = make([]user_session_default.UserSession, 0)
+	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessions))
+	require.Equal(t, 5, len(sessions))
+	assert.True(t, sessions[0].IsValid())
+	assert.True(t, sessions[1].IsValid())
+	assert.False(t, sessions[2].IsValid())
+	assert.False(t, sessions[3].IsValid())
+	assert.False(t, sessions[4].IsValid())
+	users.SessionManager().InvalidateAllSessions(opCtx)
+	resp = client1.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Error: auth_token.ErrorCodeSessionExpired, HttpCode: http.StatusUnauthorized})
+	resp = client2.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Error: auth_token.ErrorCodeSessionExpired, HttpCode: http.StatusUnauthorized})
+	sessions = make([]user_session_default.UserSession, 0)
+	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessions))
+	require.Equal(t, 5, len(sessions))
+	assert.False(t, sessions[0].IsValid())
+	assert.False(t, sessions[1].IsValid())
+	assert.False(t, sessions[2].IsValid())
+	assert.False(t, sessions[3].IsValid())
+	assert.False(t, sessions[4].IsValid())
+}
+
+func TestTokens(t *testing.T) {
+	app, users, server, opCtx := initOpTest(t)
+	defer app.Close()
+
+	// create user1
+	login1 := "user1"
+	password1 := "password1"
+	user1, err := users.Add(opCtx, login1, password1, user.Phone("12345678", &User{}), user.Email("user1@example.com", &User{}))
+	require.NoErrorf(t, err, "failed to add user")
+	require.NotNil(t, user1)
+
+	// create user2
+	login2 := "user2"
+	password2 := "password2"
+	user2, err := users.Add(opCtx, login2, password2, user.Phone("12345679", &User{}), user.Email("user2@example.com", &User{}))
+	require.NoErrorf(t, err, "failed to add user")
+	require.NotNil(t, user2)
+
+	// prepare client1
+	client1 := test_utils.PrepareHttpClient(t, server.RestApiServer.GinEngine())
+	// prepare client2
+	client2 := test_utils.PrepareHttpClient(t, server.RestApiServer.GinEngine())
+
+	client1.Login(t, login1, password1)
+	client2.Login(t, login1, password1)
+	resp := client1.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Message: `{"status":"success"}`})
+
+	t.Logf("Waiting 4 seconds for expiration of access token...")
+	time.Sleep(time.Second * 4)
+	client1.Get(t, "/status/check", nil)
+	resp = client1.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Error: auth_token.ErrorCodeTokenExpired, HttpCode: http.StatusUnauthorized})
+
+	client1.RequestRefreshToken(t)
+	resp = client1.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Message: `{"status":"success"}`})
+
+	t.Logf("Waiting 2 seconds for prolongation of access token 1...")
+	time.Sleep(time.Second * 2)
+	client1.Get(t, "/status/check", nil)
+	resp = client1.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Message: `{"status":"success"}`})
+	t.Logf("Waiting 2 seconds for prolongation of access token 2...")
+	time.Sleep(time.Second * 2)
+	client1.Get(t, "/status/check", nil)
+	resp = client1.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Message: `{"status":"success"}`})
+	t.Logf("Waiting 2 seconds for prolongation of access token 3...")
+	time.Sleep(time.Second * 2)
+	client1.Get(t, "/status/check", nil)
+	resp = client1.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Message: `{"status":"success"}`})
+
+	t.Logf("Waiting 6 seconds for expiration of refresh token...")
+	time.Sleep(time.Second * 6)
+	client1.Get(t, "/status/check", nil)
+	resp = client1.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Error: auth_token.ErrorCodeTokenExpired, HttpCode: http.StatusUnauthorized})
+
+	client1.RequestRefreshToken(t, auth_token.ErrorCodeSessionExpired)
+	resp = client1.Get(t, "/status/logged", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{Error: auth_token.ErrorCodeTokenExpired, HttpCode: http.StatusUnauthorized})
 }

@@ -16,15 +16,17 @@ type HandlerStore interface {
 	HandlerNames() []string
 }
 
-type HandlerFactory interface {
-	Create(protocol string) (AuthHandler, error)
-}
-
 type AuthManager interface {
 	Handle(ctx AuthContext, schema string) error
-	Store() HandlerStore
 	ErrorDescriptions() map[string]string
 	ErrorProtocolCodes() map[string]int
+
+	Handlers() HandlerStore
+	Schemas() HandlerStore
+}
+
+type HandlerFactory interface {
+	Create(protocol string) (AuthHandler, error)
 }
 
 type HandlerStoreBase struct {
@@ -54,7 +56,8 @@ func (h *HandlerStoreBase) AddHandler(handler AuthHandler) {
 }
 
 type AuthManagerBase struct {
-	store HandlerStore
+	handlers HandlerStore
+	schemas  HandlerStore
 }
 
 func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validator.Validator, handlerFactory HandlerFactory, configPath ...string) error {
@@ -63,7 +66,8 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 	fields := logger.Fields{"config_path": path}
 	log.Info("Init authorization manager", fields)
 
-	a.store = NewHandlerStore()
+	a.handlers = NewHandlerStore()
+	a.schemas = NewHandlerStore()
 
 	// create and init auth methods
 	log.Debug("Init auth methods")
@@ -85,9 +89,10 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 		if err != nil {
 			return log.PushFatalStack("failed to initialize authorization method", err, fields)
 		}
-		a.store.AddHandler(handler)
+		handler.SetAuthManager(a)
+		a.handlers.AddHandler(handler)
 		for _, subHandler := range handler.Handlers() {
-			a.store.AddHandler(subHandler)
+			a.handlers.AddHandler(subHandler)
 		}
 	}
 
@@ -105,13 +110,14 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 			fields := utils.AppendMapNew(fields, logger.Fields{"schema_path": schemaPath})
 			log.Debug("Init auth schema", fields)
 			schema := NewAuthSchema()
-			err := schema.InitSchema(log, cfg, vld, a.store, schemaPath)
+			err := schema.InitSchema(log, cfg, vld, a.handlers, schemaPath)
 			if err != nil {
 				return log.PushFatalStack("failed to initialize authorization schema", err, fields)
 			}
-			a.store.AddHandler(schema)
+			a.handlers.AddHandler(schema)
+			a.schemas.AddHandler(schema)
 			for _, subhandler := range schema.Handlers() {
-				a.store.AddHandler(subhandler)
+				a.handlers.AddHandler(subhandler)
 			}
 		}
 	}
@@ -120,14 +126,10 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 	return nil
 }
 
-func (a *AuthManagerBase) Store() HandlerStore {
-	return a.store
-}
-
 func (a *AuthManagerBase) ErrorDescriptions() map[string]string {
 	m := utils.CopyMapOneLevel(ErrorDescriptions)
-	for _, name := range a.store.HandlerNames() {
-		handler, _ := a.store.Handler(name)
+	for _, name := range a.handlers.HandlerNames() {
+		handler, _ := a.handlers.Handler(name)
 		utils.AppendMap(m, handler.ErrorDescriptions())
 	}
 	return m
@@ -135,8 +137,8 @@ func (a *AuthManagerBase) ErrorDescriptions() map[string]string {
 
 func (a *AuthManagerBase) ErrorProtocolCodes() map[string]int {
 	m := utils.CopyMapOneLevel(ErrorHttpCodes)
-	for _, name := range a.store.HandlerNames() {
-		handler, _ := a.store.Handler(name)
+	for _, name := range a.handlers.HandlerNames() {
+		handler, _ := a.handlers.Handler(name)
 		utils.AppendMap(m, handler.ErrorProtocolCodes())
 	}
 	return m
@@ -156,7 +158,7 @@ func (a *AuthManagerBase) Handle(ctx AuthContext, schema string) error {
 	defer onExit()
 
 	// find handler
-	handler, err := a.store.Handler(schema)
+	handler, err := a.schemas.Handler(schema)
 	if err != nil {
 		ctx.SetGenericErrorCode(ErrorCodeInvalidAuthSchema)
 		return c.SetError(err)
@@ -165,4 +167,11 @@ func (a *AuthManagerBase) Handle(ctx AuthContext, schema string) error {
 	// run handler
 	_, err = handler.Handle(ctx)
 	return err
+}
+
+func (a *AuthManagerBase) Handlers() HandlerStore {
+	return a.handlers
+}
+func (a *AuthManagerBase) Schemas() HandlerStore {
+	return a.schemas
 }
