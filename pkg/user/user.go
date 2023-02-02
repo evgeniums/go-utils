@@ -23,12 +23,13 @@ type User interface {
 	DbUser() interface{}
 }
 
+// TODO Configure somewhere unique indexes for phone and login if required
 type UserBaseDB struct {
 	common.ObjectBase
 	auth_login_phash.UserBase
 	LOGIN   string `gorm:"uniqueIndex"`
-	PHONE   string `gorm:"uniqueIndex"`
-	EMAIL   string `gorm:"uniqueIndex"`
+	PHONE   string `gorm:"index"`
+	EMAIL   string `gorm:"index"`
 	BLOCKED bool   `gorm:"index"`
 }
 

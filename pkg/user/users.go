@@ -9,16 +9,19 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type Users[UserType User] struct {
 	app_context.WithAppBase
 	user_manager.UserManagerBase
-	MakeUser func() UserType
+	MakeUser             func() UserType
+	LoginValidationRules string
 }
 
-func (u *Users[UserType]) Init(app app_context.Context) {
+func (u *Users[UserType]) Init(app app_context.Context, loginValidationRules ...string) {
 	u.WithAppBase.Init(app)
+	u.LoginValidationRules = utils.OptionalArg("required,alphanum|email,lowercase", loginValidationRules...)
 }
 
 func (u *Users[UserType]) MakeAuthUser() auth.User {
@@ -26,8 +29,7 @@ func (u *Users[UserType]) MakeAuthUser() auth.User {
 }
 
 func (u *Users[UserType]) ValidateLogin(login string) error {
-	rules := "required,alphanum,lowercase"
-	return u.App().Validator().ValidateValue(login, rules)
+	return u.App().Validator().ValidateValue(login, u.LoginValidationRules)
 }
 
 func (u *Users[UserType]) Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error) {

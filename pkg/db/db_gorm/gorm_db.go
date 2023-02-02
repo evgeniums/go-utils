@@ -144,7 +144,7 @@ func (g *GormDB) Connect(ctx logger.WithLogger) error {
 
 	dbDialector, err := g.dbConnector.DialectorOpener(g.DB_PROVIDER, dsn)
 	if err != nil {
-		return ctx.Logger().PushFatalStack("failed open dialector to connect to database", err)
+		return ctx.Logger().PushFatalStack("failed open dialector to connect to database", err, logger.Fields{"db_provider": g.DB_PROVIDER})
 	}
 
 	g.db, err = ConnectDB(dbDialector)
@@ -157,9 +157,11 @@ func (g *GormDB) Connect(ctx logger.WithLogger) error {
 }
 
 func (g *GormDB) Close() {
-	db, err := g.db.DB()
-	if err == nil {
-		db.Close()
+	if g.db != nil {
+		db, err := g.db.DB()
+		if err == nil && db != nil {
+			db.Close()
+		}
 	}
 }
 

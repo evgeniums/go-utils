@@ -32,7 +32,7 @@ func TestLogin(t *testing.T) {
 	defer app.Close()
 
 	// create user1
-	login1 := "user1"
+	login1 := "user1@example.com"
 	password1 := "password1"
 	user1, err := users.Add(opCtx, login1, password1, user.Phone("12345678", &User{}), user.Email("user1@example.com", &User{}))
 	require.NoErrorf(t, err, "failed to add user")
