@@ -36,7 +36,7 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 		if !utils.FileExists(include) {
 			// try relative path
 			newInclude := filepath.Join(filepath.Dir(configFile), include)
-			if !utils.FileExists(include) {
+			if !utils.FileExists(newInclude) {
 				err = fmt.Errorf("failed to include config file %s or %s", include, newInclude)
 				return err
 			}

@@ -1,0 +1,8 @@
+{
+    "include" : [
+        "include.json"
+    ],
+    "main_section" : {
+        "parameter1" : "value1"
+    }
+}

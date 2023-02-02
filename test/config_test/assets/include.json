@@ -1,0 +1,8 @@
+{
+    "main_section" : {
+        "additional_parameter2" : "value2"
+    },
+    "additional_section" : {
+        "parameter3" : "value3"
+    }
+}
