@@ -4,7 +4,7 @@
         "db_extra_config" : "auth_test.sqlite"
     },
     "logger" : {
-        "level" : "debug"
+        "level" : "info"
     },
     "sms": {
         "default_provider": "mock_default",
@@ -24,9 +24,24 @@
                         "access_token_ttl_seconds" : 3,
                         "refresh_token_ttl_seconds" : 5
                     },
+                    "sms": {
+                        "testing": true,
+                        "secret": "kj;oijkxwqpofe'poj",
+                        "sms_delay_seconds": 2,
+                        "token_ttl_seconds": 3,
+                        "max_tries":3
+                    },
                     "noauth":{}
                 },
-                "schemas":[]
+                "schemas":[
+                    {
+                        "name" : "token_sms",
+                        "handlers" : [
+                            {"name":"check_token"},
+                            {"name":"sms"}
+                        ]
+                    }
+                ]
             },
             "default_schema": "token",
             "endpoints": {
@@ -46,6 +61,18 @@
                     {
                         "access": 255,
                         "schema": "noauth"
+                    }
+                ],
+                "/status/sms": [
+                    {
+                        "access": 255,
+                        "schema": "token_sms"
+                    }
+                ],
+                "/status/sms-alt": [
+                    {
+                        "access": 255,
+                        "schema": "token_sms"
                     }
                 ]
             }

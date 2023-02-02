@@ -20,7 +20,7 @@ type Auth interface {
 }
 
 type AuthBaseConfig struct {
-	DEFAULT_SCHEMA string `default:"token"`
+	DEFAULT_SCHEMA string `default:"check_token"`
 }
 
 type AuthBase struct {

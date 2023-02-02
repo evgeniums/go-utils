@@ -7,6 +7,7 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms/sms_provider_factory"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_default"
@@ -21,11 +22,11 @@ var testDir = filepath.Dir(testBasePath)
 type User = user_default.User
 
 func createDb(t *testing.T, app app_context.Context) {
-	test_utils.CreateDb(t, app, &User{}, &user_session_default.UserSession{}, &user_session_default.UserSessionClient{})
+	test_utils.CreateDb(t, app, &User{}, &user_session_default.UserSession{}, &user_session_default.UserSessionClient{}, &sms.SmsMessage{})
 }
 
 func initAuthServer(t *testing.T, config ...string) (app_context.Context, *user_session_default.Users, *auth_server.AuthServerBase) {
-	app := test_utils.InitAppContext(t, testDir, utils.OptionalArg("auth_test.json", config...))
+	app := test_utils.InitAppContext(t, testDir, utils.OptionalArg("auth_test.jsonc", config...))
 
 	createDb(t, app)
 

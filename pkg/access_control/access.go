@@ -21,6 +21,7 @@ const (
 
 	Post = Create
 	Get  = ReadContent
+	Put  = UpdateReplace
 
 	All AccessType = 0xFFFFFFFF
 )

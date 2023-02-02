@@ -2,6 +2,7 @@ package api_server
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type CheckStatusEndpoint struct {
@@ -28,9 +29,10 @@ type CheckAccessEndpoint struct {
 	EndpointBase
 }
 
-func NewCheckAccessEndpoint(path string, name string) *CheckAccessEndpoint {
+func NewCheckAccessEndpoint(path string, name string, access ...access_control.AccessType) *CheckAccessEndpoint {
+	accessType := utils.OptionalArg(access_control.Get, access...)
 	ep := &CheckAccessEndpoint{}
-	ep.EndpointBase.Init(path, name, access_control.Get)
+	ep.EndpointBase.Init(path, name, accessType)
 	return ep
 }
 
@@ -44,9 +46,16 @@ type StatusService struct {
 	ServiceBase
 }
 
+// TODO Endpoint at the same path but different access methods
 func NewStatusService() *StatusService {
 	s := &StatusService{}
 	s.GroupBase.Init("/status", "Status")
-	s.AddEndpoints(NewCheckStatusEndpoint(), NewCheckAccessEndpoint("/csrf", "CheckCsrf"), NewCheckAccessEndpoint("/logged", "CheckLogged"))
+	s.AddEndpoints(NewCheckStatusEndpoint(),
+		NewCheckAccessEndpoint("/csrf", "CheckCsrf"),
+		NewCheckAccessEndpoint("/logged", "CheckLogged"),
+		NewCheckAccessEndpoint("/sms", "CheckSms", access_control.Post),
+		// NewCheckAccessEndpoint("/sms", "CheckSmsPut", access_control.Put),
+		NewCheckAccessEndpoint("/sms-alt", "CheckSmsAlt", access_control.Post),
+	)
 	return s
 }

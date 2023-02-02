@@ -14,8 +14,6 @@ import (
 
 const Protocol string = "sms_mock"
 
-var LastSmsId = ""
-
 type SmsMockConfig struct {
 	sms.ProviderBase
 	ALWAYS_FAIL bool
@@ -64,10 +62,11 @@ func (s *SmsMock) Send(ctx op_context.Context, message string, recipient string,
 		result.RawContent = "failed"
 		err = errors.New("expected failure")
 	} else {
-		LastSmsId = utils.OptionalArg("", smsID...)
 		result.RawContent = "ok"
 		c.LoggerFields()["provider_sms_id"] = result.ProviderMessageID
 	}
+
+	c.Logger().Info("Send SMS", logger.Fields{"message": message})
 
 	// return result
 	return result, err

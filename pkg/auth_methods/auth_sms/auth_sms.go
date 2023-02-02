@@ -20,6 +20,8 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
+var LastSmsCode = ""
+
 const SmsProtocol = "sms"
 
 const TokenName = "sms-token"
@@ -56,6 +58,7 @@ type AuthSmsConfig struct {
 	SECRET            string `validate:"required" mask:"true"`
 	MAX_TRIES         int    `default:"3" validate:"gt=1"`
 	CODE_LENGTH       int    `default:"5" validate:"gte=4"`
+	TESTING           bool
 }
 
 type AuthSms struct {
@@ -79,15 +82,17 @@ func (a *AuthSms) Init(cfg config.Config, log logger.Logger, vld validator.Valid
 
 	a.AuthHandlerBase.Init(SmsProtocol)
 
-	err := object_config.LoadLogValidate(cfg, log, vld, a, "auth.methods.sms", configPath...)
+	path := utils.OptionalArg("auth.methods.sms", configPath...)
+
+	err := object_config.LoadLogValidate(cfg, log, vld, a, path)
 	if err != nil {
 		return log.PushFatalStack("failed to load configuration of auth SMS handler", err)
 	}
 
 	encryption := &auth.AuthParameterEncryptionBase{}
-	err = object_config.LoadLogValidate(cfg, log, vld, encryption, "auth.methods.sms", configPath...)
+	err = encryption.Init(cfg, log, vld, path)
 	if err != nil {
-		return log.PushFatalStack("failed to load configuration of auth SMS encryption", err)
+		return log.PushFatalStack("failed to load configuration of SMS encryption", err)
 	}
 	a.Encryption = encryption
 
@@ -132,6 +137,7 @@ func (a *AuthSms) ErrorProtocolCodes() map[string]int {
 		ErrorCodeInvalidSmsCode:          http.StatusUnauthorized,
 		ErrorCodeWaitDelay:               http.StatusUnauthorized,
 		ErrorCodeTooManyTries:            http.StatusUnauthorized,
+		ErrorCodeContentMismatch:         http.StatusUnauthorized,
 	}
 	return m
 }
@@ -198,10 +204,10 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 			ctx.SetGenericErrorCode(ErrorCodeTokenExpired)
 			return true, err
 		}
-		ctx.Cache().Unset(oldCacheKey)
 
 		// check tries count
 		if cacheToken.Try >= a.MAX_TRIES {
+			ctx.Cache().Unset(oldCacheKey)
 			err = errors.New("too many tries")
 			ctx.SetGenericErrorCode(ErrorCodeTooManyTries)
 			return true, err
@@ -240,14 +246,15 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 
 		// good SMS code
 
-		// unset SMS delay
+		// remove data from cache
+		ctx.Cache().Unset(oldCacheKey)
 		ctx.Cache().Unset(a.smsDelayCacheKey(userId))
 
 		// done
 		return true, nil
 	}
 
-	// SMS code is not set in request
+	// SMS code not present in request
 
 	// check if SMS delay expired
 	delayCacheKey := a.smsDelayCacheKey(userId)
@@ -259,12 +266,14 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 		return true, err
 	}
 	if found {
-		// set delay parameter in request
+		// set delay parameter in response
 		now := time.Now()
 		diff := now.Sub(delayItem.GetCreatedAt())
 		delay := int(diff.Seconds())
 		if delay > a.SMS_DELAY_SECONDS {
-			delay = a.SMS_DELAY_SECONDS
+			delay = 0
+		} else {
+			delay = a.SMS_DELAY_SECONDS - delay
 		}
 		ctx.SetAuthParameter(SmsProtocol, DelayName, fmt.Sprintf("%d", delay))
 
@@ -308,6 +317,9 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 	cacheToken.Try = 1
 	h := a.hmacOfRequest(ctx, userId)
 	cacheToken.Checksum = h.SumStr()
+	if a.TESTING {
+		LastSmsCode = cacheToken.Code
+	}
 
 	// send SMS
 	if message == "" {
@@ -375,6 +387,7 @@ func (a *AuthSms) setToken(ctx auth.AuthContext, c op_context.CallContext, cache
 	}
 
 	// put token to response
+	requestToken.SetTTL(a.TOKEN_TTL_SECONDS)
 	err = a.Encryption.SetAuthParameter(ctx, a.Protocol(), TokenName, requestToken)
 	if err != nil {
 		c.SetMessage("failed to put token to response")
@@ -383,4 +396,8 @@ func (a *AuthSms) setToken(ctx auth.AuthContext, c op_context.CallContext, cache
 	}
 
 	return nil
+}
+
+func (a *AuthSms) SetAuthManager(manager auth.AuthManager) {
+	manager.Schemas().AddHandler(a)
 }

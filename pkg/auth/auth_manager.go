@@ -52,7 +52,9 @@ func (h *HandlerStoreBase) HandlerNames() []string {
 }
 
 func (h *HandlerStoreBase) AddHandler(handler AuthHandler) {
-	h.handlers[handler.Name()] = handler
+	if _, ok := h.handlers[handler.Name()]; !ok {
+		h.handlers[handler.Name()] = handler
+	}
 }
 
 type AuthManagerBase struct {
@@ -99,14 +101,14 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 	// create and init auth schemas
 	log.Debug("Init auth schemas")
 	schemasPath := object_config.Key(path, "schemas")
-	if cfg.IsSet("schemas") {
+	if cfg.IsSet(schemasPath) {
 		schemasSection := cfg.Get(schemasPath)
 		schemas, ok := schemasSection.([]interface{})
 		if !ok {
 			return log.PushFatalStack("failed to initialize authorization schemas", errors.New("invalid schemas section"), fields)
 		}
 		for i := range schemas {
-			schemaPath := object_config.KeyInt(path, i)
+			schemaPath := object_config.KeyInt(schemasPath, i)
 			fields := utils.AppendMapNew(fields, logger.Fields{"schema_path": schemaPath})
 			log.Debug("Init auth schema", fields)
 			schema := NewAuthSchema()
@@ -116,9 +118,6 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 			}
 			a.handlers.AddHandler(schema)
 			a.schemas.AddHandler(schema)
-			for _, subhandler := range schema.Handlers() {
-				a.handlers.AddHandler(subhandler)
-			}
 		}
 	}
 

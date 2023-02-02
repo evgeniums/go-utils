@@ -45,6 +45,7 @@ func (l *LoginphashSmsToken) InitSms(cfg config.Config, log logger.Logger, vld v
 func (l *LoginphashSmsToken) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
 	l.AuthHandlerBase.Init(LoginphashSmsTokenProtocol)
+	l.SetName(LoginphashTokenProtocol)
 
 	err := l.InitLoginToken(cfg, log, vld, configPath...)
 	if err != nil {

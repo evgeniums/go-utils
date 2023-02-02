@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/api_server/rest_api_gin_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -26,6 +28,15 @@ type HttpResponse struct {
 	Object  *httptest.ResponseRecorder
 	Code    int
 	Message string
+}
+
+func ResponseErrorCode(t *testing.T, resp *HttpResponse) string {
+	if resp.Message != "" {
+		errResp := &rest_api_gin_server.ResponseError{}
+		require.NoError(t, json.Unmarshal([]byte(resp.Message), errResp))
+		return errResp.Code
+	}
+	return ""
 }
 
 func CheckResponse(t *testing.T, resp *HttpResponse, expected *Expected) {
@@ -64,6 +75,8 @@ type HttpClient struct {
 	CsrfToken    string
 
 	Gin *gin.Engine
+
+	AutoSms bool
 }
 
 func NewHttpClient(gin *gin.Engine, baseUrl ...string) *HttpClient {
@@ -77,6 +90,7 @@ func PrepareHttpClient(t *testing.T, gin *gin.Engine, baseUrl ...string) *HttpCl
 	c := &HttpClient{}
 	c.BaseUrl = utils.OptionalArg("/api/1.0.0", baseUrl...)
 	c.Gin = gin
+	c.AutoSms = true
 	c.Prepare(t)
 	return c
 }
@@ -153,12 +167,31 @@ func (c *HttpClient) updateToken(resp *httptest.ResponseRecorder, code int) {
 	}
 }
 
+func (c *HttpClient) SendSmsConfirmation(t *testing.T, resp *HttpResponse, code string, method string, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+	c.AutoSms = false
+	h := c.addTokens(headers...)
+	h["x-auth-sms-code"] = code
+	token := resp.Object.Header().Get("x-auth-sms-token")
+	if token != "" {
+		h["x-auth-sms-token"] = token
+	}
+	return c.RequestBody(t, method, path, cmd, h)
+}
+
 func (c *HttpClient) RequestBody(t *testing.T, method string, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
 	h := c.addTokens(headers...)
 	c.addTokens(headers...)
 	resp, code, message := HttpRequestBody(t, c.Gin, method, c.Url(path), cmd, h)
 	c.updateToken(resp, code)
-	return &HttpResponse{resp, code, message}
+	r := &HttpResponse{resp, code, message}
+
+	errCode := ResponseErrorCode(t, r)
+	if c.AutoSms && errCode == auth_sms.ErrorCodeSmsConfirmationRequired {
+		return c.SendSmsConfirmation(t, r, auth_sms.LastSmsCode, method, path, cmd, h)
+	}
+	c.AutoSms = true
+
+	return r
 }
 
 func (c *HttpClient) RequestQuery(t *testing.T, method string, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
@@ -190,6 +223,21 @@ func (c *HttpClient) Delete(t *testing.T, path string, cmd interface{}, headers 
 
 func (c *HttpClient) Logout(t *testing.T) {
 	c.Post(t, "/auth/logout", nil)
+}
+
+func (c *HttpClient) UpdateCsrfToken(t *testing.T) {
+	c.Get(t, "/status/check", nil)
+}
+
+func (c *HttpClient) UpdateTokens(t *testing.T) {
+	c.UpdateCsrfToken(t)
+	c.RequestRefreshToken(t)
+}
+
+func (c *HttpClient) Sleep(t *testing.T, seconds int, message string) {
+	t.Logf("Sleeping %d seconds for %s...", seconds, message)
+	time.Sleep(time.Second * time.Duration(seconds))
+	c.UpdateTokens(t)
 }
 
 func (c *HttpClient) RequestRefreshToken(t *testing.T, expectedErrorCode ...string) {

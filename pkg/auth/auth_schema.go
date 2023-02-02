@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
@@ -22,15 +21,14 @@ const (
 )
 
 type AuthSchemaConfig struct {
-	common.WithNameBaseConfig
+	NAME        string `validate:"required"`
 	AGGREGATION string `default:"and" validate:"omitempty,oneof=and or"`
 }
 
 type AuthSchema struct {
 	AuthHandlerBase
-	config      *AuthSchemaConfig
-	aggregation Aggregation
-	handlers    []AuthHandler
+	config   *AuthSchemaConfig
+	handlers []AuthHandler
 }
 
 func NewAuthSchema() *AuthSchema {
@@ -78,11 +76,16 @@ func (a *AuthSchema) InitSchema(log logger.Logger, cfg config.Config, vld valida
 	if err != nil {
 		return log.PushFatalStack("failed to load configuration of authorization schema", err, fields)
 	}
+	a.SetName(a.config.NAME)
 
 	// load handlers
 	key := object_config.Key(path, "handlers")
 	handlersSection := cfg.Get(key)
-	handlers := handlersSection.([]interface{})
+	handlers, ok := handlersSection.([]interface{})
+	if !ok {
+		err = errors.New("invalid handlers section")
+		return log.PushFatalStack("failed to load configuration of authorization schema", err, fields)
+	}
 	for i := range handlers {
 		handlerPath := object_config.Key(key, fmt.Sprintf("%d", i))
 		fields := logger.Fields{"path": handlerPath}
@@ -128,14 +131,14 @@ func (a *AuthSchema) Handle(ctx AuthContext) (bool, error) {
 	authMethodFound := false
 	for _, handler := range a.handlers {
 		sectionFound, err := handler.Handle(ctx)
-		if !handler.IsReal() || !sectionFound && a.aggregation == Or {
+		if !handler.IsReal() || !sectionFound && a.config.AGGREGATION == Or {
 			continue
 		}
 		if err != nil {
 			ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeUnauthorized))
 			return sectionFound, c.SetError(err)
 		}
-		if a.aggregation == Or {
+		if a.config.AGGREGATION == Or {
 			return sectionFound, nil
 		}
 		if sectionFound {
