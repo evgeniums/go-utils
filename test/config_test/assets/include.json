@@ -8,5 +8,8 @@
     },
     "additional_section" : {
         "parameter3" : "value3"
+    },
+    "replacable_section" : {
+        "replacable_parameter" : "replacable_value"
     }
 }

@@ -2,8 +2,28 @@
     "include" : [
         "include.json"
     ],
-    "include_arrays" : [
-        {"include_arrays.json":["main_section.array_parameter"]}
+    "include_merge" : [
+        {
+            "mode": "array",
+            "path": "include_arrays.json",
+            "map": {
+                "main_section.array_parameter":""
+            }            
+        },
+        {
+            "mode": "array",
+            "path": "include_arrays.json",
+            "map" : {
+                "main_section.array_parameter":"main_section.subsection.other_array"                
+            }
+        },
+        {
+            "mode": "value",
+            "path": "include.json",
+            "map" : {
+                "replacable_section":"main_section.replacable_section"
+            }
+        }
     ],
     "main_section" : {
         "parameter1" : "value1",
@@ -13,6 +33,11 @@
         ],
         "map_parameter" : {
             "nested_parameter1":"nested_value1"
+        },
+        "subsection" : {
+            "other_array": [
+                "subitem1"
+            ]
         }
     }
 }

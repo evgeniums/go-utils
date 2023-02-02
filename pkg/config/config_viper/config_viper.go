@@ -11,6 +11,17 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	MergeValue string = "value"
+	MergeArray string = "array"
+)
+
+type IncludeMerge struct {
+	Path string            `json:"path"`
+	Mode string            `json:"path1"`
+	Map  map[string]string `json:"map"`
+}
+
 type ConfigViper struct {
 	*viper.Viper
 }
@@ -56,57 +67,68 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 		}
 	}
 
-	// load includes with arrays for merging
-	if c.Viper.IsSet("include_arrays") {
+	// load includes for customizable merging
+	mergeSectionKey := "include_merge"
+	if c.Viper.IsSet(mergeSectionKey) {
 
-		// load and merge arrays data
-		includeArrays := c.Viper.Get("include_arrays")
-		includeArraysSlice, ok := includeArrays.([]interface{})
+		mergeSection := c.Viper.Get(mergeSectionKey)
+		includeItems, ok := mergeSection.([]interface{})
 		if !ok {
-			msg := fmt.Errorf("invalid format of include_arrays section")
+			msg := fmt.Errorf("invalid format of %s section", mergeSectionKey)
 			return msg
 		}
-		for i := range includeArraysSlice {
-			includes := c.Viper.GetStringMapStringSlice(fmt.Sprintf("include_arrays.%d", i))
-			for include, keys := range includes {
-				if !utils.FileExists(include) {
-					// try relative path
-					newInclude := filepath.Join(filepath.Dir(configFile), include)
-					if !utils.FileExists(newInclude) {
-						err = fmt.Errorf("failed to include array config file %s or %s", include, newInclude)
-						return err
-					}
-					include = newInclude
+		for i := range includeItems {
+			item := &IncludeMerge{}
+			itemKey := fmt.Sprintf("%s.%d", mergeSectionKey, i)
+			err = c.Viper.UnmarshalKey(itemKey, item)
+			if err != nil {
+				msg := fmt.Errorf("invalid format of %s", itemKey)
+				return msg
+			}
+
+			if !utils.FileExists(item.Path) {
+				// try relative path
+				newPath := filepath.Join(filepath.Dir(configFile), item.Path)
+				if !utils.FileExists(newPath) {
+					err = fmt.Errorf("failed to include config file %s or %s", item.Path, newPath)
+					return err
 				}
-				arrCfg := viper.New()
-				arrCfg.SetConfigFile(include)
-				arrCfg.SetConfigType(cfgType)
-				err = arrCfg.ReadInConfig()
-				if err != nil {
-					msg := fmt.Errorf("failed to include array config file %s: %s", include, err)
-					return msg
+				item.Path = newPath
+			}
+
+			cfg := viper.New()
+			cfg.SetConfigFile(item.Path)
+			cfg.SetConfigType(cfgType)
+			err = cfg.ReadInConfig()
+			if err != nil {
+				msg := fmt.Errorf("failed to read configuration from %s: %s", item.Path, err)
+				return msg
+			}
+
+			for from, to := range item.Map {
+				if to == "" {
+					to = from
 				}
 
-				for _, key := range keys {
-					if arrCfg.IsSet(key) {
-						if !c.Viper.IsSet(key) {
-							c.Viper.Set(key, arrCfg.Get(key))
-						} else {
-							arr1 := c.Viper.Get(key)
-							arr2 := arrCfg.Get(key)
-							arr1Slice, ok := arr1.([]interface{})
-							if !ok {
-								msg := fmt.Errorf("failed to include array config file %s: %s is not array in main config", include, key)
-								return msg
-							}
-							arr2Slice, ok := arr2.([]interface{})
-							if !ok {
-								msg := fmt.Errorf("failed to include array config file %s: %s is not array in included config", include, key)
-								return msg
-							}
-							merge := append(arr1Slice, arr2Slice...)
-							c.Viper.Set(key, merge)
+				if cfg.IsSet(from) {
+					if !c.Viper.IsSet(to) || item.Mode != MergeArray {
+						c.Viper.Set(to, cfg.Get(from))
+					} else {
+						oldData := c.Viper.Get(to)
+						newData := cfg.Get(from)
+
+						oldSlice, ok := oldData.([]interface{})
+						if !ok {
+							msg := fmt.Errorf("failed to append array from %s: %s is not array in main config", item.Path, to)
+							return msg
 						}
+						newSlice, ok := newData.([]interface{})
+						if !ok {
+							msg := fmt.Errorf("failed to append array from %s: %s is not array in included config", item.Path, from)
+							return msg
+						}
+						merge := append(oldSlice, newSlice...)
+						c.Viper.Set(to, merge)
 					}
 				}
 			}
