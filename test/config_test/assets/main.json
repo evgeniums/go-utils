@@ -2,7 +2,17 @@
     "include" : [
         "include.json"
     ],
+    "include_arrays" : [
+        {"include_arrays.json":["main_section.array_parameter"]}
+    ],
     "main_section" : {
-        "parameter1" : "value1"
+        "parameter1" : "value1",
+        "override_parameter" : "old_value",
+        "array_parameter": [
+            "item1"
+        ],
+        "map_parameter" : {
+            "nested_parameter1":"nested_value1"
+        }
     }
 }

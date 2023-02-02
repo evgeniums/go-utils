@@ -1,0 +1,10 @@
+{
+    "main_section" : {
+        "array_parameter": [
+            "item2"
+        ]
+    },
+    "additional_section" : {
+        "not_included_parameter" : "does not matter"
+    }
+}
