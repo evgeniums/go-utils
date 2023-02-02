@@ -1,7 +1,11 @@
 {
+    // include content as is
     "include" : [
         "include.json"
     ],
+    /*
+    advanced include and merge
+    */
     "include_merge" : [
         {
             "mode": "array",
@@ -38,6 +42,8 @@
             "other_array": [
                 "subitem1"
             ]
-        }
+        },
+        "with_comments1" : "Hi! /*Hello world*/",
+        "with_comments2" : "Hi! //Hello world"
     }
 }

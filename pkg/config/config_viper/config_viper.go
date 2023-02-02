@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/spf13/viper"
+	"github.com/tidwall/jsonc"
 )
 
 const (
@@ -32,19 +34,41 @@ func New() *ConfigViper {
 	return v
 }
 
+func ReadConfigFromFile(v *viper.Viper, path string, cfgType string) error {
+
+	v.SetConfigType(cfgType)
+
+	if cfgType != "json" {
+		v.SetConfigFile(path)
+		err := v.ReadInConfig()
+		if err != nil {
+			return fmt.Errorf("fatal error while reading config file: %s", err)
+		}
+	} else {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("fatal error while reading config file: %s", err)
+		}
+		b := jsonc.ToJSON(data)
+		if err = v.ReadConfig(bytes.NewReader(b)); err != nil {
+			msg := fmt.Errorf("failed to parse configuration JSON: %s", err)
+			return msg
+		}
+	}
+	return nil
+}
+
 func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 
 	// setup
 	cfgType := utils.OptionalArg("json", configType...)
 	c.Viper.SetConfigFile(configFile)
 	c.Viper.SetConfigType(cfgType)
-	c.Viper.AddConfigPath(".")
 
 	// read main configuration file
-	err := c.Viper.ReadInConfig()
+	err := ReadConfigFromFile(c.Viper, configFile, cfgType)
 	if err != nil {
-		msg := fmt.Errorf("fatal error while reading config file: %s", err)
-		return msg
+		return fmt.Errorf("fatal error while reading config file: %s", err)
 	}
 
 	// load includes
@@ -54,16 +78,14 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 			// try relative path
 			newInclude := filepath.Join(filepath.Dir(configFile), include)
 			if !utils.FileExists(newInclude) {
-				err = fmt.Errorf("failed to include config file %s or %s", include, newInclude)
-				return err
+				return fmt.Errorf("failed to include config file %s or %s", include, newInclude)
 			}
 			include = newInclude
 		}
 		c.Viper.SetConfigFile(include)
 		err = c.Viper.MergeInConfig()
 		if err != nil {
-			msg := fmt.Errorf("failed to include config file %s: %s", include, err)
-			return msg
+			return fmt.Errorf("failed to include config file %s: %s", include, err)
 		}
 	}
 
@@ -74,35 +96,29 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 		mergeSection := c.Viper.Get(mergeSectionKey)
 		includeItems, ok := mergeSection.([]interface{})
 		if !ok {
-			msg := fmt.Errorf("invalid format of %s section", mergeSectionKey)
-			return msg
+			return fmt.Errorf("invalid format of %s section", mergeSectionKey)
 		}
 		for i := range includeItems {
 			item := &IncludeMerge{}
 			itemKey := fmt.Sprintf("%s.%d", mergeSectionKey, i)
 			err = c.Viper.UnmarshalKey(itemKey, item)
 			if err != nil {
-				msg := fmt.Errorf("invalid format of %s", itemKey)
-				return msg
+				return fmt.Errorf("invalid format of %s", itemKey)
 			}
 
 			if !utils.FileExists(item.Path) {
 				// try relative path
 				newPath := filepath.Join(filepath.Dir(configFile), item.Path)
 				if !utils.FileExists(newPath) {
-					err = fmt.Errorf("failed to include config file %s or %s", item.Path, newPath)
-					return err
+					return fmt.Errorf("failed to include config file %s or %s", item.Path, newPath)
 				}
 				item.Path = newPath
 			}
 
 			cfg := viper.New()
-			cfg.SetConfigFile(item.Path)
-			cfg.SetConfigType(cfgType)
-			err = cfg.ReadInConfig()
+			err = ReadConfigFromFile(cfg, item.Path, cfgType)
 			if err != nil {
-				msg := fmt.Errorf("failed to read configuration from %s: %s", item.Path, err)
-				return msg
+				return fmt.Errorf("failed to read configuration from %s: %s", item.Path, err)
 			}
 
 			for from, to := range item.Map {
@@ -119,13 +135,11 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 
 						oldSlice, ok := oldData.([]interface{})
 						if !ok {
-							msg := fmt.Errorf("failed to append array from %s: %s is not array in main config", item.Path, to)
-							return msg
+							return fmt.Errorf("failed to append array from %s: %s is not array in main config", item.Path, to)
 						}
 						newSlice, ok := newData.([]interface{})
 						if !ok {
-							msg := fmt.Errorf("failed to append array from %s: %s is not array in included config", item.Path, from)
-							return msg
+							return fmt.Errorf("failed to append array from %s: %s is not array in included config", item.Path, from)
 						}
 						merge := append(oldSlice, newSlice...)
 						c.Viper.Set(to, merge)
@@ -138,14 +152,12 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 		all := c.Viper.AllSettings()
 		b, err := json.MarshalIndent(all, "", " ")
 		if err != nil {
-			msg := fmt.Errorf("failed to marshal viper settings: %s", err)
-			return msg
+			return fmt.Errorf("failed to marshal viper settings: %s", err)
 		}
 		c.Viper = viper.New()
 		c.Viper.SetConfigType(cfgType)
 		if err = c.Viper.ReadConfig(bytes.NewReader(b)); err != nil {
-			msg := fmt.Errorf("failed to re-read viper settings: %s", err)
-			return msg
+			return fmt.Errorf("failed to re-read viper settings: %s", err)
 		}
 	}
 

@@ -55,6 +55,7 @@ require (
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
+	github.com/tidwall/jsonc v0.3.2 // indirect
 	github.com/toorop/gin-logrus v0.0.0-20210225092905-2c785434f26f // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	gitlab.com/jonas.jasas/condchan v0.0.0-20190210165812-36637ad2b5bc // indirect

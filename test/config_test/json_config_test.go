@@ -15,7 +15,7 @@ var _, testBasePath, _, _ = runtime.Caller(0)
 var testDir = filepath.Dir(testBasePath)
 
 func TestLoadJsonConfig(t *testing.T) {
-	configFile := test_utils.AssetsFilePath(testDir, "main.json")
+	configFile := test_utils.AssetsFilePath(testDir, "main.jsonc")
 	app := app_default.New(nil)
 	require.NoErrorf(t, app.Init(configFile), "failed to init application context")
 	defer app.Close()
@@ -58,4 +58,7 @@ func TestLoadJsonConfig(t *testing.T) {
 
 	assert.True(t, app.Cfg().IsSet("main_section.replacable_section.replacable_parameter"))
 	assert.Equal(t, "replacable_value", app.Cfg().GetString("main_section.replacable_section.replacable_parameter"))
+
+	assert.Equal(t, "Hi! /*Hello world*/", app.Cfg().GetString("main_section.with_comments1"))
+	assert.Equal(t, "Hi! //Hello world", app.Cfg().GetString("main_section.with_comments2"))
 }
