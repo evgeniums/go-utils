@@ -21,7 +21,7 @@ type Users[UserType User] struct {
 
 func (u *Users[UserType]) Init(app app_context.Context, loginValidationRules ...string) {
 	u.WithAppBase.Init(app)
-	u.LoginValidationRules = utils.OptionalArg("required,alphanum|email,lowercase", loginValidationRules...)
+	u.LoginValidationRules = utils.OptionalArg("required,alphanum_|email,lowercase", loginValidationRules...)
 }
 
 func (u *Users[UserType]) MakeAuthUser() auth.User {

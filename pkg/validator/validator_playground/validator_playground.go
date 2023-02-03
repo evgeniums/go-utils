@@ -2,6 +2,7 @@ package validator_playground
 
 import (
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
@@ -14,7 +15,9 @@ type PlaygroundValdator struct {
 }
 
 func New() *PlaygroundValdator {
-	return &PlaygroundValdator{validator: playground.New()}
+	p := &PlaygroundValdator{validator: playground.New()}
+	p.validator.RegisterValidation("alphanum_", ValidateAlphanumUnderscore)
+	return p
 }
 
 func (v *PlaygroundValdator) Validate(s interface{}) error {
@@ -97,4 +100,12 @@ func (v *PlaygroundValdator) doValidation(s interface{}) (string, string, error)
 		return name, message, err
 	}
 	return "", "", nil
+}
+
+const alphaNumericUnderscoreRegexString = "^[a-zA-Z0-9_]+$"
+
+var alphaNumericUnerscoreRegex = regexp.MustCompile(alphaNumericUnderscoreRegexString)
+
+func ValidateAlphanumUnderscore(fl playground.FieldLevel) bool {
+	return alphaNumericUnerscoreRegex.MatchString(fl.Field().String())
 }
