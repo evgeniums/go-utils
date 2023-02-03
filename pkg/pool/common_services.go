@@ -5,6 +5,7 @@ import "github.com/evgeniums/go-backend-helpers/pkg/common"
 const (
 	TypePostgresDatabase string = "postgres"
 	TypeRestApiServer    string = "rest_api"
+	TypeRedisServer      string = "redis"
 )
 
 type PostgresServer struct {
@@ -25,4 +26,14 @@ type RestApiServer struct {
 	common.WithActiveBase
 	URL         string `gorm:"index" json:"url"`
 	CONTROL_URL string `gorm:"index" json:"control_url"`
+}
+
+type RedisServer struct {
+	common.ObjectBase
+	common.WithNameBase
+	common.WithDescriptionBase
+	common.WithActiveBase
+	HOST     string `gorm:"index" json:"host"`
+	PORT     uint16 `gorm:"index" json:"port"`
+	DATABASE int    `gorm:"index" json:"database"`
 }
