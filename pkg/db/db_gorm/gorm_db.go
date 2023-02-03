@@ -273,10 +273,10 @@ func (g *GormDB) RowsWithFilter(ctx logger.WithLogger, filter *Filter, obj inter
 	return cursor, err
 }
 
-func (g *GormDB) FinWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) error {
+func (g *GormDB) FindWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) error {
 	err := FindWithFilter(g.db_(), filter, obj)
 	if err != nil && g.VERBOSE_ERRORS {
-		e := fmt.Errorf("failed to FinWithFilter %v", ObjectTypeName(obj))
+		e := fmt.Errorf("failed to FindWithFilter %v", ObjectTypeName(obj))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
 	}
 	return err

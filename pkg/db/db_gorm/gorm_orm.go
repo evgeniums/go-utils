@@ -104,24 +104,27 @@ func prepareFilter(db *gorm.DB, filter *Filter) *gorm.DB {
 
 func FindWithFilter(db_ *gorm.DB, filter *Filter, docs interface{}) error {
 
-	h := prepareFilter(db_, filter)
+	h := db_
+	if filter != nil {
+		h = prepareFilter(db_, filter)
 
-	if filter.SortField != "" && (filter.SortDirection == db.SORT_ASC || filter.SortDirection == db.SORT_DESC) {
-		h = h.Order(fmt.Sprintf("\"%v\" %v", filter.SortField, filter.SortDirection))
+		if filter.SortField != "" && (filter.SortDirection == db.SORT_ASC || filter.SortDirection == db.SORT_DESC) {
+			h = h.Order(fmt.Sprintf("\"%v\" %v", filter.SortField, filter.SortDirection))
+		}
+
+		if filter.Offset > 0 {
+			h = h.Offset(filter.Offset)
+		}
+
+		if filter.Limit > 0 {
+			h = h.Limit(filter.Limit)
+		}
 	}
 
-	if filter.Offset > 0 {
-		h = h.Offset(filter.Offset)
-	}
-
-	if filter.Limit > 0 {
-		h = h.Limit(filter.Limit)
-	}
-
-	result := h.Find(docs)
-	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return result.Error
-	}
+	h.Find(docs)
+	// if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+	// 	return result.Error
+	// }
 
 	return nil
 }

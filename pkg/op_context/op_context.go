@@ -341,3 +341,14 @@ func DB(c Context) db.DBHandlers {
 	}
 	return c.DB()
 }
+
+func LoadObjects(ctx Context, methodName string, filter *db.Filter, objects interface{}) error {
+
+	c := ctx.TraceInMethod(methodName)
+	defer ctx.TraceOutMethod()
+	err := ctx.DB().FindWithFilter(ctx, filter, objects)
+	if err != nil {
+		return c.SetError(err)
+	}
+	return nil
+}

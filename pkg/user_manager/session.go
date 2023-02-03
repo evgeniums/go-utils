@@ -277,7 +277,7 @@ func (s *SessionManagerBase) GetSessions(ctx op_context.Context, filter *db.Filt
 
 	c := ctx.TraceInMethod("user_manager.GetSessions")
 	defer ctx.TraceOutMethod()
-	err := ctx.DB().FinWithFilter(ctx, filter, sessions)
+	err := ctx.DB().FindWithFilter(ctx, filter, sessions)
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -289,7 +289,7 @@ func (s *SessionManagerBase) GetSessionClients(ctx op_context.Context, filter *d
 
 	c := ctx.TraceInMethod("user_manager.GetSessionClients")
 	defer ctx.TraceOutMethod()
-	err := ctx.DB().FinWithFilter(ctx, filter, sessions)
+	err := ctx.DB().FindWithFilter(ctx, filter, sessions)
 	if err != nil {
 		return c.SetError(err)
 	}

@@ -27,10 +27,10 @@ type User interface {
 type UserBaseDB struct {
 	common.ObjectBase
 	auth_login_phash.UserBase
-	LOGIN   string `gorm:"uniqueIndex"`
-	PHONE   string `gorm:"index"`
-	EMAIL   string `gorm:"index"`
-	BLOCKED bool   `gorm:"index"`
+	LOGIN   string `gorm:"uniqueIndex" json:"login"`
+	PHONE   string `gorm:"index" json:"phone"`
+	EMAIL   string `gorm:"index" json:"email"`
+	BLOCKED bool   `gorm:"index" json:"blocked"`
 }
 
 func (u *UserBaseDB) Display() string {

@@ -13,6 +13,8 @@ type UserManager interface {
 	Create(ctx op_context.Context, user common.Object) error
 	Update(ctx op_context.Context, user common.Object, fields db.Fields) error
 
+	GetUsers(ctx op_context.Context, filter *db.Filter, users interface{}) error
+
 	ValidateLogin(login string) error
 }
 
@@ -62,4 +64,8 @@ func (m *UserManagerBase) Update(ctx op_context.Context, user common.Object, fie
 	}
 
 	return nil
+}
+
+func (m *UserManagerBase) GetUsers(ctx op_context.Context, filter *db.Filter, users interface{}) error {
+	return op_context.LoadObjects(ctx, "", filter, users)
 }
