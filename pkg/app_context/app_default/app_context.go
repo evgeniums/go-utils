@@ -102,13 +102,19 @@ func New(buildConfig *app_context.BuildConfig, cache_ ...cache.Cache) *Context {
 	return c
 }
 
-func (c *Context) Init(configFile string, configType ...string) error {
+func (c *Context) InitWithArgs(configFile string, args []string, configType ...string) error {
 
 	// load configuration
 	fmt.Printf("Using configuration file %s\n", configFile)
 	err := c.initConfig(configFile)
 	if err != nil {
 		return c.Logger().PushFatalStack("failed to load application configuration", err)
+	}
+
+	// load command line arguments
+	err = config.LoadArgs(c.Cfg(), args)
+	if err != nil {
+		return c.Logger().PushFatalStack("failed to override confiuration parameters", err)
 	}
 
 	// setup logger
@@ -140,6 +146,10 @@ func (c *Context) Init(configFile string, configType ...string) error {
 
 	// done
 	return nil
+}
+
+func (c *Context) Init(configFile string, configType ...string) error {
+	return c.InitWithArgs(configFile, nil, configType...)
 }
 
 func (c *Context) Close() {
