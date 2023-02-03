@@ -121,10 +121,10 @@ func FindWithFilter(db_ *gorm.DB, filter *Filter, docs interface{}) error {
 		}
 	}
 
-	h.Find(docs)
-	// if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-	// 	return result.Error
-	// }
+	result := h.Find(docs)
+	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return result.Error
+	}
 
 	return nil
 }

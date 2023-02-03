@@ -42,3 +42,11 @@ func AllMapKeys[T1 comparable, T2 any](m map[T1]T2) []T1 {
 	}
 	return keys
 }
+
+func AllMapValues[T1 comparable, T2 any](m map[T1]T2) []T2 {
+	vals := make([]T2, 0)
+	for _, v := range m {
+		vals = append(vals, v)
+	}
+	return vals
+}
