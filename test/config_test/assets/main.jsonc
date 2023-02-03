@@ -1,12 +1,12 @@
 {
-    // include content as is
+    // include content as is, included content overrides content in this file
     "include" : [
         "include.json"
     ],
     /*
-    advanced include and merge
+    advanced include and merge, included content overrides content in this file
     */
-    "include_merge" : [
+    "include_advanced" : [
         {
             "mode": "array",
             "path": "include_arrays.json",

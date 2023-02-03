@@ -9,3 +9,19 @@ func FileExists(path string) bool {
 	}
 	return os.IsExist(err)
 }
+
+func IsFile(path string) bool {
+	fileinfo, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return !fileinfo.IsDir()
+}
+
+func IsDir(path string) bool {
+	fileinfo, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return fileinfo.IsDir()
+}

@@ -1,0 +1,21 @@
+{
+    "extend" : {        
+        "path": "base.jsonc",
+        "rules" : [
+            {
+                "mode":"direct"
+            }
+        ]        
+    },
+
+    "main_section" : {
+        "additional_parameter2" : "value2",
+        "override_parameter" : "new_value",
+        "map_parameter" : {
+            "nested_parameter2": "nested_value2"
+        }
+    },
+    "additional_section" : {
+        "parameter3" : "value3"
+    }
+}

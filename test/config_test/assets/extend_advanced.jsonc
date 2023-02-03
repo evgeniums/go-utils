@@ -1,0 +1,32 @@
+{
+    "extend" : {
+        "path": "base.jsonc",
+        "rules" : [
+            {
+                "mode":"array",
+                "map": {
+                    "main_section.array_parameter":"",
+                    "main_section.array_parameter_replacable":"main_section.subsection.other_array"
+                }    
+            },
+            {
+                "mode":"value",
+                "map": {
+                    "replacable_section":"main_section.replacable_section"                    
+                }    
+            }
+        ]
+    },
+
+    "main_section" : {
+        "array_parameter": [
+            "item2"
+        ],
+        "array_parameter_replacable": [
+            "item3"
+        ]
+    },
+    "replacable_section" : {
+        "replacable_parameter" : "replacable_value"
+    }
+}

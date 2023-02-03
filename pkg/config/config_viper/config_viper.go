@@ -14,18 +14,26 @@ import (
 )
 
 const (
-	MergeValue string = "value"
-	MergeArray string = "array"
+	MergeDirect string = "direct"
+	MergeValue  string = "value"
+	MergeArray  string = "array"
 )
+
+type ExtendMerge struct {
+	Path  string         `json:"path"`
+	Rules []IncludeMerge `json:"rules"`
+}
 
 type IncludeMerge struct {
 	Path string            `json:"path"`
-	Mode string            `json:"path1"`
+	Mode string            `json:"mode"`
 	Map  map[string]string `json:"map"`
 }
 
 type ConfigViper struct {
 	*viper.Viper
+	configFile string
+	configType string
 }
 
 func New() *ConfigViper {
@@ -58,6 +66,79 @@ func ReadConfigFromFile(v *viper.Viper, path string, cfgType string) error {
 	return nil
 }
 
+func MakeIncludePath(configFile string, path string) (string, error) {
+	r := path
+	if !utils.FileExists(r) || !utils.IsFile(r) {
+		// try relative path
+		r = filepath.Join(filepath.Dir(configFile), r)
+		if !utils.FileExists(r) || !utils.IsFile(r) {
+			return "", fmt.Errorf("failed to include config file %s or %s", path, r)
+		}
+	}
+	return r, nil
+}
+
+func MergeConfigs(fromCfg *ConfigViper, toCfg *ConfigViper, mode string, keysMap map[string]string) error {
+
+	if mode == MergeDirect {
+		toCfg.SetConfigFile(fromCfg.configFile)
+		err := toCfg.MergeInConfig()
+		if err != nil {
+			return fmt.Errorf("failed to include config file %s to %s: %s", fromCfg.configFile, toCfg.configFile, err)
+		}
+		return nil
+	}
+
+	for from, to := range keysMap {
+		if to == "" {
+			to = from
+		}
+
+		if fromCfg.IsSet(from) {
+			if !toCfg.IsSet(to) || mode != MergeArray {
+				toCfg.Set(to, fromCfg.Get(from))
+			} else {
+				oldData := toCfg.Get(to)
+				newData := fromCfg.Get(from)
+
+				oldSlice, ok := oldData.([]interface{})
+				if !ok {
+					return fmt.Errorf("failed to append array from %s to %s: %s is not array in main config", fromCfg.configFile, toCfg.configFile, to)
+				}
+				newSlice, ok := newData.([]interface{})
+				if !ok {
+					return fmt.Errorf("failed to append array from %s to %s: %s is not array in included config", fromCfg.configFile, toCfg.configFile, from)
+				}
+				merge := append(oldSlice, newSlice...)
+				toCfg.Set(to, merge)
+			}
+		}
+	}
+	return nil
+}
+
+func (c *ConfigViper) ConfigFile() string {
+	return c.configFile
+}
+
+func (c *ConfigViper) ConfigType() string {
+	return c.configFile
+}
+
+func (c *ConfigViper) Load(fromCfg *ConfigViper) error {
+	all := fromCfg.AllSettings()
+	b, err := json.MarshalIndent(all, "", " ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal viper settings: %s", err)
+	}
+	c.Viper = viper.New()
+	c.Viper.SetConfigType(fromCfg.configType)
+	if err = c.Viper.ReadConfig(bytes.NewReader(b)); err != nil {
+		return fmt.Errorf("failed to re-read viper settings: %s", err)
+	}
+	return nil
+}
+
 func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 
 	// setup
@@ -70,27 +151,70 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 	if err != nil {
 		return fmt.Errorf("fatal error while reading config file: %s", err)
 	}
+	c.configFile = configFile
+	c.configType = cfgType
+
+	// check if this config extends other config
+	extendKey := "extend"
+	if c.Viper.IsSet(extendKey) {
+
+		extend := &ExtendMerge{}
+		err = c.Viper.UnmarshalKey(extendKey, extend)
+		if err != nil {
+			return fmt.Errorf("invalid format of extend section")
+		}
+
+		path, err := MakeIncludePath(configFile, extend.Path)
+		if err != nil {
+			return err
+		}
+
+		mainCfg := New()
+		err = mainCfg.LoadFile(path, cfgType)
+		if err != nil {
+			return err
+		}
+
+		i := 0
+		hasDirect := false
+		for _, rule := range extend.Rules {
+			err = MergeConfigs(c, mainCfg, rule.Mode, rule.Map)
+			if err != nil {
+				return err
+			}
+			i++
+			if rule.Mode == MergeDirect {
+				hasDirect = true
+			}
+		}
+		if hasDirect && i > 1 {
+			return fmt.Errorf("failed to extend config file: rule direct mode overrides all other rules, the direct rule must be exclusive")
+		}
+
+		err = c.Load(mainCfg)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
 
 	// load includes
 	includes := c.Viper.GetStringSlice("include")
 	for _, include := range includes {
-		if !utils.FileExists(include) {
-			// try relative path
-			newInclude := filepath.Join(filepath.Dir(configFile), include)
-			if !utils.FileExists(newInclude) {
-				return fmt.Errorf("failed to include config file %s or %s", include, newInclude)
-			}
-			include = newInclude
+		path, err := MakeIncludePath(configFile, include)
+		if err != nil {
+			return err
 		}
-		c.Viper.SetConfigFile(include)
+		c.Viper.SetConfigFile(path)
 		err = c.Viper.MergeInConfig()
 		if err != nil {
 			return fmt.Errorf("failed to include config file %s: %s", include, err)
 		}
 	}
 
-	// load includes for customizable merging
-	mergeSectionKey := "include_merge"
+	// load includes for advanced merging
+	mergeSectionKey := "include_advanced"
 	if c.Viper.IsSet(mergeSectionKey) {
 
 		mergeSection := c.Viper.Get(mergeSectionKey)
@@ -106,58 +230,27 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 				return fmt.Errorf("invalid format of %s", itemKey)
 			}
 
-			if !utils.FileExists(item.Path) {
-				// try relative path
-				newPath := filepath.Join(filepath.Dir(configFile), item.Path)
-				if !utils.FileExists(newPath) {
-					return fmt.Errorf("failed to include config file %s or %s", item.Path, newPath)
-				}
-				item.Path = newPath
-			}
-
-			cfg := viper.New()
-			err = ReadConfigFromFile(cfg, item.Path, cfgType)
+			path, err := MakeIncludePath(configFile, item.Path)
 			if err != nil {
-				return fmt.Errorf("failed to read configuration from %s: %s", item.Path, err)
+				return err
 			}
 
-			for from, to := range item.Map {
-				if to == "" {
-					to = from
-				}
+			cfg := New()
+			err = cfg.LoadFile(path, cfgType)
+			if err != nil {
+				return fmt.Errorf("failed to read included configuration %s: %s", item.Path, err)
+			}
 
-				if cfg.IsSet(from) {
-					if !c.Viper.IsSet(to) || item.Mode != MergeArray {
-						c.Viper.Set(to, cfg.Get(from))
-					} else {
-						oldData := c.Viper.Get(to)
-						newData := cfg.Get(from)
-
-						oldSlice, ok := oldData.([]interface{})
-						if !ok {
-							return fmt.Errorf("failed to append array from %s: %s is not array in main config", item.Path, to)
-						}
-						newSlice, ok := newData.([]interface{})
-						if !ok {
-							return fmt.Errorf("failed to append array from %s: %s is not array in included config", item.Path, from)
-						}
-						merge := append(oldSlice, newSlice...)
-						c.Viper.Set(to, merge)
-					}
-				}
+			err = MergeConfigs(cfg, c, item.Mode, item.Map)
+			if err != nil {
+				return err
 			}
 		}
 
 		// reload viper configuration
-		all := c.Viper.AllSettings()
-		b, err := json.MarshalIndent(all, "", " ")
+		err = c.Load(c)
 		if err != nil {
-			return fmt.Errorf("failed to marshal viper settings: %s", err)
-		}
-		c.Viper = viper.New()
-		c.Viper.SetConfigType(cfgType)
-		if err = c.Viper.ReadConfig(bytes.NewReader(b)); err != nil {
-			return fmt.Errorf("failed to re-read viper settings: %s", err)
+			return err
 		}
 	}
 
