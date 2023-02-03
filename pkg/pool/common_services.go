@@ -6,6 +6,7 @@ const (
 	TypePostgresDatabase string = "postgres"
 	TypeRestApiServer    string = "rest_api"
 	TypeRedisServer      string = "redis"
+	TypeSqliteDatabase   string = "sqlite"
 )
 
 type PostgresServer struct {
@@ -36,4 +37,12 @@ type RedisServer struct {
 	HOST     string `gorm:"index" json:"host"`
 	PORT     uint16 `gorm:"index" json:"port"`
 	DATABASE int    `gorm:"index" json:"database"`
+}
+
+type SqliteDatabase struct {
+	common.ObjectBase
+	common.WithNameBase
+	common.WithDescriptionBase
+	common.WithActiveBase
+	FILE string `gorm:"index" json:"file"`
 }
