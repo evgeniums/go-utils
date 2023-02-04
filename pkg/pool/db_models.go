@@ -1,5 +1,5 @@
 package pool
 
 func DbModels() []interface{} {
-	return []interface{}{&PoolBase{}, &PoolServiceBase{}, &PostgresServer{}, &RestApiServer{}, &RedisServer{}, &SqliteDatabase{}}
+	return []interface{}{&PoolBase{}, &PoolServiceBase{}, &PoolServiceBindingBase{}}
 }

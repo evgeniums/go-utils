@@ -67,3 +67,36 @@ func (t *WithRefIdBase) RefId() string {
 func (t *WithRefIdBase) SetRefId(value string) {
 	t.REFID = value
 }
+
+type WithLongName interface {
+	LongName() string
+	SetLongName(name string)
+}
+
+type WithLongNameBase struct {
+	LONG_NAME string `json:"long_name"`
+}
+
+func (t *WithLongNameBase) LongName() string {
+	return t.LONG_NAME
+}
+
+func (t *WithLongNameBase) SetLongName(value string) {
+	t.LONG_NAME = value
+}
+
+type WithUniqueName interface {
+	WithName
+}
+
+type WithUniqueNameBase struct {
+	NAME string `gorm:"uniqueIndex" json:"name"`
+}
+
+func (w *WithUniqueNameBase) Name() string {
+	return w.NAME
+}
+
+func (w *WithUniqueNameBase) SetName(name string) {
+	w.NAME = name
+}

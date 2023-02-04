@@ -173,7 +173,7 @@ func (g *GormDB) AutoMigrate(ctx logger.WithLogger, models []interface{}) error 
 	return nil
 }
 
-func (g *GormDB) FindByField(ctx logger.WithLogger, field string, value string, obj interface{}) (bool, error) {
+func (g *GormDB) FindByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}) (bool, error) {
 	notFound, err := FindByField(g.db_(), field, value, obj)
 	if err != nil && g.VERBOSE_ERRORS && !notFound {
 		e := fmt.Errorf("failed to FindByField %v", ObjectTypeName(obj))

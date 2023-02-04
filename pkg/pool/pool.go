@@ -11,12 +11,13 @@ import (
 
 type Pool interface {
 	common.Object
-	common.WithName
+	common.WithUniqueName
+	common.WithLongName
 	common.WithDescription
 	common.WithActive
 
 	Services() []PoolService
-	ServiceById(id string) PoolService
+	Service(id string) PoolService
 	ServiceByName(name string) PoolService
 	ServiceByRefId(serviceType string, refid string) PoolService
 
@@ -24,9 +25,12 @@ type Pool interface {
 	DeleteService(id string)
 }
 
+var NilPool Pool
+
 type PoolBaseConfig struct {
 	common.ObjectBase
-	common.WithNameBase
+	common.WithUniqueNameBase
+	common.WithLongNameBase
 	common.WithDescriptionBase
 	common.WithActiveBase
 }
