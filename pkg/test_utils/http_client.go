@@ -77,10 +77,13 @@ type HttpClient struct {
 	Gin *gin.Engine
 
 	AutoSms bool
+
+	T *testing.T
 }
 
-func NewHttpClient(gin *gin.Engine, baseUrl ...string) *HttpClient {
+func NewHttpClient(t *testing.T, gin *gin.Engine, baseUrl ...string) *HttpClient {
 	c := &HttpClient{}
+	c.T = t
 	c.BaseUrl = utils.OptionalArg("/api/1.0.0", baseUrl...)
 	c.Gin = gin
 	return c
@@ -88,10 +91,11 @@ func NewHttpClient(gin *gin.Engine, baseUrl ...string) *HttpClient {
 
 func PrepareHttpClient(t *testing.T, gin *gin.Engine, baseUrl ...string) *HttpClient {
 	c := &HttpClient{}
+	c.T = t
 	c.BaseUrl = utils.OptionalArg("/api/1.0.0", baseUrl...)
 	c.Gin = gin
 	c.AutoSms = true
-	c.Prepare(t)
+	c.Prepare()
 	return c
 }
 
@@ -99,41 +103,41 @@ func (c *HttpClient) Url(path string) string {
 	return c.BaseUrl + path
 }
 
-func (c *HttpClient) Login(t *testing.T, user string, password string, expectedErrorCode ...string) {
+func (c *HttpClient) Login(user string, password string, expectedErrorCode ...string) {
 
 	errorCode := utils.OptionalArg("", expectedErrorCode...)
 	path := "/auth/login"
 
 	if errorCode == auth.ErrorCodeUnauthorized {
 		// request without headers
-		resp := c.Post(t, path, nil)
-		CheckResponse(t, resp, &Expected{HttpCode: http.StatusUnauthorized, Error: errorCode})
+		resp := c.Post(path, nil)
+		CheckResponse(c.T, resp, &Expected{HttpCode: http.StatusUnauthorized, Error: errorCode})
 		return
 	}
 
 	// first step
 	headers := map[string]string{"x-auth-login": user}
-	resp := c.Post(t, path, nil, headers)
-	CheckResponse(t, resp, &Expected{HttpCode: http.StatusUnauthorized, Error: auth_login_phash.ErrorCodeCredentialsRequired})
+	resp := c.Post(path, nil, headers)
+	CheckResponse(c.T, resp, &Expected{HttpCode: http.StatusUnauthorized, Error: auth_login_phash.ErrorCodeCredentialsRequired})
 
 	salt := resp.Object.Header().Get("x-auth-login-salt")
-	require.NotEmpty(t, salt)
+	require.NotEmpty(c.T, salt)
 
 	// second
 	phash := auth_login_phash.Phash(password, salt)
 	headers["x-auth-login-phash"] = phash
-	resp = c.Post(t, path, nil, headers)
+	resp = c.Post(path, nil, headers)
 
 	if errorCode != "" {
-		CheckResponse(t, resp, &Expected{HttpCode: http.StatusUnauthorized, Error: errorCode})
+		CheckResponse(c.T, resp, &Expected{HttpCode: http.StatusUnauthorized, Error: errorCode})
 	} else {
-		CheckResponse(t, resp, &Expected{HttpCode: http.StatusOK})
-		assert.Empty(t, resp.Message)
+		CheckResponse(c.T, resp, &Expected{HttpCode: http.StatusOK})
+		assert.Empty(c.T, resp.Message)
 		c.AccessToken = resp.Object.Header().Get("x-auth-access-token")
-		require.NotEmpty(t, c.AccessToken)
+		require.NotEmpty(c.T, c.AccessToken)
 		c.RefreshToken = resp.Object.Header().Get("x-auth-refresh-token")
-		require.NotEmpty(t, c.RefreshToken)
-		assert.NotEqual(t, c.AccessToken, c.RefreshToken)
+		require.NotEmpty(c.T, c.RefreshToken)
+		assert.NotEqual(c.T, c.AccessToken, c.RefreshToken)
 	}
 }
 
@@ -167,7 +171,7 @@ func (c *HttpClient) updateToken(resp *httptest.ResponseRecorder, code int) {
 	}
 }
 
-func (c *HttpClient) SendSmsConfirmation(t *testing.T, resp *HttpResponse, code string, method string, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+func (c *HttpClient) SendSmsConfirmation(resp *HttpResponse, code string, method string, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
 	c.AutoSms = false
 	h := c.addTokens(headers...)
 	h["x-auth-sms-code"] = code
@@ -175,91 +179,91 @@ func (c *HttpClient) SendSmsConfirmation(t *testing.T, resp *HttpResponse, code 
 	if token != "" {
 		h["x-auth-sms-token"] = token
 	}
-	return c.RequestBody(t, method, path, cmd, h)
+	return c.RequestBody(method, path, cmd, h)
 }
 
-func (c *HttpClient) RequestBody(t *testing.T, method string, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+func (c *HttpClient) RequestBody(method string, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
 	h := c.addTokens(headers...)
 	c.addTokens(headers...)
-	resp, code, message := HttpRequestBody(t, c.Gin, method, c.Url(path), cmd, h)
+	resp, code, message := HttpRequestBody(c.T, c.Gin, method, c.Url(path), cmd, h)
 	c.updateToken(resp, code)
 	r := &HttpResponse{resp, code, message}
 
-	errCode := ResponseErrorCode(t, r)
+	errCode := ResponseErrorCode(c.T, r)
 	if c.AutoSms && errCode == auth_sms.ErrorCodeSmsConfirmationRequired {
-		return c.SendSmsConfirmation(t, r, auth_sms.LastSmsCode, method, path, cmd, h)
+		return c.SendSmsConfirmation(r, auth_sms.LastSmsCode, method, path, cmd, h)
 	}
 	c.AutoSms = true
 
 	return r
 }
 
-func (c *HttpClient) RequestQuery(t *testing.T, method string, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+func (c *HttpClient) RequestQuery(method string, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
 	h := c.addTokens(headers...)
-	resp, code, message := HttpRequestQuery(t, c.Gin, method, c.Url(path), cmd, h)
+	resp, code, message := HttpRequestQuery(c.T, c.Gin, method, c.Url(path), cmd, h)
 	c.updateToken(resp, code)
 	return &HttpResponse{resp, code, message}
 }
 
-func (c *HttpClient) Post(t *testing.T, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
-	return c.RequestBody(t, http.MethodPost, path, cmd, headers...)
+func (c *HttpClient) Post(path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+	return c.RequestBody(http.MethodPost, path, cmd, headers...)
 }
 
 func (c *HttpClient) Put(t *testing.T, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
-	return c.RequestBody(t, http.MethodPut, path, cmd, headers...)
+	return c.RequestBody(http.MethodPatch, path, cmd, headers...)
 }
 
-func (c *HttpClient) Patch(t *testing.T, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
-	return c.RequestBody(t, http.MethodPatch, path, cmd, headers...)
+func (c *HttpClient) Patch(path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+	return c.RequestBody(http.MethodPatch, path, cmd, headers...)
 }
 
-func (c *HttpClient) Get(t *testing.T, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
-	return c.RequestQuery(t, http.MethodGet, path, cmd, headers...)
+func (c *HttpClient) Get(path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+	return c.RequestQuery(http.MethodGet, path, cmd, headers...)
 }
 
-func (c *HttpClient) Delete(t *testing.T, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
-	return c.RequestQuery(t, http.MethodDelete, path, cmd, headers...)
+func (c *HttpClient) Delete(path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+	return c.RequestQuery(http.MethodDelete, path, cmd, headers...)
 }
 
-func (c *HttpClient) Logout(t *testing.T) {
-	c.Post(t, "/auth/logout", nil)
+func (c *HttpClient) Logout() {
+	c.Post("/auth/logout", nil)
 }
 
-func (c *HttpClient) UpdateCsrfToken(t *testing.T) {
-	c.Get(t, "/status/check", nil)
+func (c *HttpClient) UpdateCsrfToken() {
+	c.Get("/status/check", nil)
 }
 
-func (c *HttpClient) UpdateTokens(t *testing.T) {
-	c.UpdateCsrfToken(t)
-	c.RequestRefreshToken(t)
+func (c *HttpClient) UpdateTokens() {
+	c.UpdateCsrfToken()
+	c.RequestRefreshToken()
 }
 
-func (c *HttpClient) Sleep(t *testing.T, seconds int, message string) {
-	t.Logf("Sleeping %d seconds for %s...", seconds, message)
+func (c *HttpClient) Sleep(seconds int, message string) {
+	c.T.Logf("Sleeping %d seconds for %s...", seconds, message)
 	time.Sleep(time.Second * time.Duration(seconds))
-	c.UpdateTokens(t)
+	c.UpdateTokens()
 }
 
-func (c *HttpClient) RequestRefreshToken(t *testing.T, expectedErrorCode ...string) {
+func (c *HttpClient) RequestRefreshToken(expectedErrorCode ...string) {
 
 	errorCode := utils.OptionalArg("", expectedErrorCode...)
 
 	h := map[string]string{"x-auth-refresh-token": c.RefreshToken}
-	resp := c.Post(t, "/auth/refresh", nil, h)
+	resp := c.Post("/auth/refresh", nil, h)
 
 	if errorCode != "" {
-		CheckResponse(t, resp, &Expected{Error: errorCode, HttpCode: http.StatusUnauthorized})
+		CheckResponse(c.T, resp, &Expected{Error: errorCode, HttpCode: http.StatusUnauthorized})
 	} else {
-		CheckResponse(t, resp, &Expected{HttpCode: http.StatusOK})
-		assert.Empty(t, resp.Message)
+		CheckResponse(c.T, resp, &Expected{HttpCode: http.StatusOK})
+		assert.Empty(c.T, resp.Message)
 		c.AccessToken = resp.Object.Header().Get("x-auth-access-token")
-		require.NotEmpty(t, c.AccessToken)
+		require.NotEmpty(c.T, c.AccessToken)
 	}
 }
 
-func (c *HttpClient) Prepare(t *testing.T) {
-	resp := c.Get(t, "/status/check", nil)
-	CheckResponse(t, resp, &Expected{
+func (c *HttpClient) Prepare() {
+	resp := c.Get("/status/check", nil)
+	CheckResponse(c.T, resp, &Expected{
 		HttpCode: http.StatusOK,
 		Message:  `{"status":"running"}`})
 }
