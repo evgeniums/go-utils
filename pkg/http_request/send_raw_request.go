@@ -9,7 +9,7 @@ import (
 
 func SendRawRequest(ctx op_context.Context, request *http.Request) (*http.Response, error) {
 
-	c := ctx.TraceInMethod("http_request.Send", logger.Fields{"path": request.URL.Path, "method": request.Method})
+	c := ctx.TraceInMethod("http_request.Send", logger.Fields{"url": request.URL.Path, "method": request.Method})
 	defer ctx.TraceOutMethod()
 
 	client := &http.Client{}
