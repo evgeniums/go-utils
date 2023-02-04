@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"time"
 
@@ -28,10 +29,12 @@ const TenancyParameter string = "tenancy"
 type ServerConfig struct {
 	api_server.ServerBaseConfig
 
-	HOST            string `validate:"ip" default:"127.0.0.1"`
-	PORT            uint16 `validate:"required"`
-	PATH_PREFIX     string `default:"/api"`
-	TRUSTED_PROXIES []string
+	HOST                    string `validate:"ip" default:"127.0.0.1"`
+	PORT                    uint16 `validate:"required"`
+	PATH_PREFIX             string `default:"/api"`
+	TRUSTED_PROXIES         []string
+	VERBOSE                 bool
+	VERBOSE_BODY_MAX_LENGTH int `default:"2048"`
 }
 
 type AuthParameterGetter = func(r *Request, key string) string
@@ -228,6 +231,12 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		request := &Request{}
 		request.Init(s, ginCtx, ep)
 		request.SetName(ep.Name())
+
+		if s.VERBOSE {
+			dumpBody := ginCtx.Request.ContentLength > 0 && int(ginCtx.Request.ContentLength) <= s.VERBOSE_BODY_MAX_LENGTH
+			b, _ := httputil.DumpRequest(ginCtx.Request, dumpBody)
+			request.Logger().Debug("Dump HTTP request", logger.Fields{"request": string(b)})
+		}
 
 		// extract tenancy if applicable
 		if s.IsMultiTenancy() {

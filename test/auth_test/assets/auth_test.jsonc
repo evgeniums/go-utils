@@ -4,7 +4,7 @@
         "db_extra_config" : "auth_test.sqlite"
     },
     "logger" : {
-        "level" : "info"
+        "level" : "debug"
     },
     "sms": {
         "default_provider": "mock_default",
@@ -78,6 +78,7 @@
             }
         },
         "rest_api_server": {
+            "verbose":true,
             "name": "Auth server",
             "api_version" : "1.0.0",
             "host": "127.0.0.1",

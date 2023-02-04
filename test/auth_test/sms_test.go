@@ -40,6 +40,7 @@ func TestSms(t *testing.T) {
 	assert.NotEmpty(t, auth_sms.LastSmsCode)
 
 	// send altered data or path
+	t.Logf("Check mismatched data")
 	cmd1 := &Cmd{Param1: "value1_1", Param2: "value1_2"}
 	cmd2 := &Cmd{Param1: "value2_1", Param2: "value2_2"}
 	client.AutoSms = false

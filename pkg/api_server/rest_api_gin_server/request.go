@@ -2,6 +2,7 @@ package rest_api_gin_server
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"time"
@@ -74,9 +75,11 @@ func (r *Request) GetRequestUserAgent() string {
 }
 
 func (r *Request) Close(successMessage ...string) {
+	var reponseBody interface{}
 	if r.GenericError() == nil {
 		if r.response.Message() != nil {
-			r.ginCtx.JSON(r.response.httpCode, r.response.Message())
+			reponseBody = r.response.Message()
+			r.ginCtx.JSON(r.response.httpCode, reponseBody)
 		} else {
 			r.ginCtx.Status(r.response.httpCode)
 		}
@@ -86,9 +89,23 @@ func (r *Request) Close(successMessage ...string) {
 		if code < http.StatusInternalServerError {
 			r.SetErrorAsWarn(true)
 		}
+		reponseBody = err
 		r.SetLoggerField("status", err.Code)
-		r.ginCtx.JSON(code, err)
+		r.ginCtx.JSON(code, reponseBody)
 	}
+
+	if r.server.VERBOSE {
+		h := r.ginCtx.Writer.Header()
+		body := ""
+		if reponseBody != nil {
+			b, e := json.Marshal(reponseBody)
+			if e == nil {
+				body = string(b)
+			}
+		}
+		r.Logger().Debug("Dump HTTP response", logger.Fields{"response_header": h, "response_body": body})
+	}
+
 	r.RequestBase.Close("")
 	r.server.logGinRequest(r.Logger(), r.initialPath, r.start, r.ginCtx)
 }
