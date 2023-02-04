@@ -13,6 +13,7 @@ type Config interface {
 	GetFloat64(key string) float64
 	GetIntSlice(key string) []int
 	GetStringSlice(key string) []string
+	GetFloat64Slice(key string) []float64
 
 	SetDefault(key string, value interface{})
 	Set(key string, value interface{})
@@ -20,6 +21,9 @@ type Config interface {
 	IsSet(key string) bool
 
 	AllKeys() []string
+
+	Rebuild() error
+	ToString() string
 }
 
 type WithCfg interface {

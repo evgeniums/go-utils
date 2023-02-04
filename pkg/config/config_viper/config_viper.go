@@ -131,6 +131,7 @@ func (c *ConfigViper) Load(fromCfg *ConfigViper) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal viper settings: %s", err)
 	}
+
 	c.Viper = viper.New()
 	c.Viper.SetConfigType(fromCfg.configType)
 	if err = c.Viper.ReadConfig(bytes.NewReader(b)); err != nil {
@@ -248,7 +249,7 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 		}
 
 		// reload viper configuration
-		err = c.Load(c)
+		err = c.Rebuild()
 		if err != nil {
 			return err
 		}
@@ -270,4 +271,38 @@ func (c *ConfigViper) LoadString(configStr string, configType ...string) error {
 	}
 
 	return nil
+}
+
+func (c *ConfigViper) Rebuild() error {
+	return c.Load(c)
+}
+
+func (c *ConfigViper) ToString() string {
+	all := c.AllSettings()
+	b, _ := json.MarshalIndent(all, "", "   ")
+	return string(b)
+}
+
+func (c *ConfigViper) GetFloat64Slice(key string) []float64 {
+	if !c.IsSet(key) {
+		return []float64{}
+	}
+	val := c.Get(key)
+	iSlice, ok := val.([]interface{})
+	if !ok {
+		r, ok := val.([]float64)
+		if ok {
+			return r
+		}
+		return []float64{}
+	}
+	l := make([]float64, len(iSlice))
+	for i := 0; i < len(iSlice); i++ {
+		val, ok := iSlice[i].(float64)
+		if !ok {
+			return []float64{}
+		}
+		l[i] = val
+	}
+	return l
 }

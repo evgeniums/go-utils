@@ -88,6 +88,10 @@ func setParameter(cfg Config, valueType string, key string, value string) error 
 
 func LoadArgs(cfg Config, args []string) error {
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	if len(args)%2 != 0 {
 		return fmt.Errorf("invalid number of configuration parameters in arguments: %d (mus be even)", len(args))
 	}
@@ -126,5 +130,6 @@ func LoadArgs(cfg Config, args []string) error {
 		}
 	}
 
+	cfg.Rebuild()
 	return nil
 }

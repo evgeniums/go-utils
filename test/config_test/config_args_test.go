@@ -16,8 +16,16 @@ func TestConfigArgs(t *testing.T) {
 	require.NoErrorf(t, app.Init(configFile), "failed to init application context")
 	defer app.Close()
 
+	// fmt.Printf("Settings before:\n%s\n", app.Cfg().ToString())
+
 	assert.Equal(t, "value1", app.Cfg().GetString("main_section.parameter1"))
-	assert.InDeltaSlice(t, []float64{100.99, 200.02, 300.03}, app.Cfg().GetIntSlice("main_section.subsection.float_list"), 0.001)
+
+	flistSlice := app.Cfg().GetFloat64Slice("main_section.float_list")
+	assert.InDeltaSlice(t, []float64{100.99, 200.01, 300.01}, flistSlice, 0.001)
+	require.Equal(t, 3, len(flistSlice))
+	assert.InDelta(t, 100.99, flistSlice[0], 0.001)
+	assert.InDelta(t, 200.01, flistSlice[1], 0.001)
+	assert.InDelta(t, 300.01, flistSlice[2], 0.001)
 
 	args := []string{
 		"--main_section.parameter1.string", "arg_value1",
@@ -31,6 +39,8 @@ func TestConfigArgs(t *testing.T) {
 	}
 	require.NoErrorf(t, config.LoadArgs(app.Cfg(), args), "failed to load args")
 
+	// fmt.Printf("Settings after:\n%s\n", app.Cfg().ToString())
+
 	assert.Equal(t, "arg_value1", app.Cfg().GetString("main_section.parameter1"))
 	assert.Equal(t, "arg_value2", app.Cfg().GetString("main_section.parameter2"))
 	assert.Equal(t, 1234, app.Cfg().GetInt("main_section.subsection.int_parameter"))
@@ -38,11 +48,8 @@ func TestConfigArgs(t *testing.T) {
 	assert.True(t, app.Cfg().GetBool("main_section.subsection.bool_parameter"))
 	assert.Equal(t, []string{"one", "two", "three"}, app.Cfg().GetStringSlice("main_section.subsection.list"))
 	assert.Equal(t, []int{1, 2, 3}, app.Cfg().GetIntSlice("main_section.subsection.ilist"))
-	flist := app.Cfg().Get("main_section.subsection.flist")
-	flistSlice, ok := flist.([]float64)
-	require.True(t, ok)
-	require.Equal(t, 3, len(flistSlice))
-	assert.InDelta(t, 100.99, flistSlice[0], 0.001)
-	assert.InDelta(t, 200.02, flistSlice[1], 0.001)
-	assert.InDelta(t, 300.03, flistSlice[2], 0.001)
+	assert.InDeltaSlice(t, []float64{100.99, 200.02, 300.03}, app.Cfg().GetFloat64Slice("main_section.subsection.flist"), 0.001)
+
+	app.Cfg().Set("main_section.subsection.flist_manual", []float64{100.99, 200.02, 300.03})
+	assert.InDeltaSlice(t, []float64{100.99, 200.02, 300.03}, app.Cfg().GetFloat64Slice("main_section.subsection.flist_manual"), 0.001)
 }
