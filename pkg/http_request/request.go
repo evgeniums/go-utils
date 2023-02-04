@@ -165,3 +165,11 @@ func (r *Request) SetAuthHeader(key string, value string) {
 	str := fmt.Sprintf("%s %s", key, value)
 	r.NativeRequest.Header.Set("Authorization", str)
 }
+
+func HttpHeadersSet(req *http.Request, headers ...map[string]string) {
+	if len(headers) > 0 {
+		for k, v := range headers[0] {
+			req.Header.Set(k, v)
+		}
+	}
+}
