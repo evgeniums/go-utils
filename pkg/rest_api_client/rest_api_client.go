@@ -61,6 +61,10 @@ func (c *RestApiClientBase) Url(path string) string {
 	return c.BaseUrl + path
 }
 
+func (c *RestApiClientBase) SetRefreshToken(token string) {
+	c.RefreshToken = token
+}
+
 func (h *RestApiClientBase) Login(ctx op_context.Context, user string, password string) (Response, error) {
 
 	var err error
@@ -374,7 +378,7 @@ func DefaultSendWithQuery(ctx op_context.Context, method string, url string, cmd
 	return resp, nil
 }
 
-func DefaultRestApiClientBase(baseUrl string, userAgent ...string) *RestApiClientBase {
+func DefaultRestApiClient(baseUrl string, userAgent ...string) *RestApiClientBase {
 	return NewRestApiClientBase(baseUrl, utils.OptionalArg("", userAgent...), DefaultSendWithBody, DefaultSendWithQuery)
 }
 

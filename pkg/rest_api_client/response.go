@@ -54,3 +54,10 @@ func (r *HttpResponse) Error() *rest_api_gin_server.ResponseError {
 func (r *HttpResponse) SetError(err *rest_api_gin_server.ResponseError) {
 	r.serverError = err
 }
+
+func IsResponseOK(resp Response, err error) bool {
+	if err != nil || resp == nil {
+		return false
+	}
+	return resp.Code() < http.StatusBadRequest
+}

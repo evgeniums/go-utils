@@ -340,3 +340,11 @@ func (t *TokenSchema) Handlers() []auth.AuthHandler {
 func (t *TokenSchema) SetAuthManager(manager auth.AuthManager) {
 	manager.Schemas().AddHandler(t)
 }
+
+func ReloginRequired(code string) bool {
+	return code == ErrorCodeInvalidToken || code == ErrorCodeSessionExpired || code == ErrorCodeUnknownUser
+}
+
+func RefreshRequired(code string) bool {
+	return code == ErrorCodeTokenExpired
+}

@@ -139,3 +139,7 @@ func (a *AuthCsrf) Handle(ctx auth.AuthContext) (bool, error) {
 	// done
 	return true, nil
 }
+
+func IsCsrfError(code string) bool {
+	return code == ErrorCodeAntiCsrfRequired || code == ErrorCodeInvalidToken || code == ErrorCodeTokenExpired
+}
