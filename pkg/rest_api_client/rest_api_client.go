@@ -48,13 +48,20 @@ type RestApiClientBase struct {
 	SendWithQuery DoRequest
 }
 
-func NewRestApiClientBase(baseUrl string, userAgent string, withBodySender DoRequest, withQuerySender DoRequest) *RestApiClientBase {
+func NewRestApiClientBase(withBodySender DoRequest, withQuerySender DoRequest) *RestApiClientBase {
 	c := &RestApiClientBase{}
+	c.Construct(withBodySender, withQuerySender)
+	return c
+}
+
+func (c *RestApiClientBase) Init(baseUrl string, userAgent string) {
 	c.BaseUrl = baseUrl
 	c.UserAgent = userAgent
+}
+
+func (c *RestApiClientBase) Construct(withBodySender DoRequest, withQuerySender DoRequest) {
 	c.SendWithBody = withBodySender
 	c.SendWithQuery = withQuerySender
-	return c
 }
 
 func (c *RestApiClientBase) Url(path string) string {
@@ -379,7 +386,9 @@ func DefaultSendWithQuery(ctx op_context.Context, method string, url string, cmd
 }
 
 func DefaultRestApiClient(baseUrl string, userAgent ...string) *RestApiClientBase {
-	return NewRestApiClientBase(baseUrl, utils.OptionalArg("", userAgent...), DefaultSendWithBody, DefaultSendWithQuery)
+	c := NewRestApiClientBase(DefaultSendWithBody, DefaultSendWithQuery)
+	c.Init(baseUrl, utils.OptionalArg("go-backend-helpers", userAgent...))
+	return c
 }
 
 func fillResponseError(resp Response) error {
@@ -394,4 +403,9 @@ func fillResponseError(resp Response) error {
 		return nil
 	}
 	return nil
+}
+
+type ClientBase struct {
+	BASE_URL   string `validate:"required"`
+	USER_AGENT string `default:"go-backend-helpers"`
 }

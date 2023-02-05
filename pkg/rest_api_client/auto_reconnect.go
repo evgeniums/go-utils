@@ -9,6 +9,7 @@ import (
 
 type AutoReconnectHandlers interface {
 	GetRefreshToken() string
+	SaveRefreshToken(ctx op_context.Context, token string)
 	GetCredentials(ctx op_context.Context) (login string, password string, err error)
 }
 
@@ -75,6 +76,7 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 			c.SetMessage("nil login response")
 			return nil, err
 		}
+		a.handlers.SaveRefreshToken(ctx, a.client.RefreshToken)
 		return a.resend(ctx, send)
 	}
 
@@ -84,6 +86,7 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 		if !IsResponseOK(resp, err) {
 			return resp, err
 		}
+		a.handlers.SaveRefreshToken(ctx, a.client.RefreshToken)
 		return a.resend(ctx, send)
 	}
 
@@ -91,7 +94,7 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 	return lastResp, lastErr
 }
 
-func AutoReconnectRestApiClient(reconnectHandlers AutoReconnectHandlers, baseUrl string, userAgent string) *RestApiClientBase {
+func AutoReconnectRestApiClient(reconnectHandlers AutoReconnectHandlers) *RestApiClientBase {
 
 	reconnect := newAutoReconnectHelper(reconnectHandlers)
 
@@ -110,7 +113,7 @@ func AutoReconnectRestApiClient(reconnectHandlers AutoReconnectHandlers, baseUrl
 		return reconnect.checkResponse(ctx, send, resp, err)
 	}
 
-	client := NewRestApiClientBase(baseUrl, userAgent, sendWithBody, sendWithQuery)
+	client := NewRestApiClientBase(sendWithBody, sendWithQuery)
 	reconnect.client = client
 	reconnect.init()
 	return client

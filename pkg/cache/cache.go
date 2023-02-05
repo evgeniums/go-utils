@@ -57,7 +57,7 @@ func (c *SerializedObjectCache) Get(key string, obj interface{}) (bool, error) {
 
 	found, err := c.impl.Get(key, &val)
 	if !found || err != nil {
-		return found, err
+		return false, err
 	}
 
 	b, err := c.StringCoding.Decode(val)
