@@ -14,6 +14,7 @@ type Resource interface {
 
 	IsService() bool
 	SetSetvice(val bool)
+	IsServicePart() bool
 
 	SetParent(parent Resource)
 	Parent() Resource
@@ -26,7 +27,12 @@ type Resource interface {
 
 	PathPrototype() string
 	ActualPath() string
-	RebuildPath()
+	FullPathPrototype() string
+	FullActualPath() string
+	ServicePathPrototype() string
+	ServiceActualPath() string
+
+	RebuildPaths()
 
 	Chain() []Resource
 	ChainResourceId(resourceType string) string
@@ -40,12 +46,16 @@ type ResourceConfig struct {
 
 type ResourceBase struct {
 	ResourceConfig
-	resourceType  string
-	pathPrototype string
-	actualPath    string
-	parent        Resource
-	children      []Resource
-	operations    []Operation
+	resourceType         string
+	pathPrototype        string
+	actualPath           string
+	fullPathPrototype    string
+	fullActualPath       string
+	servicePathPrototype string
+	serviceActualPath    string
+	parent               Resource
+	children             []Resource
+	operations           []Operation
 }
 
 func NewResource(resourceType string, config ...ResourceConfig) *ResourceBase {
@@ -57,10 +67,10 @@ func NewResource(resourceType string, config ...ResourceConfig) *ResourceBase {
 func (r *ResourceBase) Init(resourceType string, config ...ResourceConfig) {
 	r.resourceType = resourceType
 	r.ResourceConfig = utils.OptionalArg(ResourceConfig{}, config...)
-	r.RebuildPath()
+	r.RebuildPaths()
 }
 
-func (r *ResourceBase) RebuildPath() {
+func (r *ResourceBase) RebuildPaths() {
 
 	if r.HasId() {
 		r.pathPrototype = utils.ConcatStrings("/", r.Type(), "/:", r.Type(), ":")
@@ -70,8 +80,23 @@ func (r *ResourceBase) RebuildPath() {
 		r.actualPath = r.pathPrototype
 	}
 
+	if r.IsService() {
+		r.servicePathPrototype = r.pathPrototype
+		r.serviceActualPath = r.actualPath
+	}
+
+	parent := r.Parent()
+	if parent != nil {
+		r.fullPathPrototype = utils.ConcatStrings(parent.FullPathPrototype(), r.pathPrototype)
+		r.fullActualPath = utils.ConcatStrings(parent.FullActualPath(), r.actualPath)
+		if r.IsServicePart() && !r.IsService() {
+			r.servicePathPrototype = utils.ConcatStrings(parent.ServicePathPrototype(), r.pathPrototype)
+			r.serviceActualPath = utils.ConcatStrings(parent.ServiceActualPath(), r.actualPath)
+		}
+	}
+
 	for _, child := range r.children {
-		child.RebuildPath()
+		child.RebuildPaths()
 	}
 }
 
@@ -81,6 +106,22 @@ func (r *ResourceBase) PathPrototype() string {
 
 func (r *ResourceBase) ActualPath() string {
 	return r.actualPath
+}
+
+func (r *ResourceBase) FullPathPrototype() string {
+	return r.fullPathPrototype
+}
+
+func (r *ResourceBase) FullActualPath() string {
+	return r.fullActualPath
+}
+
+func (r *ResourceBase) ServicePathPrototype() string {
+	return r.servicePathPrototype
+}
+
+func (r *ResourceBase) ServiceActualPath() string {
+	return r.serviceActualPath
 }
 
 func (r *ResourceBase) Type() string {
@@ -96,7 +137,7 @@ func (r *ResourceBase) SetId(val string) {
 	if val != "" {
 		r.SetHasId(true)
 	}
-	r.RebuildPath()
+	r.RebuildPaths()
 }
 
 func (r *ResourceBase) HasId() bool {
@@ -105,21 +146,31 @@ func (r *ResourceBase) HasId() bool {
 
 func (r *ResourceBase) SetHasId(val bool) {
 	r.ResourceConfig.HasId = val
-	r.RebuildPath()
+	r.RebuildPaths()
 }
 
 func (r *ResourceBase) IsService() bool {
 	return r.ResourceConfig.Service
 }
 
+func (r *ResourceBase) IsServicePart() bool {
+	if r.IsService() {
+		return true
+	}
+	if r.Parent() != nil {
+		return r.parent.IsServicePart()
+	}
+	return false
+}
+
 func (r *ResourceBase) SetSetvice(val bool) {
 	r.ResourceConfig.Service = val
-	r.RebuildPath()
+	r.RebuildPaths()
 }
 
 func (r *ResourceBase) SetParent(parent Resource) {
 	r.parent = parent
-	r.RebuildPath()
+	r.RebuildPaths()
 }
 
 func (r *ResourceBase) Parent() Resource {
@@ -129,7 +180,7 @@ func (r *ResourceBase) Parent() Resource {
 func (r *ResourceBase) AddChild(child Resource) {
 	r.children = append(r.children, child)
 	child.SetParent(r)
-	child.RebuildPath()
+	child.RebuildPaths()
 }
 
 func (r *ResourceBase) Children() []Resource {
