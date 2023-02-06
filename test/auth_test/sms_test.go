@@ -59,8 +59,6 @@ func TestSms(t *testing.T) {
 	resp = client.SendSmsConfirmation(resp, auth_sms.LastSmsCode, http.MethodPost, "/status/sms", cmd1, headers)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusOK})
 
-	// TODO check altered method
-
 	// check too many tries of invalid code
 	client.AutoSms = false
 	resp = client.Post("/status/sms", nil)
