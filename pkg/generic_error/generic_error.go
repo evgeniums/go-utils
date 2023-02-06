@@ -1,5 +1,7 @@
 package generic_error
 
+import "github.com/evgeniums/go-backend-helpers/pkg/utils"
+
 // Generic error that can be forwarded from place of arising to place of user reporting.
 type Error interface {
 	error
@@ -30,8 +32,8 @@ func New(code string, message ...string) *ErrorBase {
 }
 
 // Create new error from code and message taken from other "native error".
-func NewFromErr(code string, err error) *ErrorBase {
-	return New(code, err.Error())
+func NewFromErr(err error, code ...string) *ErrorBase {
+	return New(utils.OptionalArg(ErrorCodeUnknown, code...), err.Error())
 }
 
 // Create new error from code, message and some other "original error" with keeping native error.

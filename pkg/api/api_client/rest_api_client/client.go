@@ -1,7 +1,6 @@
 package rest_api_client
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
@@ -30,7 +29,9 @@ func New(restApiClient RestApiClient) *Client {
 	return c
 }
 
-func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd interface{}, response interface{}) (generic_error.Error, error) {
+func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd interface{}, response interface{}) generic_error.Error {
+
+	// TODO support hateoas links of resource
 
 	c := ctx.TraceInMethod("RestApiClientBase.Login")
 	defer ctx.TraceOutMethod()
@@ -38,13 +39,16 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 	method, ok := cl.methods[operation.AccessType()]
 	if !ok {
 		c.SetLoggerField("access_type", operation.AccessType())
-		return nil, c.SetError(errors.New("access type not supported"))
+		genericError := generic_error.NewFromMessage("access type not supported")
+		c.SetError(genericError)
+		return genericError
 	}
 	resp, err := method(ctx, operation.Resource().ActualPath(), cmd, response)
 	genericError := api.ResponseGenericError(resp.Error())
 	if err != nil {
-		return genericError, c.SetError(err)
+		genericError.SetOriginal(err)
+		c.SetError(err)
 	}
 
-	return genericError, nil
+	return genericError
 }

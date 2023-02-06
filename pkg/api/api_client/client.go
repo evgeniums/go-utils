@@ -7,15 +7,15 @@ import (
 )
 
 type Client interface {
-	Exec(ctx op_context.Context, operation api.Operation, cmd interface{}, response interface{}) (generic_error.Error, error)
+	Exec(ctx op_context.Context, operation api.Operation, cmd interface{}, response interface{}) generic_error.Error
 }
 
 type ClientHandler interface {
-	Exec(client Client, ctx op_context.Context, operation api.Operation) (generic_error.Error, error)
+	Exec(client Client, ctx op_context.Context, operation api.Operation) generic_error.Error
 }
 
 func Handler(client Client, clientHandler ClientHandler) api.OperationHandler {
-	return func(ctx op_context.Context, operation api.Operation) (generic_error.Error, error) {
+	return func(ctx op_context.Context, operation api.Operation) generic_error.Error {
 		return clientHandler.Exec(client, ctx, operation)
 	}
 }
