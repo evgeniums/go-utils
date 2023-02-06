@@ -6,7 +6,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/api_server/rest_api_gin_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/http_request"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
@@ -394,7 +394,7 @@ func DefaultRestApiClient(baseUrl string, userAgent ...string) *RestApiClientBas
 func fillResponseError(resp Response) error {
 	b := resp.Body()
 	if b != nil {
-		errResp := &rest_api_gin_server.ResponseError{}
+		errResp := &api.ResponseError{}
 		err := json.Unmarshal(b, errResp)
 		if err != nil {
 			return err

@@ -1,8 +1,8 @@
 package auth_server
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/api_server"
-	"github.com/evgeniums/go-backend-helpers/pkg/api_server/rest_api_gin_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server/rest_api_gin_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_factory"

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/api_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/gin-gonic/gin"

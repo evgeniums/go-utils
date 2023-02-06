@@ -5,8 +5,7 @@ import (
 	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
-	"github.com/evgeniums/go-backend-helpers/pkg/api_client"
-	"github.com/evgeniums/go-backend-helpers/pkg/api_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
@@ -31,7 +30,7 @@ func New(restApiClient RestApiClient) *Client {
 	return c
 }
 
-func (cl *Client) Exec(ctx op_context.Context, operation api_client.Operation, cmd interface{}, response interface{}) (generic_error.Error, error) {
+func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd interface{}, response interface{}) (generic_error.Error, error) {
 
 	c := ctx.TraceInMethod("RestApiClientBase.Login")
 	defer ctx.TraceOutMethod()
@@ -42,7 +41,7 @@ func (cl *Client) Exec(ctx op_context.Context, operation api_client.Operation, c
 		return nil, c.SetError(errors.New("access type not supported"))
 	}
 	resp, err := method(ctx, operation.Resource().ActualPath(), cmd, response)
-	genericError := api_server.ResponseGenericError(resp.Error())
+	genericError := api.ResponseGenericError(resp.Error())
 	if err != nil {
 		return genericError, c.SetError(err)
 	}

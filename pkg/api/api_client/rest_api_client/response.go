@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/api_server/rest_api_gin_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/api"
 )
 
 type Response interface {
@@ -13,18 +13,18 @@ type Response interface {
 	Body() []byte
 	Message() string
 
-	Error() *rest_api_gin_server.ResponseError
-	SetError(err *rest_api_gin_server.ResponseError)
+	Error() *api.ResponseError
+	SetError(err *api.ResponseError)
 }
 
 type HttpResponse struct {
 	Raw         *http.Response
 	body        []byte
-	serverError *rest_api_gin_server.ResponseError
+	serverError *api.ResponseError
 }
 
 func NewResponse(raw *http.Response) *HttpResponse {
-	return &HttpResponse{Raw: raw, serverError: &rest_api_gin_server.ResponseError{}}
+	return &HttpResponse{Raw: raw, serverError: &api.ResponseError{}}
 }
 
 func (r *HttpResponse) Code() int {
@@ -47,11 +47,11 @@ func (r *HttpResponse) Message() string {
 	return string(r.Body())
 }
 
-func (r *HttpResponse) Error() *rest_api_gin_server.ResponseError {
+func (r *HttpResponse) Error() *api.ResponseError {
 	return r.serverError
 }
 
-func (r *HttpResponse) SetError(err *rest_api_gin_server.ResponseError) {
+func (r *HttpResponse) SetError(err *api.ResponseError) {
 	r.serverError = err
 }
 

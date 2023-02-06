@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/api_server/rest_api_gin_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_sms"
@@ -32,7 +32,7 @@ type HttpResponse struct {
 
 func ResponseErrorCode(t *testing.T, resp *HttpResponse) string {
 	if resp.Message != "" {
-		errResp := &rest_api_gin_server.ResponseError{}
+		errResp := &api.ResponseError{}
 		require.NoError(t, json.Unmarshal([]byte(resp.Message), errResp))
 		return errResp.Code
 	}
@@ -50,7 +50,7 @@ func CheckResponse(t *testing.T, resp *HttpResponse, expected *Expected) {
 		if expected.Error != "" {
 			assert.NotEmpty(t, resp.Message)
 			if len(resp.Message) != 0 {
-				errResp := &rest_api_gin_server.ResponseError{}
+				errResp := &api.ResponseError{}
 				require.NoError(t, json.Unmarshal([]byte(resp.Message), errResp))
 				assert.Equal(t, expected.Error, errResp.Code)
 				if expected.Details != "" {

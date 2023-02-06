@@ -1,16 +1,8 @@
-package api_client
+package api
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
-
-type Operation interface {
-	SetResource(resource Resource)
-	Resource() Resource
-
-	AccessType() access_control.AccessType
-}
 
 type Resource interface {
 	Type() string
@@ -192,25 +184,4 @@ func (r *ResourceBase) ChainResourceId(resourceType string) string {
 		}
 	}
 	return ""
-}
-
-type OperationBase struct {
-	resource   Resource
-	accessType access_control.AccessType
-}
-
-func (o *OperationBase) Init(accessType access_control.AccessType) {
-	o.accessType = accessType
-}
-
-func (o *OperationBase) SetResource(resource Resource) {
-	o.resource = resource
-}
-
-func (o *OperationBase) Resource() Resource {
-	return o.resource
-}
-
-func (o *OperationBase) AccessType() access_control.AccessType {
-	return o.accessType
 }

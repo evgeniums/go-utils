@@ -10,7 +10,8 @@ import (
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
-	"github.com/evgeniums/go-backend-helpers/pkg/api_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/api"
+	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_csrf"
@@ -48,7 +49,7 @@ type Server struct {
 	auth.WithAuthBase
 
 	ginEngine     *gin.Engine
-	notFoundError *ResponseError
+	notFoundError *api.ResponseError
 	hostname      string
 
 	authParamsGetters map[string]AuthParameterGetter
@@ -200,7 +201,7 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 	s.ginEngine.Use(s.ginDefaultLogger(), gin.Recovery())
 
 	// set noroute
-	s.notFoundError = &ResponseError{Code: "not_found", Message: "Requested resource was not found"}
+	s.notFoundError = &api.ResponseError{Code: "not_found", Message: "Requested resource was not found"}
 	s.ginEngine.NoRoute(s.NoRoute())
 
 	// done
@@ -299,8 +300,8 @@ func (s *Server) AddEndpoint(ep api_server.Endpoint) {
 	s.ginEngine.Handle(method, fullPath, requestHandler(s, ep))
 }
 
-func (s *Server) MakeResponseError(gerr generic_error.Error) (int, *ResponseError) {
-	err := &ResponseError{Code: gerr.Code(), Message: gerr.Message(), Details: gerr.Details()}
+func (s *Server) MakeResponseError(gerr generic_error.Error) (int, *api.ResponseError) {
+	err := &api.ResponseError{Code: gerr.Code(), Message: gerr.Message(), Details: gerr.Details()}
 	code := s.ErrorProtocolCode(gerr.Code())
 	return code, err
 }
