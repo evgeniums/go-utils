@@ -6,18 +6,18 @@ type AccessType uint32
 type Operation uint32
 
 const (
-	ReadContent AccessType = 1
-	ReadMeta    AccessType = 2
-	ReadOptions AccessType = 4
+	ReadContent AccessType = 0x1
+	ReadMeta    AccessType = 0x2
+	ReadOptions AccessType = 0x4
 	Read        AccessType = ReadContent | ReadMeta | ReadOptions
 
-	Create AccessType = 8
+	Create AccessType = 0x8
 
-	UpdateReplace AccessType = 10
-	UpdatePartial AccessType = 20
+	UpdateReplace AccessType = 0x10
+	UpdatePartial AccessType = 0x20
 	Update        AccessType = UpdateReplace | UpdatePartial
 
-	Delete AccessType = 40
+	Delete AccessType = 0x40
 
 	Post = Create
 	Get  = ReadContent
