@@ -9,8 +9,4 @@ type Response struct {
 	request  *Request
 }
 
-type ResponseError struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-	Details string `json:"details"`
-}
+type ResponseError = api_server.ResponseError

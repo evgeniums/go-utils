@@ -25,7 +25,7 @@ type RestApiClient interface {
 	UpdateCsrfToken(ctx op_context.Context) (Response, error)
 	RequestRefreshToken(ctx op_context.Context) (Response, error)
 
-	Post(ctx op_context.Context, path string, cmd interface{}, response interface{}, headers ...map[string]string)
+	Post(ctx op_context.Context, path string, cmd interface{}, response interface{}, headers ...map[string]string) (Response, error)
 	Put(ctx op_context.Context, path string, cmd interface{}, response interface{}, headers ...map[string]string) (Response, error)
 	Patch(ctx op_context.Context, path string, cmd interface{}, response interface{}, headers ...map[string]string) (Response, error)
 	Get(ctx op_context.Context, path string, cmd interface{}, response interface{}, headers ...map[string]string) (Response, error)

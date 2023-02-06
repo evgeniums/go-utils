@@ -7,10 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/api_client/rest_api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/api_server/rest_api_gin_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/http_request"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/rest_api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-querystring/query"
@@ -107,5 +107,7 @@ func RestApiTestClient(t *testing.T, g *gin.Engine, baseUrl string, userAgent ..
 		return resp, nil
 	}
 
-	return rest_api_client.NewRestApiClientBase(baseUrl, utils.OptionalArg("go-backend-helpers", userAgent...), sendWithBody, sendWithQuery)
+	c := rest_api_client.NewRestApiClientBase(sendWithBody, sendWithQuery)
+	c.Init(baseUrl, utils.OptionalArg("go-backend-helpers", userAgent...))
+	return c
 }
