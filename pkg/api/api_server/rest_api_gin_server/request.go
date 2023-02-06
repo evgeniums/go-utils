@@ -31,7 +31,7 @@ func (r *Request) Init(s *Server, ginCtx *gin.Context, ep api_server.Endpoint, f
 	r.start = time.Now()
 	r.server = s
 
-	r.RequestBase.Init(s.App(), s.App().Logger(), s.App().DB(), fields...)
+	r.RequestBase.Init(s.App(), s.App().Logger(), s.App().DB(), ep, fields...)
 	r.RequestBase.SetErrorManager(s)
 
 	r.ginCtx = ginCtx
@@ -56,10 +56,6 @@ func (r *Request) SetParameter(key string, value any) {
 
 func (r *Request) Response() api_server.Response {
 	return r.response
-}
-
-func (r *Request) GetRequestPath() string {
-	return r.endpoint.FullPath()
 }
 
 func (r *Request) GetRequestMethod() string {
@@ -146,4 +142,16 @@ func (r *Request) GetAuthParameter(authMethodProtocol string, key string) string
 
 func (r *Request) CheckRequestContent(smsMessage *string) error {
 	return r.endpoint.PrecheckRequestBeforeAuth(r, smsMessage)
+}
+
+func (r *Request) ResourceIds() map[string]string {
+	m := make(map[string]string, 0)
+	for _, param := range r.ginCtx.Params {
+		m[param.Key] = param.Value
+	}
+	return m
+}
+
+func (r *Request) GetRequestPath() string {
+	return api_server.FullRequestServicePath(r)
 }

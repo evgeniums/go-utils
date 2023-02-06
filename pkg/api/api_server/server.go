@@ -1,6 +1,8 @@
 package api_server
 
 import (
+	"fmt"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
@@ -20,12 +22,15 @@ type Server interface {
 	// Run server.
 	Run(fin *finish.Finisher)
 
-	// Add endpoint to server.
+	// Add operation endpoint to server.
 	AddEndpoint(ep Endpoint)
 }
 
 func AddServiceToServer(s Server, service Service) {
-	service.AttachToServer(s)
+	err := service.AttachToServer(s)
+	if err != nil {
+		panic(fmt.Errorf("failed to attach service %s to server", service.Type()))
+	}
 }
 
 type ServerBaseConfig struct {

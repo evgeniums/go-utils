@@ -16,16 +16,20 @@ type Request interface {
 
 	Server() Server
 	Response() Response
+	Endpoint() Endpoint
+	ResourceIds() map[string]string
 }
 
 type RequestBase struct {
 	op_context.ContextBase
 	auth.SessionBase
 	auth.UserContextBase
+	endpoint Endpoint
 }
 
-func (r *RequestBase) Init(app app_context.Context, log logger.Logger, db db.DB, fields ...logger.Fields) {
+func (r *RequestBase) Init(app app_context.Context, log logger.Logger, db db.DB, endpoint Endpoint, fields ...logger.Fields) {
 	r.ContextBase.Init(app, log, db, fields...)
+	r.endpoint = endpoint
 }
 
 func (r *RequestBase) DB() db.DB {
@@ -34,4 +38,16 @@ func (r *RequestBase) DB() db.DB {
 		return t.DB()
 	}
 	return r.ContextBase.DB()
+}
+
+func (r *RequestBase) Endpoint() Endpoint {
+	return r.endpoint
+}
+
+func FullRequestPath(r Request) string {
+	return r.Endpoint().Resource().BuildActualPath(r.ResourceIds())
+}
+
+func FullRequestServicePath(r Request) string {
+	return r.Endpoint().Resource().BuildActualPath(r.ResourceIds(), true)
 }

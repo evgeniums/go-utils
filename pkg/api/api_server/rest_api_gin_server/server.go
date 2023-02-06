@@ -55,7 +55,8 @@ type Server struct {
 	authParamsGetters map[string]AuthParameterGetter
 	authParamsSetters map[string]AuthParameterSetter
 
-	csrf *auth_csrf.AuthCsrf
+	csrf            *auth_csrf.AuthCsrf
+	tenancyResource api.Resource
 }
 
 func getHttpHeader(g *gin.Context, name string) string {
@@ -172,6 +173,10 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 	s.WithAuthBase.Init(auth)
 	auth.AttachToErrorManager(s)
 
+	if s.IsMultiTenancy() {
+		s.tenancyResource = api.NewResource(TenancyParameter, api.ResourceConfig{HasId: true})
+	}
+
 	defaultPath := "rest_api_server"
 
 	// load configuration
@@ -259,7 +264,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 
 		// process auth
 		if err == nil {
-			err = s.Auth().HandleRequest(request, ep.FullPath(), ep.AccessType())
+			err = s.Auth().HandleRequest(request, ep.Resource().ServicePathPrototype(), ep.AccessType())
 			if err != nil {
 				request.SetGenericError(s.MakeGenericError(auth.ErrorCodeUnauthorized, request.Tr))
 				// errors must be processed in handler
@@ -290,14 +295,12 @@ func (s *Server) AddEndpoint(ep api_server.Endpoint) {
 		panic(fmt.Sprintf("Invalid HTTP method in endpoint %s for access %d", ep.Name(), ep.AccessType()))
 	}
 
-	var fullPath string
-	if !s.IsMultiTenancy() {
-		fullPath = fmt.Sprintf("%s/%s/%s", s.PATH_PREFIX, s.ApiVersion(), ep.FullPath())
-	} else {
-		fullPath = fmt.Sprintf("%s/%s/:%s:/%s", s.PATH_PREFIX, TenancyParameter, s.ApiVersion(), ep.FullPath())
+	if s.IsMultiTenancy() {
+		s.tenancyResource.AddChild(ep.Resource())
 	}
 
-	s.ginEngine.Handle(method, fullPath, requestHandler(s, ep))
+	path := fmt.Sprintf("%s/%s%s", s.PATH_PREFIX, s.ApiVersion(), ep.Resource().FullPathPrototype())
+	s.ginEngine.Handle(method, path, requestHandler(s, ep))
 }
 
 func (s *Server) MakeResponseError(gerr generic_error.Error) (int, *api.ResponseError) {

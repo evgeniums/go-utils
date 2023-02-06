@@ -2,24 +2,15 @@ package api_server
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 // Interface of API endpoint.
 type Endpoint interface {
-	common.WithNameAndPath
+	api.Operation
 	generic_error.ErrorsExtender
-
-	Parent() Group
-
-	// Get service
-	Service() Service
-	// Set service
-	SetService(service Service)
-
-	// Get endpoint access type
-	AccessType() access_control.AccessType
 
 	// Handle request to server API.
 	HandleRequest(request Request) error
@@ -32,49 +23,31 @@ type EndpointHandler = func(request Request)
 
 // Base type for API endpoints.
 type EndpointBase struct {
-	common.WithNameAndPathBase
+	api.OperationBase
 	generic_error.ErrorsExtenderBase
-
-	service    Service
-	accessType access_control.AccessType
-	parent     Group
 }
 
-func (e *EndpointBase) Init(path string, name string, accessType access_control.AccessType) {
-	e.WithNameAndPathBase.Init(path, name)
-	e.accessType = accessType
-}
-
-func (e *EndpointBase) Service() Service {
-	return e.service
-}
-
-func (e *EndpointBase) SetService(service Service) {
-	e.service = service
-}
-
-func (e *EndpointBase) AccessType() access_control.AccessType {
-	return e.accessType
+func (e *EndpointBase) Init(operationName string, accessType ...access_control.AccessType) {
+	e.OperationBase.Init(operationName, utils.OptionalArg(access_control.Get, accessType...))
 }
 
 func (e *EndpointBase) PrecheckRequestBeforeAuth(request Request, smsMessage *string) error {
 	return nil
 }
 
-func (e *EndpointBase) Parent() Group {
-	return e.parent
+type ResourceEndpoint struct {
+	api.ResourceBase
+	EndpointBase
 }
 
-func (e *EndpointBase) SetParent(parent common.WithPath) {
-	// TODO fix parent
-	// e.parent = parent.(Group)
-	e.WithNameAndPathBase.SetParent(parent)
+func (e *ResourceEndpoint) Init(resourceType string, operationName string, selfOp api.Operation, accessType ...access_control.AccessType) {
+	e.EndpointBase.Init(operationName, accessType...)
+	e.ResourceBase.Init(resourceType)
+	e.AddOperation(selfOp)
 }
 
 // Base type for API endpoints with empty handlers.
-type EndpointNoHandler struct {
-	EndpointBase
-}
+type EndpointNoHandler struct{}
 
 func (e *EndpointNoHandler) HandleRequest(request Request) error {
 	return nil

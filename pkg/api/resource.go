@@ -18,13 +18,16 @@ type Resource interface {
 	IsService() bool
 	SetSetvice(val bool)
 	IsServicePart() bool
+	Service() Resource
 
 	SetParent(parent Resource)
 	Parent() Resource
 	AddChild(resource Resource)
+	AddChildren(resources ...Resource)
 	Children() []Resource
 
 	AddOperation(operation Operation, getter ...bool)
+	AddOperations(operations ...Operation)
 	Operations() []Operation
 	Getter() Operation
 	EachOperation(handler func(operation Operation) error, recursive ...bool) error
@@ -35,7 +38,7 @@ type Resource interface {
 	FullActualPath() string
 	ServicePathPrototype() string
 	ServiceActualPath() string
-	BuildActualPath(actualResourceIds map[string]string) string
+	BuildActualPath(actualResourceIds map[string]string, service ...bool) string
 
 	RebuildPaths()
 
@@ -97,6 +100,9 @@ func (r *ResourceBase) RebuildPaths() {
 		r.pathPrototype = utils.ConcatStrings("/", r.Type())
 		r.actualPath = r.pathPrototype
 	}
+
+	r.fullPathPrototype = r.pathPrototype
+	r.fullActualPath = r.actualPath
 
 	if r.IsService() {
 		r.servicePathPrototype = r.pathPrototype
@@ -192,6 +198,16 @@ func (r *ResourceBase) IsServicePart() bool {
 	return false
 }
 
+func (r *ResourceBase) Service() Resource {
+	if r.IsService() {
+		return r
+	}
+	if r.Parent() != nil {
+		return r.parent.Service()
+	}
+	return nil
+}
+
 func (r *ResourceBase) SetSetvice(val bool) {
 	r.ResourceConfig.Service = val
 	r.RebuildPaths()
@@ -212,6 +228,12 @@ func (r *ResourceBase) AddChild(child Resource) {
 	child.RebuildPaths()
 }
 
+func (r *ResourceBase) AddChildren(resources ...Resource) {
+	for _, child := range resources {
+		r.AddChild(child)
+	}
+}
+
 func (r *ResourceBase) Children() []Resource {
 	return r.children
 }
@@ -222,6 +244,12 @@ func (r *ResourceBase) AddOperation(operation Operation, getter ...bool) {
 		r.getter = operation
 	}
 	operation.SetResource(r)
+}
+
+func (r *ResourceBase) AddOperations(operations ...Operation) {
+	for _, op := range operations {
+		r.AddOperation(op)
+	}
 }
 
 func (r *ResourceBase) Getter() Operation {
@@ -275,7 +303,12 @@ func (r *ResourceBase) ChainResourceId(resourceType string) string {
 	return ""
 }
 
-func (r *ResourceBase) BuildActualPath(actualResourceIds map[string]string) string {
+func (r *ResourceBase) BuildActualPath(actualResourceIds map[string]string, service ...bool) string {
+
+	servicePath := utils.OptionalArg(false, service...)
+	if servicePath && !r.IsServicePart() {
+		return ""
+	}
 
 	var path string
 	id, ok := actualResourceIds[r.Type()]
@@ -287,7 +320,10 @@ func (r *ResourceBase) BuildActualPath(actualResourceIds map[string]string) stri
 
 	parent := r.Parent()
 	if parent != nil {
-		path = utils.ConcatStrings(parent.BuildActualPath(actualResourceIds), path)
+		parentPath := parent.BuildActualPath(actualResourceIds, service...)
+		if parentPath != "" {
+			path = utils.ConcatStrings(parentPath, path)
+		}
 	}
 
 	return path

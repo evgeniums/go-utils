@@ -2,16 +2,16 @@ package api_server
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-backend-helpers/pkg/api"
 )
 
 type CheckStatusEndpoint struct {
-	EndpointBase
+	ResourceEndpoint
 }
 
 func NewCheckStatusEndpoint() *CheckStatusEndpoint {
 	ep := &CheckStatusEndpoint{}
-	ep.EndpointBase.Init("/check", "CheckStatus", access_control.Get)
+	ep.Init("check", "CheckStatus", ep, access_control.Get)
 	return ep
 }
 
@@ -25,37 +25,55 @@ func (e *CheckStatusEndpoint) HandleRequest(request Request) error {
 	return nil
 }
 
-type CheckAccessEndpoint struct {
-	EndpointBase
-}
+type CheckAccess struct{}
 
-func NewCheckAccessEndpoint(path string, name string, access ...access_control.AccessType) *CheckAccessEndpoint {
-	accessType := utils.OptionalArg(access_control.Get, access...)
-	ep := &CheckAccessEndpoint{}
-	ep.EndpointBase.Init(path, name, accessType)
-	return ep
-}
-
-func (e *CheckAccessEndpoint) HandleRequest(request Request) error {
+func (e *CheckAccess) HandleRequest(request Request) error {
 	resp := &StatusResponse{"success"}
 	request.Response().SetMessage(resp)
 	return nil
+}
+
+type CheckAccessEndpoint struct {
+	EndpointBase
+	CheckAccess
+}
+
+func NewCheckAccessEndpoint(operationName string, accessType ...access_control.AccessType) *CheckAccessEndpoint {
+	ep := &CheckAccessEndpoint{}
+	ep.Init(operationName, accessType...)
+	return ep
+}
+
+type CheckAccessResourceEndpoint struct {
+	ResourceEndpoint
+	CheckAccess
+}
+
+func NewCheckAccessResourceEndpoint(resource string, operationName string,
+	accessType ...access_control.AccessType) *CheckAccessResourceEndpoint {
+	ep := &CheckAccessResourceEndpoint{}
+	ep.Init(resource, operationName, ep, accessType...)
+	return ep
 }
 
 type StatusService struct {
 	ServiceBase
 }
 
-// TODO Endpoint at the same path but different access methods
 func NewStatusService() *StatusService {
 	s := &StatusService{}
-	s.GroupBase.Init("/status", "Status")
-	s.AddEndpoints(NewCheckStatusEndpoint(),
-		NewCheckAccessEndpoint("/csrf", "CheckCsrf"),
-		NewCheckAccessEndpoint("/logged", "CheckLogged"),
-		NewCheckAccessEndpoint("/sms", "CheckSms", access_control.Post),
-		// NewCheckAccessEndpoint("/sms", "CheckSmsPut", access_control.Put),
-		NewCheckAccessEndpoint("/sms-alt", "CheckSmsAlt", access_control.Post),
+
+	s.Init("status")
+	s.AddChildren(NewCheckStatusEndpoint(),
+		NewCheckAccessResourceEndpoint("csrf", "CheckCsrf"),
+		NewCheckAccessResourceEndpoint("logged", "CheckLogged"),
+		NewCheckAccessResourceEndpoint("sms-alt", "CheckSmsAlt", access_control.Post),
 	)
+	sms := api.NewResource("sms")
+	sms.AddOperations(
+		NewCheckAccessEndpoint("CheckSms", access_control.Post),
+		NewCheckAccessEndpoint("CheckSmsPut", access_control.Put),
+	)
+	s.AddChild(sms)
 	return s
 }
