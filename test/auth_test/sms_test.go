@@ -54,6 +54,8 @@ func TestSms(t *testing.T) {
 	headers := map[string]string{"x-auth-sms-token": smsToken}
 	resp = client.SendSmsConfirmation(resp, auth_sms.LastSmsCode, http.MethodPost, "/status/sms-alt", cmd1, headers)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: auth_sms.ErrorCodeContentMismatch})
+	resp = client.SendSmsConfirmation(resp, auth_sms.LastSmsCode, http.MethodPut, "/status/sms", cmd1, headers)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: auth_sms.ErrorCodeContentMismatch})
 	resp = client.SendSmsConfirmation(resp, auth_sms.LastSmsCode, http.MethodPost, "/status/sms", cmd1, headers)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusOK})
 
