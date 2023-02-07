@@ -21,7 +21,7 @@ type LoginphashSmsToken struct {
 	Sms auth.AuthHandler
 }
 
-func NewLoginphashSmsToken(users user_manager.WithSessionManager, smsManager sms.SmsManager) *LoginphashSmsToken {
+func NewLoginphashSmsToken(users user_manager.WithUserSessionManager, smsManager sms.SmsManager) *LoginphashSmsToken {
 	l := &LoginphashSmsToken{}
 	l.Login = auth_login_phash.New(users)
 	l.Token = auth_token.NewNewToken(users)

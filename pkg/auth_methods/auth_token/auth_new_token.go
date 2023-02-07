@@ -15,7 +15,7 @@ type AuthNewTokenHandler struct {
 	AuthTokenHandler
 }
 
-func NewNewToken(users user_manager.WithSessionManager) *AuthNewTokenHandler {
+func NewNewToken(users user_manager.WithUserSessionManager) *AuthNewTokenHandler {
 	a := &AuthNewTokenHandler{}
 	a.users = users
 	return a

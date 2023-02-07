@@ -37,7 +37,7 @@ func NewAuthServer() *AuthServerBase {
 	return s
 }
 
-func (s *AuthServerBase) Init(app app_context.Context, users user_manager.WithSessionManager, smsProviders sms.ProviderFactory, configPath ...string) error {
+func (s *AuthServerBase) Init(app app_context.Context, users user_manager.WithUserSessionManager, smsProviders sms.ProviderFactory, configPath ...string) error {
 
 	path := utils.OptionalArg("auth_server", configPath...)
 

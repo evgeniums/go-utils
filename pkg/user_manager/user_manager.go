@@ -14,3 +14,8 @@ type UserManager interface {
 type WithUserManager interface {
 	UserManager() UserManager
 }
+
+type WithUserSessionManager interface {
+	WithUserManager
+	SessionManager() SessionController
+}

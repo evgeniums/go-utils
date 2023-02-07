@@ -32,7 +32,7 @@ type AuthTokenHandlerConfig struct {
 type AuthTokenHandler struct {
 	auth.AuthHandlerBase
 	AuthTokenHandlerConfig
-	users      user_manager.WithSessionManager
+	users      user_manager.WithUserSessionManager
 	encryption auth.AuthParameterEncryption
 }
 
@@ -49,7 +49,7 @@ func (a *AuthTokenHandler) Config() interface{} {
 	return &a.AuthTokenHandlerConfig
 }
 
-func New(users user_manager.WithSessionManager) *AuthTokenHandler {
+func New(users user_manager.WithUserSessionManager) *AuthTokenHandler {
 	a := &AuthTokenHandler{}
 	a.users = users
 	return a
@@ -313,7 +313,7 @@ type TokenSchema struct {
 	Token *AuthTokenHandler
 }
 
-func NewSchema(users user_manager.WithSessionManager) *TokenSchema {
+func NewSchema(users user_manager.WithUserSessionManager) *TokenSchema {
 	l := &TokenSchema{}
 	l.Construct()
 	l.Token = New(users)

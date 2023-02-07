@@ -23,7 +23,7 @@ type LoginphashToken struct {
 	Token *auth_token.AuthNewTokenHandler
 }
 
-func NewLoginphashToken(users user_manager.WithSessionManager) *LoginphashToken {
+func NewLoginphashToken(users user_manager.WithUserSessionManager) *LoginphashToken {
 	l := &LoginphashToken{}
 	l.Construct()
 	l.Login = auth_login_phash.New(users)

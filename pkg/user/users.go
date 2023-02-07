@@ -15,15 +15,15 @@ import (
 type UserController[UserType User] interface {
 	user_manager.UserController
 
-	SetUserBuilder(builder func() UserType)
-	MakeUser() UserType
-
 	Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error)
 	FindByLogin(ctx op_context.Context, login string) (UserType, error)
 	SetPassword(ctx op_context.Context, login string, password string) error
 	SetPhone(ctx op_context.Context, login string, phone string) error
 	SetEmail(ctx op_context.Context, login string, email string) error
 	SetBlocked(ctx op_context.Context, login string, blocked bool) error
+
+	SetUserBuilder(builder func() UserType)
+	MakeUser() UserType
 }
 
 type UserControllerBase[UserType User] struct {
@@ -260,14 +260,5 @@ func (u *UsersBase[UserType]) ValidateLogin(login string) error {
 }
 
 func (m *UsersBase[UserType]) UserManager() user_manager.UserManager {
-	return m
-}
-
-type UsersWithSession[UserType User, SessionType user_manager.Session, SessionClientType user_manager.SessionClient] struct {
-	UsersBase[UserType]
-	user_manager.SessionManagerBase
-}
-
-func (m *UsersWithSession[UserType, SessionType, SessionClientType]) SessionManager() user_manager.SessionManager {
 	return m
 }

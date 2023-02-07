@@ -19,10 +19,10 @@ func NewUser() *User {
 func NewUsers(userController ...user.UserController[*User]) *Users {
 	m := &Users{}
 	if len(userController) == 0 {
-		m.Construct(user.LocalUserController[*User]())
+		m.UsersBase.Construct(user.LocalUserController[*User]())
 	} else {
-		m.Construct(userController[0])
+		m.UsersBase.Construct(userController[0])
 	}
-	m.SetUserBuilder(NewUser)
+	m.UsersBase.SetUserBuilder(NewUser)
 	return m
 }

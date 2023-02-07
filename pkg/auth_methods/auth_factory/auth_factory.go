@@ -14,7 +14,7 @@ import (
 )
 
 type DefaultAuthFactory struct {
-	Users      user_manager.WithSessionManager
+	Users      user_manager.WithUserSessionManager
 	SmsManager sms.SmsManager
 }
 

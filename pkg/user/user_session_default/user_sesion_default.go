@@ -12,7 +12,7 @@ type UserSession struct {
 	user_manager.SessionBase
 }
 
-func NewSession() user_manager.Session {
+func NewSession() *UserSession {
 	return &UserSession{}
 }
 
@@ -20,23 +20,12 @@ type UserSessionClient struct {
 	user_manager.SessionClientBase
 }
 
-func NewSessionClient() user_manager.SessionClient {
+func NewSessionClient() *UserSessionClient {
 	return &UserSessionClient{}
 }
 
-type Users struct {
-	user.UsersWithSession[*user_default.User, *UserSession, *UserSessionClient]
-}
+type Users = user.UsersWithSession[*user_default.User, *UserSession, *UserSessionClient]
 
-func NewUsers(userController ...user.UserController[*User]) *Users {
-	m := &Users{}
-	if len(userController) == 0 {
-		m.Construct(user.LocalUserController[*User]())
-	} else {
-		m.Construct(userController[0])
-	}
-	m.SetUserBuilder(user_default.NewUser)
-	m.MakeSession = NewSession
-	m.MakeSessionClient = NewSessionClient
-	return m
+func NewUsers(controllers ...user.UsersWithSessionConfig[*User]) *Users {
+	return user.NewUsersWithSession(user_default.NewUser, NewSession, NewSessionClient, controllers...)
 }
