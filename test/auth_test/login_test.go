@@ -73,6 +73,11 @@ func TestLogin(t *testing.T) {
 	client.Login("someuser", password1, auth_login_phash.ErrorCodeLoginFailed)
 }
 
+type StrippedSession struct {
+	Valid      bool
+	Expiration time.Time
+}
+
 func TestSession(t *testing.T) {
 	app, users, server, opCtx := initOpTest(t)
 	defer app.Close()
@@ -199,6 +204,16 @@ func TestSession(t *testing.T) {
 	assert.False(t, sessions[2].IsValid())
 	assert.False(t, sessions[3].IsValid())
 	assert.False(t, sessions[4].IsValid())
+
+	strippedSessions := []StrippedSession{}
+	require.NoError(t, app.DB().FindWithFilter(app, filter, sessions, &strippedSessions))
+	require.Equal(t, 5, len(strippedSessions))
+	assert.True(t, strippedSessions[0].Valid)
+	assert.True(t, strippedSessions[1].Valid)
+	assert.False(t, strippedSessions[2].Valid)
+	assert.False(t, strippedSessions[3].Valid)
+	assert.False(t, strippedSessions[4].Valid)
+
 	users.SessionManager().InvalidateAllSessions(opCtx)
 	resp = client1.Get("/status/logged", nil)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{Error: auth_token.ErrorCodeSessionExpired, HttpCode: http.StatusUnauthorized})

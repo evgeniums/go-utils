@@ -175,8 +175,8 @@ func (g *GormDB) AutoMigrate(ctx logger.WithLogger, models []interface{}) error 
 	return nil
 }
 
-func (g *GormDB) FindByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}) (bool, error) {
-	notFound, err := FindByField(g.db_(), field, value, obj)
+func (g *GormDB) FindByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}, dest ...interface{}) (bool, error) {
+	notFound, err := FindByField(g.db_(), field, value, obj, dest...)
 	if err != nil && g.VERBOSE_ERRORS && !notFound {
 		e := fmt.Errorf("failed to FindByField %v", ObjectTypeName(obj))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"field": field, "value": value, "error": err})
@@ -184,8 +184,8 @@ func (g *GormDB) FindByField(ctx logger.WithLogger, field string, value interfac
 	return notFound, err
 }
 
-func (g *GormDB) FindByFields(ctx logger.WithLogger, fields db.Fields, obj interface{}) (bool, error) {
-	notFound, err := FindByFields(g.db_(), fields, obj)
+func (g *GormDB) FindByFields(ctx logger.WithLogger, fields db.Fields, obj interface{}, dest ...interface{}) (bool, error) {
+	notFound, err := FindByFields(g.db_(), fields, obj, dest...)
 	if err != nil && g.VERBOSE_ERRORS && !notFound {
 		e := fmt.Errorf("failed to FindByFields %v", ObjectTypeName(obj))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
@@ -275,8 +275,8 @@ func (g *GormDB) RowsWithFilter(ctx logger.WithLogger, filter *Filter, obj inter
 	return cursor, err
 }
 
-func (g *GormDB) FindWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) error {
-	err := FindWithFilter(g.db_(), filter, obj)
+func (g *GormDB) FindWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}, dest ...interface{}) error {
+	err := FindWithFilter(g.db_(), filter, obj, dest...)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to FindWithFilter %v", ObjectTypeName(obj))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})

@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -18,8 +19,9 @@ func ConnectDB(dialector gorm.Dialector) (*gorm.DB, error) {
 	return db, err
 }
 
-func FindByField(db *gorm.DB, fieldName string, fieldValue interface{}, doc interface{}) (bool, error) {
-	result := db.First(doc, fmt.Sprintf("\"%v\" = ?", fieldName), fieldValue)
+func FindByField(db *gorm.DB, fieldName string, fieldValue interface{}, doc interface{}, dest ...interface{}) (bool, error) {
+	dst := utils.OptionalArg(doc, dest...)
+	result := db.Model(doc).First(dst, fmt.Sprintf("\"%v\" = ?", fieldName), fieldValue)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return false, nil
@@ -30,8 +32,9 @@ func FindByField(db *gorm.DB, fieldName string, fieldValue interface{}, doc inte
 	return true, nil
 }
 
-func FindByFields(db *gorm.DB, fields db.Fields, doc interface{}) (bool, error) {
-	result := db.Where(fields).First(doc)
+func FindByFields(db *gorm.DB, fields db.Fields, doc interface{}, dest ...interface{}) (bool, error) {
+	dst := utils.OptionalArg(doc, dest...)
+	result := db.Model(doc).Where(fields).First(dst)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return false, nil
@@ -50,10 +53,10 @@ func AllRows(db *gorm.DB, doc interface{}) (*sql.Rows, error) {
 	return db.Model(doc).Rows()
 }
 
-func FindAll(db *gorm.DB, docs interface{}) error {
-	result := db.Find(docs)
+func FindAll(db *gorm.DB, docs interface{}, dest ...interface{}) error {
+	dst := utils.OptionalArg(docs, dest...)
+	result := db.Model(docs).Find(dst)
 	return result.Error
-
 }
 
 type Interval = db.Interval
@@ -102,11 +105,11 @@ func prepareFilter(db *gorm.DB, filter *Filter) *gorm.DB {
 	return h
 }
 
-func FindWithFilter(db_ *gorm.DB, filter *Filter, docs interface{}) error {
+func FindWithFilter(db_ *gorm.DB, filter *Filter, docs interface{}, dest ...interface{}) error {
 
-	h := db_
+	h := db_.Model(docs)
 	if filter != nil {
-		h = prepareFilter(db_, filter)
+		h = prepareFilter(db_.Model(docs), filter)
 
 		if filter.SortField != "" && (filter.SortDirection == db.SORT_ASC || filter.SortDirection == db.SORT_DESC) {
 			h = h.Order(fmt.Sprintf("\"%v\" %v", filter.SortField, filter.SortDirection))
@@ -121,7 +124,8 @@ func FindWithFilter(db_ *gorm.DB, filter *Filter, docs interface{}) error {
 		}
 	}
 
-	result := h.Find(docs)
+	dst := utils.OptionalArg(docs, dest...)
+	result := h.Find(dst)
 	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return result.Error
 	}
