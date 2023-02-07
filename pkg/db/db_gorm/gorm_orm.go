@@ -91,7 +91,7 @@ func prepareFilter(db *gorm.DB, filter *Filter) *gorm.DB {
 		h = h.Where(fmt.Sprintf("\"%v\" NOT IN ? ", field), values)
 	}
 
-	for name, interval := range filter.IntervalFields {
+	for name, interval := range filter.Intervals {
 		h = prepareInterval(h, name, interval)
 	}
 

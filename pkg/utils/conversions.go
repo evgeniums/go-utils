@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -90,7 +91,18 @@ func StrToUint32(s string) (uint32, error) {
 	return uint32(val), nil
 }
 
-func StrToInt(s string) (int, error) {
+func StrToUint64(s string) (uint64, error) {
+	if s == "" {
+		return 0, nil
+	}
+	val, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return val, nil
+}
+
+func StrToInt32(s string) (int32, error) {
 	if s == "" {
 		return 0, nil
 	}
@@ -98,7 +110,29 @@ func StrToInt(s string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return int(val), nil
+	return int32(val), nil
+}
+
+func StrToInt64(s string) (int64, error) {
+	if s == "" {
+		return 0, nil
+	}
+	val, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return val, nil
+}
+
+func StrToBool(s string) (bool, error) {
+	str := strings.ToLower(s)
+	if str == "true" {
+		return true, nil
+	}
+	if str == "false" {
+		return true, nil
+	}
+	return false, errors.New("invalid format")
 }
 
 func NumToStr[T constraints.Integer](val T) string {

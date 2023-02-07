@@ -38,6 +38,16 @@ func (v *PlaygroundValdator) ValidateValue(value interface{}, rules string) erro
 	return nil
 }
 
+func (v *PlaygroundValdator) ValidatePartial(s interface{}, fields ...string) error {
+	err := v.validator.StructPartial(s, fields...)
+	if err != nil {
+		field, msg, err := v.doValidation(s, fields...)
+		return &validator.ValidationError{Field: field, Message: msg, Err: err}
+	}
+
+	return nil
+}
+
 func (v *PlaygroundValdator) validationSubfield(structField reflect.StructField, typenames []string) (reflect.StructField, bool) {
 
 	first := utils.OptionalArg("", typenames...)
@@ -59,8 +69,13 @@ func (v *PlaygroundValdator) validationSubfield(structField reflect.StructField,
 	return v.validationSubfield(field, typenames[1:])
 }
 
-func (v *PlaygroundValdator) doValidation(s interface{}) (string, string, error) {
-	err := v.validator.Struct(s)
+func (v *PlaygroundValdator) doValidation(s interface{}, fields ...string) (string, string, error) {
+	var err error
+	if len(fields) == 0 {
+		err = v.validator.Struct(s)
+	} else {
+		err = v.validator.StructPartial(s, fields...)
+	}
 	if err != nil {
 		var name, message string
 		errs := err.(playground.ValidationErrors)

@@ -56,6 +56,8 @@ type Cursor interface {
 }
 
 type DB interface {
+	WithFilterParser
+
 	NewDB() DB
 
 	InitWithConfig(ctx logger.WithLogger, vld validator.Validator, cfg *DBConfig) error
@@ -86,34 +88,6 @@ func (w *WithDBBase) DB() DB {
 
 func (w *WithDBBase) Init(db DB) {
 	w.db = db
-}
-
-type Interval struct {
-	From interface{}
-	To   interface{}
-}
-
-type BetweenFields struct {
-	FromField string
-	ToField   string
-	Value     interface{}
-}
-
-func (i *Interval) IsNull() bool {
-	return i.From == nil && i.To == nil
-}
-
-type Filter struct {
-	Fields         Fields
-	FieldsIn       map[string][]interface{}
-	FieldsNotIn    map[string][]interface{}
-	IntervalFields map[string]*Interval
-	BetweenFields  []*BetweenFields
-
-	SortField     string
-	SortDirection string
-	Offset        int
-	Limit         int
 }
 
 func Update(db DBHandlers, ctx logger.WithLogger, obj common.Object, fields Fields) error {

@@ -26,6 +26,7 @@ type DbConnector struct {
 }
 
 type GormDB struct {
+	FilterManager
 	db *gorm.DB
 	gormDBConfig
 	dbConnector *DbConnector
@@ -67,6 +68,7 @@ var DefaultDbConnector = postgresDbConnector
 
 func New(dbConnector ...*DbConnector) *GormDB {
 	g := &GormDB{}
+	g.FilterManager.Construct()
 
 	g.dbConnector = DefaultDbConnector()
 
