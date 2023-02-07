@@ -9,15 +9,20 @@ type User struct {
 }
 
 type Users struct {
-	user.Users[*User]
+	user.UsersBase[*User]
 }
 
 func NewUser() *User {
 	return &User{}
 }
 
-func NewUsers() *Users {
+func NewUsers(userController ...user.UserController[*User]) *Users {
 	m := &Users{}
-	m.MakeUser = NewUser
+	if len(userController) == 0 {
+		m.Construct(user.LocalUserController[*User]())
+	} else {
+		m.Construct(userController[0])
+	}
+	m.SetUserBuilder(NewUser)
 	return m
 }

@@ -24,6 +24,7 @@ type User interface {
 }
 
 // TODO Configure somewhere unique indexes for phone and login if required
+// TODO Add validation rules for user fields
 type UserBaseDB struct {
 	common.ObjectBase
 	auth_login_phash.UserBase

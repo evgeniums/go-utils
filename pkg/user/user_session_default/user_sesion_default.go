@@ -28,9 +28,14 @@ type Users struct {
 	user.UsersWithSession[*user_default.User, *UserSession, *UserSessionClient]
 }
 
-func NewUsers() *Users {
+func NewUsers(userController ...user.UserController[*User]) *Users {
 	m := &Users{}
-	m.MakeUser = user_default.NewUser
+	if len(userController) == 0 {
+		m.Construct(user.LocalUserController[*User]())
+	} else {
+		m.Construct(userController[0])
+	}
+	m.SetUserBuilder(user_default.NewUser)
 	m.MakeSession = NewSession
 	m.MakeSessionClient = NewSessionClient
 	return m

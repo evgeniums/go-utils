@@ -12,27 +12,38 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
-type Users[UserType User] struct {
-	app_context.WithAppBase
-	user_manager.UserManagerBase
-	MakeUser             func() UserType
-	LoginValidationRules string
+type UserController[UserType User] interface {
+	user_manager.UserController
+
+	SetUserBuilder(builder func() UserType)
+	MakeUser() UserType
+
+	Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error)
+	FindByLogin(ctx op_context.Context, login string) (UserType, error)
+	SetPassword(ctx op_context.Context, login string, password string) error
+	SetPhone(ctx op_context.Context, login string, phone string) error
+	SetEmail(ctx op_context.Context, login string, email string) error
+	SetBlocked(ctx op_context.Context, login string, blocked bool) error
 }
 
-func (u *Users[UserType]) Init(app app_context.Context, loginValidationRules ...string) {
-	u.WithAppBase.Init(app)
-	u.LoginValidationRules = utils.OptionalArg("required,alphanum_|email,lowercase", loginValidationRules...)
+type UserControllerBase[UserType User] struct {
+	user_manager.UserControllerBase
+	userBuilder func() UserType
 }
 
-func (u *Users[UserType]) MakeAuthUser() auth.User {
-	return u.MakeUser()
+func LocalUserController[UserType User]() *UserControllerBase[UserType] {
+	return &UserControllerBase[UserType]{}
 }
 
-func (u *Users[UserType]) ValidateLogin(login string) error {
-	return u.App().Validator().ValidateValue(login, u.LoginValidationRules)
+func (u *UserControllerBase[UserType]) SetUserBuilder(userBuilder func() UserType) {
+	u.userBuilder = userBuilder
 }
 
-func (u *Users[UserType]) Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error) {
+func (u *UserControllerBase[UserType]) MakeUser() UserType {
+	return u.userBuilder()
+}
+
+func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error) {
 
 	// setup
 	ctx.SetLoggerField("login", login)
@@ -69,7 +80,7 @@ func (u *Users[UserType]) Add(ctx op_context.Context, login string, password str
 	return user, nil
 }
 
-func (u *Users[UserType]) FindByLogin(ctx op_context.Context, login string) (UserType, error) {
+func (u *UserControllerBase[UserType]) FindByLogin(ctx op_context.Context, login string) (UserType, error) {
 
 	var nilUser UserType
 
@@ -100,7 +111,7 @@ func (u *Users[UserType]) FindByLogin(ctx op_context.Context, login string) (Use
 	return user, nil
 }
 
-func (u *Users[UserType]) SetPassword(ctx op_context.Context, login string, password string) error {
+func (u *UserControllerBase[UserType]) SetPassword(ctx op_context.Context, login string, password string) error {
 
 	// setup
 	ctx.SetLoggerField("login", login)
@@ -131,7 +142,7 @@ func (u *Users[UserType]) SetPassword(ctx op_context.Context, login string, pass
 	return nil
 }
 
-func (u *Users[UserType]) SetPhone(ctx op_context.Context, login string, phone string) error {
+func (u *UserControllerBase[UserType]) SetPhone(ctx op_context.Context, login string, phone string) error {
 
 	// setup
 	ctx.SetLoggerField("login", login)
@@ -162,7 +173,7 @@ func (u *Users[UserType]) SetPhone(ctx op_context.Context, login string, phone s
 	return nil
 }
 
-func (u *Users[UserType]) SetEmail(ctx op_context.Context, login string, email string) error {
+func (u *UserControllerBase[UserType]) SetEmail(ctx op_context.Context, login string, email string) error {
 
 	// setup
 	ctx.SetLoggerField("login", login)
@@ -193,7 +204,7 @@ func (u *Users[UserType]) SetEmail(ctx op_context.Context, login string, email s
 	return nil
 }
 
-func (u *Users[UserType]) SetBlocked(ctx op_context.Context, login string, blocked bool) error {
+func (u *UserControllerBase[UserType]) SetBlocked(ctx op_context.Context, login string, blocked bool) error {
 
 	// setup
 	ctx.SetLoggerField("login", login)
@@ -224,12 +235,36 @@ func (u *Users[UserType]) SetBlocked(ctx op_context.Context, login string, block
 	return nil
 }
 
-func (m *Users[UserType]) UserManager() user_manager.UserManager {
+type UsersBase[UserType User] struct {
+	app_context.WithAppBase
+	LoginValidationRules string
+
+	UserController[UserType]
+}
+
+func (u *UsersBase[UserType]) Construct(userController UserController[UserType]) {
+	u.UserController = userController
+}
+
+func (u *UsersBase[UserType]) Init(app app_context.Context, loginValidationRules ...string) {
+	u.WithAppBase.Init(app)
+	u.LoginValidationRules = utils.OptionalArg("required,alphanum_|email,lowercase", loginValidationRules...)
+}
+
+func (u *UsersBase[UserType]) MakeAuthUser() auth.User {
+	return u.MakeUser()
+}
+
+func (u *UsersBase[UserType]) ValidateLogin(login string) error {
+	return u.App().Validator().ValidateValue(login, u.LoginValidationRules)
+}
+
+func (m *UsersBase[UserType]) UserManager() user_manager.UserManager {
 	return m
 }
 
 type UsersWithSession[UserType User, SessionType user_manager.Session, SessionClientType user_manager.SessionClient] struct {
-	Users[UserType]
+	UsersBase[UserType]
 	user_manager.SessionManagerBase
 }
 
