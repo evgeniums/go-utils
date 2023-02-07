@@ -45,7 +45,7 @@ type Resource interface {
 	Chain() []Resource
 	ChainResourceId(resourceType string) string
 
-	FillHateoasLinks(actualResourceIds map[string]string, links *HateoasLinks)
+	FillHateoasLinks(actualResourceIds map[string]string, links *HateoasLinks, withTestOps ...bool)
 
 	SetHateoasLinks(links []*HateoasLink)
 	AppendHateoasLink(link *HateoasLink)
@@ -329,13 +329,18 @@ func (r *ResourceBase) BuildActualPath(actualResourceIds map[string]string, serv
 	return path
 }
 
-func (r *ResourceBase) FillHateoasLinks(actualResourceIds map[string]string, links *HateoasLinks) {
+func (r *ResourceBase) FillHateoasLinks(actualResourceIds map[string]string, links *HateoasLinks, withTestOps ...bool) {
+
+	withTest := utils.OptionalArg(false, withTestOps...)
 
 	links.Links = make([]*HateoasLink, 0)
 
 	addLink := func(host string, target string, operation Operation) {
 
 		if operation == nil {
+			return
+		}
+		if operation.TestOnly() && !withTest {
 			return
 		}
 

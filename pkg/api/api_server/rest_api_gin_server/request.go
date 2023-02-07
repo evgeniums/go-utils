@@ -22,8 +22,6 @@ type Request struct {
 
 	initialPath string
 	start       time.Time
-
-	endpoint api_server.Endpoint
 }
 
 func (r *Request) Init(s *Server, ginCtx *gin.Context, ep api_server.Endpoint, fields ...logger.Fields) {
@@ -38,8 +36,6 @@ func (r *Request) Init(s *Server, ginCtx *gin.Context, ep api_server.Endpoint, f
 	r.response = &Response{request: r, httpCode: http.StatusOK}
 
 	r.initialPath = ginCtx.Request.URL.Path
-
-	r.endpoint = ep
 }
 
 func (r *Request) Server() api_server.Server {
@@ -106,10 +102,6 @@ func (r *Request) Close(successMessage ...string) {
 	r.server.logGinRequest(r.Logger(), r.initialPath, r.start, r.ginCtx)
 }
 
-func (r *Request) TenancyInPath() string {
-	return r.ginCtx.Param(TenancyParameter)
-}
-
 func (r *Request) GetRequestContent() []byte {
 	if r.ginCtx.Request.Body != nil {
 		b, _ := io.ReadAll(r.ginCtx.Request.Body)
@@ -141,7 +133,7 @@ func (r *Request) GetAuthParameter(authMethodProtocol string, key string) string
 }
 
 func (r *Request) CheckRequestContent(smsMessage *string) error {
-	return r.endpoint.PrecheckRequestBeforeAuth(r, smsMessage)
+	return r.Endpoint().PrecheckRequestBeforeAuth(r, smsMessage)
 }
 
 func (r *Request) ResourceIds() map[string]string {
@@ -154,4 +146,8 @@ func (r *Request) ResourceIds() map[string]string {
 
 func (r *Request) GetRequestPath() string {
 	return api_server.FullRequestServicePath(r)
+}
+
+func (r *Request) GetResourceId(resourceType string) string {
+	return r.ginCtx.Param(resourceType)
 }

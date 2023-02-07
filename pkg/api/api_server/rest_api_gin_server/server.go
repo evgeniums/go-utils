@@ -88,6 +88,10 @@ func (s *Server) Config() interface{} {
 	return &s.ServerConfig
 }
 
+func (s *Server) Testing() bool {
+	return s.App().Testing()
+}
+
 func (s *Server) address() string {
 	a := fmt.Sprintf("%s:%d", s.HOST, s.PORT)
 	return a
@@ -246,20 +250,22 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 
 		// extract tenancy if applicable
 		if s.IsMultiTenancy() {
-			tenancyInPath := request.TenancyInPath()
+			tenancyInPath := request.GetResourceId(TenancyParameter)
 			tenancy, err := s.TenancyByPath(tenancyInPath)
 			if err != nil {
 				// report that tenancy was not found
 				request.SetGenericError(s.MakeGenericError(generic_error.ErrorCodeNotFound, request.Tr))
-				request.Logger().ErrorNative(err, logger.Fields{"tenancy_path": tenancyInPath})
+				request.Logger().ErrorNative(err, logger.Fields{"tenancy": tenancyInPath})
 			} else {
 				request.SetTenancy(tenancy)
 			}
 		}
 
 		// process CSRF
-		if s.csrf != nil {
-			_, err = s.csrf.Handle(request)
+		if err == nil {
+			if s.csrf != nil {
+				_, err = s.csrf.Handle(request)
+			}
 		}
 
 		// process auth
@@ -287,6 +293,10 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 }
 
 func (s *Server) AddEndpoint(ep api_server.Endpoint) {
+
+	if ep.TestOnly() && !s.Testing() {
+		return
+	}
 
 	ep.AttachToErrorManager(s)
 

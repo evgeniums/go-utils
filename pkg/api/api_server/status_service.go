@@ -67,13 +67,18 @@ func NewStatusService() *StatusService {
 	s.AddChildren(NewCheckStatusEndpoint(),
 		NewCheckAccessResourceEndpoint("csrf", "CheckCsrf"),
 		NewCheckAccessResourceEndpoint("logged", "CheckLogged"),
-		NewCheckAccessResourceEndpoint("sms-alt", "CheckSmsAlt", access_control.Post),
 	)
+	altSmsPath := NewCheckAccessResourceEndpoint("sms-alt", "CheckSmsAlt", access_control.Post)
+	altSmsPath.SetTestOnly(true)
+	s.AddChild(altSmsPath)
+
 	sms := api.NewResource("sms")
 	sms.AddOperations(
 		NewCheckAccessEndpoint("CheckSms", access_control.Post),
-		NewCheckAccessEndpoint("CheckSmsPut", access_control.Put),
 	)
+	altSmsMethod := NewCheckAccessEndpoint("CheckSmsPut", access_control.Put)
+	altSmsMethod.SetTestOnly(true)
+	sms.AddOperation(altSmsMethod)
 	s.AddChild(sms)
 	return s
 }

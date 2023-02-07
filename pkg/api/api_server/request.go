@@ -18,6 +18,8 @@ type Request interface {
 	Response() Response
 	Endpoint() Endpoint
 	ResourceIds() map[string]string
+
+	GetResourceId(resourceType string) string
 }
 
 type RequestBase struct {

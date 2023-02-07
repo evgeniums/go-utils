@@ -24,6 +24,8 @@ type Server interface {
 
 	// Add operation endpoint to server.
 	AddEndpoint(ep Endpoint)
+
+	Testing() bool
 }
 
 func AddServiceToServer(s Server, service Service) {
