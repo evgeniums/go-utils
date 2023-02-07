@@ -1,4 +1,5 @@
 {
+    "testing" : "true",
     "db":{
         "db_provider": "sqlite",
         "db_extra_config" : "auth_test.sqlite"
