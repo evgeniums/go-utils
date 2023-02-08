@@ -57,6 +57,22 @@ func NewCheckAccessResourceEndpoint(resource string, operationName string,
 	return ep
 }
 
+type CheckSmsEndpoint struct {
+	EndpointBase
+}
+
+func (e *CheckSmsEndpoint) HandleRequest(request Request) error {
+	content := request.GetRequestContent()
+	request.Response().SetText(string(content))
+	return nil
+}
+
+func NewCheckSmsEndpoint() *CheckSmsEndpoint {
+	ep := &CheckSmsEndpoint{}
+	ep.Init("CheckSms", access_control.Post)
+	return ep
+}
+
 type StatusService struct {
 	ServiceBase
 }
@@ -74,9 +90,7 @@ func NewStatusService() *StatusService {
 	s.AddChild(altSmsPath)
 
 	sms := api.NewResource("sms")
-	sms.AddOperations(
-		NewCheckAccessEndpoint("CheckSms", access_control.Post),
-	)
+	sms.AddOperation(NewCheckSmsEndpoint())
 	altSmsMethod := NewCheckAccessEndpoint("CheckSmsPut", access_control.Put)
 	altSmsMethod.SetTestOnly(true)
 	sms.AddOperation(altSmsMethod)

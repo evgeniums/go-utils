@@ -8,11 +8,15 @@ type Response interface {
 	SetMessage(message api.Response)
 	Request() Request
 	SetRequest(request Request)
+
+	Text() string
+	SetText(text string)
 }
 
 type ResponseBase struct {
 	message interface{}
 	request Request
+	text    string
 }
 
 func (r *ResponseBase) Message() interface{} {
@@ -32,4 +36,12 @@ func (r *ResponseBase) SetRequest(request Request) {
 
 func (r *ResponseBase) Request() Request {
 	return r.request
+}
+
+func (r *ResponseBase) SetText(text string) {
+	r.text = text
+}
+
+func (r *ResponseBase) Text() string {
+	return r.text
 }

@@ -73,12 +73,17 @@ func (r *Request) GetRequestUserAgent() string {
 func (r *Request) Close(successMessage ...string) {
 	var reponseBody interface{}
 	if r.GenericError() == nil {
-		if r.response.Message() != nil {
-			reponseBody = r.response.Message()
-			r.ginCtx.JSON(r.response.httpCode, reponseBody)
+
+		if r.response.Text() != "" {
+			r.ginCtx.String(r.response.httpCode, r.response.Text())
 		} else {
-			r.ginCtx.Status(r.response.httpCode)
+			if r.response.Message() != nil {
+				r.ginCtx.JSON(r.response.httpCode, r.response.Message())
+			} else {
+				r.ginCtx.Status(r.response.httpCode)
+			}
 		}
+
 		r.SetLoggerField("status", "success")
 	} else {
 		code, err := r.server.MakeResponseError(r.GenericError())
