@@ -96,12 +96,12 @@ func (d *DbCRUD) List(ctx op_context.Context, filter *db.Filter, objects interfa
 	return nil
 }
 
-func List(crud CRUD, ctx op_context.Context, methodName string, filter *db.Filter, objects interface{}, dest ...interface{}) error {
+func List[T common.Object](crud CRUD, ctx op_context.Context, methodName string, filter *db.Filter, objects *[]T, dest ...interface{}) error {
 
 	c := ctx.TraceInMethod(methodName)
 	defer ctx.TraceOutMethod()
 
-	err := crud.List(ctx, filter, objects)
+	err := crud.List(ctx, filter, objects, dest...)
 	if err != nil {
 		return c.SetError(err)
 	}

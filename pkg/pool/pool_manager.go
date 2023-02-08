@@ -63,7 +63,16 @@ func (m *PoolManagerBase) UpdatePool(ctx op_context.Context, poolName string, fi
 }
 
 func (m *PoolManagerBase) GetPools(ctx op_context.Context, filter *db.Filter, pools interface{}) error {
-	return crud.List(m.CRUD, ctx, "PoolManager.GetPools", filter, pools)
+
+	c := ctx.TraceInMethod("PoolManager.GetPools")
+	defer ctx.TraceOutMethod()
+
+	err := m.CRUD.List(ctx, filter, pools)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	return nil
 }
 
 func (m *PoolManagerBase) GetPoolsBase(ctx op_context.Context, filter *db.Filter) ([]*PoolBase, error) {
@@ -95,7 +104,16 @@ func (m *PoolManagerBase) UpdateService(ctx op_context.Context, name string, fie
 }
 
 func (m *PoolManagerBase) GetServices(ctx op_context.Context, filter *db.Filter, services interface{}) error {
-	return crud.List(m.CRUD, ctx, "PoolManager.GetServices", filter, services)
+
+	c := ctx.TraceInMethod("PoolManager.GetServices")
+	defer ctx.TraceOutMethod()
+
+	err := m.CRUD.List(ctx, filter, services)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	return nil
 }
 
 func (m *PoolManagerBase) GetServicesBase(ctx op_context.Context, filter *db.Filter) ([]*PoolServiceBase, error) {
@@ -117,7 +135,16 @@ func (m *PoolManagerBase) AddBinding(ctx op_context.Context, binding PoolService
 func (m *PoolManagerBase) GetPoolBindings(ctx op_context.Context, poolId string, bindings interface{}) error {
 	filter := &db.Filter{}
 	filter.Fields["pool_id"] = poolId
-	return crud.List(m.CRUD, ctx, "PoolManager.GetPoolBindings", filter, bindings)
+
+	c := ctx.TraceInMethod("PoolManager.GetPoolBindings")
+	defer ctx.TraceOutMethod()
+
+	err := m.CRUD.List(ctx, filter, bindings)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	return nil
 }
 
 func (m *PoolManagerBase) GetPoolBindingsBase(ctx op_context.Context, poolId string) ([]*PoolServiceBindingBase, error) {
@@ -141,7 +168,16 @@ func (m *PoolManagerBase) DeleteBinding(ctx op_context.Context, id string) error
 }
 
 func (m *PoolManagerBase) GetBindings(ctx op_context.Context, filter *db.Filter, bindings interface{}) error {
-	return crud.List(m.CRUD, ctx, "PoolManager.GetBindings", filter, bindings)
+
+	c := ctx.TraceInMethod("PoolManager.GetBindings")
+	defer ctx.TraceOutMethod()
+
+	err := m.CRUD.List(ctx, filter, bindings)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	return nil
 }
 
 func (m *PoolManagerBase) GetBindingsBase(ctx op_context.Context, filter *db.Filter) ([]*PoolServiceBindingBase, error) {
