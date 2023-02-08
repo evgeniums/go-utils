@@ -6,5 +6,4 @@ type Response struct {
 	api_server.ResponseBase
 
 	httpCode int
-	request  *Request
 }

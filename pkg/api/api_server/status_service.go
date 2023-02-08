@@ -16,11 +16,12 @@ func NewCheckStatusEndpoint() *CheckStatusEndpoint {
 }
 
 type StatusResponse struct {
+	api.ResponseNoHateous
 	Status string `json:"status"`
 }
 
 func (e *CheckStatusEndpoint) HandleRequest(request Request) error {
-	resp := &StatusResponse{"running"}
+	resp := &StatusResponse{Status: "running"}
 	request.Response().SetMessage(resp)
 	return nil
 }
@@ -28,7 +29,7 @@ func (e *CheckStatusEndpoint) HandleRequest(request Request) error {
 type CheckAccess struct{}
 
 func (e *CheckAccess) HandleRequest(request Request) error {
-	resp := &StatusResponse{"success"}
+	resp := &StatusResponse{Status: "success"}
 	request.Response().SetMessage(resp)
 	return nil
 }

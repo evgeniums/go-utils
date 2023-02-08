@@ -36,7 +36,8 @@ func (r *Request) Init(s *Server, ginCtx *gin.Context, ep api_server.Endpoint, f
 	r.RequestBase.SetErrorManager(s)
 
 	r.ginCtx = ginCtx
-	r.response = &Response{request: r, httpCode: http.StatusOK}
+	r.response = &Response{httpCode: http.StatusOK}
+	r.response.SetRequest(r)
 
 	r.initialPath = ginCtx.Request.URL.Path
 }

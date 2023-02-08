@@ -1,6 +1,7 @@
 package user
 
 import (
+	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_sms"
@@ -23,6 +24,8 @@ type User interface {
 	SetEmail(email string)
 
 	DbUser() interface{}
+
+	api.WithHateoasLinks
 }
 
 // TODO Configure somewhere unique indexes for phone and login if required
@@ -30,6 +33,8 @@ type User interface {
 type UserBaseDB struct {
 	common.ObjectBase
 	auth_login_phash.UserBase
+	api.ResponseHateous
+
 	LOGIN   string `gorm:"uniqueIndex" json:"login"`
 	PHONE   string `gorm:"index" json:"phone"`
 	EMAIL   string `gorm:"index" json:"email"`

@@ -28,9 +28,9 @@ type UserController[UserType User] interface {
 
 */
 
-func PrepareResources(userTypeName ...string) (serviceName string, groupResource api.Resource, userResource api.Resource) {
+func PrepareResources(userTypeName ...string) (userType string, serviceName string, groupResource api.Resource, userResource api.Resource) {
 
-	userType := utils.OptionalArg("user", userTypeName...)
+	userType = utils.OptionalArg("user", userTypeName...)
 	serviceName = utils.ConcatStrings(userType, "s")
 
 	userResource = UserResource(userType)
@@ -41,6 +41,15 @@ func PrepareResources(userTypeName ...string) (serviceName string, groupResource
 
 func UserResource(resourceType ...string) api.Resource {
 	return api.NamedResource(utils.OptionalArg("user", resourceType...))
+}
+
+type ListResponse[T any] struct {
+	api.ResponseHateous
+	Users []T `json:"users"`
+}
+
+func List() api.Operation {
+	return api.NewOperation("list", access_control.Read)
 }
 
 func Find() api.Operation {

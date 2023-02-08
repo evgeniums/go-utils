@@ -1,7 +1,6 @@
 package api
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
@@ -11,7 +10,7 @@ type Resource interface {
 
 	Type() string
 	Id() string
-	SetId(val string)
+	SetId(val string, rebuild ...bool)
 
 	HasId() bool
 	SetHasId(val bool)
@@ -40,18 +39,15 @@ type Resource interface {
 	ServicePathPrototype() string
 	ServiceActualPath() string
 	BuildActualPath(actualResourceIds map[string]string, service ...bool) string
+	FillActualPaths(actualResourceIds map[string]string)
+	ResetIds()
 
 	RebuildPaths()
 
 	Chain() []Resource
 	ChainResourceId(resourceType string) string
 
-	FillHateoasLinks(actualResourceIds map[string]string, links *HateoasLinks, withTestOps ...bool)
-
-	SetHateoasLinks(links []*HateoasLink)
-	AppendHateoasLink(link *HateoasLink)
-	HateoasLinks() []*HateoasLink
-	ResetHateoasLinks()
+	Clone() Resource
 }
 
 type ResourceConfig struct {
@@ -74,8 +70,6 @@ type ResourceBase struct {
 	children             []Resource
 	operations           []Operation
 	getter               Operation
-
-	links []*HateoasLink
 }
 
 func NewResource(resourceType string, config ...ResourceConfig) *ResourceBase {
@@ -168,12 +162,14 @@ func (r *ResourceBase) Id() string {
 	return r.ResourceConfig.Id
 }
 
-func (r *ResourceBase) SetId(val string) {
+func (r *ResourceBase) SetId(val string, rebuild ...bool) {
 	r.ResourceConfig.Id = val
 	if val != "" {
 		r.SetHasId(true)
 	}
-	r.RebuildPaths()
+	if utils.OptionalArg(true, rebuild...) {
+		r.RebuildPaths()
+	}
 }
 
 func (r *ResourceBase) HasId() bool {
@@ -332,75 +328,37 @@ func (r *ResourceBase) BuildActualPath(actualResourceIds map[string]string, serv
 	return path
 }
 
-func (r *ResourceBase) FillHateoasLinks(actualResourceIds map[string]string, links *HateoasLinks, withTestOps ...bool) {
+func (r *ResourceBase) FillActualPaths(actualResourceIds map[string]string) {
 
-	withTest := utils.OptionalArg(false, withTestOps...)
-
-	links.Links = make([]*HateoasLink, 0)
-
-	addLink := func(host string, target string, operation Operation) {
-
-		if operation == nil {
-			return
+	if r.HasId() {
+		selfId, ok := actualResourceIds[r.Type()]
+		if ok {
+			r.SetId(selfId, false)
 		}
-		if operation.TestOnly() && !withTest {
-			return
-		}
-
-		link := &HateoasLink{}
-		link.Host = host
-		link.HttpMethod = access_control.Access2HttpMethod(operation.AccessType())
-		link.Path = r.BuildActualPath(actualResourceIds)
-		link.Operation = operation.Name()
-		link.Target = target
-
-		links.Links = append(links.Links, link)
 	}
 
-	// add self operations
-	selfHost := r.Host()
-	r.EachOperation(func(operation Operation) error { addLink(selfHost, TargetSelf, operation); return nil }, false)
-
-	addGetter := func(target string, resource Resource) {
-		addLink(resource.Host(), target, resource.Getter())
-	}
-
-	// add children getters
-	for _, child := range r.children {
-		addGetter(TargetChild, child)
-	}
-	// add parent getter
 	parent := r.Parent()
 	if parent != nil {
-		addGetter(TargetParent, parent)
+		parent.FillActualPaths(actualResourceIds)
+	} else {
+		r.RebuildPaths()
 	}
 }
 
-func (r *ResourceBase) SetHateoasLinks(links []*HateoasLink) {
-	r.links = links
+func (r *ResourceBase) ResetIds() {
+	if r.HasId() {
+		r.SetId("", false)
+	}
 	parent := r.Parent()
 	if parent != nil {
-		for _, link := range links {
-			if link.Target == TargetParent {
-				parent.AppendHateoasLink(link)
-			}
-		}
+		parent.ResetIds()
+	} else {
+		r.RebuildPaths()
 	}
 }
 
-func (r *ResourceBase) AppendHateoasLink(link *HateoasLink) {
-	if r.links == nil {
-		r.links = make([]*HateoasLink, 0, 1)
-	}
-	r.links = append(r.links, link)
-}
-
-func (r *ResourceBase) ResetHateoasLinks() {
-	r.links = nil
-}
-
-func (r *ResourceBase) HateoasLinks() []*HateoasLink {
-	return r.links
+func (r *ResourceBase) Clone() Resource {
+	return nil
 }
 
 func GroupResource(resourceType string) Resource {

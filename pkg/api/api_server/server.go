@@ -25,6 +25,10 @@ type Server interface {
 	// Add operation endpoint to server.
 	AddEndpoint(ep Endpoint)
 
+	// Check if hateoas links are enabled.
+	IsHateoas() bool
+
+	// Check for testing mode.
 	Testing() bool
 }
 
@@ -37,10 +41,15 @@ func AddServiceToServer(s Server, service Service) {
 
 type ServerBaseConfig struct {
 	API_VERSION string `validate:"required"`
+	HATEOAS     bool
 	common.WithNameBaseConfig
 	multitenancy.MultitenancyBaseConfig
 }
 
 func (s *ServerBaseConfig) ApiVersion() string {
 	return s.API_VERSION
+}
+
+func (s *ServerBaseConfig) IsHateoas() bool {
+	return s.HATEOAS
 }

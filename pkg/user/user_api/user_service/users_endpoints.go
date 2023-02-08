@@ -8,21 +8,21 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
 )
 
-type FindEndpoint[U user.User, S auth_session.Session, SC auth_session.SessionClient] struct {
+type ListEndpoint[U user.User, S auth_session.Session, SC auth_session.SessionClient] struct {
 	api_server.EndpointBase
 	UserEndpoint[U, S, SC]
 }
 
-func Find[U user.User, S auth_session.Session, SC auth_session.SessionClient](service *UserService[U, S, SC]) *FindEndpoint[U, S, SC] {
-	e := &FindEndpoint[U, S, SC]{}
+func List[U user.User, S auth_session.Session, SC auth_session.SessionClient](service *UserService[U, S, SC]) *ListEndpoint[U, S, SC] {
+	e := &ListEndpoint[U, S, SC]{}
 	e.service = service
-	e.Construct(user_api.Find())
+	e.Construct(user_api.List())
 	return e
 }
 
-func (e *FindEndpoint[U, S, SC]) HandleRequest(request api_server.Request) error {
+func (e *ListEndpoint[U, S, SC]) HandleRequest(request api_server.Request) error {
 
-	c := request.TraceInMethod("users.Find")
+	c := request.TraceInMethod("users.List")
 	defer request.TraceOutMethod()
 
 	q := &api.DbQuery{}
@@ -34,11 +34,16 @@ func (e *FindEndpoint[U, S, SC]) HandleRequest(request api_server.Request) error
 		return c.SetError(err)
 	}
 
-	var users []U
-	err = e.service.Users.FindUsers(request, filter, &users)
+	resp := &user_api.ListResponse[U]{}
+	err = e.service.Users.FindUsers(request, filter, &resp.Users)
 	if err != nil {
 		return c.SetError(err)
 	}
+
+	if request.Server().IsHateoas() {
+		api.ProcessListResourceHateousLinks(request.Endpoint().Resource(), e.service.UserTypeName, resp.Users)
+	}
+	request.Response().SetMessage(resp)
 
 	return nil
 }

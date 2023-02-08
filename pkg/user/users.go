@@ -22,6 +22,7 @@ type UserController[UserType User] interface {
 	SetEmail(ctx op_context.Context, login string, email string) error
 	SetBlocked(ctx op_context.Context, login string, blocked bool) error
 
+	// TODO paginate users
 	FindUsers(ctx op_context.Context, filter *db.Filter, users *[]UserType) error
 
 	SetUserBuilder(builder func() UserType)

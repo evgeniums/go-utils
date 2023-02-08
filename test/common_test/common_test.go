@@ -1,10 +1,12 @@
 package test_common
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"gopkg.in/go-playground/assert.v1"
 )
 
 func TestWithPath(t *testing.T) {
@@ -87,4 +89,45 @@ func TestWithPath(t *testing.T) {
 	if !reflect.DeepEqual(p3.Paths(), paths3) {
 		t.Fatalf("invalid paths: expected %v, got %v", paths3, p3.Paths())
 	}
+}
+
+type Item struct {
+	Field string `json:"field"`
+}
+
+type Extend struct {
+	ExtraList []Item `json:"_links,omitempty"`
+}
+
+type TargetBase struct {
+	TargetField string `json:"target_field"`
+}
+
+type Target struct {
+	TargetBase
+	Extend
+}
+
+func TestMergeInterface(t *testing.T) {
+
+	v1 := &Target{}
+	v1.TargetField = "target_value1"
+
+	b1, _ := json.MarshalIndent(v1, "", "  ")
+	t.Logf("Extended data: \n%s", string(b1))
+
+	b2, _ := json.Marshal(v1)
+	t.Logf("Extended data: \n%s", string(b2))
+	assert.Equal(t, `{"target_field":"target_value1"}`, string(b2))
+
+	v1.ExtraList = make([]Item, 1)
+	v1.ExtraList[0].Field = "item1"
+
+	b3, _ := json.MarshalIndent(v1, "", "  ")
+	t.Logf("Extended data: \n%s", string(b3))
+
+	b4, _ := json.Marshal(v1)
+	t.Logf("Extended data: \n%s", string(b4))
+
+	assert.Equal(t, `{"target_field":"target_value1","_links":[{"field":"item1"}]}`, string(b4))
 }

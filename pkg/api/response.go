@@ -8,18 +8,6 @@ const (
 	TargetChild  = "parent"
 )
 
-type HateoasLink struct {
-	Target     string `json:"target"`
-	Operation  string `json:"operation"`
-	HttpMethod string `json:"http_method"`
-	Host       string `json:"host"`
-	Path       string `json:"path"`
-}
-
-type HateoasLinks struct {
-	Links []*HateoasLink `json:"links"`
-}
-
 type ResponseError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
@@ -33,4 +21,16 @@ func ResponseGenericError(responseError *ResponseError) generic_error.Error {
 	e := generic_error.New(responseError.Code, responseError.Message)
 	e.SetDetails(responseError.Details)
 	return e
+}
+
+type Response interface {
+	WithHateoasLinks
+}
+
+type ResponseNoHateous struct {
+	HateoasLinksStub
+}
+
+type ResponseHateous struct {
+	HateoasLinksContainer
 }

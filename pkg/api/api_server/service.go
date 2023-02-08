@@ -13,20 +13,26 @@ type ServiceEachEndpointHandler = func(ep Endpoint)
 type Service interface {
 	api.Resource
 
-	// Attach service to server.
+	Server() Server
 	AttachToServer(server Server) error
 }
 
 type ServiceBase struct {
 	api.ResourceBase
 	generic_error.ErrorsExtenderBase
+	server Server
 }
 
 func (s *ServiceBase) Init(pathName string) {
 	s.ResourceBase.Init(pathName, api.ResourceConfig{Service: true})
 }
 
+func (s *ServiceBase) Server() Server {
+	return s.server
+}
+
 func (s *ServiceBase) AttachToServer(server Server) error {
+	s.server = server
 	s.AttachToErrorManager(server)
 	return s.EachOperation(func(op api.Operation) error {
 		ep, ok := op.(Endpoint)
