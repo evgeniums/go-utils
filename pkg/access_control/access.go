@@ -113,3 +113,8 @@ func Access2HttpMethod(access AccessType) string {
 
 	return ""
 }
+
+func HttpContentInQuery(accessType AccessType) bool {
+	a := NewAccess(uint32(accessType))
+	return a.Check(Get) || a.Check(Delete)
+}

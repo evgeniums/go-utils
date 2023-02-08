@@ -1,12 +1,14 @@
 package api_server
 
 import (
+	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/parameter"
+	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
 // Interface of request to server API.
@@ -20,6 +22,8 @@ type Request interface {
 	ResourceIds() map[string]string
 
 	GetResourceId(resourceType string) string
+
+	ParseVerify(cmd interface{}) error
 }
 
 type RequestBase struct {
@@ -52,4 +56,26 @@ func FullRequestPath(r Request) string {
 
 func FullRequestServicePath(r Request) string {
 	return r.Endpoint().Resource().BuildActualPath(r.ResourceIds(), true)
+}
+
+func ParseDbQuery(request Request, models []interface{}, q api.Query, queryName string) (*db.Filter, error) {
+	c := request.TraceInMethod("ParseDbQuery", logger.Fields{"query_name": queryName, "query": q.Query()})
+	defer request.TraceOutMethod()
+
+	err := request.ParseVerify(q)
+	if err != nil {
+		return nil, c.SetError(err)
+	}
+
+	filter, err := db.ParseQuery(request.DB(), q.Query(), models, queryName, db.EmptyFilterValidator(request.App().Validator()))
+	if err != nil {
+		vErr, ok := err.(*validator.ValidationError)
+		if ok {
+			request.SetGenericError(vErr.GenericError(), true)
+		}
+		c.SetMessage("failed to parse/validate db query")
+		return nil, c.SetError(err)
+	}
+
+	return filter, nil
 }

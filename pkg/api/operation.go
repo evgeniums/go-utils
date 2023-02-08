@@ -19,6 +19,7 @@ type Operation interface {
 	Exec(ctx op_context.Context, handler OperationHandler) generic_error.Error
 
 	TestOnly() bool
+	SetTestOnly(val bool)
 }
 
 type OperationBase struct {
@@ -26,6 +27,12 @@ type OperationBase struct {
 	resource   Resource
 	accessType access_control.AccessType
 	testOnly   bool
+}
+
+func NewOperation(name string, accessType access_control.AccessType, testOnly ...bool) *OperationBase {
+	o := &OperationBase{}
+	o.Init(name, accessType, testOnly...)
+	return o
 }
 
 func (o *OperationBase) Init(name string, accessType access_control.AccessType, testOnly ...bool) {

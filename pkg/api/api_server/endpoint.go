@@ -23,12 +23,16 @@ type EndpointHandler = func(request Request)
 
 // Base type for API endpoints.
 type EndpointBase struct {
-	api.OperationBase
+	api.Operation
 	generic_error.ErrorsExtenderBase
 }
 
+func (e *EndpointBase) Construct(op api.Operation) {
+	e.Operation = op
+}
+
 func (e *EndpointBase) Init(operationName string, accessType ...access_control.AccessType) {
-	e.OperationBase.Init(operationName, utils.OptionalArg(access_control.Get, accessType...))
+	e.Construct(api.NewOperation(operationName, utils.OptionalArg(access_control.Get, accessType...)))
 }
 
 func (e *EndpointBase) PrecheckRequestBeforeAuth(request Request, smsMessage *string) error {

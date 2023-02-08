@@ -2,21 +2,16 @@ package http_request
 
 import (
 	"bytes"
-	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/message"
+	"github.com/evgeniums/go-backend-helpers/pkg/message/message_json"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/google/go-querystring/query"
-)
-
-const (
-	FormatJson string = "json"
-	FormatXml  string = "xml"
 )
 
 type Request struct {
@@ -26,26 +21,21 @@ type Request struct {
 	ResponseContent string
 	GoodResponse    interface{}
 	BadResponse     interface{}
-	Format          string
+	Serializer      message.Serializer
 }
 
-func NewPost(ctx op_context.Context, url string, msg interface{}, format ...string) (*Request, error) {
+func NewPost(ctx op_context.Context, url string, msg interface{}, serializer ...message.Serializer) (*Request, error) {
 
 	r := &Request{}
-	r.Format = utils.OptionalArg(FormatJson, format...)
+	r.Serializer = utils.OptionalArg[message.Serializer](message_json.Serializer, serializer...)
 
-	c := ctx.TraceInMethod("http_request.NewPost", logger.Fields{"url": url, "format": r.Format})
+	c := ctx.TraceInMethod("http_request.NewPost", logger.Fields{"url": url})
 	defer ctx.TraceOutMethod()
 
 	var cmdByte []byte
 	var err error
 
-	// TODO use message serializer
-	if r.Format == FormatXml {
-		cmdByte, err = xml.Marshal(msg)
-	} else {
-		cmdByte, err = json.Marshal(msg)
-	}
+	cmdByte, err = r.Serializer.SerializeMessage(msg)
 	if err != nil {
 		c.SetMessage("failed to marshal message")
 		return nil, c.SetError(err)
@@ -57,22 +47,17 @@ func NewPost(ctx op_context.Context, url string, msg interface{}, format ...stri
 		return nil, c.SetError(err)
 	}
 
-	if r.Format == FormatXml {
-		r.NativeRequest.Header.Set("Content-Type", "application/xml;charset=UTF-8")
-	} else {
-		r.NativeRequest.Header.Set("Content-Type", "application/json")
-		r.NativeRequest.Header.Set("Accept", "application/json")
-	}
+	r.NativeRequest.Header.Set("Content-Type", utils.ConcatStrings(r.Serializer.ContentMime(), ";charset=UTF-8"))
+	r.NativeRequest.Header.Set("Accept", r.Serializer.ContentMime())
 
 	return r, nil
 }
 
-func NewGet(ctx op_context.Context, url string, msg interface{}, format ...string) (*Request, error) {
+func NewGet(ctx op_context.Context, url string, msg interface{}) (*Request, error) {
 
 	r := &Request{}
-	r.Format = utils.OptionalArg(FormatJson, format...)
 
-	c := ctx.TraceInMethod("http_request.NewGet", logger.Fields{"url": url, "format": r.Format})
+	c := ctx.TraceInMethod("http_request.NewGet", logger.Fields{"url": url})
 	defer ctx.TraceOutMethod()
 
 	var err error
@@ -123,11 +108,10 @@ func (r *Request) Send(ctx op_context.Context) error {
 			r.ResponseContent = string(body)
 
 			parseResponse := func(obj interface{}) {
-				if r.Format == FormatXml {
-					err = xml.Unmarshal(body, obj)
-				} else {
-					err = json.Unmarshal(body, obj)
+				if r.Serializer == nil {
+					r.Serializer = message_json.Serializer
 				}
+				err = r.Serializer.ParseMessage(body, obj)
 			}
 
 			if r.ResponseStatus < http.StatusBadRequest {

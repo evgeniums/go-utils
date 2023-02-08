@@ -22,6 +22,8 @@ type UserController[UserType User] interface {
 	SetEmail(ctx op_context.Context, login string, email string) error
 	SetBlocked(ctx op_context.Context, login string, blocked bool) error
 
+	FindUsers(ctx op_context.Context, filter *db.Filter, users *[]UserType) error
+
 	SetUserBuilder(builder func() UserType)
 	MakeUser() UserType
 }
@@ -233,6 +235,10 @@ func (u *UserControllerBase[UserType]) SetBlocked(ctx op_context.Context, login 
 
 	// done
 	return nil
+}
+
+func (u *UserControllerBase[UserType]) FindUsers(ctx op_context.Context, filter *db.Filter, users *[]UserType) error {
+	return u.List(ctx, filter, users)
 }
 
 type UsersBase[UserType User] struct {

@@ -7,9 +7,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/http_request"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 	"github.com/gin-gonic/gin"
 )
 
@@ -150,4 +153,73 @@ func (r *Request) GetRequestPath() string {
 
 func (r *Request) GetResourceId(resourceType string) string {
 	return r.ginCtx.Param(resourceType)
+}
+
+func (r *Request) Validate(cmd interface{}) error {
+
+	c := r.TraceInMethod("Request.Validate")
+	defer r.TraceOutMethod()
+
+	err := r.App().Validator().Validate(cmd)
+	if err != nil {
+		vErr, ok := err.(*validator.ValidationError)
+		if ok {
+			r.SetGenericError(vErr.GenericError(), true)
+		}
+		return c.SetError(err)
+	}
+	return nil
+}
+
+func (r *Request) ParseVerifyQuery(cmd interface{}) error {
+
+	if cmd == nil {
+		return nil
+	}
+
+	c := r.TraceInMethod("Request.ParseVerifyQuery")
+	defer r.TraceOutMethod()
+
+	err := http_request.ParseQuery(r, r.ginCtx.Request, cmd)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	err = r.Validate(cmd)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	return nil
+}
+
+func (r *Request) ParseVerifyBody(cmd interface{}) error {
+
+	if cmd == nil {
+		return nil
+	}
+
+	c := r.TraceInMethod("Request.ParseVerifyBody")
+	defer r.TraceOutMethod()
+
+	err := http_request.ParseBody(r, r.ginCtx.Request, cmd)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	err = r.Validate(cmd)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	return nil
+}
+
+func (r *Request) ParseVerify(cmd interface{}) error {
+
+	if access_control.HttpContentInQuery(r.Endpoint().AccessType()) {
+		return r.ParseVerifyQuery(cmd)
+	}
+
+	return r.ParseVerifyBody(cmd)
 }

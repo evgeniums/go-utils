@@ -7,6 +7,7 @@ import (
 
 type Resource interface {
 	Host() string
+	SetHost(val string)
 
 	Type() string
 	Id() string
@@ -94,8 +95,8 @@ func (r *ResourceBase) Init(resourceType string, config ...ResourceConfig) {
 func (r *ResourceBase) RebuildPaths() {
 
 	if r.HasId() {
-		r.pathPrototype = utils.ConcatStrings("/", r.Type(), "/:", r.Type(), ":")
-		r.actualPath = utils.ConcatStrings("/", r.Type(), "/", r.Id())
+		r.pathPrototype = utils.ConcatStrings("/:", r.Type(), ":")
+		r.actualPath = utils.ConcatStrings("/", r.Id())
 	} else {
 		r.pathPrototype = utils.ConcatStrings("/", r.Type())
 		r.actualPath = r.pathPrototype
@@ -310,10 +311,12 @@ func (r *ResourceBase) BuildActualPath(actualResourceIds map[string]string, serv
 		return ""
 	}
 
-	var path string
-	id, ok := actualResourceIds[r.Type()]
-	if ok {
-		path = utils.ConcatStrings("/", r.Type(), "/", id)
+	path := "/"
+	if r.HasId() {
+		id, ok := actualResourceIds[r.Type()]
+		if ok {
+			path = utils.ConcatStrings("/", id)
+		}
 	} else {
 		path = utils.ConcatStrings("/", r.Type())
 	}
@@ -398,4 +401,21 @@ func (r *ResourceBase) ResetHateoasLinks() {
 
 func (r *ResourceBase) HateoasLinks() []*HateoasLink {
 	return r.links
+}
+
+func GroupResource(resourceType string) Resource {
+	r := NewResource(resourceType)
+	return r
+}
+
+func NamedResource(resourceType string) Resource {
+	cfg := ResourceConfig{
+		HasId: true,
+	}
+	r := NewResource(resourceType, cfg)
+
+	group := GroupResource(resourceType)
+	group.AddChild(r)
+
+	return r
 }

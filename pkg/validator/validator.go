@@ -1,6 +1,10 @@
 package validator
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
+)
 
 type Validator interface {
 	Validate(s interface{}) error
@@ -25,4 +29,10 @@ func (e *ValidationError) Error() string {
 		return fmt.Sprintf("validation failed on field \"%s\": %s", e.Field, e.Message)
 	}
 	return fmt.Sprintf("validation failed: %s", e.Message)
+}
+
+func (e *ValidationError) GenericError() generic_error.Error {
+	err := generic_error.New(generic_error.ErrorCodeFormat, e.Message)
+	err.SetDetails(e.Field)
+	return err
 }
