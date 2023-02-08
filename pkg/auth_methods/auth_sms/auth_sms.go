@@ -226,6 +226,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 		if code != cacheToken.Code {
 
 			// bad SMS code
+			ctx.Cache().Unset(oldCacheKey)
 
 			// regenerate token
 			token.GenerateID()
