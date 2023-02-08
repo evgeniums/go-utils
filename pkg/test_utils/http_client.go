@@ -9,8 +9,8 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_sms"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"

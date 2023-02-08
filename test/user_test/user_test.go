@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"

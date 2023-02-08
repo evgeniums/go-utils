@@ -2,7 +2,7 @@ package user_service
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_session"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
 )

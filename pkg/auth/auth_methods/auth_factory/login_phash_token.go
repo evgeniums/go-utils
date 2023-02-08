@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_token"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_session"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_token"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"

@@ -7,9 +7,9 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_token"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_token"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"

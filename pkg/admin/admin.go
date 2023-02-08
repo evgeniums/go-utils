@@ -1,7 +1,7 @@
 package admin
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_session"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_session_default"
 )

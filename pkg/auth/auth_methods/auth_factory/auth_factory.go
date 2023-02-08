@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_hmac"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_sms"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_token"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/noauth"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_session"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_hmac"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_sms"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_token"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/noauth"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
 )
 

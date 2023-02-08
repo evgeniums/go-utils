@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_session"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"

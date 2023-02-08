@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/http_request"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"

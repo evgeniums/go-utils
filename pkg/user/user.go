@@ -2,8 +2,8 @@ package user
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_sms"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/crud"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"

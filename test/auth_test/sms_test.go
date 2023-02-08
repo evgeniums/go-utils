@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_sms"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/stretchr/testify/assert"

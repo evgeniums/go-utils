@@ -1,9 +1,9 @@
 package rest_api_client
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_csrf"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_token"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_csrf"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_token"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 

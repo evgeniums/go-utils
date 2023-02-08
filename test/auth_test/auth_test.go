@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms/sms_provider_factory"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"

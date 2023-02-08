@@ -1,6 +1,6 @@
 package user
 
-import "github.com/evgeniums/go-backend-helpers/pkg/auth_session"
+import "github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 
 type UsersWithSession[UserType User, SessionType auth_session.Session, SessionClientType auth_session.SessionClient] struct {
 	UsersBase[UserType]
