@@ -9,12 +9,12 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_token"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/noauth"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
-	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 )
 
 type DefaultAuthFactory struct {
-	Users      user_manager.WithUserSessionManager
+	Users      auth_session.WithUserSessionManager
 	SmsManager sms.SmsManager
 }
 

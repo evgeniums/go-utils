@@ -5,11 +5,11 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_token"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
-	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
@@ -21,7 +21,7 @@ type LoginphashSmsToken struct {
 	Sms auth.AuthHandler
 }
 
-func NewLoginphashSmsToken(users user_manager.WithUserSessionManager, smsManager sms.SmsManager) *LoginphashSmsToken {
+func NewLoginphashSmsToken(users auth_session.WithUserSessionManager, smsManager sms.SmsManager) *LoginphashSmsToken {
 	l := &LoginphashSmsToken{}
 	l.Login = auth_login_phash.New(users)
 	l.Token = auth_token.NewNewToken(users)

@@ -6,10 +6,10 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_token"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
@@ -23,7 +23,7 @@ type LoginphashToken struct {
 	Token *auth_token.AuthNewTokenHandler
 }
 
-func NewLoginphashToken(users user_manager.WithUserSessionManager) *LoginphashToken {
+func NewLoginphashToken(users auth_session.WithUserSessionManager) *LoginphashToken {
 	l := &LoginphashToken{}
 	l.Construct()
 	l.Login = auth_login_phash.New(users)

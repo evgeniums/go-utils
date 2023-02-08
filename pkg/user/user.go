@@ -5,6 +5,8 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-backend-helpers/pkg/crud"
+	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
@@ -93,4 +95,8 @@ func Email[UserType User](email string, userSample ...UserType) SetUserFields[Us
 		user.SetEmail(email)
 		return nil
 	}
+}
+
+func FindByLogin(controller crud.CRUD, ctx op_context.Context, login string, user interface{}, dest ...interface{}) (bool, error) {
+	return controller.Read(ctx, db.Fields{"login": login}, user, dest...)
 }

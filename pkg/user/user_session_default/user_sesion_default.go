@@ -1,15 +1,15 @@
 package user_session_default
 
 import (
+	"github.com/evgeniums/go-backend-helpers/pkg/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_default"
-	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 )
 
 type User = user_default.User
 
 type UserSession struct {
-	user_manager.SessionBase
+	auth_session.SessionBase
 }
 
 func NewSession() *UserSession {
@@ -17,7 +17,7 @@ func NewSession() *UserSession {
 }
 
 type UserSessionClient struct {
-	user_manager.SessionClientBase
+	auth_session.SessionClientBase
 }
 
 func NewSessionClient() *UserSessionClient {

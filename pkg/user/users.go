@@ -5,18 +5,18 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth_session"
+	"github.com/evgeniums/go-backend-helpers/pkg/crud"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type UserController[UserType User] interface {
-	user_manager.UserController
-
 	Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error)
 	FindByLogin(ctx op_context.Context, login string) (UserType, error)
+	FindAuthUser(ctx op_context.Context, login string, user interface{}, dest ...interface{}) (bool, error)
 	SetPassword(ctx op_context.Context, login string, password string) error
 	SetPhone(ctx op_context.Context, login string, phone string) error
 	SetEmail(ctx op_context.Context, login string, email string) error
@@ -29,16 +29,20 @@ type UserController[UserType User] interface {
 }
 
 type UserControllerBase[UserType User] struct {
-	user_manager.UserControllerBase
-	userBuilder func() UserType
+	userBuilder    func() UserType
+	crudController crud.CRUD
 }
 
 func LocalUserController[UserType User]() *UserControllerBase[UserType] {
-	return &UserControllerBase[UserType]{}
+	return &UserControllerBase[UserType]{crudController: &crud.DbCRUD{}}
 }
 
 func (u *UserControllerBase[UserType]) SetUserBuilder(userBuilder func() UserType) {
 	u.userBuilder = userBuilder
+}
+
+func (u *UserControllerBase[UserType]) CRUD() crud.CRUD {
+	return u.crudController
 }
 
 func (u *UserControllerBase[UserType]) MakeUser() UserType {
@@ -72,7 +76,7 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 	}
 
 	// create in manager
-	err = u.Create(ctx, user)
+	err = u.crudController.Create(ctx, user)
 	if err != nil {
 		var nilUser UserType
 		return nilUser, err
@@ -99,7 +103,7 @@ func (u *UserControllerBase[UserType]) FindByLogin(ctx op_context.Context, login
 
 	// find user
 	user := u.MakeUser()
-	found, err := user_manager.FindByLogin(u, ctx, login, user)
+	found, err := FindByLogin(u.crudController, ctx, login, user)
 	if err != nil {
 		c.SetMessage("failed to find user in database")
 		return nilUser, err
@@ -135,7 +139,7 @@ func (u *UserControllerBase[UserType]) SetPassword(ctx op_context.Context, login
 
 	// set password
 	user.SetPassword(password)
-	err = u.Update(ctx, user, db.Fields{"password_hash": user.PasswordHash(), "password_salt": user.PasswordSalt()})
+	err = u.crudController.Update(ctx, user, db.Fields{"password_hash": user.PasswordHash(), "password_salt": user.PasswordSalt()})
 	if err != nil {
 		return err
 	}
@@ -166,7 +170,7 @@ func (u *UserControllerBase[UserType]) SetPhone(ctx op_context.Context, login st
 	}
 
 	// set password
-	err = u.Update(ctx, user, db.Fields{"phone": phone})
+	err = u.crudController.Update(ctx, user, db.Fields{"phone": phone})
 	if err != nil {
 		return err
 	}
@@ -197,13 +201,17 @@ func (u *UserControllerBase[UserType]) SetEmail(ctx op_context.Context, login st
 	}
 
 	// set password
-	err = u.Update(ctx, user, db.Fields{"email": email})
+	err = u.crudController.Update(ctx, user, db.Fields{"email": email})
 	if err != nil {
 		return err
 	}
 
 	// done
 	return nil
+}
+
+func (u *UserControllerBase[UserType]) FindAuthUser(ctx op_context.Context, login string, user interface{}, dest ...interface{}) (bool, error) {
+	return FindByLogin(u.crudController, ctx, login, user)
 }
 
 func (u *UserControllerBase[UserType]) SetBlocked(ctx op_context.Context, login string, blocked bool) error {
@@ -228,7 +236,7 @@ func (u *UserControllerBase[UserType]) SetBlocked(ctx op_context.Context, login 
 	}
 
 	// set password
-	err = u.Update(ctx, user, db.Fields{"blocked": blocked})
+	err = u.crudController.Update(ctx, user, db.Fields{"blocked": blocked})
 	if err != nil {
 		return err
 	}
@@ -238,7 +246,7 @@ func (u *UserControllerBase[UserType]) SetBlocked(ctx op_context.Context, login 
 }
 
 func (u *UserControllerBase[UserType]) FindUsers(ctx op_context.Context, filter *db.Filter, users *[]UserType) error {
-	return u.List(ctx, filter, users)
+	return u.crudController.List(ctx, filter, users)
 }
 
 type UsersBase[UserType User] struct {
@@ -265,6 +273,6 @@ func (u *UsersBase[UserType]) ValidateLogin(login string) error {
 	return u.App().Validator().ValidateValue(login, u.LoginValidationRules)
 }
 
-func (m *UsersBase[UserType]) UserManager() user_manager.UserManager {
+func (m *UsersBase[UserType]) AuthUserManager() auth_session.AuthUserManager {
 	return m
 }

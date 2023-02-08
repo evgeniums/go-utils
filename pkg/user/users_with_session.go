@@ -1,24 +1,22 @@
 package user
 
-import (
-	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
-)
+import "github.com/evgeniums/go-backend-helpers/pkg/auth_session"
 
-type UsersWithSession[UserType User, SessionType user_manager.Session, SessionClientType user_manager.SessionClient] struct {
+type UsersWithSession[UserType User, SessionType auth_session.Session, SessionClientType auth_session.SessionClient] struct {
 	UsersBase[UserType]
-	user_manager.SessionController
+	auth_session.SessionController
 }
 
-func (m *UsersWithSession[UserType, SessionType, SessionClientType]) SessionManager() user_manager.SessionController {
+func (m *UsersWithSession[UserType, SessionType, SessionClientType]) SessionManager() auth_session.SessionController {
 	return m
 }
 
 type UsersWithSessionConfig[UserType User] struct {
 	UserController    UserController[UserType]
-	SessionController user_manager.SessionController
+	SessionController auth_session.SessionController
 }
 
-func NewUsersWithSession[UserType User, SessionType user_manager.Session, SessionClientType user_manager.SessionClient](
+func NewUsersWithSession[UserType User, SessionType auth_session.Session, SessionClientType auth_session.SessionClient](
 	userBuilder func() UserType,
 	sessionBuilder func() SessionType,
 	sessionClientBuilder func() SessionClientType,
@@ -28,15 +26,15 @@ func NewUsersWithSession[UserType User, SessionType user_manager.Session, Sessio
 
 	if len(config) == 0 {
 		m.UsersBase.Construct(LocalUserController[UserType]())
-		m.SessionController = user_manager.LocalSessionController()
+		m.SessionController = auth_session.LocalSessionController()
 	} else {
 		m.UsersBase.Construct(config[0].UserController)
 		m.SessionController = config[0].SessionController
 	}
 
 	m.SetUserBuilder(userBuilder)
-	m.SetSessionBuilder(func() user_manager.Session { return sessionBuilder() })
-	m.SetSessionClientBuilder(func() user_manager.SessionClient { return sessionClientBuilder() })
+	m.SetSessionBuilder(func() auth_session.Session { return sessionBuilder() })
+	m.SetSessionClientBuilder(func() auth_session.SessionClient { return sessionClientBuilder() })
 
 	return m
 }

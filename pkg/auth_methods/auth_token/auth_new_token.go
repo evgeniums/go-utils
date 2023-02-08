@@ -2,10 +2,10 @@ package auth_token
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
@@ -15,7 +15,7 @@ type AuthNewTokenHandler struct {
 	AuthTokenHandler
 }
 
-func NewNewToken(users user_manager.WithUserSessionManager) *AuthNewTokenHandler {
+func NewNewToken(users auth_session.WithUserSessionManager) *AuthNewTokenHandler {
 	a := &AuthNewTokenHandler{}
 	a.users = users
 	return a
@@ -54,7 +54,7 @@ func (a *AuthNewTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	// user was authenticated, just create or update session client and add tokens
 
 	sessionId := ctx.GetSessionId()
-	var session user_manager.Session
+	var session auth_session.Session
 	if sessionId == "" {
 		// create session
 		session, err = a.users.SessionManager().CreateSession(ctx, a.SessionExpiration())

@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
@@ -32,7 +32,7 @@ type AuthTokenHandlerConfig struct {
 type AuthTokenHandler struct {
 	auth.AuthHandlerBase
 	AuthTokenHandlerConfig
-	users      user_manager.WithUserSessionManager
+	users      auth_session.WithUserSessionManager
 	encryption auth.AuthParameterEncryption
 }
 
@@ -49,7 +49,7 @@ func (a *AuthTokenHandler) Config() interface{} {
 	return &a.AuthTokenHandlerConfig
 }
 
-func New(users user_manager.WithUserSessionManager) *AuthTokenHandler {
+func New(users auth_session.WithUserSessionManager) *AuthTokenHandler {
 	a := &AuthTokenHandler{}
 	a.users = users
 	return a
@@ -178,8 +178,8 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	}
 
 	// load user
-	user := a.users.UserManager().MakeAuthUser()
-	found, err := user_manager.FindByLogin(a.users.UserManager(), ctx, session.GetUserLogin(), user)
+	user := a.users.AuthUserManager().MakeAuthUser()
+	found, err := a.users.AuthUserManager().FindAuthUser(ctx, session.GetUserLogin(), user)
 	if err != nil {
 		c.SetMessage("failed to load user")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
@@ -258,7 +258,7 @@ func (a *AuthTokenHandler) GenAccessToken(ctx auth.AuthContext) error {
 	return c.SetError(a.GenToken(ctx, AccessTokenName, a.ACCESS_TOKEN_TTL_SECONDS))
 }
 
-func (a *AuthTokenHandler) GenRefreshToken(ctx auth.AuthContext, session user_manager.Session) error {
+func (a *AuthTokenHandler) GenRefreshToken(ctx auth.AuthContext, session auth_session.Session) error {
 	c := ctx.TraceInMethod("AuthTokenHandler.GenRefreshToken")
 	var err error
 	onExit := func() {
@@ -313,7 +313,7 @@ type TokenSchema struct {
 	Token *AuthTokenHandler
 }
 
-func NewSchema(users user_manager.WithUserSessionManager) *TokenSchema {
+func NewSchema(users auth_session.WithUserSessionManager) *TokenSchema {
 	l := &TokenSchema{}
 	l.Construct()
 	l.Token = New(users)

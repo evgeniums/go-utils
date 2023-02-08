@@ -1,4 +1,4 @@
-package user_manager
+package auth_session
 
 import (
 	"time"

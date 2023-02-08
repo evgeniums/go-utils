@@ -7,9 +7,9 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_methods/auth_factory"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth_service"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
-	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
@@ -37,7 +37,7 @@ func NewAuthServer() *AuthServerBase {
 	return s
 }
 
-func (s *AuthServerBase) Init(app app_context.Context, users user_manager.WithUserSessionManager, smsProviders sms.ProviderFactory, configPath ...string) error {
+func (s *AuthServerBase) Init(app app_context.Context, users auth_session.WithUserSessionManager, smsProviders sms.ProviderFactory, configPath ...string) error {
 
 	path := utils.OptionalArg("auth_server", configPath...)
 

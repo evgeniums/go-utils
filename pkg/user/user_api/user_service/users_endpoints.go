@@ -3,17 +3,17 @@ package user_service
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
-	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 )
 
-type FindEndpoint[U user.User, S user_manager.Session, SC user_manager.SessionClient] struct {
+type FindEndpoint[U user.User, S auth_session.Session, SC auth_session.SessionClient] struct {
 	api_server.EndpointBase
 	UserEndpoint[U, S, SC]
 }
 
-func Find[U user.User, S user_manager.Session, SC user_manager.SessionClient](service *UserService[U, S, SC]) *FindEndpoint[U, S, SC] {
+func Find[U user.User, S auth_session.Session, SC auth_session.SessionClient](service *UserService[U, S, SC]) *FindEndpoint[U, S, SC] {
 	e := &FindEndpoint[U, S, SC]{}
 	e.service = service
 	e.Construct(user_api.Find())

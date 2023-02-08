@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/user_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
@@ -50,10 +50,10 @@ func (u *UserBase) CheckPasswordHash(phash string) bool {
 // Auth handler for login processing. The AuthTokenHandler MUST ALWAYS follow this handler in session scheme with AND conjunction.
 type LoginHandler struct {
 	auth.AuthHandlerBase
-	users user_manager.WithUserManager
+	users auth_session.WithAuthUserManager
 }
 
-func New(users user_manager.WithUserManager) *LoginHandler {
+func New(users auth_session.WithAuthUserManager) *LoginHandler {
 	l := &LoginHandler{}
 	l.users = users
 	return l
@@ -107,7 +107,7 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		return false, nil
 	}
 	ctx.SetLoggerField("login", login)
-	err = l.users.UserManager().ValidateLogin(login)
+	err = l.users.AuthUserManager().ValidateLogin(login)
 	if err != nil {
 		err = errors.New("invalid login format")
 		if phash == "" {
@@ -121,8 +121,8 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	}
 
 	// load user
-	dbUser := l.users.UserManager().MakeAuthUser()
-	found, err := user_manager.FindByLogin(l.users.UserManager(), ctx, login, dbUser)
+	dbUser := l.users.AuthUserManager().MakeAuthUser()
+	found, err := l.users.AuthUserManager().FindAuthUser(ctx, login, dbUser)
 	if err != nil {
 		c.SetMessage("failed to load user")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)

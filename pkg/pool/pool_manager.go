@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/crud"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
@@ -39,6 +40,7 @@ type PoolManager interface {
 }
 
 type PoolManagerBase struct {
+	CRUD crud.CRUD
 }
 
 func (m *PoolManagerBase) AddPool(ctx op_context.Context, pool Pool) error {
@@ -49,24 +51,24 @@ func (m *PoolManagerBase) AddPool(ctx op_context.Context, pool Pool) error {
 }
 
 func (m *PoolManagerBase) FindPool(ctx op_context.Context, id string) (Pool, error) {
-	return op_context.FindObject(ctx, "PoolManager.FindPool", "id", id, &PoolBase{}, logger.Fields{"pool_id": id})
+	return crud.FindByField(m.CRUD, ctx, "PoolManager.FindPool", "id", id, &PoolBase{})
 }
 
 func (m *PoolManagerBase) FindPoolByName(ctx op_context.Context, name string) (Pool, error) {
-	return op_context.FindObject(ctx, "PoolManager.FindPoolByName", "name", name, &PoolBase{}, logger.Fields{"pool_name": name})
+	return crud.FindByField(m.CRUD, ctx, "PoolManager.FindPoolByName", "name", name, &PoolBase{})
 }
 
 func (m *PoolManagerBase) UpdatePool(ctx op_context.Context, poolName string, fields db.Fields) error {
-	return op_context.FindUpdateObject(ctx, "PoolManager.UpdatePool", "name", poolName, fields, &PoolBase{}, logger.Fields{"pool_name": poolName})
+	return crud.FindUpdate(m.CRUD, ctx, "PoolManager.UpdatePool", "name", poolName, fields, &PoolBase{}, logger.Fields{"pool_name": poolName})
 }
 
 func (m *PoolManagerBase) GetPools(ctx op_context.Context, filter *db.Filter, pools interface{}) error {
-	return op_context.LoadObjects(ctx, "PoolManager.GetPools", filter, pools)
+	return crud.List(m.CRUD, ctx, "PoolManager.GetPools", filter, pools)
 }
 
 func (m *PoolManagerBase) GetPoolsBase(ctx op_context.Context, filter *db.Filter) ([]*PoolBase, error) {
 	var pools []*PoolBase
-	err := op_context.LoadObjects(ctx, "PoolManager.GetPoolsBase", filter, &pools)
+	err := crud.List(m.CRUD, ctx, "PoolManager.GetPoolsBase", filter, &pools)
 	if err != nil {
 		return nil, err
 	}
@@ -81,24 +83,24 @@ func (m *PoolManagerBase) AddService(ctx op_context.Context, service PoolService
 }
 
 func (m *PoolManagerBase) FindService(ctx op_context.Context, id string) (PoolService, error) {
-	return op_context.FindObject(ctx, "PoolManager.FindService", "id", id, &PoolServiceBase{}, logger.Fields{"service_id": id})
+	return crud.FindByField(m.CRUD, ctx, "PoolManager.FindService", "id", id, &PoolServiceBase{})
 }
 
 func (m *PoolManagerBase) FindServiceByName(ctx op_context.Context, name string) (PoolService, error) {
-	return op_context.FindObject(ctx, "PoolManager.FindServiceByName", "name", name, &PoolServiceBase{}, logger.Fields{"service_name": name})
+	return crud.FindByField(m.CRUD, ctx, "PoolManager.FindServiceByName", "name", name, &PoolServiceBase{})
 }
 
 func (m *PoolManagerBase) UpdateService(ctx op_context.Context, name string, fields db.Fields) error {
-	return op_context.FindUpdateObject(ctx, "PoolManager.UpdateService", "name", name, fields, &PoolServiceBase{}, logger.Fields{"service_name": name})
+	return crud.FindUpdate(m.CRUD, ctx, "PoolManager.UpdateService", "name", name, fields, &PoolServiceBase{}, logger.Fields{"service_name": name})
 }
 
 func (m *PoolManagerBase) GetServices(ctx op_context.Context, filter *db.Filter, services interface{}) error {
-	return op_context.LoadObjects(ctx, "PoolManager.GetServices", filter, services)
+	return crud.List(m.CRUD, ctx, "PoolManager.GetServices", filter, services)
 }
 
 func (m *PoolManagerBase) GetServicesBase(ctx op_context.Context, filter *db.Filter) ([]*PoolServiceBase, error) {
 	var services []*PoolServiceBase
-	err := op_context.LoadObjects(ctx, "PoolManager.GetServicesBase", filter, &services)
+	err := crud.List(m.CRUD, ctx, "PoolManager.GetServicesBase", filter, &services)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +117,7 @@ func (m *PoolManagerBase) AddBinding(ctx op_context.Context, binding PoolService
 func (m *PoolManagerBase) GetPoolBindings(ctx op_context.Context, poolId string, bindings interface{}) error {
 	filter := &db.Filter{}
 	filter.Fields["pool_id"] = poolId
-	return op_context.LoadObjects(ctx, "PoolManager.GetPoolBindings", filter, bindings)
+	return crud.List(m.CRUD, ctx, "PoolManager.GetPoolBindings", filter, bindings)
 }
 
 func (m *PoolManagerBase) GetPoolBindingsBase(ctx op_context.Context, poolId string) ([]*PoolServiceBindingBase, error) {
@@ -139,12 +141,12 @@ func (m *PoolManagerBase) DeleteBinding(ctx op_context.Context, id string) error
 }
 
 func (m *PoolManagerBase) GetBindings(ctx op_context.Context, filter *db.Filter, bindings interface{}) error {
-	return op_context.LoadObjects(ctx, "PoolManager.GetBindings", filter, bindings)
+	return crud.List(m.CRUD, ctx, "PoolManager.GetBindings", filter, bindings)
 }
 
 func (m *PoolManagerBase) GetBindingsBase(ctx op_context.Context, filter *db.Filter) ([]*PoolServiceBindingBase, error) {
 	var bindings []*PoolServiceBindingBase
-	err := op_context.LoadObjects(ctx, "PoolManager.GetBindingsBase", filter, &bindings)
+	err := crud.List(m.CRUD, ctx, "PoolManager.GetBindingsBase", filter, &bindings)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +154,7 @@ func (m *PoolManagerBase) GetBindingsBase(ctx op_context.Context, filter *db.Fil
 }
 
 func (m *PoolManagerBase) UpdateBinding(ctx op_context.Context, id string, fields db.Fields) error {
-	return op_context.FindUpdateObject(ctx, "PoolManager.UpdateBinding", "id", id, fields, &PoolServiceBindingBase{}, logger.Fields{"binding_id": id})
+	return crud.FindUpdate(m.CRUD, ctx, "PoolManager.UpdateBinding", "id", id, fields, &PoolServiceBindingBase{}, logger.Fields{"binding_id": id})
 }
 
 func (m *PoolManagerBase) FindPoolServiceBindingType(ctx op_context.Context, poolId string, bindingType string) (PoolService, error) {
@@ -161,7 +163,7 @@ func (m *PoolManagerBase) FindPoolServiceBindingType(ctx op_context.Context, poo
 	defer ctx.TraceOutMethod()
 
 	fields := db.Fields{"pool_id": poolId, "type": bindingType}
-	binding, err := op_context.FindObjectByFields(ctx, "PoolManager.FindPoolServiceBindingType", fields, &PoolServiceBindingBase{})
+	binding, err := crud.Find(m.CRUD, ctx, "PoolManager.FindPoolServiceBindingType", fields, &PoolServiceBindingBase{})
 	if err != nil {
 		c.SetMessage("failed to find binding")
 		return nil, c.SetError(err)
@@ -225,7 +227,3 @@ func (m *PoolManagerBase) BindPoolService(ctx op_context.Context, poolName strin
 
 	return binding, nil
 }
-
-// func aaa() PoolManager {
-// 	return &PoolManagerBase{}
-// }
