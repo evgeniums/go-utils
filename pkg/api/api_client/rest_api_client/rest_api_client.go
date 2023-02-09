@@ -21,7 +21,7 @@ type RestApiClient interface {
 	Login(ctx op_context.Context, user string, password string) (Response, error)
 	Logout(ctx op_context.Context) (Response, error)
 
-	UpdateTokens(ctx op_context.Context)
+	UpdateTokens(ctx op_context.Context) (Response, error)
 	UpdateCsrfToken(ctx op_context.Context) (Response, error)
 	RequestRefreshToken(ctx op_context.Context) (Response, error)
 

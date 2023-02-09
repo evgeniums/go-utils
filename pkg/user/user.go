@@ -19,6 +19,7 @@ type User interface {
 
 	SetLogin(login string)
 	SetPhone(phone string)
+	SetBlocked(val bool)
 
 	Email() string
 	SetEmail(email string)
@@ -30,47 +31,80 @@ type User interface {
 
 // TODO Configure somewhere unique indexes for phone and login if required
 // TODO Add validation rules for user fields
-type UserBaseDB struct {
-	common.ObjectBase
-	auth_login_phash.UserBase
-	api.ResponseHateous
 
+type UserBaseFields struct {
 	LOGIN   string `gorm:"uniqueIndex" json:"login"`
 	PHONE   string `gorm:"index" json:"phone"`
 	EMAIL   string `gorm:"index" json:"email"`
 	BLOCKED bool   `gorm:"index" json:"blocked"`
 }
 
-func (u *UserBaseDB) Display() string {
+func (u *UserBaseFields) Display() string {
 	return u.LOGIN
 }
 
-func (u *UserBaseDB) Login() string {
+func (u *UserBaseFields) Login() string {
 	return u.LOGIN
 }
 
-func (u *UserBaseDB) SetLogin(login string) {
+func (u *UserBaseFields) SetLogin(login string) {
 	u.LOGIN = login
 }
 
-func (u *UserBaseDB) Phone() string {
+func (u *UserBaseFields) Phone() string {
 	return u.PHONE
 }
 
-func (u *UserBaseDB) SetPhone(phone string) {
+func (u *UserBaseFields) SetPhone(phone string) {
 	u.PHONE = phone
 }
 
-func (u *UserBaseDB) IsBlocked() bool {
+func (u *UserBaseFields) IsBlocked() bool {
 	return u.BLOCKED
 }
 
-func (u *UserBaseDB) Email() string {
+func (u *UserBaseFields) SetBlocked(val bool) {
+	u.BLOCKED = val
+}
+
+func (u *UserBaseFields) Email() string {
 	return u.EMAIL
 }
 
-func (u *UserBaseDB) SetEmail(email string) {
+func (u *UserBaseFields) SetEmail(email string) {
 	u.EMAIL = email
+}
+
+func (u *UserBaseFields) SetUserFields(ctx op_context.Context, user User) error {
+	user.SetEmail(u.Email())
+	user.SetPhone(u.Phone())
+	user.SetBlocked(u.IsBlocked())
+	return nil
+}
+
+type UserFieldsWithPassword struct {
+	UserBaseFields
+	password string `gorm:"-:all" json:"-"`
+}
+
+func (u *UserFieldsWithPassword) Password() string {
+	return u.password
+}
+
+func (u *UserFieldsWithPassword) SetPassword(password string) {
+	u.password = password
+}
+
+func NewUserFieldsWihPassword() *UserFieldsWithPassword {
+	u := &UserFieldsWithPassword{}
+	return u
+}
+
+type UserBaseDB struct {
+	common.ObjectBase
+	UserBaseFields
+	auth_login_phash.UserBase
+	api.ResponseHateous
 }
 
 type UserBase struct {
@@ -92,7 +126,15 @@ type UserFieldsSetter[T User] interface {
 	SetUserFields(ctx op_context.Context, user T) error
 }
 
-type SetUserFields[UserType User] func(ctx op_context.Context, user UserType) error
+type SetUserFields[UserType interface{}] func(ctx op_context.Context, user UserType) error
+
+type UserFieldsSetterBase[T User] struct {
+	UserFieldsWithPassword
+}
+
+func (u *UserFieldsSetterBase[T]) SetUserFields(ctx op_context.Context, user T) error {
+	return u.UserFieldsWithPassword.SetUserFields(ctx, user)
+}
 
 func Phone[UserType User](phone string, userSample ...UserType) SetUserFields[UserType] {
 	return func(ctx op_context.Context, user UserType) error {

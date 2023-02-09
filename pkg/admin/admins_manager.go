@@ -16,6 +16,6 @@ func NewManager(controllers ...AdminControllers) *Manager {
 	return m
 }
 
-func (m *Manager) Add(ctx op_context.Context, login string, password string, phone string) (*Admin, error) {
+func (m *Manager) AddAdmin(ctx op_context.Context, login string, password string, phone string) (*Admin, error) {
 	return m.UsersWithSessionBase.Add(ctx, login, password, user.Phone(phone, &Admin{}))
 }

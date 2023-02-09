@@ -15,6 +15,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func InitAppContextNoDb(t *testing.T, testDir string, config ...string) app_context.Context {
+	configFile := utils.OptionalArg(AssetsFilePath(testDir, "test_config.json"), config...)
+	if !utils.FileExists(configFile) {
+		configFile = AssetsFilePath(testDir, configFile)
+	}
+
+	app := app_default.New(nil)
+	require.NoErrorf(t, app.Init(configFile), "failed to init application context")
+
+	return app
+}
+
 func InitAppContext(t *testing.T, testDir string, config ...string) app_context.Context {
 	configFile := utils.OptionalArg(AssetsFilePath(testDir, "test_config.json"), config...)
 	if !utils.FileExists(configFile) {

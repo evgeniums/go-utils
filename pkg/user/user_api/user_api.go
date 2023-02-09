@@ -26,13 +26,13 @@ type UserController[UserType User] interface {
 
 */
 
-func PrepareResources(userTypeName ...string) (userType string, serviceName string, groupResource api.Resource, userResource api.Resource) {
+func PrepareResources(userTypeName ...string) (userType string, serviceName string, collectionResource api.Resource, userResource api.Resource) {
 
 	userType = utils.OptionalArg("user", userTypeName...)
 	serviceName = utils.ConcatStrings(userType, "s")
 
 	userResource = UserResource(userType)
-	groupResource = userResource.Parent()
+	collectionResource = userResource.Parent()
 
 	return
 }
@@ -50,7 +50,7 @@ func List() api.Operation {
 	return api.NewOperation("list", access_control.Read)
 }
 
-type AddResponse[T user.User] struct {
+type UserResponse[T user.User] struct {
 	api.ResponseHateous
 	User T `json:"user"`
 }

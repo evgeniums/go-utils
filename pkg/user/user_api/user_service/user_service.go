@@ -18,14 +18,15 @@ type UserService[U user.User] struct {
 
 func NewUserService[U user.User](userController user.Users[U],
 	setterBuilder func() user.UserFieldsSetter[U],
-	UserTypeName ...string) *UserService[U] {
+	userTypeName ...string) *UserService[U] {
 
-	userType, serviceName, users, _ := user_api.PrepareResources(UserTypeName...)
+	userType, serviceName, users, _ := user_api.PrepareResources(userTypeName...)
 	s := &UserService[U]{}
 	s.Init(serviceName)
+	s.UserTypeName = userType
+
 	s.Users = userController
 	s.AddChild(users)
-	s.UserTypeName = userType
 
 	users.AddOperation(List(s))
 	users.AddOperation(Add(s, setterBuilder))

@@ -69,7 +69,11 @@ func SetupGormDB(t *testing.T) {
 	}
 }
 
-func CreateDb(t *testing.T, app app_context.Context, models ...interface{}) {
+func CreateDbModel(t *testing.T, app app_context.Context, models ...interface{}) {
 	modelsList := append([]interface{}{}, models...)
-	require.NoErrorf(t, app.DB().AutoMigrate(app, modelsList), "failed to create database")
+	CreateDbModels(t, app, modelsList)
+}
+
+func CreateDbModels(t *testing.T, app app_context.Context, models []interface{}) {
+	require.NoErrorf(t, app.DB().AutoMigrate(app, models), "failed to create database")
 }

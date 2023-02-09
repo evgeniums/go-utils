@@ -22,7 +22,7 @@ var testDir = filepath.Dir(testBasePath)
 type User = user_default.User
 
 func createDb(t *testing.T, app app_context.Context) {
-	test_utils.CreateDb(t, app, &User{})
+	test_utils.CreateDbModel(t, app, &User{})
 }
 
 func initTest(t *testing.T, config ...string) (app_context.Context, *user_default.Users, op_context.Context) {
