@@ -26,6 +26,8 @@ type User interface {
 
 	DbUser() interface{}
 
+	ToCmd(password string) interface{}
+
 	api.WithHateoasLinks
 }
 
@@ -84,15 +86,15 @@ func (u *UserBaseFields) SetUserFields(ctx op_context.Context, user User) error 
 
 type UserFieldsWithPassword struct {
 	UserBaseFields
-	password string `gorm:"-:all" json:"-"`
+	PlainPassword string `gorm:"-:all" json:"password"`
 }
 
 func (u *UserFieldsWithPassword) Password() string {
-	return u.password
+	return u.PlainPassword
 }
 
 func (u *UserFieldsWithPassword) SetPassword(password string) {
-	u.password = password
+	u.PlainPassword = password
 }
 
 func NewUserFieldsWihPassword() *UserFieldsWithPassword {
@@ -105,6 +107,13 @@ type UserBaseDB struct {
 	UserBaseFields
 	auth_login_phash.UserBase
 	api.ResponseHateous
+}
+
+func (u *UserBaseDB) ToCmd(password string) interface{} {
+	cmd := &UserFieldsWithPassword{}
+	cmd.UserBaseFields = u.UserBaseFields
+	cmd.SetPassword(password)
+	return cmd
 }
 
 type UserBase struct {
@@ -133,6 +142,8 @@ type UserFieldsSetterBase[T User] struct {
 }
 
 func (u *UserFieldsSetterBase[T]) SetUserFields(ctx op_context.Context, user T) error {
+	user.SetLogin(u.Login())
+	user.SetPassword(u.Password())
 	return u.UserFieldsWithPassword.SetUserFields(ctx, user)
 }
 

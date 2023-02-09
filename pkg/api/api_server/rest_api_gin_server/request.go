@@ -73,11 +73,11 @@ func (r *Request) GetRequestUserAgent() string {
 func (r *Request) Close(successMessage ...string) {
 	var reponseBody interface{}
 	if r.GenericError() == nil {
-
 		if r.response.Text() != "" {
 			r.ginCtx.String(r.response.httpCode, r.response.Text())
 		} else {
 			if r.response.Message() != nil {
+				reponseBody = r.response.Message()
 				r.ginCtx.JSON(r.response.httpCode, r.response.Message())
 			} else {
 				r.ginCtx.Status(r.response.httpCode)

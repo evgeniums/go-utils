@@ -2,30 +2,34 @@ package api_client
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
-	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
 type Client interface {
-	Exec(ctx op_context.Context, operation api.Operation, cmd interface{}, response interface{}) generic_error.Error
+	Exec(ctx op_context.Context, operation api.Operation, cmd interface{}, response interface{}) error
+	Transport() interface{}
 }
 
 type ClientOperation interface {
-	Exec(client Client, ctx op_context.Context, operation api.Operation) generic_error.Error
+	Exec(client Client, ctx op_context.Context, operation api.Operation) error
 }
 
 func MakeOperationHandler(client Client, clientOperation ClientOperation) api.OperationHandler {
-	return func(ctx op_context.Context, operation api.Operation) generic_error.Error {
+	return func(ctx op_context.Context, operation api.Operation) error {
 		return clientOperation.Exec(client, ctx, operation)
 	}
 }
 
 type ServiceClient struct {
 	api.ResourceBase
-	Client Client
+	client Client
 }
 
 func (s *ServiceClient) Init(client Client, pathName string) {
-	s.Client = client
+	s.client = client
 	s.ResourceBase.Init(pathName, api.ResourceConfig{Service: true})
+}
+
+func (s *ServiceClient) Client() Client {
+	return s.client
 }

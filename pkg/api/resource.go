@@ -222,7 +222,6 @@ func (r *ResourceBase) Parent() Resource {
 func (r *ResourceBase) AddChild(child Resource) {
 	r.children = append(r.children, child)
 	child.SetParent(r)
-	child.RebuildPaths()
 }
 
 func (r *ResourceBase) AddChildren(resources ...Resource) {

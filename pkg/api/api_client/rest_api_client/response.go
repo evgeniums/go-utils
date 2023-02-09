@@ -24,7 +24,7 @@ type HttpResponse struct {
 }
 
 func NewResponse(raw *http.Response) *HttpResponse {
-	return &HttpResponse{Raw: raw, serverError: &api.ResponseError{}}
+	return &HttpResponse{Raw: raw}
 }
 
 func (r *HttpResponse) Code() int {

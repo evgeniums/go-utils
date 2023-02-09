@@ -6,7 +6,7 @@ import (
 )
 
 type AuthUserManager interface {
-	FindAuthUser(ctx op_context.Context, login string, user interface{}, dest ...interface{}) (bool, error)
+	FindAuthUser(ctx op_context.Context, login string, user auth.User, dest ...interface{}) (bool, error)
 	MakeAuthUser() auth.User
 	ValidateLogin(login string) error
 }

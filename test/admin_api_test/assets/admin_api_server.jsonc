@@ -21,15 +21,11 @@
                 "methods": {
                     "login_phash_token": {},
                     "token": {
-                        "secret": "hdidyuvp98-32kj4p98y",
-                        "access_token_ttl_seconds" : 3,
-                        "refresh_token_ttl_seconds" : 5
+                        "secret": "hdidyuvp98-32kj4p98y"
                     },
                     "sms": {
                         "testing": true,
                         "secret": "kj;oijkxwqpofe'poj",
-                        "sms_delay_seconds": 2,
-                        "token_ttl_seconds": 3,
                         "max_tries":3
                     },
                     "noauth":{}
@@ -87,7 +83,7 @@
             "trusted_proxies": ["127.0.0.1"],
             "csrf": {
                 "secret": "0000000000000",
-                "token_ttl_seconds": 2,
+                // "token_ttl_seconds": 2,
                 "ignore_paths": ["/status/check"]
             }
         }

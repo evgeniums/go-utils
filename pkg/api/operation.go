@@ -2,12 +2,11 @@ package api
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
-	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
-type OperationHandler = func(ctx op_context.Context, operation Operation) generic_error.Error
+type OperationHandler = func(ctx op_context.Context, operation Operation) error
 
 type Operation interface {
 	Name() string
@@ -16,7 +15,7 @@ type Operation interface {
 	Resource() Resource
 
 	AccessType() access_control.AccessType
-	Exec(ctx op_context.Context, handler OperationHandler) generic_error.Error
+	Exec(ctx op_context.Context, handler OperationHandler) error
 
 	TestOnly() bool
 	SetTestOnly(val bool)
@@ -65,6 +64,12 @@ func (o *OperationBase) AccessType() access_control.AccessType {
 	return o.accessType
 }
 
-func (o *OperationBase) Exec(ctx op_context.Context, handler OperationHandler) generic_error.Error {
-	return handler(ctx, o)
+func (o *OperationBase) Exec(ctx op_context.Context, handler OperationHandler) error {
+
+	c := ctx.TraceInMethod("Operation.Exec")
+	defer ctx.TraceOutMethod()
+
+	err := handler(ctx, o)
+	c.SetError(err)
+	return err
 }

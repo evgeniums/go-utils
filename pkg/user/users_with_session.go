@@ -29,12 +29,15 @@ func NewUsersWithSession[UserType User, SessionType auth_session.Session, Sessio
 
 	m := &UsersWithSessionBase[UserType, SessionType, SessionClientType]{}
 
-	if len(config) == 0 {
-		m.UsersBase.Construct(LocalUserController[UserType]())
-		m.SessionController = auth_session.LocalSessionController()
-	} else {
+	if len(config) != 0 {
 		m.UsersBase.Construct(config[0].UserController)
 		m.SessionController = config[0].SessionController
+	}
+	if m.UsersBase.UserController == nil {
+		m.UsersBase.Construct(LocalUserController[UserType]())
+	}
+	if m.SessionController == nil {
+		m.SessionController = auth_session.LocalSessionController()
 	}
 
 	m.SetUserBuilder(userBuilder)

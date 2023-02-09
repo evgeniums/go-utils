@@ -24,7 +24,7 @@ type RestApiTestResponse struct {
 }
 
 func NewRestApiTestResponse(raw *httptest.ResponseRecorder) *RestApiTestResponse {
-	return &RestApiTestResponse{Raw: raw, serverError: &api.ResponseError{}}
+	return &RestApiTestResponse{Raw: raw}
 }
 
 func (r *RestApiTestResponse) Code() int {
@@ -65,11 +65,11 @@ func HttptestSendWithBody(t *testing.T, g *gin.Engine, method string, url string
 	require.NoErrorf(t, err, "failed to create HTTP request")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
+	http_request.HttpHeadersSet(req, headers...)
 
 	// send request
 	httprec := httptest.NewRecorder()
 	g.ServeHTTP(httprec, req)
-	http_request.HttpHeadersSet(req, headers...)
 
 	// done
 	return NewRestApiTestResponse(httprec)

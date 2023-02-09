@@ -1,4 +1,4 @@
-package user_api_test
+package admin_api_test
 
 import (
 	"path/filepath"

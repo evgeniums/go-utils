@@ -16,7 +16,7 @@ import (
 type UserController[UserType User] interface {
 	Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error)
 	FindByLogin(ctx op_context.Context, login string) (UserType, error)
-	FindAuthUser(ctx op_context.Context, login string, user interface{}, dest ...interface{}) (bool, error)
+	FindAuthUser(ctx op_context.Context, login string, user auth.User, dest ...interface{}) (bool, error)
 	SetPassword(ctx op_context.Context, login string, password string) error
 	SetPhone(ctx op_context.Context, login string, phone string) error
 	SetEmail(ctx op_context.Context, login string, email string) error
@@ -216,7 +216,7 @@ func (u *UserControllerBase[UserType]) SetEmail(ctx op_context.Context, login st
 	return nil
 }
 
-func (u *UserControllerBase[UserType]) FindAuthUser(ctx op_context.Context, login string, user interface{}, dest ...interface{}) (bool, error) {
+func (u *UserControllerBase[UserType]) FindAuthUser(ctx op_context.Context, login string, user auth.User, dest ...interface{}) (bool, error) {
 	return FindByLogin(u.crudController, ctx, login, user)
 }
 
