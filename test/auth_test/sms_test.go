@@ -28,7 +28,7 @@ func TestSms(t *testing.T) {
 	require.NotNil(t, user1)
 
 	// prepare client
-	client := test_utils.PrepareHttpClient(t, server.RestApiServer.GinEngine())
+	client := test_utils.PrepareHttpClient(t, test_utils.BBGinEngine(t, server))
 
 	// good login
 	client.Login(login1, password1)

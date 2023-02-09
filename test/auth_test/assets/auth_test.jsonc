@@ -15,7 +15,7 @@
             }
         }
     },
-    "auth_server": { 
+    "server": { 
         "auth": {
             "manager" : {
                 "methods": {

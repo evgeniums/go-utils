@@ -10,10 +10,10 @@ import (
 )
 
 func TestCsrf(t *testing.T) {
-	app, _, server := initAuthServer(t)
+	app, _, server := initServer(t)
 	defer app.Close()
 
-	client := test_utils.NewHttpClient(t, server.RestApiServer.GinEngine())
+	client := test_utils.NewHttpClient(t, test_utils.BBGinEngine(t, server))
 
 	resp := client.Get("/just-check-404", nil)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{

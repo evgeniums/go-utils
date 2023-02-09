@@ -5,8 +5,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/api/bare_bones_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms/sms_provider_factory"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
@@ -25,7 +25,7 @@ func createDb(t *testing.T, app app_context.Context) {
 	test_utils.CreateDbModel(t, app, &User{}, &user_session_default.UserSession{}, &user_session_default.UserSessionClient{}, &sms.SmsMessage{})
 }
 
-func initAuthServer(t *testing.T, config ...string) (app_context.Context, *user_session_default.Users, *auth_server.AuthServerBase) {
+func initServer(t *testing.T, config ...string) (app_context.Context, *user_session_default.Users, bare_bones_server.Server) {
 	app := test_utils.InitAppContext(t, testDir, utils.OptionalArg("auth_test.jsonc", config...))
 
 	createDb(t, app)
@@ -33,13 +33,13 @@ func initAuthServer(t *testing.T, config ...string) (app_context.Context, *user_
 	users := user_session_default.NewUsers()
 	users.Init(app.Validator())
 
-	server := auth_server.NewAuthServer()
-	require.NoErrorf(t, server.Init(app, users, &sms_provider_factory.MockFactory{}), "failed to init auth server")
+	server := bare_bones_server.New(users, bare_bones_server.Config{SmsProviders: &sms_provider_factory.MockFactory{}})
+	require.NoErrorf(t, server.Init(app), "failed to init auth server")
 
 	return app, users, server
 }
 
 func TestInitServer(t *testing.T) {
-	app, _, _ := initAuthServer(t)
+	app, _, _ := initServer(t)
 	app.Close()
 }

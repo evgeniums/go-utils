@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/api/bare_bones_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_token"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
@@ -19,8 +19,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func initOpTest(t *testing.T, config ...string) (app_context.Context, *user_session_default.Users, *auth_server.AuthServerBase, op_context.Context) {
-	app, users, server := initAuthServer(t)
+func initOpTest(t *testing.T, config ...string) (app_context.Context, *user_session_default.Users, bare_bones_server.Server, op_context.Context) {
+	app, users, server := initServer(t)
 
 	ctx := test_utils.SimpleOpContext(app, t.Name())
 
@@ -46,7 +46,7 @@ func TestLogin(t *testing.T) {
 	require.NotNil(t, user2)
 
 	// prepare client
-	client := test_utils.PrepareHttpClient(t, server.RestApiServer.GinEngine())
+	client := test_utils.PrepareHttpClient(t, test_utils.BBGinEngine(t, server))
 
 	// login without headers
 	client.Login(login1, password1, auth.ErrorCodeUnauthorized)
@@ -97,9 +97,9 @@ func TestSession(t *testing.T) {
 	require.NotNil(t, user2)
 
 	// prepare client1
-	client1 := test_utils.PrepareHttpClient(t, server.RestApiServer.GinEngine())
+	client1 := test_utils.PrepareHttpClient(t, test_utils.BBGinEngine(t, server))
 	// prepare client2
-	client2 := test_utils.PrepareHttpClient(t, server.RestApiServer.GinEngine())
+	client2 := test_utils.PrepareHttpClient(t, test_utils.BBGinEngine(t, server))
 
 	// request before login
 	resp := client1.Get("/status/logged", nil)
@@ -248,9 +248,9 @@ func TestTokens(t *testing.T) {
 	require.NotNil(t, user2)
 
 	// prepare client1
-	client1 := test_utils.PrepareHttpClient(t, server.RestApiServer.GinEngine())
+	client1 := test_utils.PrepareHttpClient(t, test_utils.BBGinEngine(t, server))
 	// prepare client2
-	client2 := test_utils.PrepareHttpClient(t, server.RestApiServer.GinEngine())
+	client2 := test_utils.PrepareHttpClient(t, test_utils.BBGinEngine(t, server))
 
 	client1.Login(login1, password1)
 	client2.Login(login1, password1)

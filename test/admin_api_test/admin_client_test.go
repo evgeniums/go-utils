@@ -15,7 +15,7 @@ import (
 const BaseUrl = "http://localhost"
 
 func initClient(t *testing.T, g *gin.Engine, config ...string) (app_context.Context, api_client.Client, *admin_api_client.AdminClient) {
-	app := test_utils.InitAppContextNoDb(t, testDir, utils.OptionalArg("user_api_client.jsonc", config...))
+	app := test_utils.InitAppContextNoDb(t, testDir, utils.OptionalArg("admin_api_client.jsonc", config...))
 
 	restApiClient := test_utils.RestApiTestClient(t, g, BaseUrl)
 	client := rest_api_client.New(restApiClient)
@@ -27,7 +27,7 @@ func initClient(t *testing.T, g *gin.Engine, config ...string) (app_context.Cont
 
 func TestInitClient(t *testing.T) {
 	serverApp, _, server := initServer(t)
-	clientApp, _, _ := initClient(t, server.RestApiServer.GinEngine())
+	clientApp, _, _ := initClient(t, test_utils.BBGinEngine(t, server))
 	serverApp.Close()
 	clientApp.Close()
 }

@@ -20,7 +20,7 @@ var _, testBasePath, _, _ = runtime.Caller(0)
 var testDir = filepath.Dir(testBasePath)
 
 func createDb(t *testing.T, app app_context.Context) {
-	test_utils.CreateDb(t, app, &sms.SmsMessage{})
+	test_utils.CreateDbModel(t, app, &sms.SmsMessage{})
 }
 
 func initSmsManager(t *testing.T, config ...string) (app_context.Context, sms.SmsManager) {

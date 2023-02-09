@@ -34,7 +34,7 @@ type SampleModel2 struct {
 }
 
 func createDb(t *testing.T, app app_context.Context) {
-	test_utils.CreateDb(t, app, &SampleModel1{}, &SampleModel2{})
+	test_utils.CreateDbModel(t, app, &SampleModel1{}, &SampleModel2{})
 }
 
 func TestCreateDatabase(t *testing.T) {
