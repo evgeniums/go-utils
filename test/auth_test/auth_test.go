@@ -31,7 +31,7 @@ func initAuthServer(t *testing.T, config ...string) (app_context.Context, *user_
 	createDb(t, app)
 
 	users := user_session_default.NewUsers()
-	users.Init(app)
+	users.Init(app.Validator())
 
 	server := auth_server.NewAuthServer()
 	require.NoErrorf(t, server.Init(app, users, &sms_provider_factory.MockFactory{}), "failed to init auth server")

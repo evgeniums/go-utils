@@ -31,7 +31,7 @@ func initTest(t *testing.T, config ...string) (app_context.Context, *user_defaul
 	createDb(t, app)
 
 	users := user_default.NewUsers()
-	users.Init(app)
+	users.Init(app.Validator())
 
 	ctx := test_utils.SimpleOpContext(app, t.Name())
 

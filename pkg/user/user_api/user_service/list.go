@@ -3,24 +3,16 @@ package user_service
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
 )
 
-type ListEndpoint[U user.User, S auth_session.Session, SC auth_session.SessionClient] struct {
+type ListEndpoint[U user.User] struct {
 	api_server.EndpointBase
-	UserEndpoint[U, S, SC]
+	UserEndpoint[U]
 }
 
-func List[U user.User, S auth_session.Session, SC auth_session.SessionClient](service *UserService[U, S, SC]) *ListEndpoint[U, S, SC] {
-	e := &ListEndpoint[U, S, SC]{}
-	e.service = service
-	e.Construct(user_api.List())
-	return e
-}
-
-func (e *ListEndpoint[U, S, SC]) HandleRequest(request api_server.Request) error {
+func (e *ListEndpoint[U]) HandleRequest(request api_server.Request) error {
 
 	c := request.TraceInMethod("users.List")
 	defer request.TraceOutMethod()
@@ -46,4 +38,11 @@ func (e *ListEndpoint[U, S, SC]) HandleRequest(request api_server.Request) error
 	request.Response().SetMessage(resp)
 
 	return nil
+}
+
+func List[U user.User](service *UserService[U]) *ListEndpoint[U] {
+	e := &ListEndpoint[U]{}
+	e.service = service
+	e.Construct(user_api.List())
+	return e
 }

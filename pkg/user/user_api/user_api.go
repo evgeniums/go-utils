@@ -3,6 +3,7 @@ package user_api
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
+	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
@@ -10,13 +11,10 @@ import (
 
 type UserController[UserType User] interface {
 
-	Find(ctx op_context.Context, fields db.Fields, user interface{}) (bool, error)
-	Create(ctx op_context.Context, user common.Object) error
 	List(ctx op_context.Context, filter *db.Filter, users interface{}) error
 	Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error)
 	FindByLogin(ctx op_context.Context, login string) (UserType, error)
 
-	Update(ctx op_context.Context, user common.Object, fields db.Fields) error
 	SetPassword(ctx op_context.Context, login string, password string) error
 	SetPhone(ctx op_context.Context, login string, phone string) error
 	SetEmail(ctx op_context.Context, login string, email string) error
@@ -52,14 +50,11 @@ func List() api.Operation {
 	return api.NewOperation("list", access_control.Read)
 }
 
-func Find() api.Operation {
-	return api.NewOperation("find", access_control.Read)
+type AddResponse[T user.User] struct {
+	api.ResponseHateous
+	User T `json:"user"`
 }
 
-func Create() api.Operation {
-	return api.NewOperation("create", access_control.Create)
-}
-
-func Update() api.Operation {
-	return api.NewOperation("update", access_control.UpdatePartial)
+func Add() api.Operation {
+	return api.NewOperation("add", access_control.Create)
 }

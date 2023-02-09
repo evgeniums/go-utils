@@ -3,7 +3,6 @@ package user
 import (
 	"errors"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/crud"
@@ -11,6 +10,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
 type UserController[UserType User] interface {
@@ -27,6 +27,11 @@ type UserController[UserType User] interface {
 
 	SetUserBuilder(builder func() UserType)
 	MakeUser() UserType
+}
+
+type Users[UserType User] interface {
+	auth_session.AuthUserManager
+	UserController[UserType]
 }
 
 type UserControllerBase[UserType User] struct {
@@ -251,7 +256,7 @@ func (u *UserControllerBase[UserType]) FindUsers(ctx op_context.Context, filter 
 }
 
 type UsersBase[UserType User] struct {
-	app_context.WithAppBase
+	Validator            validator.Validator
 	LoginValidationRules string
 
 	UserController[UserType]
@@ -261,8 +266,8 @@ func (u *UsersBase[UserType]) Construct(userController UserController[UserType])
 	u.UserController = userController
 }
 
-func (u *UsersBase[UserType]) Init(app app_context.Context, loginValidationRules ...string) {
-	u.WithAppBase.Init(app)
+func (u *UsersBase[UserType]) Init(vld validator.Validator, loginValidationRules ...string) {
+	u.Validator = vld
 	u.LoginValidationRules = utils.OptionalArg("required,alphanum_|email,lowercase", loginValidationRules...)
 }
 
@@ -271,7 +276,7 @@ func (u *UsersBase[UserType]) MakeAuthUser() auth.User {
 }
 
 func (u *UsersBase[UserType]) ValidateLogin(login string) error {
-	return u.App().Validator().ValidateValue(login, u.LoginValidationRules)
+	return u.Validator.ValidateValue(login, u.LoginValidationRules)
 }
 
 func (m *UsersBase[UserType]) AuthUserManager() auth_session.AuthUserManager {

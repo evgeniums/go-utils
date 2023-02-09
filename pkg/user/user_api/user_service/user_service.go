@@ -2,34 +2,35 @@ package user_service
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
 )
 
-type UserEndpoint[U user.User, S auth_session.Session, SC auth_session.SessionClient] struct {
-	service *UserService[U, S, SC]
+type UserEndpoint[U user.User] struct {
+	service *UserService[U]
 }
 
-type UserService[U user.User, S auth_session.Session, SC auth_session.SessionClient] struct {
+type UserService[U user.User] struct {
 	api_server.ServiceBase
-	Users        *user.UsersWithSession[U, S, SC]
+	Users        user.Users[U]
 	UserTypeName string
 }
 
-func NewUserService[U user.User, S auth_session.Session, SC auth_session.SessionClient](userController *user.UsersWithSession[U, S, SC],
-	UserTypeName ...string) *UserService[U, S, SC] {
+func NewUserService[U user.User](userController user.Users[U],
+	setterBuilder func() user.UserFieldsSetter[U],
+	UserTypeName ...string) *UserService[U] {
 
-	userType, serviceName, users, user := user_api.PrepareResources(UserTypeName...)
-	s := &UserService[U, S, SC]{}
+	userType, serviceName, users, _ := user_api.PrepareResources(UserTypeName...)
+	s := &UserService[U]{}
 	s.Init(serviceName)
 	s.Users = userController
 	s.AddChild(users)
 	s.UserTypeName = userType
 
 	users.AddOperation(List(s))
+	users.AddOperation(Add(s, setterBuilder))
 
-	user.AddOperation(Update(s))
+	// user.AddOperation(Update(s))
 
 	return s
 }

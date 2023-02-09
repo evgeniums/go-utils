@@ -86,6 +86,12 @@ func (u *UserBase) DbUser() interface{} {
 	return &u.UserBaseDB
 }
 
+type UserFieldsSetter[T User] interface {
+	Login() string
+	Password() string
+	SetUserFields(ctx op_context.Context, user T) error
+}
+
 type SetUserFields[UserType User] func(ctx op_context.Context, user UserType) error
 
 func Phone[UserType User](phone string, userSample ...UserType) SetUserFields[UserType] {

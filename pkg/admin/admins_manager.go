@@ -6,16 +6,16 @@ import (
 )
 
 type Manager struct {
-	*user.UsersWithSession[*Admin, *AdminSession, *AdminSessionClient]
+	*user.UsersWithSessionBase[*Admin, *AdminSession, *AdminSessionClient]
 }
 
-type AdminControllers = user.UsersWithSessionConfig[*Admin]
+type AdminControllers = user.UsersWithSessionBaseConfig[*Admin]
 
 func NewManager(controllers ...AdminControllers) *Manager {
-	m := &Manager{UsersWithSession: user.NewUsersWithSession(NewAdmin, NewAdminSession, NewAdminSessionClient, controllers...)}
+	m := &Manager{UsersWithSessionBase: user.NewUsersWithSession(NewAdmin, NewAdminSession, NewAdminSessionClient, controllers...)}
 	return m
 }
 
 func (m *Manager) Add(ctx op_context.Context, login string, password string, phone string) (*Admin, error) {
-	return m.UsersWithSession.Add(ctx, login, password, user.Phone(phone, &Admin{}))
+	return m.UsersWithSessionBase.Add(ctx, login, password, user.Phone(phone, &Admin{}))
 }

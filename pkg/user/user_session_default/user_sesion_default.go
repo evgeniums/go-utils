@@ -24,8 +24,8 @@ func NewSessionClient() *UserSessionClient {
 	return &UserSessionClient{}
 }
 
-type Users = user.UsersWithSession[*user_default.User, *UserSession, *UserSessionClient]
+type Users = user.UsersWithSessionBase[*user_default.User, *UserSession, *UserSessionClient]
 
-func NewUsers(controllers ...user.UsersWithSessionConfig[*User]) *Users {
+func NewUsers(controllers ...user.UsersWithSessionBaseConfig[*User]) *Users {
 	return user.NewUsersWithSession(user_default.NewUser, NewSession, NewSessionClient, controllers...)
 }
