@@ -65,9 +65,13 @@ func TestSms(t *testing.T) {
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: auth_sms.ErrorCodeSmsConfirmationRequired})
 	resp = client.SendSmsConfirmation(resp, "0000", http.MethodPost, "/status/sms", nil)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: auth_sms.ErrorCodeInvalidSmsCode})
+	overridenToken := resp.Object.Header().Get("x-auth-sms-token")
 	resp = client.SendSmsConfirmation(resp, "1111", http.MethodPost, "/status/sms", nil)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: auth_sms.ErrorCodeInvalidSmsCode})
-	resp = client.SendSmsConfirmation(resp, "2222", http.MethodPost, "/status/sms", nil)
+	actualToken := resp.Object.Header().Get("x-auth-sms-token")
+	resp = client.SendSmsConfirmationWithToken(resp, overridenToken, "2222", http.MethodPost, "/status/sms", nil)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: auth_sms.ErrorCodeTokenExpired})
+	resp = client.SendSmsConfirmationWithToken(resp, actualToken, "2222", http.MethodPost, "/status/sms", nil)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: auth_sms.ErrorCodeTooManyTries})
 
 	// check delay

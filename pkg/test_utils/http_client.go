@@ -182,6 +182,16 @@ func (c *HttpClient) SendSmsConfirmation(resp *HttpResponse, code string, method
 	return c.RequestBody(method, path, cmd, h)
 }
 
+func (c *HttpClient) SendSmsConfirmationWithToken(resp *HttpResponse, token string, code string, method string, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+	c.AutoSms = false
+	h := c.addTokens(headers...)
+	h["x-auth-sms-code"] = code
+	if token != "" {
+		h["x-auth-sms-token"] = token
+	}
+	return c.RequestBody(method, path, cmd, h)
+}
+
 func (c *HttpClient) RequestBody(method string, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
 	h := c.addTokens(headers...)
 	c.addTokens(headers...)
