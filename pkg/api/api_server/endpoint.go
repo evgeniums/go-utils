@@ -39,15 +39,36 @@ func (e *EndpointBase) PrecheckRequestBeforeAuth(request Request, smsMessage *st
 	return nil
 }
 
+type ResourceEndpointI interface {
+	api.Resource
+	Endpoint
+	init(resourceType string, operationName string, accessType ...access_control.AccessType)
+	construct(resourceType string, op api.Operation)
+}
+
 type ResourceEndpoint struct {
 	api.ResourceBase
 	EndpointBase
 }
 
-func (e *ResourceEndpoint) Init(resourceType string, operationName string, selfOp api.Operation, accessType ...access_control.AccessType) {
+func (e *ResourceEndpoint) init(resourceType string, operationName string, accessType ...access_control.AccessType) {
 	e.EndpointBase.Init(operationName, accessType...)
 	e.ResourceBase.Init(resourceType)
-	e.AddOperation(selfOp)
+}
+
+func (e *ResourceEndpoint) construct(resourceType string, op api.Operation) {
+	e.ResourceBase.Init(resourceType)
+	e.EndpointBase.Construct(op)
+}
+
+func ConstructResourceEndpoint(ep ResourceEndpointI, resourceType string, op api.Operation) {
+	ep.construct(resourceType, op)
+	ep.AddOperation(ep)
+}
+
+func InitResourceEndpoint(ep ResourceEndpointI, resourceType string, operationName string, accessType ...access_control.AccessType) {
+	ep.init(resourceType, operationName, accessType...)
+	ep.AddOperation(ep)
 }
 
 // Base type for API endpoints with empty handlers.

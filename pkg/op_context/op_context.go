@@ -106,6 +106,7 @@ type Context interface {
 
 	// TODO add event logger
 
+	Reset()
 	Close(successMessage ...string)
 }
 
@@ -333,6 +334,12 @@ func (c *ContextBase) DbTransaction() db.DBHandlers {
 
 func (c *ContextBase) SetErrorAsWarn(enable bool) {
 	c.errorAsWarn = enable
+}
+
+func (c *ContextBase) Reset() {
+	c.stack = make([]CallContext, 0)
+	c.errorStack = nil
+	c.genericError = nil
 }
 
 func DB(c Context) db.DBHandlers {

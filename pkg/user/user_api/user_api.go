@@ -37,6 +37,12 @@ func PrepareResources(userTypeName ...string) (userType string, serviceName stri
 	return
 }
 
+func NamedUserResource(id string, userTypeName ...string) (userResource api.Resource) {
+	r := UserResource(userTypeName...)
+	r.SetId(id)
+	return r
+}
+
 func UserResource(resourceType ...string) api.Resource {
 	return api.NamedResource(utils.OptionalArg("user", resourceType...))
 }
@@ -57,4 +63,28 @@ type UserResponse[T user.User] struct {
 
 func Add() api.Operation {
 	return api.NewOperation("add", access_control.Create)
+}
+
+type SetPasswordCmd struct {
+	Password string `json:"password"`
+}
+
+func SetPassword() api.Operation {
+	return api.NewOperation("set_password", access_control.Put)
+}
+
+type SetEmailCmd struct {
+	Email string `json:"email" validate:"omitempty,email" vmessage:"Invalid email format"`
+}
+
+func SetEmail() api.Operation {
+	return api.NewOperation("set_email", access_control.Put)
+}
+
+type SetPhoneCmd struct {
+	Phone string `json:"phone" validate:"omitempty,phone" vmessage:"Invalid phone format"`
+}
+
+func SetPhone() api.Operation {
+	return api.NewOperation("set_phone", access_control.Put)
 }

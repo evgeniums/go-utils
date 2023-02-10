@@ -21,7 +21,7 @@ var CommonErrorDescriptions = map[string]string{
 	ErrorCodeFieldValue:                 "Invalid value of request field",
 	ErrorCodeValidation:                 "Validation failed",
 	ErrorCodeForbidden:                  "Access denied",
-	ErrorCodeNotFound:                   "Resource is not found",
+	ErrorCodeNotFound:                   "Resource not found",
 	ErrorCodeExternalServiceUnavailable: "External service is temporarily unavailable",
 	ErrorCodeExternalServiceError:       "External service reported error",
 }

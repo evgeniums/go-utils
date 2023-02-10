@@ -13,7 +13,7 @@ type LoginEndpoint struct {
 
 func NewLoginEndpoint() *LoginEndpoint {
 	ep := &LoginEndpoint{}
-	ep.Init("login", "Login", ep, access_control.Post)
+	api_server.InitResourceEndpoint(ep, "login", "Login", access_control.Post)
 	return ep
 }
 
@@ -25,7 +25,7 @@ type LogoutEndpoint struct {
 
 func NewLogoutEndpoint() *LogoutEndpoint {
 	ep := &LogoutEndpoint{}
-	ep.Init("logout", "Logout", ep, access_control.Post)
+	api_server.InitResourceEndpoint(ep, "logout", "Logout", access_control.Post)
 	return ep
 }
 
@@ -37,7 +37,7 @@ type RefreshEndpoint struct {
 
 func NewRefreshEndpoint() *RefreshEndpoint {
 	ep := &RefreshEndpoint{}
-	ep.Init("refresh", "Refresh", ep, access_control.Post)
+	api_server.InitResourceEndpoint(ep, "refresh", "Refresh", access_control.Post)
 	return ep
 }
 

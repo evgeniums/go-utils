@@ -89,7 +89,7 @@ func (r *ResourceBase) Init(resourceType string, config ...ResourceConfig) {
 func (r *ResourceBase) RebuildPaths() {
 
 	if r.HasId() {
-		r.pathPrototype = utils.ConcatStrings("/:", r.Type(), ":")
+		r.pathPrototype = utils.ConcatStrings("/:", r.Type())
 		r.actualPath = utils.ConcatStrings("/", r.Id())
 	} else {
 		r.pathPrototype = utils.ConcatStrings("/", r.Type())

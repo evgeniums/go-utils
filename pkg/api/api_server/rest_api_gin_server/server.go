@@ -273,7 +273,6 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 			err = s.Auth().HandleRequest(request, ep.Resource().ServicePathPrototype(), ep.AccessType())
 			if err != nil {
 				request.SetGenericError(s.MakeGenericError(auth.ErrorCodeUnauthorized, request.Tr))
-				// errors must be processed in handler
 			}
 		}
 
@@ -284,7 +283,10 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 
 		// call endpoint's request handler
 		if err == nil {
-			ep.HandleRequest(request) // do we need to handle error return here?
+			err = ep.HandleRequest(request)
+			if err != nil {
+				request.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
+			}
 		}
 
 		// close context with sending response to client

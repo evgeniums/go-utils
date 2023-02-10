@@ -21,15 +21,20 @@ func MakeOperationHandler(client Client, clientOperation ClientOperation) api.Op
 }
 
 type ServiceClient struct {
-	api.ResourceBase
-	client Client
+	client      Client
+	serviceName string
 }
 
-func (s *ServiceClient) Init(client Client, pathName string) {
+func (s *ServiceClient) Init(client Client, serviceName string) {
 	s.client = client
-	s.ResourceBase.Init(pathName, api.ResourceConfig{Service: true})
+	s.serviceName = serviceName
 }
 
 func (s *ServiceClient) Client() Client {
 	return s.client
+}
+
+func (s *ServiceClient) Service() api.Resource {
+	r := api.NewResource(s.serviceName, api.ResourceConfig{Service: true})
+	return r
 }

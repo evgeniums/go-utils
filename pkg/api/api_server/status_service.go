@@ -11,7 +11,7 @@ type CheckStatusEndpoint struct {
 
 func NewCheckStatusEndpoint() *CheckStatusEndpoint {
 	ep := &CheckStatusEndpoint{}
-	ep.Init("check", "CheckStatus", ep, access_control.Get)
+	InitResourceEndpoint(ep, "check", "CheckStatus", access_control.Get)
 	return ep
 }
 
@@ -53,7 +53,7 @@ type CheckAccessResourceEndpoint struct {
 func NewCheckAccessResourceEndpoint(resource string, operationName string,
 	accessType ...access_control.AccessType) *CheckAccessResourceEndpoint {
 	ep := &CheckAccessResourceEndpoint{}
-	ep.Init(resource, operationName, ep, accessType...)
+	InitResourceEndpoint(ep, resource, operationName, accessType...)
 	return ep
 }
 

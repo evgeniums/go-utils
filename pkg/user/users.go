@@ -7,21 +7,27 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/crud"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
+type MainFieldSetters interface {
+	SetPassword(ctx op_context.Context, id string, password string) error
+	SetPhone(ctx op_context.Context, id string, phone string) error
+	SetEmail(ctx op_context.Context, id string, email string) error
+	SetBlocked(ctx op_context.Context, id string, blocked bool) error
+}
+
 type UserController[UserType User] interface {
+	MainFieldSetters
+
 	Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error)
+	Find(ctx op_context.Context, id string) (UserType, error)
 	FindByLogin(ctx op_context.Context, login string) (UserType, error)
 	FindAuthUser(ctx op_context.Context, login string, user auth.User, dest ...interface{}) (bool, error)
-	SetPassword(ctx op_context.Context, login string, password string) error
-	SetPhone(ctx op_context.Context, login string, phone string) error
-	SetEmail(ctx op_context.Context, login string, email string) error
-	SetBlocked(ctx op_context.Context, login string, blocked bool) error
-
 	// TODO paginate users
 	FindUsers(ctx op_context.Context, filter *db.Filter, users *[]UserType) error
 
@@ -92,12 +98,44 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 	return user, nil
 }
 
+func (u *UserControllerBase[UserType]) Find(ctx op_context.Context, id string) (UserType, error) {
+
+	var nilUser UserType
+
+	// setup
+	c := ctx.TraceInMethod("Users.Find", logger.Fields{"id": id})
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
+
+	// find user
+	user := u.MakeUser()
+	found, err := u.crudController.Read(ctx, db.Fields{"id": id}, user)
+	if err != nil {
+		c.SetMessage("failed to find user in database")
+		return nilUser, err
+	}
+	if !found {
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
+		err = errors.New("user with such ID does not exist")
+		return nilUser, err
+	}
+
+	// done
+	return user, nil
+}
+
 func (u *UserControllerBase[UserType]) FindByLogin(ctx op_context.Context, login string) (UserType, error) {
 
 	var nilUser UserType
 
 	// setup
-	c := ctx.TraceInMethod("Users.Find", logger.Fields{"login": login})
+	c := ctx.TraceInMethod("Users.FindByLogin", logger.Fields{"login": login})
 	var err error
 	onExit := func() {
 		if err != nil {
@@ -123,10 +161,10 @@ func (u *UserControllerBase[UserType]) FindByLogin(ctx op_context.Context, login
 	return user, nil
 }
 
-func (u *UserControllerBase[UserType]) SetPassword(ctx op_context.Context, login string, password string) error {
+func (u *UserControllerBase[UserType]) SetPassword(ctx op_context.Context, id string, password string) error {
 
 	// setup
-	ctx.SetLoggerField("login", login)
+	ctx.SetLoggerField("id", id)
 	c := ctx.TraceInMethod("Users.SetPassword")
 	var err error
 	onExit := func() {
@@ -138,7 +176,7 @@ func (u *UserControllerBase[UserType]) SetPassword(ctx op_context.Context, login
 	defer onExit()
 
 	// find admin
-	user, err := u.FindByLogin(ctx, login)
+	user, err := u.Find(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -154,10 +192,10 @@ func (u *UserControllerBase[UserType]) SetPassword(ctx op_context.Context, login
 	return nil
 }
 
-func (u *UserControllerBase[UserType]) SetPhone(ctx op_context.Context, login string, phone string) error {
+func (u *UserControllerBase[UserType]) SetPhone(ctx op_context.Context, id string, phone string) error {
 
 	// setup
-	ctx.SetLoggerField("login", login)
+	ctx.SetLoggerField("id", id)
 	ctx.SetLoggerField("phone", phone)
 	c := ctx.TraceInMethod("Users.SetPhone")
 	var err error
@@ -170,7 +208,7 @@ func (u *UserControllerBase[UserType]) SetPhone(ctx op_context.Context, login st
 	defer onExit()
 
 	// find user
-	user, err := u.FindByLogin(ctx, login)
+	user, err := u.Find(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -185,11 +223,11 @@ func (u *UserControllerBase[UserType]) SetPhone(ctx op_context.Context, login st
 	return nil
 }
 
-func (u *UserControllerBase[UserType]) SetEmail(ctx op_context.Context, login string, email string) error {
+func (u *UserControllerBase[UserType]) SetEmail(ctx op_context.Context, id string, email string) error {
 
 	// setup
-	ctx.SetLoggerField("login", login)
-	ctx.SetLoggerField("phone", email)
+	ctx.SetLoggerField("id", id)
+	ctx.SetLoggerField("email", email)
 	c := ctx.TraceInMethod("Users.SetEmail")
 	var err error
 	onExit := func() {
@@ -201,7 +239,7 @@ func (u *UserControllerBase[UserType]) SetEmail(ctx op_context.Context, login st
 	defer onExit()
 
 	// find user
-	user, err := u.FindByLogin(ctx, login)
+	user, err := u.Find(ctx, id)
 	if err != nil {
 		return err
 	}

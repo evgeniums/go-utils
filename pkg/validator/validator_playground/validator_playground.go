@@ -17,6 +17,7 @@ type PlaygroundValdator struct {
 func New() *PlaygroundValdator {
 	p := &PlaygroundValdator{validator: playground.New()}
 	p.validator.RegisterValidation("alphanum_", ValidateAlphanumUnderscore)
+	p.validator.RegisterValidation("phone", ValidatePhone)
 	return p
 }
 
@@ -123,4 +124,12 @@ var alphaNumericUnerscoreRegex = regexp.MustCompile(alphaNumericUnderscoreRegexS
 
 func ValidateAlphanumUnderscore(fl playground.FieldLevel) bool {
 	return alphaNumericUnerscoreRegex.MatchString(fl.Field().String())
+}
+
+const phoneRegexString = "^[1-9]?[0-9]{7,14}$"
+
+var phoneRegex = regexp.MustCompile(phoneRegexString)
+
+func ValidatePhone(fl playground.FieldLevel) bool {
+	return phoneRegex.MatchString(fl.Field().String())
 }

@@ -20,7 +20,7 @@ func NewUserService[U user.User](userController user.Users[U],
 	setterBuilder func() user.UserFieldsSetter[U],
 	userTypeName ...string) *UserService[U] {
 
-	userType, serviceName, users, _ := user_api.PrepareResources(userTypeName...)
+	userType, serviceName, users, user := user_api.PrepareResources(userTypeName...)
 	s := &UserService[U]{}
 	s.Init(serviceName)
 	s.UserTypeName = userType
@@ -31,7 +31,7 @@ func NewUserService[U user.User](userController user.Users[U],
 	users.AddOperation(List(s))
 	users.AddOperation(Add(s, setterBuilder))
 
-	// user.AddOperation(Update(s))
+	user.AddChild(SetPhone(s.UserTypeName, s.Users))
 
 	return s
 }

@@ -13,6 +13,10 @@ func NewProxy(logger Logger, fields ...Fields) *ProxyLogger {
 	return &ProxyLogger{logger, utils.OptionalArg(Fields{}, fields...)}
 }
 
+func (p *ProxyLogger) Reset() {
+	p.staticFields = Fields{}
+}
+
 func (p *ProxyLogger) NextLogger() Logger {
 	return p.logger
 }
