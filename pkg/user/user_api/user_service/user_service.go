@@ -1,6 +1,7 @@
 package user_service
 
 import (
+	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
@@ -32,6 +33,20 @@ func NewUserService[U user.User](userController user.Users[U],
 	users.AddOperation(Add(s, setterBuilder))
 
 	user.AddChild(SetPhone(s.UserTypeName, s.Users))
+	user.AddChild(SetEmail(s.UserTypeName, s.Users))
 
 	return s
+}
+
+type SetUserFieldEndpoint struct {
+	userTypeName string
+	api_server.ResourceEndpoint
+	users user.MainFieldSetters
+}
+
+func (e *SetUserFieldEndpoint) Init(ep api_server.ResourceEndpointI, userTypeName string, fieldName string, users user.MainFieldSetters, op api.Operation) api_server.ResourceEndpointI {
+	api_server.ConstructResourceEndpoint(ep, fieldName, op)
+	e.users = users
+	e.userTypeName = userTypeName
+	return ep
 }

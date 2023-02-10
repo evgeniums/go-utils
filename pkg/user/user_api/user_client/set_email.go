@@ -6,20 +6,20 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
 )
 
-type SetPhone = SetterHandler[user_api.SetPhoneCmd]
+type SetEmail = SetterHandler[user_api.SetEmailCmd]
 
-func (u *UserClient[U]) SetPhone(ctx op_context.Context, id string, phone string) error {
+func (u *UserClient[U]) SetEmail(ctx op_context.Context, id string, email string) error {
 
 	// setup
-	c := ctx.TraceInMethod("UserClient.SetPhone")
+	c := ctx.TraceInMethod("UserClient.SetEmail")
 	defer ctx.TraceOutMethod()
 
 	// create command
-	handler := &SetPhone{}
-	handler.Cmd.Phone = phone
+	handler := &SetEmail{}
+	handler.Cmd.Email = email
 
 	// prepare and exec handler
-	err := u.UserOperation(id, "phone", user_api.SetPhone()).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
+	err := u.UserOperation(id, "email", user_api.SetEmail()).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")
 		return err

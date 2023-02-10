@@ -7,9 +7,7 @@ import (
 )
 
 type SetPhoneEndpoint struct {
-	userTypeName string
-	api_server.ResourceEndpoint
-	users user.MainFieldSetters
+	SetUserFieldEndpoint
 }
 
 func (s *SetPhoneEndpoint) HandleRequest(request api_server.Request) error {
@@ -31,10 +29,7 @@ func (s *SetPhoneEndpoint) HandleRequest(request api_server.Request) error {
 	return nil
 }
 
-func SetPhone(userTypeName string, users user.MainFieldSetters) *SetPhoneEndpoint {
+func SetPhone(userTypeName string, users user.MainFieldSetters) api_server.ResourceEndpointI {
 	e := &SetPhoneEndpoint{}
-	api_server.ConstructResourceEndpoint(e, "phone", user_api.SetPhone())
-	e.users = users
-	e.userTypeName = userTypeName
-	return e
+	return e.Init(e, userTypeName, "phone", users, user_api.SetPhone())
 }

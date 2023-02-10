@@ -12,6 +12,14 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
 )
 
+type SetterHandler[T interface{}] struct {
+	Cmd T
+}
+
+func (s *SetterHandler[T]) Exec(client api_client.Client, ctx op_context.Context, operation api.Operation) error {
+	return client.Exec(ctx, operation, s.Cmd, nil)
+}
+
 type UserBuilder[U user.User] func() U
 
 type UserClient[U user.User] struct {
@@ -74,10 +82,6 @@ func (u *UserClient[U]) FindAuthUser(ctx op_context.Context, login string, user 
 }
 
 func (u *UserClient[U]) SetPassword(ctx op_context.Context, login string, password string) error {
-	return errors.New("not implemented yet")
-}
-
-func (u *UserClient[U]) SetEmail(ctx op_context.Context, login string, email string) error {
 	return errors.New("not implemented yet")
 }
 

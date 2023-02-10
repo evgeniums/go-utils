@@ -134,11 +134,10 @@ func TestSetPhone(t *testing.T) {
 	defer ctx.Close()
 
 	newPhone := "888999111"
+
+	// check unknown ID
 	err := ctx.RemoteAdminManager.SetPhone(ctx.ClientOp, targetAdminLogin, newPhone)
-	assert.Error(t, err)
-	gErr, ok := err.(generic_error.Error)
-	require.True(t, ok)
-	assert.Equal(t, generic_error.ErrorCodeNotFound, gErr.Code())
+	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeNotFound)
 	ctx.Reset()
 
 	dbAdmin1, err := ctx.LocalAdminManager.FindByLogin(ctx.AdminOp, targetAdminLogin)
@@ -147,9 +146,55 @@ func TestSetPhone(t *testing.T) {
 	assert.Equal(t, targetAdminPhone, dbAdmin1.Phone())
 	ctx.Reset()
 
+	// check invalid phone
+	err = ctx.RemoteAdminManager.SetPhone(ctx.ClientOp, ctx.TargetUser.GetID(), "not phone")
+	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeFormat, "Invalid phone format")
+
+	dbAdmin1, err = ctx.LocalAdminManager.FindByLogin(ctx.AdminOp, targetAdminLogin)
+	require.NoError(t, err)
+	require.NotNil(t, dbAdmin1)
+	assert.Equal(t, targetAdminPhone, dbAdmin1.Phone())
+	ctx.Reset()
+
+	// check success
 	assert.NoError(t, ctx.RemoteAdminManager.SetPhone(ctx.ClientOp, ctx.TargetUser.GetID(), newPhone))
 	dbAdmin2, err := ctx.LocalAdminManager.FindByLogin(ctx.AdminOp, targetAdminLogin)
 	require.NoError(t, err)
 	require.NotNil(t, dbAdmin2)
 	assert.Equal(t, newPhone, dbAdmin2.Phone())
+}
+
+func TestSetEmail(t *testing.T) {
+	ctx := initTest(t)
+	defer ctx.Close()
+
+	newEmail := "user@example.com"
+
+	// check invalid ID
+	err := ctx.RemoteAdminManager.SetEmail(ctx.ClientOp, targetAdminLogin, newEmail)
+	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeNotFound)
+	ctx.Reset()
+
+	dbAdmin1, err := ctx.LocalAdminManager.FindByLogin(ctx.AdminOp, targetAdminLogin)
+	require.NoError(t, err)
+	require.NotNil(t, dbAdmin1)
+	assert.Equal(t, targetAdminEmail, dbAdmin1.Email())
+	ctx.Reset()
+
+	// check invalid email
+	err = ctx.RemoteAdminManager.SetEmail(ctx.ClientOp, ctx.TargetUser.GetID(), "not email")
+	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeFormat, "Invalid email format")
+
+	dbAdmin1, err = ctx.LocalAdminManager.FindByLogin(ctx.AdminOp, targetAdminLogin)
+	require.NoError(t, err)
+	require.NotNil(t, dbAdmin1)
+	assert.Equal(t, targetAdminEmail, dbAdmin1.Email())
+	ctx.Reset()
+
+	// check success
+	assert.NoError(t, ctx.RemoteAdminManager.SetEmail(ctx.ClientOp, ctx.TargetUser.GetID(), newEmail))
+	dbAdmin2, err := ctx.LocalAdminManager.FindByLogin(ctx.AdminOp, targetAdminLogin)
+	require.NoError(t, err)
+	require.NotNil(t, dbAdmin2)
+	assert.Equal(t, newEmail, dbAdmin2.Email())
 }
