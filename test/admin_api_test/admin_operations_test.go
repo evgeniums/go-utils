@@ -216,3 +216,19 @@ func TestFindUsers(t *testing.T) {
 	assert.Equal(t, 1, len(admins))
 	assert.Equal(t, targetAdminEmail, admins[0].Email())
 }
+
+func TestFindSingleUser(t *testing.T) {
+	ctx := initTest(t)
+	defer ctx.Close()
+
+	admin, err := ctx.RemoteAdminManager.Find(ctx.ClientOp, ctx.TargetUser.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, admin)
+	assert.Equal(t, targetAdminLogin, admin.Login())
+	assert.Equal(t, targetAdminPhone, admin.Phone())
+
+	dbAdmin1, err := ctx.LocalAdminManager.FindByLogin(ctx.AdminOp, targetAdminLogin)
+	require.NoError(t, err)
+	require.NotNil(t, dbAdmin1)
+	assert.Equal(t, dbAdmin1.GetID(), admin.GetID())
+}

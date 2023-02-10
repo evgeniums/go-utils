@@ -67,11 +67,6 @@ func (u *UserClient[U]) UserOperation(userId string, resourceName string, op api
 	return op
 }
 
-func (u *UserClient[U]) Find(ctx op_context.Context, id string) (U, error) {
-	var nilU U
-	return nilU, errors.New("not implemented yet")
-}
-
 func (u *UserClient[U]) FindByLogin(ctx op_context.Context, login string) (U, error) {
 	var nilU U
 	return nilU, errors.New("not implemented yet")

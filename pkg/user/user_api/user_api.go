@@ -65,6 +65,10 @@ func Add() api.Operation {
 	return api.NewOperation("add", access_control.Create)
 }
 
+func Find() api.Operation {
+	return api.NewOperation("find", access_control.Get)
+}
+
 type SetPasswordCmd struct {
 	Password string `json:"password"`
 }

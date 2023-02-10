@@ -1,0 +1,50 @@
+package user_client
+
+import (
+	"github.com/evgeniums/go-backend-helpers/pkg/api"
+	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/user"
+	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
+)
+
+type Find[U user.User] struct {
+	result *user_api.UserResponse[U]
+}
+
+func (a *Find[U]) Exec(client api_client.Client, ctx op_context.Context, operation api.Operation) error {
+
+	c := ctx.TraceInMethod("Find.Exec")
+	defer ctx.TraceOutMethod()
+
+	err := client.Exec(ctx, operation, nil, a.result)
+	c.SetError(err)
+	return err
+}
+
+func (u *UserClient[U]) Find(ctx op_context.Context, id string) (U, error) {
+
+	var nilU U
+
+	// setup
+	c := ctx.TraceInMethod("UserClient.Find")
+	defer ctx.TraceOutMethod()
+
+	// create command
+	handler := &Find[U]{}
+	handler.result = &user_api.UserResponse[U]{}
+
+	// prepare and exec handler
+	userResource := u.userResource.CloneChain(false)
+	userResource.SetId(id)
+	op := user_api.Find()
+	userResource.AddOperation(op)
+	err := op.Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
+	if err != nil {
+		c.SetMessage("failed to exec operation")
+		return nilU, c.SetError(err)
+	}
+
+	// done
+	return handler.result.User, nil
+}

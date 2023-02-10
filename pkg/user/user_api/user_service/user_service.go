@@ -32,6 +32,7 @@ func NewUserService[U user.User](userController user.Users[U],
 	users.AddOperation(List(s))
 	users.AddOperation(Add(s, setterBuilder))
 
+	user.AddOperation(Find(s))
 	user.AddChild(SetPhone(s.UserTypeName, s.Users))
 	user.AddChild(SetEmail(s.UserTypeName, s.Users))
 

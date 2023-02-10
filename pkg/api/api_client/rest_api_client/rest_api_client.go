@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
@@ -190,9 +191,16 @@ func (r *RestApiClientBase) sendRequest(send DoRequest, ctx op_context.Context, 
 	if resp.Code() < http.StatusBadRequest {
 		if response != nil {
 			if resp.Code() < http.StatusBadRequest {
-				err = json.Unmarshal(resp.Body(), response)
+
+				b := resp.Body()
+				if len(b) == 0 {
+					return nil, c.SetError(errors.New("failed to parse empty response"))
+				}
+
+				err = json.Unmarshal(b, response)
 				if err != nil {
-					c.SetMessage("failed to parse response message")
+					fmt.Printf("message: %s\n", err)
+					return nil, c.SetError(errors.New("failed to parse response message"))
 				}
 			}
 		}
