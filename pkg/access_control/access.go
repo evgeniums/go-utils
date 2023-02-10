@@ -6,22 +6,18 @@ type AccessType uint32
 type Operation uint32
 
 const (
-	ReadContent AccessType = 0x1
-	ReadMeta    AccessType = 0x2
-	ReadOptions AccessType = 0x4
-	Read        AccessType = ReadContent | ReadMeta | ReadOptions
-
-	Create AccessType = 0x8
-
-	UpdateReplace AccessType = 0x10
-	UpdatePartial AccessType = 0x20
+	Read          AccessType = 0x1
+	Create        AccessType = 0x2
+	UpdateReplace AccessType = 0x4
+	UpdatePartial AccessType = 0x8
 	Update        AccessType = UpdateReplace | UpdatePartial
 
-	Delete AccessType = 0x40
+	Delete AccessType = 0x10
 
-	Post = Create
-	Get  = ReadContent
-	Put  = UpdateReplace
+	Post  = Create
+	Get   = Read
+	Put   = UpdateReplace
+	Patch = UpdatePartial
 
 	All AccessType = 0xFFFFFFFF
 )
@@ -62,13 +58,11 @@ func (a *AccessBase) Mask() uint32 {
 }
 
 var httpMethods2AccessTypes = map[string]AccessType{
-	http.MethodGet:     ReadContent,
-	http.MethodPost:    Create,
-	http.MethodPut:     UpdateReplace,
-	http.MethodPatch:   UpdatePartial,
-	http.MethodDelete:  Delete,
-	http.MethodOptions: ReadOptions,
-	http.MethodHead:    ReadMeta,
+	http.MethodGet:    Read,
+	http.MethodPost:   Create,
+	http.MethodPut:    UpdateReplace,
+	http.MethodPatch:  UpdatePartial,
+	http.MethodDelete: Delete,
 }
 
 func HttpMethod2Access(method string) AccessType {
@@ -83,7 +77,7 @@ func Access2HttpMethod(access AccessType) string {
 
 	a := NewAccess(uint32(access))
 
-	if a.Check(ReadContent) {
+	if a.Check(Read) {
 		return http.MethodGet
 	}
 
@@ -101,14 +95,6 @@ func Access2HttpMethod(access AccessType) string {
 
 	if a.Check(Delete) {
 		return http.MethodDelete
-	}
-
-	if a.Check(ReadMeta) {
-		return http.MethodHead
-	}
-
-	if a.Check(ReadOptions) {
-		return http.MethodOptions
 	}
 
 	return ""

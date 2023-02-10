@@ -27,13 +27,15 @@ func (e *ListEndpoint[U]) HandleRequest(request api_server.Request) error {
 	}
 
 	resp := &user_api.ListResponse[U]{}
-	err = e.service.Users.FindUsers(request, filter, &resp.Users)
+	users := make([]U, 0)
+	resp.Users = &users
+	err = e.service.Users.FindUsers(request, filter, resp.Users)
 	if err != nil {
 		return c.SetError(err)
 	}
 
 	if request.Server().IsHateoas() {
-		api.ProcessListResourceHateousLinks(request.Endpoint().Resource(), e.service.UserTypeName, resp.Users)
+		api.ProcessListResourceHateousLinks(request.Endpoint().Resource(), e.service.UserTypeName, *resp.Users)
 	}
 	request.Response().SetMessage(resp)
 

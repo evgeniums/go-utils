@@ -6,7 +6,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
@@ -86,9 +85,5 @@ func (u *UserClient[U]) SetPassword(ctx op_context.Context, login string, passwo
 }
 
 func (u *UserClient[U]) SetBlocked(ctx op_context.Context, login string, blocked bool, idIsLogin ...bool) error {
-	return errors.New("not implemented yet")
-}
-
-func (u *UserClient[U]) FindUsers(ctx op_context.Context, filter *db.Filter, users *[]U) error {
 	return errors.New("not implemented yet")
 }

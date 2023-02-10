@@ -59,6 +59,11 @@ func FullRequestServicePath(r Request) string {
 }
 
 func ParseDbQuery(request Request, models []interface{}, q api.Query, queryName string) (*db.Filter, error) {
+
+	if q == nil || q.Query() == "" {
+		return nil, nil
+	}
+
 	c := request.TraceInMethod("ParseDbQuery", logger.Fields{"query_name": queryName, "query": q.Query()})
 	defer request.TraceOutMethod()
 

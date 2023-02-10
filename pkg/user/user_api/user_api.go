@@ -49,7 +49,7 @@ func UserResource(resourceType ...string) api.Resource {
 
 type ListResponse[T any] struct {
 	api.ResponseHateous
-	Users []T `json:"users"`
+	Users *[]T `json:"users"`
 }
 
 func List() api.Operation {

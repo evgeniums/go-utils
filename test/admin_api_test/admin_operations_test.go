@@ -198,3 +198,13 @@ func TestSetEmail(t *testing.T) {
 	require.NotNil(t, dbAdmin2)
 	assert.Equal(t, newEmail, dbAdmin2.Email())
 }
+
+func TestFindUsers(t *testing.T) {
+	ctx := initTest(t)
+	defer ctx.Close()
+
+	var admins []*Admin
+	err := ctx.RemoteAdminManager.FindUsers(ctx.ClientOp, nil, &admins)
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(admins))
+}
