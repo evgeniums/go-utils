@@ -37,8 +37,8 @@ type PoolBaseConfig struct {
 
 type PoolBase struct {
 	PoolBaseConfig
-	services       map[string]PoolService
-	servicesByName map[string]PoolService
+	services       map[string]PoolService `json:"-"`
+	servicesByName map[string]PoolService `json:"-"`
 }
 
 func NewPool() *PoolBase {
