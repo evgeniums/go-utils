@@ -6,12 +6,12 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
 )
 
-type SetEmail = SetterHandler[user_api.SetEmailCmd]
+type SetBlocked = SetterHandler[user_api.SetBlockedCmd]
 
-func (u *UserClient[U]) SetEmail(ctx op_context.Context, id string, email string, idIsLogin ...bool) error {
+func (u *UserClient[U]) SetBlocked(ctx op_context.Context, id string, blocked bool, idIsLogin ...bool) error {
 
 	// setup
-	c := ctx.TraceInMethod("UserClient.SetEmail")
+	c := ctx.TraceInMethod("UserClient.SetBlocked")
 	defer ctx.TraceOutMethod()
 
 	// if idIsLogin then first find user
@@ -22,11 +22,11 @@ func (u *UserClient[U]) SetEmail(ctx op_context.Context, id string, email string
 	}
 
 	// create command
-	handler := &SetEmail{}
-	handler.Cmd.Email = email
+	handler := &SetBlocked{}
+	handler.Cmd.Blocked = blocked
 
 	// prepare and exec handler
-	err = u.UserOperation(userId, "email", user_api.SetEmail()).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
+	err = u.UserOperation(userId, "blocked", user_api.SetBlocked()).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")
 		return c.SetError(err)

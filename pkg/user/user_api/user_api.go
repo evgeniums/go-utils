@@ -7,25 +7,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
-/*
-
-type UserController[UserType User] interface {
-
-	List(ctx op_context.Context, filter *db.Filter, users interface{}) error
-	Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error)
-	FindByLogin(ctx op_context.Context, login string) (UserType, error)
-
-	SetPassword(ctx op_context.Context, login string, password string) error
-	SetPhone(ctx op_context.Context, login string, phone string) error
-	SetEmail(ctx op_context.Context, login string, email string) error
-	SetBlocked(ctx op_context.Context, login string, blocked bool) error
-
-	SetUserBuilder(builder func() UserType)
-	MakeUser() UserType
-}
-
-*/
-
 func PrepareResources(userTypeName ...string) (userType string, serviceName string, collectionResource api.Resource, userResource api.Resource) {
 
 	userType = utils.OptionalArg("user", userTypeName...)
@@ -91,4 +72,12 @@ type SetPhoneCmd struct {
 
 func SetPhone() api.Operation {
 	return api.NewOperation("set_phone", access_control.Put)
+}
+
+type SetBlockedCmd struct {
+	Blocked bool `json:"blocked"`
+}
+
+func SetBlocked() api.Operation {
+	return api.NewOperation("set_blocked", access_control.Put)
 }

@@ -14,17 +14,22 @@ func (u *UserClient[U]) SetPhone(ctx op_context.Context, id string, phone string
 	c := ctx.TraceInMethod("UserClient.SetPhone")
 	defer ctx.TraceOutMethod()
 
-	// TODO if idIsLogin then first find user
+	// if idIsLogin then first find user
+	userId, err := u.GetUserId(ctx, id, idIsLogin...)
+	if err != nil {
+		c.SetMessage("failed to get user ID")
+		return c.SetError(err)
+	}
 
 	// create command
 	handler := &SetPhone{}
 	handler.Cmd.Phone = phone
 
 	// prepare and exec handler
-	err := u.UserOperation(id, "phone", user_api.SetPhone()).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
+	err = u.UserOperation(userId, "phone", user_api.SetPhone()).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")
-		return err
+		return c.SetError(err)
 	}
 
 	// done
