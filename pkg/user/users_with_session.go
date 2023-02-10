@@ -34,7 +34,9 @@ func NewUsersWithSession[UserType User, SessionType auth_session.Session, Sessio
 		m.SessionController = config[0].SessionController
 	}
 	if m.UsersBase.UserController == nil {
-		m.UsersBase.Construct(LocalUserController[UserType]())
+		c := LocalUserController[UserType]()
+		m.UsersBase.Construct(c)
+		c.SetUserValidators(m)
 	}
 	if m.SessionController == nil {
 		m.SessionController = auth_session.LocalSessionController()

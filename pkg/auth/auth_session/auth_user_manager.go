@@ -5,10 +5,15 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
+type UserValidators interface {
+	ValidateLogin(login string) error
+	ValidatePassword(password string) error
+}
+
 type AuthUserManager interface {
+	UserValidators
 	FindAuthUser(ctx op_context.Context, login string, user auth.User, dest ...interface{}) (bool, error)
 	MakeAuthUser() auth.User
-	ValidateLogin(login string) error
 }
 
 type WithAuthUserManager interface {

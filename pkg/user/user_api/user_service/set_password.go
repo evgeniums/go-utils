@@ -21,7 +21,6 @@ func (s *SetPasswordEndpoint) HandleRequest(request api_server.Request) error {
 		return err
 	}
 
-	// TODO add custom password validator
 	err = s.users.SetPassword(request, request.GetResourceId(s.userTypeName), cmd.PlainPassword)
 	if err != nil {
 		return c.SetError(err)

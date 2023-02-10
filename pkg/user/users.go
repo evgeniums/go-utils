@@ -43,6 +43,7 @@ type Users[UserType User] interface {
 type UserControllerBase[UserType User] struct {
 	userBuilder    func() UserType
 	crudController crud.CRUD
+	userValidators auth_session.UserValidators
 }
 
 func LocalUserController[UserType User]() *UserControllerBase[UserType] {
@@ -51,6 +52,10 @@ func LocalUserController[UserType User]() *UserControllerBase[UserType] {
 
 func (u *UserControllerBase[UserType]) SetUserBuilder(userBuilder func() UserType) {
 	u.userBuilder = userBuilder
+}
+
+func (u *UserControllerBase[UserType]) SetUserValidators(validators auth_session.UserValidators) {
+	u.userValidators = validators
 }
 
 func (u *UserControllerBase[UserType]) CRUD() crud.CRUD {
@@ -64,6 +69,7 @@ func (u *UserControllerBase[UserType]) MakeUser() UserType {
 func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error) {
 
 	// setup
+	var nilUser UserType
 	ctx.SetLoggerField("login", login)
 	c := ctx.TraceInMethod("Users.Add")
 	var err error
@@ -75,6 +81,20 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 	}
 	defer onExit()
 
+	// validate
+	if u.userValidators != nil {
+		err = u.userValidators.ValidateLogin(login)
+		if err != nil {
+			c.SetMessage("faield to validate login")
+			return nilUser, err
+		}
+		err = u.userValidators.ValidatePassword(password)
+		if err != nil {
+			c.SetMessage("faield to validate password")
+			return nilUser, err
+		}
+	}
+
 	// create user
 	user := u.MakeUser()
 	user.InitObject()
@@ -84,13 +104,14 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 		err = setter(ctx, user)
 		if err != nil {
 			c.SetMessage("failed to set extra fields")
+			return nilUser, err
 		}
 	}
 
 	// create in manager
 	err = u.crudController.Create(ctx, user)
 	if err != nil {
-		var nilUser UserType
+		c.SetMessage("failed to create user")
 		return nilUser, err
 	}
 
@@ -188,6 +209,15 @@ func (u *UserControllerBase[UserType]) SetPassword(ctx op_context.Context, id st
 		ctx.TraceOutMethod()
 	}
 	defer onExit()
+
+	// validate
+	if u.userValidators != nil {
+		err = u.userValidators.ValidatePassword(password)
+		if err != nil {
+			c.SetMessage("faield to validate password")
+			return err
+		}
+	}
 
 	// find user
 	user, err := FindUser(u, ctx, id, idIsLogin...)
@@ -326,6 +356,13 @@ func (u *UsersBase[UserType]) MakeAuthUser() auth.User {
 
 func (u *UsersBase[UserType]) ValidateLogin(login string) error {
 	return u.Validator.ValidateValue(login, u.LoginValidationRules)
+}
+
+func (u *UsersBase[UserType]) ValidatePassword(password string) error {
+	if len(password) < 8 {
+		return &validator.ValidationError{Message: "Password must be at least 8 characters", Field: "password"}
+	}
+	return nil
 }
 
 func (m *UsersBase[UserType]) AuthUserManager() auth_session.AuthUserManager {

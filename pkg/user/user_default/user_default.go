@@ -19,7 +19,9 @@ func NewUser() *User {
 func NewUsers(userController ...user.UserController[*User]) *Users {
 	m := &Users{}
 	if len(userController) == 0 {
-		m.UsersBase.Construct(user.LocalUserController[*User]())
+		c := user.LocalUserController[*User]()
+		m.UsersBase.Construct(c)
+		c.SetUserValidators(m)
 	} else {
 		m.UsersBase.Construct(userController[0])
 	}
