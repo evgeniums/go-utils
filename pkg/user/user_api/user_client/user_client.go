@@ -81,11 +81,11 @@ func (u *UserClient[U]) FindAuthUser(ctx op_context.Context, login string, user 
 	return false, errors.New("unsupported method")
 }
 
-func (u *UserClient[U]) SetPassword(ctx op_context.Context, login string, password string) error {
+func (u *UserClient[U]) SetPassword(ctx op_context.Context, login string, password string, idIsLogin ...bool) error {
 	return errors.New("not implemented yet")
 }
 
-func (u *UserClient[U]) SetBlocked(ctx op_context.Context, login string, blocked bool) error {
+func (u *UserClient[U]) SetBlocked(ctx op_context.Context, login string, blocked bool, idIsLogin ...bool) error {
 	return errors.New("not implemented yet")
 }
 

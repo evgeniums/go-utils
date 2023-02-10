@@ -15,10 +15,10 @@ import (
 )
 
 type MainFieldSetters interface {
-	SetPassword(ctx op_context.Context, id string, password string) error
-	SetPhone(ctx op_context.Context, id string, phone string) error
-	SetEmail(ctx op_context.Context, id string, email string) error
-	SetBlocked(ctx op_context.Context, id string, blocked bool) error
+	SetPassword(ctx op_context.Context, id string, password string, idIsLogin ...bool) error
+	SetPhone(ctx op_context.Context, id string, phone string, idIsLogin ...bool) error
+	SetEmail(ctx op_context.Context, id string, email string, idIsLogin ...bool) error
+	SetBlocked(ctx op_context.Context, id string, blocked bool, idIsLogin ...bool) error
 }
 
 type UserController[UserType User] interface {
@@ -161,10 +161,24 @@ func (u *UserControllerBase[UserType]) FindByLogin(ctx op_context.Context, login
 	return user, nil
 }
 
-func (u *UserControllerBase[UserType]) SetPassword(ctx op_context.Context, id string, password string) error {
+func FindUser[UserType User](u *UserControllerBase[UserType], ctx op_context.Context, id string, idIsLogin ...bool) (user UserType, err error) {
+
+	useLogin := utils.OptionalArg(false, idIsLogin...)
+
+	if useLogin {
+		ctx.SetLoggerField("login", id)
+		user, err = u.FindByLogin(ctx, id)
+	} else {
+		ctx.SetLoggerField("id", id)
+		user, err = u.Find(ctx, id)
+	}
+
+	return
+}
+
+func (u *UserControllerBase[UserType]) SetPassword(ctx op_context.Context, id string, password string, idIsLogin ...bool) error {
 
 	// setup
-	ctx.SetLoggerField("id", id)
 	c := ctx.TraceInMethod("Users.SetPassword")
 	var err error
 	onExit := func() {
@@ -175,8 +189,8 @@ func (u *UserControllerBase[UserType]) SetPassword(ctx op_context.Context, id st
 	}
 	defer onExit()
 
-	// find admin
-	user, err := u.Find(ctx, id)
+	// find user
+	user, err := FindUser(u, ctx, id, idIsLogin...)
 	if err != nil {
 		return err
 	}
@@ -192,10 +206,9 @@ func (u *UserControllerBase[UserType]) SetPassword(ctx op_context.Context, id st
 	return nil
 }
 
-func (u *UserControllerBase[UserType]) SetPhone(ctx op_context.Context, id string, phone string) error {
+func (u *UserControllerBase[UserType]) SetPhone(ctx op_context.Context, id string, phone string, idIsLogin ...bool) error {
 
 	// setup
-	ctx.SetLoggerField("id", id)
 	ctx.SetLoggerField("phone", phone)
 	c := ctx.TraceInMethod("Users.SetPhone")
 	var err error
@@ -208,7 +221,7 @@ func (u *UserControllerBase[UserType]) SetPhone(ctx op_context.Context, id strin
 	defer onExit()
 
 	// find user
-	user, err := u.Find(ctx, id)
+	user, err := FindUser(u, ctx, id, idIsLogin...)
 	if err != nil {
 		return err
 	}
@@ -223,10 +236,9 @@ func (u *UserControllerBase[UserType]) SetPhone(ctx op_context.Context, id strin
 	return nil
 }
 
-func (u *UserControllerBase[UserType]) SetEmail(ctx op_context.Context, id string, email string) error {
+func (u *UserControllerBase[UserType]) SetEmail(ctx op_context.Context, id string, email string, idIsLogin ...bool) error {
 
 	// setup
-	ctx.SetLoggerField("id", id)
 	ctx.SetLoggerField("email", email)
 	c := ctx.TraceInMethod("Users.SetEmail")
 	var err error
@@ -239,7 +251,7 @@ func (u *UserControllerBase[UserType]) SetEmail(ctx op_context.Context, id strin
 	defer onExit()
 
 	// find user
-	user, err := u.Find(ctx, id)
+	user, err := FindUser(u, ctx, id, idIsLogin...)
 	if err != nil {
 		return err
 	}
@@ -258,10 +270,9 @@ func (u *UserControllerBase[UserType]) FindAuthUser(ctx op_context.Context, logi
 	return FindByLogin(u.crudController, ctx, login, user)
 }
 
-func (u *UserControllerBase[UserType]) SetBlocked(ctx op_context.Context, login string, blocked bool) error {
+func (u *UserControllerBase[UserType]) SetBlocked(ctx op_context.Context, id string, blocked bool, idIsLogin ...bool) error {
 
 	// setup
-	ctx.SetLoggerField("login", login)
 	ctx.SetLoggerField("blocked", blocked)
 	c := ctx.TraceInMethod("Users.SetBlocked")
 	var err error
@@ -273,8 +284,8 @@ func (u *UserControllerBase[UserType]) SetBlocked(ctx op_context.Context, login 
 	}
 	defer onExit()
 
-	// find admin
-	user, err := u.FindByLogin(ctx, login)
+	// find user
+	user, err := FindUser(u, ctx, id, idIsLogin...)
 	if err != nil {
 		return err
 	}

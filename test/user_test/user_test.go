@@ -87,7 +87,7 @@ func TestUserOperations(t *testing.T) {
 	require.Nil(t, userNotInDb)
 
 	newPhone := "999000111"
-	require.NoError(t, users.SetPhone(ctx, login1, newPhone))
+	require.NoError(t, users.SetPhone(ctx, login1, newPhone, true))
 	userDb1_2, err := users.FindByLogin(ctx, login1)
 	require.NoErrorf(t, err, "failed to find user")
 	require.NotNil(t, userDb1_2)
@@ -95,21 +95,21 @@ func TestUserOperations(t *testing.T) {
 	assert.Equal(t, email1, userDb1_2.Email())
 
 	newEmail := "user1_1@example.com"
-	require.NoError(t, users.SetEmail(ctx, login1, newEmail))
+	require.NoError(t, users.SetEmail(ctx, login1, newEmail, true))
 	userDb1_3, err := users.FindByLogin(ctx, login1)
 	require.NoErrorf(t, err, "failed to find user")
 	require.NotNil(t, userDb1_3)
 	assert.Equal(t, newPhone, userDb1_3.Phone())
 	assert.Equal(t, newEmail, userDb1_3.Email())
 
-	require.NoError(t, users.SetBlocked(ctx, login1, true))
+	require.NoError(t, users.SetBlocked(ctx, login1, true, true))
 	userDb1_4, err := users.FindByLogin(ctx, login1)
 	require.NoErrorf(t, err, "failed to find user")
 	require.NotNil(t, userDb1_4)
 	assert.True(t, userDb1_4.IsBlocked())
 
 	newPassword := "bla-bla-new"
-	require.NoError(t, users.SetPassword(ctx, login1, newPassword))
+	require.NoError(t, users.SetPassword(ctx, login1, newPassword, true))
 	userDb1_5, err := users.FindByLogin(ctx, login1)
 	require.NoErrorf(t, err, "failed to find user")
 	require.NotNil(t, userDb1_5)

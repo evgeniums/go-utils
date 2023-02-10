@@ -8,11 +8,13 @@ import (
 
 type SetEmail = SetterHandler[user_api.SetEmailCmd]
 
-func (u *UserClient[U]) SetEmail(ctx op_context.Context, id string, email string) error {
+func (u *UserClient[U]) SetEmail(ctx op_context.Context, id string, email string, idIsLogin ...bool) error {
 
 	// setup
 	c := ctx.TraceInMethod("UserClient.SetEmail")
 	defer ctx.TraceOutMethod()
+
+	// TODO if idIsLogin then first find user
 
 	// create command
 	handler := &SetEmail{}

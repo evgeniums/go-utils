@@ -8,11 +8,13 @@ import (
 
 type SetPhone = SetterHandler[user_api.SetPhoneCmd]
 
-func (u *UserClient[U]) SetPhone(ctx op_context.Context, id string, phone string) error {
+func (u *UserClient[U]) SetPhone(ctx op_context.Context, id string, phone string, idIsLogin ...bool) error {
 
 	// setup
 	c := ctx.TraceInMethod("UserClient.SetPhone")
 	defer ctx.TraceOutMethod()
+
+	// TODO if idIsLogin then first find user
 
 	// create command
 	handler := &SetPhone{}
