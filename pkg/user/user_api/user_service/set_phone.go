@@ -15,13 +15,13 @@ func (s *SetPhoneEndpoint) HandleRequest(request api_server.Request) error {
 	c := request.TraceInMethod("users.SetPhone")
 	defer request.TraceOutMethod()
 
-	cmd := &user_api.SetPhoneCmd{}
+	cmd := &user.UserPhone{}
 	err := request.ParseVerify(cmd)
 	if err != nil {
 		return err
 	}
 
-	err = s.users.SetPhone(request, request.GetResourceId(s.userTypeName), cmd.Phone)
+	err = s.users.SetPhone(request, request.GetResourceId(s.userTypeName), cmd.PHONE)
 	if err != nil {
 		return c.SetError(err)
 	}

@@ -3,10 +3,11 @@ package user_client
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
 )
 
-type SetBlocked = SetterHandler[user_api.SetBlockedCmd]
+type SetBlocked = SetterHandler[user.UserBlocked]
 
 func (u *UserClient[U]) SetBlocked(ctx op_context.Context, id string, blocked bool, idIsLogin ...bool) error {
 
@@ -23,7 +24,7 @@ func (u *UserClient[U]) SetBlocked(ctx op_context.Context, id string, blocked bo
 
 	// create command
 	handler := &SetBlocked{}
-	handler.Cmd.Blocked = blocked
+	handler.Cmd.BLOCKED = blocked
 
 	// prepare and exec handler
 	err = u.UserOperation(userId, "blocked", user_api.SetBlocked()).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))

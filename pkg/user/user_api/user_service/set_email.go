@@ -15,13 +15,13 @@ func (s *SetEmailEndpoint) HandleRequest(request api_server.Request) error {
 	c := request.TraceInMethod("users.SetEmail")
 	defer request.TraceOutMethod()
 
-	cmd := &user_api.SetEmailCmd{}
+	cmd := &user.UserEmail{}
 	err := request.ParseVerify(cmd)
 	if err != nil {
 		return err
 	}
 
-	err = s.users.SetEmail(request, request.GetResourceId(s.userTypeName), cmd.Email)
+	err = s.users.SetEmail(request, request.GetResourceId(s.userTypeName), cmd.EMAIL)
 	if err != nil {
 		return c.SetError(err)
 	}

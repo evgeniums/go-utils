@@ -3,10 +3,11 @@ package user_client
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
 )
 
-type SetEmail = SetterHandler[user_api.SetEmailCmd]
+type SetEmail = SetterHandler[user.UserEmail]
 
 func (u *UserClient[U]) SetEmail(ctx op_context.Context, id string, email string, idIsLogin ...bool) error {
 
@@ -23,7 +24,7 @@ func (u *UserClient[U]) SetEmail(ctx op_context.Context, id string, email string
 
 	// create command
 	handler := &SetEmail{}
-	handler.Cmd.Email = email
+	handler.Cmd.EMAIL = email
 
 	// prepare and exec handler
 	err = u.UserOperation(userId, "email", user_api.SetEmail()).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))

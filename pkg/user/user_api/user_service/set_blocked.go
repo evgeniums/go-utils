@@ -15,13 +15,13 @@ func (s *SetBlockedEndpoint) HandleRequest(request api_server.Request) error {
 	c := request.TraceInMethod("users.SetBlocked")
 	defer request.TraceOutMethod()
 
-	cmd := &user_api.SetBlockedCmd{}
+	cmd := &user.UserBlocked{}
 	err := request.ParseVerify(cmd)
 	if err != nil {
 		return err
 	}
 
-	err = s.users.SetBlocked(request, request.GetResourceId(s.userTypeName), cmd.Blocked)
+	err = s.users.SetBlocked(request, request.GetResourceId(s.userTypeName), cmd.BLOCKED)
 	if err != nil {
 		return c.SetError(err)
 	}

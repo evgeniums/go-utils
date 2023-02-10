@@ -32,13 +32,24 @@ type User interface {
 }
 
 // TODO Configure somewhere unique indexes for phone and login if required
-// TODO Add validation rules for user fields
+
+type UserPhone struct {
+	PHONE string `gorm:"index" json:"phone" validate:"omitempty,phone" vmessage:"Invalid phone format"`
+}
+
+type UserEmail struct {
+	EMAIL string `gorm:"index" json:"email" validate:"omitempty,email" vmessage:"Invalid email format"`
+}
+
+type UserBlocked struct {
+	BLOCKED bool `gorm:"index" json:"blocked"`
+}
 
 type UserBaseFields struct {
-	LOGIN   string `gorm:"uniqueIndex" json:"login"`
-	PHONE   string `gorm:"index" json:"phone"`
-	EMAIL   string `gorm:"index" json:"email"`
-	BLOCKED bool   `gorm:"index" json:"blocked"`
+	UserPhone
+	UserEmail
+	UserBlocked
+	LOGIN string `gorm:"uniqueIndex" json:"login"`
 }
 
 func (u *UserBaseFields) Display() string {
@@ -84,9 +95,13 @@ func (u *UserBaseFields) SetUserFields(ctx op_context.Context, user User) error 
 	return nil
 }
 
+type UserPlainPassword struct {
+	PlainPassword string `gorm:"-:all" json:"password"`
+}
+
 type UserFieldsWithPassword struct {
 	UserBaseFields
-	PlainPassword string `gorm:"-:all" json:"password"`
+	UserPlainPassword
 }
 
 func (u *UserFieldsWithPassword) Password() string {

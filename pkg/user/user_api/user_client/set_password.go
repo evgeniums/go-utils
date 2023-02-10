@@ -3,10 +3,11 @@ package user_client
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
 )
 
-type SetPassword = SetterHandler[user_api.SetPasswordCmd]
+type SetPassword = SetterHandler[user.UserPlainPassword]
 
 func (u *UserClient[U]) SetPassword(ctx op_context.Context, id string, password string, idIsLogin ...bool) error {
 
@@ -23,7 +24,7 @@ func (u *UserClient[U]) SetPassword(ctx op_context.Context, id string, password 
 
 	// create command
 	handler := &SetPassword{}
-	handler.Cmd.Password = password
+	handler.Cmd.PlainPassword = password
 
 	// prepare and exec handler
 	err = u.UserOperation(userId, "password", user_api.SetPassword()).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
