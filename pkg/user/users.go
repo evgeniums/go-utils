@@ -355,7 +355,11 @@ func (u *UsersBase[UserType]) MakeAuthUser() auth.User {
 }
 
 func (u *UsersBase[UserType]) ValidateLogin(login string) error {
-	return u.Validator.ValidateValue(login, u.LoginValidationRules)
+	err := u.Validator.ValidateValue(login, u.LoginValidationRules)
+	if err != nil {
+		return &validator.ValidationError{Message: "Invalid format of login", Field: "login"}
+	}
+	return nil
 }
 
 func (u *UsersBase[UserType]) ValidatePassword(password string) error {
