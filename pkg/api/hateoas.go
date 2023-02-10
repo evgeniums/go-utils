@@ -62,7 +62,7 @@ func MakeHateoasLinks(resource Resource, withTestOps ...bool) []*HateoasLink {
 	}
 
 	// add self operations
-	path := resource.ActualPath()
+	path := resource.FullActualPath()
 	selfHost := resource.Host()
 	resource.EachOperation(func(operation Operation) error { addLink(selfHost, path, TargetSelf, operation); return nil }, false)
 
@@ -82,7 +82,7 @@ func MakeHateoasLinks(resource Resource, withTestOps ...bool) []*HateoasLink {
 	}
 
 	// done
-	return nil
+	return links
 }
 
 func InjectHateoasLinksToObject(resource Resource, withLinks WithHateoasLinks) {
@@ -98,7 +98,7 @@ func InjectHateoasLinksToList[T ObjectWithHateoasLinks](sampleResource Resource,
 }
 
 func ProcessListResourceHateousLinks[T ObjectWithHateoasLinks](parentResource Resource, resourceType string, objects []T) {
-	epResource := parentResource.Clone()
+	epResource := parentResource.CloneChain(true)
 	sampleResource := NamedResource(resourceType)
 	epResource.AddChild(sampleResource)
 

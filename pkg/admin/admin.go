@@ -13,7 +13,7 @@ type Role struct {
 
 type Admin struct {
 	user_session_default.User
-	Roles []Role `gorm:"-:all"`
+	Roles []Role `gorm:"-:all" json:"roles,omitempty"`
 }
 
 func NewAdmin() *Admin {

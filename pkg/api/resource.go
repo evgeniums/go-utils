@@ -20,9 +20,9 @@ type Resource interface {
 	IsServicePart() bool
 	Service() Resource
 
-	SetParent(parent Resource)
+	SetParent(parent Resource, rebuild ...bool)
 	Parent() Resource
-	AddChild(resource Resource)
+	AddChild(resource Resource, rebuild ...bool)
 	AddChildren(resources ...Resource)
 	Children() []Resource
 
@@ -47,7 +47,8 @@ type Resource interface {
 	Chain() []Resource
 	ChainResourceId(resourceType string) string
 
-	Clone() Resource
+	Clone(withOperations bool) Resource
+	CloneChain(withOperations bool) Resource
 }
 
 type ResourceConfig struct {
@@ -210,18 +211,20 @@ func (r *ResourceBase) SetSetvice(val bool) {
 	r.RebuildPaths()
 }
 
-func (r *ResourceBase) SetParent(parent Resource) {
+func (r *ResourceBase) SetParent(parent Resource, rebuild ...bool) {
 	r.parent = parent
-	r.RebuildPaths()
+	if utils.OptionalArg(true, rebuild...) {
+		r.RebuildPaths()
+	}
 }
 
 func (r *ResourceBase) Parent() Resource {
 	return r.parent
 }
 
-func (r *ResourceBase) AddChild(child Resource) {
+func (r *ResourceBase) AddChild(child Resource, rebuild ...bool) {
 	r.children = append(r.children, child)
-	child.SetParent(r)
+	child.SetParent(r, rebuild...)
 }
 
 func (r *ResourceBase) AddChildren(resources ...Resource) {
@@ -356,8 +359,37 @@ func (r *ResourceBase) ResetIds() {
 	}
 }
 
-func (r *ResourceBase) Clone() Resource {
-	return nil
+func (r *ResourceBase) Clone(withOperations bool) Resource {
+	resource := NewResource(r.resourceType, r.ResourceConfig)
+	if r.HasId() {
+		resource.SetId(r.Id())
+	}
+	if withOperations {
+		r.EachOperation(func(operation Operation) error {
+			op := NewOperation(operation.Name(), operation.AccessType(), operation.TestOnly())
+			resource.AddOperation(op)
+			return nil
+		})
+	}
+	return resource
+}
+
+func (r *ResourceBase) CloneChain(withOperations bool) Resource {
+	resource := NewResource(r.resourceType, r.ResourceConfig)
+	if r.HasId() {
+		resource.SetId(r.Id())
+	}
+
+	var topResource Resource
+	topResource = resource
+	for parent := r.Parent(); parent != nil; parent = parent.Parent() {
+		parentClone := parent.Clone(withOperations)
+		parentClone.AddChild(topResource, false)
+		topResource = parentClone
+	}
+	topResource.RebuildPaths()
+
+	return resource
 }
 
 func GroupResource(resourceType string) Resource {
