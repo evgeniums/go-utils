@@ -60,7 +60,7 @@ func FullRequestServicePath(r Request) string {
 
 func ParseDbQuery(request Request, models []interface{}, q api.Query, queryName string) (*db.Filter, error) {
 
-	if q == nil || q.Query() == "" {
+	if q == nil {
 		return nil, nil
 	}
 
@@ -69,7 +69,11 @@ func ParseDbQuery(request Request, models []interface{}, q api.Query, queryName 
 
 	err := request.ParseVerify(q)
 	if err != nil {
+		c.SetMessage("faield to parse/verify query")
 		return nil, c.SetError(err)
+	}
+	if q.Query() == "" {
+		return nil, nil
 	}
 
 	filter, err := db.ParseQuery(request.DB(), q.Query(), models, queryName, db.EmptyFilterValidator(request.App().Validator()))

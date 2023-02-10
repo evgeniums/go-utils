@@ -17,11 +17,10 @@ func (e *ListEndpoint[U]) HandleRequest(request api_server.Request) error {
 	c := request.TraceInMethod("users.List")
 	defer request.TraceOutMethod()
 
-	q := &api.DbQuery{}
-
+	cmd := &api.DbQuery{}
 	queryName := request.Endpoint().Resource().ServicePathPrototype()
 	models := []interface{}{e.service.Users.MakeUser()}
-	filter, err := api_server.ParseDbQuery(request, models, q, queryName)
+	filter, err := api_server.ParseDbQuery(request, models, cmd, queryName)
 	if err != nil {
 		return c.SetError(err)
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client/rest_api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/bare_bones_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
@@ -207,4 +208,11 @@ func TestFindUsers(t *testing.T) {
 	err := ctx.RemoteAdminManager.FindUsers(ctx.ClientOp, nil, &admins)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(admins))
+
+	filter := db.NewFilter()
+	filter.AddField("login", targetAdminLogin)
+	err = ctx.RemoteAdminManager.FindUsers(ctx.ClientOp, filter, &admins)
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(admins))
+	assert.Equal(t, targetAdminEmail, admins[0].Email())
 }

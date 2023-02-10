@@ -13,7 +13,7 @@ import (
 )
 
 type FilterParser struct {
-	Manager      FilterManager
+	Manager      *FilterManager
 	DefaultModel string
 	Models       map[string]bool
 	Validator    *db.FilterValidator
@@ -130,12 +130,16 @@ func (f *FilterParser) ParseValidateField(name string, value string, onlyName ..
 func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 
 	// setup
+	var err error
 	if query == nil {
 		return nil, nil
 	}
-	_, err := f.ParseValidateField(query.SortField, "", true)
-	if err != nil {
-		return nil, err
+
+	if query.SortField != "" {
+		_, err = f.ParseValidateField(query.SortField, "", true)
+		if err != nil {
+			return nil, err
+		}
 	}
 	filter := &db.Filter{}
 	filter.SortDirection = query.SortDirection
@@ -240,6 +244,7 @@ func (f *FilterManager) Construct() {
 func (f *FilterManager) PrepareFilterParser(models []interface{}, name string, validator ...*db.FilterValidator) (db.FilterParser, error) {
 
 	parser := &FilterParser{}
+	parser.Manager = f
 	parser.Models = make(map[string]bool)
 
 	// parse schemas
@@ -248,11 +253,11 @@ func (f *FilterManager) PrepareFilterParser(models []interface{}, name string, v
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse %d model's schema: %s", i, err)
 		}
-		f.Models[s.Name] = s
+		f.Models[s.Table] = s
 		if i == 0 {
-			parser.DefaultModel = s.Name
+			parser.DefaultModel = s.Table
 		}
-		parser.Models[s.Name] = true
+		parser.Models[s.Table] = true
 	}
 
 	// keep validator

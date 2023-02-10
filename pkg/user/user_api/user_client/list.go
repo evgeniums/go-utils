@@ -38,9 +38,11 @@ func (u *UserClient[U]) FindUsers(ctx op_context.Context, filter *db.Filter, use
 	}
 	defer onExit()
 
-	// TODO create query from filter
-	// cmd := user.ToCmd(password)
+	// set query
 	cmd := &api.DbQuery{}
+	if filter != nil {
+		cmd.SetQuery(filter.ToQueryString())
+	}
 
 	// prepare and exec handler
 	handler := &List[U]{

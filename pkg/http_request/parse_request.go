@@ -18,6 +18,10 @@ func ParseQuery(ctx op_context.Context, request *http.Request, cmd interface{}) 
 	c := ctx.TraceInMethod("http_request.ParseQuery", logger.Fields{"query": request.URL.RawQuery})
 	defer ctx.TraceOutMethod()
 
+	if request.URL.RawQuery == "" {
+		return nil
+	}
+
 	vals, err := url.ParseQuery(request.URL.RawQuery)
 	if err != nil {
 		c.SetMessage("failed to parse query")
