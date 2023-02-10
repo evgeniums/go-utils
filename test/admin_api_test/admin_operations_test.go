@@ -10,6 +10,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client/rest_api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/bare_bones_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
@@ -231,4 +232,38 @@ func TestFindSingleUser(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, dbAdmin1)
 	assert.Equal(t, dbAdmin1.GetID(), admin.GetID())
+}
+
+func TestSetBlocked(t *testing.T) {
+	ctx := initTest(t)
+	defer ctx.Close()
+
+	assert.NoError(t, ctx.RemoteAdminManager.SetBlocked(ctx.ClientOp, ctx.TargetUser.Login(), true, true))
+	dbAdmin, err := ctx.LocalAdminManager.FindByLogin(ctx.AdminOp, targetAdminLogin)
+	require.NoError(t, err)
+	require.NotNil(t, dbAdmin)
+	assert.True(t, dbAdmin.IsBlocked())
+
+	assert.NoError(t, ctx.RemoteAdminManager.SetBlocked(ctx.ClientOp, ctx.TargetUser.Login(), false, true))
+	dbAdmin, err = ctx.LocalAdminManager.FindByLogin(ctx.AdminOp, targetAdminLogin)
+	require.NoError(t, err)
+	require.NotNil(t, dbAdmin)
+	assert.False(t, dbAdmin.IsBlocked())
+}
+
+func TestSetPassword(t *testing.T) {
+	ctx := initTest(t)
+	defer ctx.Close()
+
+	restClient0 := test_utils.PrepareHttpClient(t, test_utils.BBGinEngine(t, ctx.Server))
+	restClient0.Login(targetAdminLogin, targetAdminPassword)
+
+	newPassword := "new password"
+	assert.NoError(t, ctx.RemoteAdminManager.SetPassword(ctx.ClientOp, ctx.TargetUser.GetID(), newPassword))
+
+	restClient1 := test_utils.PrepareHttpClient(t, test_utils.BBGinEngine(t, ctx.Server))
+	restClient1.Login(targetAdminLogin, newPassword)
+
+	restClient2 := test_utils.PrepareHttpClient(t, test_utils.BBGinEngine(t, ctx.Server))
+	restClient2.Login(targetAdminLogin, targetAdminPassword, auth_login_phash.ErrorCodeLoginFailed)
 }

@@ -1,11 +1,15 @@
 package user_client
 
 import (
+	"errors"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
+	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type Find[U user.User] struct {
@@ -47,4 +51,43 @@ func (u *UserClient[U]) Find(ctx op_context.Context, id string) (U, error) {
 
 	// done
 	return handler.result.User, nil
+}
+
+func (u *UserClient[U]) FindByLogin(ctx op_context.Context, login string) (U, error) {
+
+	var nilU U
+	c := ctx.TraceInMethod("UserClient.FindByLogin")
+	defer ctx.TraceOutMethod()
+
+	filter := db.NewFilter()
+	filter.AddField("login", login)
+
+	var users []U
+	err := u.FindUsers(ctx, filter, &users)
+	if err != nil {
+		return nilU, c.SetError(err)
+	}
+
+	if len(users) < 1 {
+		return nilU, c.SetError(errors.New("user not found"))
+	}
+
+	return users[0], nil
+}
+
+func (u *UserClient[U]) GetUserId(ctx op_context.Context, id string, idIsLogin ...bool) (string, error) {
+
+	c := ctx.TraceInMethod("UserClient.SetBlocked")
+	defer ctx.TraceOutMethod()
+
+	if !utils.OptionalArg(false, idIsLogin...) {
+		return id, nil
+	}
+
+	user, err := u.FindByLogin(ctx, id)
+	if err != nil {
+		return "", c.SetError(err)
+	}
+
+	return user.GetID(), nil
 }

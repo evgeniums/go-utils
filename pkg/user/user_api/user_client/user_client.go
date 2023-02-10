@@ -9,7 +9,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type SetterHandler[T interface{}] struct {
@@ -68,28 +67,6 @@ func (u *UserClient[U]) UserOperation(userId string, resourceName string, op api
 	return op
 }
 
-func (u *UserClient[U]) FindByLogin(ctx op_context.Context, login string) (U, error) {
-	var nilU U
-	return nilU, errors.New("not implemented yet")
-}
-
 func (u *UserClient[U]) FindAuthUser(ctx op_context.Context, login string, user auth.User, dest ...interface{}) (bool, error) {
 	return false, errors.New("unsupported method")
-}
-
-func (u *UserClient[U]) GetUserId(ctx op_context.Context, id string, idIsLogin ...bool) (string, error) {
-
-	c := ctx.TraceInMethod("UserClient.SetBlocked")
-	defer ctx.TraceOutMethod()
-
-	if !utils.OptionalArg(false, idIsLogin...) {
-		return id, nil
-	}
-
-	user, err := u.FindByLogin(ctx, id)
-	if err != nil {
-		return "", c.SetError(err)
-	}
-
-	return user.GetID(), nil
 }
