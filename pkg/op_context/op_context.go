@@ -7,6 +7,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/oplog"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
@@ -104,7 +105,7 @@ type Context interface {
 
 	SetErrorAsWarn(enable bool)
 
-	// TODO add event logger
+	Oplog(o oplog.Oplog)
 
 	Reset()
 	Close(successMessage ...string)
@@ -140,6 +141,8 @@ type ContextBase struct {
 	cache              cache.Cache
 
 	errorAsWarn bool
+
+	oplogs []oplog.Oplog
 }
 
 func (c *ContextBase) Init(app app_context.Context, log logger.Logger, db db.DB, fields ...logger.Fields) {
@@ -265,6 +268,8 @@ func (c *ContextBase) GenericError() generic_error.Error {
 
 func (c *ContextBase) Close(successMessage ...string) {
 
+	// TODO write oplog
+
 	if c.errorStack != nil {
 		// log error
 		var msg string
@@ -340,6 +345,14 @@ func (c *ContextBase) Reset() {
 	c.stack = make([]CallContext, 0)
 	c.errorStack = nil
 	c.genericError = nil
+	c.oplogs = make([]oplog.Oplog, 0)
+}
+
+func (c *ContextBase) Oplog(o oplog.Oplog) {
+	if c.oplogs == nil {
+		c.oplogs = make([]oplog.Oplog, 0)
+	}
+	c.oplogs = append(c.oplogs, o)
 }
 
 func DB(c Context) db.DBHandlers {
