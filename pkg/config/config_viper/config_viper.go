@@ -200,6 +200,9 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 		return nil
 	}
 
+	// TODO include JSONC
+	// TODO fix extend some kind of files
+
 	// load includes
 	includes := c.Viper.GetStringSlice("include")
 	for _, include := range includes {
@@ -210,7 +213,7 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 		c.Viper.SetConfigFile(path)
 		err = c.Viper.MergeInConfig()
 		if err != nil {
-			return fmt.Errorf("failed to include config file %s: %s", include, err)
+			return fmt.Errorf("failed to include config file %s: %s", path, err)
 		}
 	}
 
