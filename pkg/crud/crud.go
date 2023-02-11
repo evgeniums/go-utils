@@ -203,21 +203,22 @@ func Update(crud CRUD, ctx op_context.Context, methodName string, obj common.Obj
 	return nil
 }
 
-func FindUpdate[T common.Object](crud CRUD, ctx op_context.Context, methodName string, fieldName string, fieldValue interface{}, fields db.Fields, object T, dest ...interface{}) error {
+func FindUpdate[T common.Object](crud CRUD, ctx op_context.Context, methodName string, fieldName string, fieldValue interface{}, fields db.Fields, object T, dest ...interface{}) (T, error) {
 	c := ctx.TraceInMethod(methodName)
 	defer ctx.TraceOutMethod()
+	var nilT T
 
 	obj, err := FindByField(crud, ctx, "Find", fieldName, fieldValue, object)
 	if err != nil {
-		return c.SetError(err)
+		return nilT, c.SetError(err)
 	}
 
 	err = Update(crud, ctx, "Update", obj, fields)
 	if err != nil {
-		return c.SetError(err)
+		return nilT, c.SetError(err)
 	}
 
-	return nil
+	return obj, nil
 }
 
 func Delete(crud CRUD, ctx op_context.Context, methodName string, fieldName string, fieldValue interface{}, object common.Object, loggerFields ...logger.Fields) error {

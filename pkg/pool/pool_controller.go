@@ -54,8 +54,19 @@ func fieldName(idIsName ...bool) string {
 	return fieldName
 }
 
+func (m *PoolControllerBase) OpLog(ctx op_context.Context, operation string, oplog *OpLogPool) {
+	oplog.SetOperation(operation)
+	ctx.Oplog(oplog)
+}
+
 func (m *PoolControllerBase) AddPool(ctx op_context.Context, pool Pool) error {
-	return crud.Create(m.CRUD, ctx, "PoolController.AddPool", pool, logger.Fields{"pool_name": pool.Name()})
+	pool.InitObject()
+	err := crud.Create(m.CRUD, ctx, "PoolController.AddPool", pool, logger.Fields{"pool_name": pool.Name()})
+	if err != nil {
+		return err
+	}
+	m.OpLog(ctx, "add_pool", &OpLogPool{PoolId: pool.GetID(), PoolName: pool.Name()})
+	return nil
 }
 
 func (m *PoolControllerBase) FindPool(ctx op_context.Context, id string, idIsName ...bool) (Pool, error) {
@@ -72,7 +83,12 @@ func (m *PoolControllerBase) FindPool(ctx op_context.Context, id string, idIsNam
 
 func (m *PoolControllerBase) UpdatePool(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) error {
 	field := fieldName(idIsName...)
-	return crud.FindUpdate(m.CRUD, ctx, "PoolController.UpdatePool", field, id, fields, &PoolBase{}, logger.Fields{field: id})
+	obj, err := crud.FindUpdate(m.CRUD, ctx, "PoolController.UpdatePool", field, id, fields, &PoolBase{}, logger.Fields{field: id})
+	if err != nil {
+		return err
+	}
+	m.OpLog(ctx, "update_pool", &OpLogPool{PoolId: obj.GetID(), PoolName: obj.Name()})
+	return nil
 }
 
 func (m *PoolControllerBase) DeletePool(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) error {
@@ -100,11 +116,27 @@ func (m *PoolControllerBase) DeletePool(ctx op_context.Context, id string, field
 		return c.SetError(errors.New("can not delete pool with services, remove all service bindings first"))
 	}
 
-	return crud.Delete(m.CRUD, ctx, "PoolController.DeletePool", "id", poolId, &PoolBase{}, logger.Fields{"id": id})
+	err = crud.Delete(m.CRUD, ctx, "PoolController.DeletePool", "id", poolId, &PoolBase{}, logger.Fields{"id": id})
+	if err != nil {
+		return err
+	}
+
+	o := &OpLogPool{PoolId: poolId}
+	if utils.OptionalArg(false, idIsName...) {
+		o.PoolName = id
+	}
+	m.OpLog(ctx, "delete_pool", o)
+	return nil
 }
 
 func (m *PoolControllerBase) AddService(ctx op_context.Context, service PoolService) error {
-	return crud.Create(m.CRUD, ctx, "PoolController.AddService", service, logger.Fields{"name": service.Name()})
+	service.InitObject()
+	err := crud.Create(m.CRUD, ctx, "PoolController.AddService", service, logger.Fields{"name": service.Name()})
+	if err != nil {
+		return err
+	}
+	m.OpLog(ctx, "add_service", &OpLogPool{ServiceId: service.GetID(), ServiceName: service.Name()})
+	return nil
 }
 
 func (m *PoolControllerBase) FindService(ctx op_context.Context, id string, idIsName ...bool) (PoolService, error) {
@@ -121,7 +153,12 @@ func (m *PoolControllerBase) FindService(ctx op_context.Context, id string, idIs
 
 func (m *PoolControllerBase) UpdateService(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) error {
 	field := fieldName(idIsName...)
-	return crud.FindUpdate(m.CRUD, ctx, "PoolController.UpdateService", field, id, fields, &PoolServiceBase{}, logger.Fields{field: id})
+	obj, err := crud.FindUpdate(m.CRUD, ctx, "PoolController.UpdateService", field, id, fields, &PoolServiceBase{}, logger.Fields{field: id})
+	if err != nil {
+		return err
+	}
+	m.OpLog(ctx, "update_service", &OpLogPool{ServiceId: obj.GetID(), ServiceName: obj.Name()})
+	return nil
 }
 
 func (m *PoolControllerBase) DeleteService(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) error {
@@ -150,7 +187,17 @@ func (m *PoolControllerBase) DeleteService(ctx op_context.Context, id string, fi
 		return c.SetError(errors.New("can not delete service bound to pools, remove all service bindings first"))
 	}
 
-	return crud.Delete(m.CRUD, ctx, "PoolController.DeleteService", "id", serviceId, &PoolBase{}, logger.Fields{"id": id})
+	err = crud.Delete(m.CRUD, ctx, "PoolController.DeleteService", "id", serviceId, &PoolBase{}, logger.Fields{"id": id})
+	if err != nil {
+		return err
+	}
+
+	o := &OpLogPool{ServiceId: serviceId}
+	if utils.OptionalArg(false, idIsName...) {
+		o.ServiceName = id
+	}
+	m.OpLog(ctx, "delete_service", o)
+	return nil
 }
 
 func (p *PoolControllerBase) GetPools(ctx op_context.Context, filter *db.Filter) ([]*PoolBase, error) {
@@ -207,6 +254,10 @@ func (m *PoolControllerBase) AddServiceToPool(ctx op_context.Context, poolId str
 		return nil, c.SetError(err)
 	}
 
+	m.OpLog(ctx, "add_service_to_pool", &OpLogPool{ServiceId: service.GetID(), ServiceName: service.Name(),
+		PoolId: pool.GetID(), PoolName: pool.Name(),
+		Role: role,
+	})
 	return binding, nil
 }
 
@@ -252,22 +303,22 @@ func (m *PoolControllerBase) ServiceId(c op_context.CallContext, ctx op_context.
 	return pId, nil
 }
 
-func (m *PoolControllerBase) RemoveServiceFromPool(ctx op_context.Context, poolId string, role string, idIsName ...bool) error {
+func (m *PoolControllerBase) RemoveServiceFromPool(ctx op_context.Context, id string, role string, idIsName ...bool) error {
 
-	c := ctx.TraceInMethod("PoolController.RemoveServiceFromPool")
+	c := ctx.TraceInMethod("PoolController.RemoveServiceFromPool", logger.Fields{"role": role})
 	defer ctx.TraceOutMethod()
 
-	pId, err := m.PoolId(c, ctx, poolId, idIsName...)
+	poolId, err := m.PoolId(c, ctx, id, idIsName...)
 	if err != nil {
 		return err
 	}
-	if pId == "" {
+	if poolId == "" {
 		ctx.SetGenericError(nil)
 		return nil
 	}
 
 	association := &PoolServiceAssociacionBase{}
-	fields := db.Fields{"pool_id": pId, "role": role}
+	fields := db.Fields{"pool_id": poolId, "role": role}
 	found, err := m.CRUD.Read(ctx, fields, association)
 	if err != nil {
 		c.SetMessage("failed to find association")
@@ -283,6 +334,11 @@ func (m *PoolControllerBase) RemoveServiceFromPool(ctx op_context.Context, poolI
 		return c.SetError(err)
 	}
 
+	o := &OpLogPool{PoolId: poolId, Role: role}
+	if utils.OptionalArg(false, idIsName...) {
+		o.PoolName = id
+	}
+	m.OpLog(ctx, "remove_service_from_pool", o)
 	return nil
 }
 
@@ -305,6 +361,12 @@ func (m *PoolControllerBase) RemoveAllServicesFromPool(ctx op_context.Context, i
 	if err != nil {
 		return err
 	}
+
+	o := &OpLogPool{PoolId: poolId}
+	if utils.OptionalArg(false, idIsName...) {
+		o.PoolName = id
+	}
+	m.OpLog(ctx, "remove_all_services_from_pool", o)
 	return nil
 }
 
@@ -313,7 +375,7 @@ func (m *PoolControllerBase) RemoveServiceFromAllPools(ctx op_context.Context, i
 	c := ctx.TraceInMethod("PoolController.RemoveServiceFromAllPools")
 	defer ctx.TraceOutMethod()
 
-	serviceId, err := m.PoolId(c, ctx, id, idIsName...)
+	serviceId, err := m.ServiceId(c, ctx, id, idIsName...)
 	if err != nil {
 		return err
 	}
@@ -327,5 +389,11 @@ func (m *PoolControllerBase) RemoveServiceFromAllPools(ctx op_context.Context, i
 	if err != nil {
 		return err
 	}
+
+	o := &OpLogPool{ServiceId: serviceId}
+	if utils.OptionalArg(false, idIsName...) {
+		o.ServiceName = id
+	}
+	m.OpLog(ctx, "remove_service_from_all_pools", o)
 	return nil
 }
