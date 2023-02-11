@@ -408,3 +408,12 @@ func NamedResource(resourceType string) Resource {
 
 	return r
 }
+
+func PrepareCollectionAndNameResource(typeName string) (serviceName string, collectionResource Resource, objectResource Resource) {
+
+	serviceName = utils.ConcatStrings(typeName, "s")
+	objectResource = NamedResource(typeName)
+	collectionResource = objectResource.Parent()
+
+	return
+}

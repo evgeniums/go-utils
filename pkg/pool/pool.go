@@ -16,12 +16,23 @@ type Pool interface {
 	Service(role string) (PoolServiceBinding, error)
 }
 
-type PoolBaseEssentials struct {
-	common.ObjectBase
+type PoolBaseData struct {
 	common.WithUniqueNameBase
 	common.WithLongNameBase
 	common.WithDescriptionBase
 	common.WithActiveBase
+}
+
+func (p *PoolBaseData) Fill(pool Pool) {
+	p.SetName(pool.Name())
+	p.SetActive(pool.IsActive())
+	p.SetDescription(pool.Description())
+	p.SetLongName(pool.LongName())
+}
+
+type PoolBaseEssentials struct {
+	common.ObjectBase
+	PoolBaseData
 }
 
 type PoolItem struct {
@@ -33,6 +44,11 @@ type PoolItem struct {
 type PoolBase struct {
 	PoolBaseEssentials
 	Services map[string]PoolServiceBinding `gorm:"-:all"`
+}
+
+func NewPool() *PoolBase {
+	p := &PoolBase{}
+	return p
 }
 
 func (PoolBase) TableName() string {

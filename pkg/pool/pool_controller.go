@@ -15,7 +15,7 @@ const ErrorCodeServiceNotFound = "service_not_found"
 const ErrorCodePoolServiceBindingsExist = "pool_service_bindings_exist"
 
 type PoolController interface {
-	AddPool(ctx op_context.Context, pool Pool) error
+	AddPool(ctx op_context.Context, pool Pool) (Pool, error)
 	FindPool(ctx op_context.Context, id string, idIsName ...bool) (Pool, error)
 	UpdatePool(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) error
 	DeletePool(ctx op_context.Context, id string, idIsName ...bool) error
@@ -59,14 +59,14 @@ func (m *PoolControllerBase) OpLog(ctx op_context.Context, operation string, opl
 	ctx.Oplog(oplog)
 }
 
-func (m *PoolControllerBase) AddPool(ctx op_context.Context, pool Pool) error {
+func (m *PoolControllerBase) AddPool(ctx op_context.Context, pool Pool) (Pool, error) {
 	pool.InitObject()
 	err := crud.Create(m.CRUD, ctx, "PoolController.AddPool", pool, logger.Fields{"pool_name": pool.Name()})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	m.OpLog(ctx, "add_pool", &OpLogPool{PoolId: pool.GetID(), PoolName: pool.Name()})
-	return nil
+	return pool, nil
 }
 
 func (m *PoolControllerBase) FindPool(ctx op_context.Context, id string, idIsName ...bool) (Pool, error) {
