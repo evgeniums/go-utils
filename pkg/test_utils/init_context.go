@@ -59,14 +59,14 @@ func prepareOpContext(ctx op_context.Context, name string) {
 
 func SimpleOpContext(app app_context.Context, name string) op_context.Context {
 	ctx := &op_context.ContextBase{}
-	ctx.Init(app, app.Logger(), app.DB())
+	ctx.Init(app, app.Logger(), app.Db())
 	prepareOpContext(ctx, name)
 	return ctx
 }
 
 func UserOpContext(app app_context.Context, name string, user auth.User, tenancy ...multitenancy.Tenancy) auth.UserContext {
 	ctx := &auth.UserContextBase{}
-	ctx.Init(app, app.Logger(), app.DB())
+	ctx.Init(app, app.Logger(), app.Db())
 	prepareOpContext(ctx, name)
 	ctx.SetAuthUser(user)
 	t := utils.OptionalArg(nil, tenancy...)

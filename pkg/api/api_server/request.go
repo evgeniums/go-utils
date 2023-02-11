@@ -41,9 +41,9 @@ func (r *RequestBase) Init(app app_context.Context, log logger.Logger, db db.DB,
 func (r *RequestBase) DB() db.DB {
 	t := r.GetTenancy()
 	if t != nil {
-		return t.DB()
+		return t.Db()
 	}
-	return r.ContextBase.DB()
+	return r.ContextBase.Db()
 }
 
 func (r *RequestBase) Endpoint() Endpoint {
@@ -76,7 +76,7 @@ func ParseDbQuery(request Request, models []interface{}, q api.Query, queryName 
 		return nil, nil
 	}
 
-	filter, err := db.ParseQuery(request.DB(), q.Query(), models, queryName, db.EmptyFilterValidator(request.App().Validator()))
+	filter, err := db.ParseQuery(request.Db(), q.Query(), models, queryName, db.EmptyFilterValidator(request.App().Validator()))
 	if err != nil {
 		vErr, ok := err.(*validator.ValidationError)
 		if ok {

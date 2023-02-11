@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
+	"github.com/evgeniums/go-backend-helpers/pkg/crud"
 	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
@@ -30,10 +31,14 @@ type SessionController interface {
 type SessionControllerBase struct {
 	sessionBuilder       func() Session
 	sessionClientBuilder func() SessionClient
+	crud                 crud.CRUD
 }
 
-func LocalSessionController() *SessionControllerBase {
+func LocalSessionController(cr ...crud.CRUD) *SessionControllerBase {
 	s := &SessionControllerBase{}
+	if len(cr) == 0 {
+		s.crud = &crud.DbCRUD{}
+	}
 	return s
 }
 
@@ -64,7 +69,7 @@ func (s *SessionControllerBase) CreateSession(ctx auth.AuthContext, expiration t
 	session.SetValid(true)
 	session.SetExpiration(expiration)
 
-	err := ctx.DB().Create(ctx, session)
+	err := s.crud.Create(ctx, session)
 	if err != nil {
 		return nil, c.SetError(err)
 	}
@@ -78,7 +83,7 @@ func (s *SessionControllerBase) FindSession(ctx op_context.Context, sessionId st
 	defer ctx.TraceOutMethod()
 
 	session := s.MakeSession()
-	_, err := ctx.DB().FindByField(ctx, "id", sessionId, session)
+	_, err := s.crud.ReadByField(ctx, "id", sessionId, session)
 	if err != nil {
 		return nil, c.SetError(err)
 	}
@@ -109,7 +114,7 @@ func (s *SessionControllerBase) UpdateSessionClient(ctx auth.AuthContext) error 
 	tryUpdate := true
 	client := s.MakeSessionClient()
 	fields := db.Fields{"session_id": ctx.GetSessionId(), "client_hash": clientHash}
-	found, err := ctx.DB().FindByFields(ctx, fields, client)
+	found, err := s.crud.Read(ctx, fields, client)
 	if err != nil {
 		c.SetMessage("failed to find client in database")
 		return err
@@ -123,7 +128,7 @@ func (s *SessionControllerBase) UpdateSessionClient(ctx auth.AuthContext) error 
 		client.SetSessionId(ctx.GetSessionId())
 		client.SetUser(ctx.AuthUser())
 		client.SetUserAgent(userAgent)
-		err1 := ctx.DB().Create(ctx, client)
+		err1 := s.crud.Create(ctx, client)
 		if err1 != nil {
 			c.Logger().Error("failed to create session client in database", err1)
 			tryUpdate = true
@@ -132,7 +137,7 @@ func (s *SessionControllerBase) UpdateSessionClient(ctx auth.AuthContext) error 
 
 	// update client
 	if tryUpdate {
-		err = db.Update(ctx.DB(), ctx, client, db.Fields{"updated_at": time.Now()})
+		err = s.crud.Update(ctx, client, db.Fields{"updated_at": time.Now()})
 		if err != nil {
 			c.SetMessage("failed to update client in database")
 			return err
@@ -149,7 +154,7 @@ func (s *SessionControllerBase) UpdateSessionExpiration(ctx auth.AuthContext, se
 	c := ctx.TraceInMethod("auth_session.UpdateSessionExpiration")
 	defer ctx.TraceOutMethod()
 
-	err := db.Update(ctx.DB(), ctx, session, db.Fields{"expiration": session.GetExpiration()})
+	err := s.crud.Update(ctx, session, db.Fields{"expiration": session.GetExpiration()})
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -161,7 +166,7 @@ func (s *SessionControllerBase) InvalidateSession(ctx op_context.Context, userId
 	c := ctx.TraceInMethod("auth_session.InvalidateSession")
 	defer ctx.TraceOutMethod()
 
-	err := ctx.DB().Update(ctx, s.MakeSession(), db.Fields{"id": sessionId, "user_id": userId}, db.Fields{"valid": false, "updated_at": time.Now()})
+	err := s.crud.UpdateMulti(ctx, s.MakeSession(), db.Fields{"id": sessionId, "user_id": userId}, db.Fields{"valid": false, "updated_at": time.Now()})
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -173,7 +178,7 @@ func (s *SessionControllerBase) InvalidateUserSessions(ctx op_context.Context, u
 	c := ctx.TraceInMethod("auth_session.InvalidateUserSessions")
 	defer ctx.TraceOutMethod()
 
-	err := ctx.DB().Update(ctx, s.MakeSession(), db.Fields{"user_id": userId}, db.Fields{"valid": false, "updated_at": time.Now()})
+	err := s.crud.UpdateMulti(ctx, s.MakeSession(), db.Fields{"user_id": userId}, db.Fields{"valid": false, "updated_at": time.Now()})
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -184,7 +189,7 @@ func (s *SessionControllerBase) InvalidateAllSessions(ctx op_context.Context) er
 	c := ctx.TraceInMethod("auth_session.InvalidateAllSessions")
 	defer ctx.TraceOutMethod()
 
-	err := ctx.DB().UpdateAll(ctx, s.MakeSession(), db.Fields{"valid": false, "updated_at": time.Now()})
+	err := s.crud.UpdateMulti(ctx, s.MakeSession(), nil, db.Fields{"valid": false, "updated_at": time.Now()})
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -196,7 +201,7 @@ func (s *SessionControllerBase) GetSessions(ctx op_context.Context, filter *db.F
 
 	c := ctx.TraceInMethod("auth_session.GetSessions")
 	defer ctx.TraceOutMethod()
-	err := ctx.DB().FindWithFilter(ctx, filter, sessions)
+	err := s.crud.List(ctx, filter, sessions)
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -208,7 +213,7 @@ func (s *SessionControllerBase) GetSessionClients(ctx op_context.Context, filter
 
 	c := ctx.TraceInMethod("auth_session.GetSessionClients")
 	defer ctx.TraceOutMethod()
-	err := ctx.DB().FindWithFilter(ctx, filter, sessions)
+	err := s.crud.List(ctx, filter, sessions)
 	if err != nil {
 		return c.SetError(err)
 	}

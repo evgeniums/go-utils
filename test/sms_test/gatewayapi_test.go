@@ -44,7 +44,7 @@ func TestGatewayapi(t *testing.T) {
 	}
 
 	opCtx := &op_context.ContextBase{}
-	opCtx.Init(app, app.Logger(), app.DB())
+	opCtx.Init(app, app.Logger(), app.Db())
 	errManager := &generic_error.ErrorManagerBase{}
 	errManager.Init(http.StatusBadRequest)
 	opCtx.SetErrorManager(errManager)

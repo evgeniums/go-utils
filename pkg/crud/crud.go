@@ -12,6 +12,7 @@ type CRUD interface {
 	Read(ctx op_context.Context, fields db.Fields, object interface{}, dest ...interface{}) (bool, error)
 	ReadByField(ctx op_context.Context, fieldName string, fieldValue interface{}, object interface{}, dest ...interface{}) (bool, error)
 	Update(ctx op_context.Context, object common.Object, fields db.Fields) error
+	UpdateMulti(ctx op_context.Context, model interface{}, filter db.Fields, fields db.Fields) error
 	Delete(ctx op_context.Context, object common.Object) error
 	DeleteByFields(ctx op_context.Context, field db.Fields, object common.Object) error
 
@@ -64,11 +65,28 @@ func (d *DbCRUD) ReadByField(ctx op_context.Context, fieldName string, fieldValu
 	return found, nil
 }
 
-func (d *DbCRUD) Update(ctx op_context.Context, user common.Object, fields db.Fields) error {
+func (d *DbCRUD) Update(ctx op_context.Context, obj common.Object, fields db.Fields) error {
 	c := ctx.TraceInMethod("CRUD.Update")
 	defer ctx.TraceOutMethod()
 
-	err := db.Update(op_context.DB(ctx), ctx, user, fields)
+	err := db.Update(op_context.DB(ctx), ctx, obj, fields)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	return nil
+}
+
+func (d *DbCRUD) UpdateMulti(ctx op_context.Context, model interface{}, filter db.Fields, fields db.Fields) error {
+	c := ctx.TraceInMethod("CRUD.UpdateMulti")
+	defer ctx.TraceOutMethod()
+
+	var err error
+	if filter == nil {
+		err = db.UpdateAll(op_context.DB(ctx), ctx, model, fields)
+	} else {
+		err = db.UpdateMulti(op_context.DB(ctx), ctx, model, filter, fields)
+	}
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -103,7 +121,7 @@ func (crud *DbCRUD) DeleteByFields(ctx op_context.Context, fields db.Fields, obj
 func (d *DbCRUD) List(ctx op_context.Context, filter *db.Filter, objects interface{}, dest ...interface{}) error {
 	c := ctx.TraceInMethod("CRUD.List")
 	defer ctx.TraceOutMethod()
-	err := ctx.DB().FindWithFilter(ctx, filter, objects, dest...)
+	err := op_context.DB(ctx).FindWithFilter(ctx, filter, objects, dest...)
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -113,7 +131,7 @@ func (d *DbCRUD) List(ctx op_context.Context, filter *db.Filter, objects interfa
 func (d *DbCRUD) Exists(ctx op_context.Context, filter *db.Filter, object interface{}) (bool, error) {
 	c := ctx.TraceInMethod("CRUD.Exists")
 	defer ctx.TraceOutMethod()
-	exists, err := ctx.DB().Exists(ctx, filter, object)
+	exists, err := op_context.DB(ctx).Exists(ctx, filter, object)
 	if err != nil {
 		return false, c.SetError(err)
 	}

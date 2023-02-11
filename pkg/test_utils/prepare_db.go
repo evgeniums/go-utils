@@ -75,5 +75,5 @@ func CreateDbModel(t *testing.T, app app_context.Context, models ...interface{})
 }
 
 func CreateDbModels(t *testing.T, app app_context.Context, models []interface{}) {
-	require.NoErrorf(t, app.DB().AutoMigrate(app, models), "failed to create database")
+	require.NoErrorf(t, app.Db().AutoMigrate(app, models), "failed to create database")
 }

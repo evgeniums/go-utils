@@ -60,6 +60,6 @@ func (t *TenancyBase) ConnectDB(ctx op_context.Context) error {
 	localCtx := ctx.TraceInMethod("TenancyBase.ConnectDB")
 	defer ctx.TraceOutMethod()
 
-	t.WithDBBase.Init(ctx.DB().NewDB())
-	return localCtx.SetError(t.DB().InitWithConfig(ctx, ctx.App().Validator(), &t.DBConfig))
+	t.WithDBBase.Init(ctx.Db().NewDB())
+	return localCtx.SetError(t.Db().InitWithConfig(ctx, ctx.App().Validator(), &t.DBConfig))
 }

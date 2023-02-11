@@ -218,7 +218,7 @@ func (s *SmsManagerBase) Send(ctx auth.UserContext, message string, recipient st
 	} else {
 		sms.Message = message
 	}
-	err = ctx.DB().Create(ctx, sms)
+	err = op_context.DB(ctx).Create(ctx, sms)
 	if err != nil {
 		c.SetMessage("failed to save SMS in database")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
@@ -239,7 +239,7 @@ func (s *SmsManagerBase) Send(ctx auth.UserContext, message string, recipient st
 	}
 
 	// update status in database
-	err1 := db.Update(ctx.DB(), ctx, sms, db.Fields{"status": sms.Status, "raw_response": sms.RawResponse, "foreign_id": sms.ForeignId})
+	err1 := db.Update(op_context.DB(ctx), ctx, sms, db.Fields{"status": sms.Status, "raw_response": sms.RawResponse, "foreign_id": sms.ForeignId})
 	if err1 != nil {
 		c.LoggerFields()["status"] = sms.Status
 		c.LoggerFields()["raw_response"] = sms.RawResponse
@@ -268,7 +268,7 @@ func (s *SmsManagerBase) FindSms(ctx op_context.Context, smsId string) (*SmsMess
 	defer onExit()
 
 	msg := &SmsMessage{}
-	found, err := ctx.DB().FindByField(ctx, "id", smsId, msg)
+	found, err := op_context.DB(ctx).FindByField(ctx, "id", smsId, msg)
 	if err != nil {
 		c.SetMessage("failed to find SMS in database")
 		return nil, err

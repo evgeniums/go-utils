@@ -76,7 +76,7 @@ func (c *ConsoleUtility) InitCommandContext(group string, command string) op_con
 	}
 
 	opCtx := &op_context.ContextBase{}
-	opCtx.Init(c.App, c.App.Logger(), c.App.DB())
+	opCtx.Init(c.App, c.App.Logger(), c.App.Db())
 	opCtx.SetName(fmt.Sprintf("%s.%s", group, command))
 	errManager := &generic_error.ErrorManagerBase{}
 	errManager.Init(http.StatusBadRequest)

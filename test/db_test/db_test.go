@@ -52,16 +52,16 @@ func TestMainDbOperations(t *testing.T) {
 	doc1.InitObject()
 	doc1.Field1 = "value1"
 	doc1.Field2 = "value2"
-	require.NoError(t, app.DB().Create(app, doc1), "failed to create doc1 in database")
+	require.NoError(t, app.Db().Create(app, doc1), "failed to create doc1 in database")
 
 	docDb1 := &SampleModel1{}
-	found, err := app.DB().FindByFields(app, db.Fields{"field1": "value1"}, docDb1)
+	found, err := app.Db().FindByFields(app, db.Fields{"field1": "value1"}, docDb1)
 	require.NoError(t, err, "failed to find doc1 in database")
 	assert.Equal(t, found, true)
 	assert.Equal(t, doc1, docDb1)
 
 	docDb1NotFound := &SampleModel1{}
-	found, err = app.DB().FindByFields(app, db.Fields{"field1": "value11"}, docDb1NotFound)
+	found, err = app.Db().FindByFields(app, db.Fields{"field1": "value11"}, docDb1NotFound)
 	require.NoError(t, err, "failed to find docDb1NotFound in database")
 	assert.Equal(t, found, false)
 
@@ -70,7 +70,7 @@ func TestMainDbOperations(t *testing.T) {
 	filter.SortField = "field1"
 	filter.SortDirection = db.SORT_ASC
 	docsDb1 := make([]*SampleModel1, 0)
-	require.NoError(t, app.DB().FindWithFilter(app, filter, &docsDb1), "failed to find docs with filter in database")
+	require.NoError(t, app.Db().FindWithFilter(app, filter, &docsDb1), "failed to find docs with filter in database")
 	require.Len(t, docsDb1, 1)
 	assert.Equal(t, doc1, docsDb1[0])
 
@@ -78,9 +78,9 @@ func TestMainDbOperations(t *testing.T) {
 	doc2.InitObject()
 	doc2.Field1 = "value1"
 	doc2.Field2 = "value2"
-	assert.Error(t, app.DB().Create(app, doc1), "doc with field1=valu1e must be unique in database")
+	assert.Error(t, app.Db().Create(app, doc1), "doc with field1=valu1e must be unique in database")
 	docsDb2 := make([]*SampleModel1, 0)
-	require.NoError(t, app.DB().FindWithFilter(app, filter, &docsDb2), "failed to find docs with filter in database")
+	require.NoError(t, app.Db().FindWithFilter(app, filter, &docsDb2), "failed to find docs with filter in database")
 	require.Len(t, docsDb2, 1)
 	assert.Equal(t, doc1, docsDb2[0])
 
@@ -88,23 +88,23 @@ func TestMainDbOperations(t *testing.T) {
 	doc3.InitObject()
 	doc3.Field1 = "value3"
 	doc3.Field2 = "value2"
-	assert.NoError(t, app.DB().Create(app, doc3), "failed to create doc3 in database")
+	assert.NoError(t, app.Db().Create(app, doc3), "failed to create doc3 in database")
 
 	docsDb3 := make([]*SampleModel1, 0)
-	require.NoError(t, app.DB().FindWithFilter(app, filter, &docsDb3), "failed to find docs with filter in database")
+	require.NoError(t, app.Db().FindWithFilter(app, filter, &docsDb3), "failed to find docs with filter in database")
 	require.Len(t, docsDb3, 2)
 	assert.Equal(t, doc1, docsDb3[0])
 	assert.Equal(t, doc3, docsDb3[1])
 
-	require.NoError(t, app.DB().Update(app, doc3, db.Fields{"field1": "value3"}, db.Fields{"field2": "value33"}), "failed to update doc3 in database")
+	require.NoError(t, app.Db().Update(app, doc3, db.Fields{"field1": "value3"}, db.Fields{"field2": "value33"}), "failed to update doc3 in database")
 
 	docsDb4 := make([]*SampleModel1, 0)
-	require.NoError(t, app.DB().FindWithFilter(app, filter, &docsDb4), "failed to find docsDb4 with filter in database")
+	require.NoError(t, app.Db().FindWithFilter(app, filter, &docsDb4), "failed to find docsDb4 with filter in database")
 	require.Len(t, docsDb4, 1)
 	assert.Equal(t, doc1, docsDb4[0])
 
 	docDb33 := &SampleModel1{}
-	found, err = app.DB().FindByFields(app, db.Fields{"field2": "value33"}, docDb33)
+	found, err = app.Db().FindByFields(app, db.Fields{"field2": "value33"}, docDb33)
 	require.NoError(t, err, "failed to find docDb33 in database")
 	assert.Equal(t, found, true)
 	assert.Equal(t, docDb33.Field1, doc3.Field1)

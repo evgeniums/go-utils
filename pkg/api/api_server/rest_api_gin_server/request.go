@@ -32,7 +32,7 @@ func (r *Request) Init(s *Server, ginCtx *gin.Context, ep api_server.Endpoint, f
 	r.start = time.Now()
 	r.server = s
 
-	r.RequestBase.Init(s.App(), s.App().Logger(), s.App().DB(), ep, fields...)
+	r.RequestBase.Init(s.App(), s.App().Logger(), s.App().Db(), ep, fields...)
 	r.RequestBase.SetErrorManager(s)
 
 	r.ginCtx = ginCtx

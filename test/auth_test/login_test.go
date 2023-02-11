@@ -206,7 +206,7 @@ func TestSession(t *testing.T) {
 	assert.False(t, sessions[4].IsValid())
 
 	strippedSessions := []StrippedSession{}
-	require.NoError(t, app.DB().FindWithFilter(app, filter, sessions, &strippedSessions))
+	require.NoError(t, app.Db().FindWithFilter(app, filter, sessions, &strippedSessions))
 	require.Equal(t, 5, len(strippedSessions))
 	assert.True(t, strippedSessions[0].Valid)
 	assert.True(t, strippedSessions[1].Valid)

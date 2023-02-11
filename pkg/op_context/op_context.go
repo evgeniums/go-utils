@@ -180,7 +180,7 @@ func (c *ContextBase) ID() string {
 }
 
 func (c *ContextBase) MainDB() db.DB {
-	return c.WithDBBase.DB()
+	return c.WithDBBase.Db()
 }
 
 func (c *ContextBase) Name() string {
@@ -359,5 +359,5 @@ func DB(c Context) db.DBHandlers {
 	if c.DbTransaction() != nil {
 		return c.DbTransaction()
 	}
-	return c.DB()
+	return c.Db()
 }

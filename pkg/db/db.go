@@ -76,14 +76,14 @@ type DB interface {
 }
 
 type WithDB interface {
-	DB() DB
+	Db() DB
 }
 
 type WithDBBase struct {
 	db DB
 }
 
-func (w *WithDBBase) DB() DB {
+func (w *WithDBBase) Db() DB {
 	return w.db
 }
 
@@ -95,4 +95,16 @@ func Update(db DBHandlers, ctx logger.WithLogger, obj common.Object, fields Fiel
 	f := utils.CopyMap(fields)
 	f["updated_at"] = time.Now()
 	return db.Update(ctx, obj, Fields{"id": obj.GetID()}, f)
+}
+
+func UpdateMulti(db DBHandlers, ctx logger.WithLogger, obj interface{}, filter Fields, fields Fields) error {
+	f := utils.CopyMap(fields)
+	f["updated_at"] = time.Now()
+	return db.Update(ctx, obj, filter, f)
+}
+
+func UpdateAll(db DBHandlers, ctx logger.WithLogger, obj interface{}, fields Fields) error {
+	f := utils.CopyMap(fields)
+	f["updated_at"] = time.Now()
+	return db.UpdateAll(ctx, obj, f)
 }

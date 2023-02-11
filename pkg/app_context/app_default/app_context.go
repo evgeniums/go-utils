@@ -46,7 +46,7 @@ func (c *Context) Config() interface{} {
 	return &c.contextConfig
 }
 
-func (c *Context) DB() db.DB {
+func (c *Context) Db() db.DB {
 	return c.db
 }
 
