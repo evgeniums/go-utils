@@ -117,7 +117,7 @@ func New(buildConfig *app_context.BuildConfig, cache_ ...cache.Cache) *Context {
 func (c *Context) InitWithArgs(configFile string, args []string, configType ...string) error {
 
 	// load configuration
-	fmt.Printf("Using configuration file %s\n", configFile)
+	fmt.Printf("Application %s using configuration file %s\n", c.Application(), configFile)
 	err := c.initConfig(configFile)
 	if err != nil {
 		return c.Logger().PushFatalStack("failed to load application configuration", err)
