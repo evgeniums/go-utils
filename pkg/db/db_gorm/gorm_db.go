@@ -301,3 +301,12 @@ func (g *GormDB) UpdateAll(ctx logger.WithLogger, obj interface{}, newFields db.
 	}
 	return err
 }
+
+func (g *GormDB) Exists(ctx logger.WithLogger, filter *Filter, obj interface{}) (bool, error) {
+	exists, err := Exists(g.db_(), filter, obj)
+	if err != nil && g.VERBOSE_ERRORS {
+		e := fmt.Errorf("failed to Exists %v", ObjectTypeName(obj))
+		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+	}
+	return exists, err
+}

@@ -13,8 +13,10 @@ type CRUD interface {
 	ReadByField(ctx op_context.Context, fieldName string, fieldValue interface{}, object interface{}, dest ...interface{}) (bool, error)
 	Update(ctx op_context.Context, object common.Object, fields db.Fields) error
 	Delete(ctx op_context.Context, object common.Object) error
+	DeleteByFields(ctx op_context.Context, field db.Fields, object common.Object) error
 
 	List(ctx op_context.Context, filter *db.Filter, object interface{}, dest ...interface{}) error
+	Exists(ctx op_context.Context, filter *db.Filter, object interface{}) (bool, error)
 }
 
 type WithCRUD interface {
@@ -86,6 +88,18 @@ func (crud *DbCRUD) Delete(ctx op_context.Context, object common.Object) error {
 	return nil
 }
 
+func (crud *DbCRUD) DeleteByFields(ctx op_context.Context, fields db.Fields, object common.Object) error {
+	c := ctx.TraceInMethod("CRUD.DeleteByFields")
+	defer ctx.TraceOutMethod()
+
+	err := op_context.DB(ctx).DeleteByFields(ctx, fields, object)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	return nil
+}
+
 func (d *DbCRUD) List(ctx op_context.Context, filter *db.Filter, objects interface{}, dest ...interface{}) error {
 	c := ctx.TraceInMethod("CRUD.List")
 	defer ctx.TraceOutMethod()
@@ -94,6 +108,16 @@ func (d *DbCRUD) List(ctx op_context.Context, filter *db.Filter, objects interfa
 		return c.SetError(err)
 	}
 	return nil
+}
+
+func (d *DbCRUD) Exists(ctx op_context.Context, filter *db.Filter, object interface{}) (bool, error) {
+	c := ctx.TraceInMethod("CRUD.Exists")
+	defer ctx.TraceOutMethod()
+	exists, err := ctx.DB().Exists(ctx, filter, object)
+	if err != nil {
+		return false, c.SetError(err)
+	}
+	return exists, nil
 }
 
 func List[T common.Object](crud CRUD, ctx op_context.Context, methodName string, filter *db.Filter, objects *[]T, dest ...interface{}) error {
@@ -141,6 +165,16 @@ func FindByField[T common.Object](crud CRUD, ctx op_context.Context, methodName 
 	return object, nil
 }
 
+func Create(crud CRUD, ctx op_context.Context, methodName string, obj common.Object, loggerFields ...logger.Fields) error {
+	c := ctx.TraceInMethod(methodName, loggerFields...)
+	defer ctx.TraceOutMethod()
+	err := crud.Create(ctx, obj)
+	if err != nil {
+		return c.SetError(err)
+	}
+	return nil
+}
+
 func Update(crud CRUD, ctx op_context.Context, methodName string, obj common.Object, fields db.Fields, loggerFields ...logger.Fields) error {
 	c := ctx.TraceInMethod(methodName, loggerFields...)
 	defer ctx.TraceOutMethod()
@@ -166,4 +200,49 @@ func FindUpdate[T common.Object](crud CRUD, ctx op_context.Context, methodName s
 	}
 
 	return nil
+}
+
+func Delete(crud CRUD, ctx op_context.Context, methodName string, fieldName string, fieldValue interface{}, object common.Object, loggerFields ...logger.Fields) error {
+	c := ctx.TraceInMethod(methodName)
+	defer ctx.TraceOutMethod()
+
+	obj, err := FindByField(crud, ctx, "Find", fieldName, fieldValue, object)
+	if err != nil {
+		return c.SetError(err)
+	}
+	if obj == nil {
+		return nil
+	}
+
+	err = crud.Delete(ctx, obj)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	return nil
+}
+
+func DeleteByFields(crud CRUD, ctx op_context.Context, methodName string, fields db.Fields, object common.Object, loggerFields ...logger.Fields) error {
+	c := ctx.TraceInMethod(methodName)
+	defer ctx.TraceOutMethod()
+
+	err := crud.DeleteByFields(ctx, fields, object)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	return nil
+}
+
+func Exists(crud CRUD, ctx op_context.Context, methodName string, filter *db.Filter, object interface{}) (bool, error) {
+
+	c := ctx.TraceInMethod(methodName)
+	defer ctx.TraceOutMethod()
+
+	exists, err := crud.Exists(ctx, filter, object)
+	if err != nil {
+		return false, c.SetError(err)
+	}
+
+	return exists, nil
 }

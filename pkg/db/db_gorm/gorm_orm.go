@@ -232,32 +232,6 @@ func UpdateField(db *gorm.DB, field string, doc interface{}) error {
 	return result.Error
 }
 
-/*
-func collectFieldNames(t reflect.Type, names *[]string) {
-
-		// Return if not struct or pointer to struct.
-		if t.Kind() == reflect.Ptr {
-			t = t.Elem()
-		}
-		if t.Kind() != reflect.Struct {
-			return
-		}
-
-		// Iterate through fields collecting names in map.
-		for i := 0; i < t.NumField(); i++ {
-			sf := t.Field(i)
-
-			// Recurse into anonymous fields.
-			if sf.Anonymous {
-				if sf.Name != "BaseObject" {
-					collectFieldNames(sf.Type, names)
-				}
-			} else {
-				*names = append(*names, sf.Name)
-			}
-		}
-	}
-*/
 type TransactionHandler func(tx *gorm.DB) error
 
 func Transaction(db *gorm.DB, handler TransactionHandler) error {
@@ -285,6 +259,22 @@ func UpdateFielsdMulti(db *gorm.DB, filter db.Fields, doc interface{}, newFields
 func UpdateFieldsAll(db *gorm.DB, doc interface{}, newFields db.Fields) error {
 	result := db.Model(doc).Where("1 = 1").Updates(newFields)
 	return result.Error
+}
+
+func Exists(g *gorm.DB, filter *Filter, obj interface{}) (bool, error) {
+
+	h := g
+	if filter != nil {
+		h = prepareFilter(g.Model(obj), filter)
+	}
+	h.Limit(1)
+
+	result := h.First(obj)
+	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return false, result.Error
+	}
+
+	return result.RowsAffected > 0, nil
 }
 
 func DeleteAllByFields(db *gorm.DB, fields db.Fields, docs interface{}) error {

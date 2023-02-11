@@ -2,10 +2,6 @@ package pool
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
-	"github.com/evgeniums/go-backend-helpers/pkg/config"
-	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
-	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
 type ServiceConfig interface {
@@ -22,8 +18,7 @@ type ServiceConfig interface {
 	Parameter3() string
 }
 
-type PoolService interface {
-	common.Object
+type PoolServiceEssentials interface {
 	common.WithUniqueName
 	common.WithLongName
 	common.WithDescription
@@ -31,6 +26,11 @@ type PoolService interface {
 	common.WithType
 	common.WithRefId
 	ServiceConfig
+}
+
+type PoolService interface {
+	common.Object
+	PoolServiceEssentials
 }
 
 var NilService PoolService
@@ -93,8 +93,7 @@ func (s *ServiceConfigBase) Parameter3() string {
 	return s.PARAMETER3
 }
 
-type PoolServiceBaseConfig struct {
-	common.ObjectBase
+type PoolServiceBaseEssentials struct {
 	common.WithUniqueNameBase
 	common.WithLongNameBase
 	common.WithDescriptionBase
@@ -105,7 +104,8 @@ type PoolServiceBaseConfig struct {
 }
 
 type PoolServiceBase struct {
-	PoolServiceBaseConfig
+	common.ObjectBase
+	PoolServiceBaseEssentials
 }
 
 func NewPoolService() *PoolServiceBase {
@@ -113,64 +113,50 @@ func NewPoolService() *PoolServiceBase {
 	return p
 }
 
-func (p *PoolServiceBase) Config() interface{} {
-	return &p.PoolServiceBaseConfig
-}
-
-func (p *PoolServiceBase) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
-
-	err := object_config.LoadLogValidate(cfg, log, vld, p, "pool_service", configPath...)
-	if err != nil {
-		return log.PushFatalStack("failed to init PoolService", err)
-	}
-
-	return nil
-}
-
 func (PoolServiceBase) TableName() string {
 	return "pool_services"
 }
 
-type PoolServiceBinding interface {
-	common.Object
-	common.WithName
-	common.WithLongName
-	common.WithDescription
-	Pool() string
-	Type() string
-	Service() string
-}
+// type PoolServiceBinding interface {
+// 	common.Object
+// 	common.WithName
+// 	common.WithLongName
+// 	common.WithDescription
+// 	Pool() string
+// 	Type() string
+// 	Service() string
+// }
 
-type PoolServiceBindingBaseConfig struct {
-	common.ObjectBase
-	common.WithNameBase
-	common.WithLongNameBase
-	common.WithDescriptionBase
-	POOL_ID    string `gorm:"index;index:,unique,composite:u" json:"pool_id"`
-	TYPE       string `gorm:"index;index:,unique,composite:u" json:"type"`
-	SERVICE_ID string `gorm:"index" json:"service_id"`
-}
+// type PoolServiceBindingBaseConfig struct {
+// 	common.ObjectBase
+// 	common.WithNameBase
+// 	common.WithLongNameBase
+// 	common.WithDescriptionBase
+// 	POOL_ID    string `gorm:"index;index:,unique,composite:u" json:"pool_id"`
+// 	TYPE       string `gorm:"index;index:,unique,composite:u" json:"type"`
+// 	SERVICE_ID string `gorm:"index" json:"service_id"`
+// }
 
-func (p *PoolServiceBindingBaseConfig) Pool() string {
-	return p.POOL_ID
-}
+// func (p *PoolServiceBindingBaseConfig) Pool() string {
+// 	return p.POOL_ID
+// }
 
-func (p *PoolServiceBindingBaseConfig) Type() string {
-	return p.TYPE
-}
+// func (p *PoolServiceBindingBaseConfig) Type() string {
+// 	return p.TYPE
+// }
 
-func (p *PoolServiceBindingBaseConfig) Service() string {
-	return p.SERVICE_ID
-}
+// func (p *PoolServiceBindingBaseConfig) Service() string {
+// 	return p.SERVICE_ID
+// }
 
-type PoolServiceBindingBase struct {
-	PoolServiceBindingBaseConfig
-}
+// type PoolServiceBindingBase struct {
+// 	PoolServiceBindingBaseConfig
+// }
 
-func (p *PoolServiceBindingBase) Config() interface{} {
-	return &p.PoolServiceBindingBaseConfig
-}
+// func (p *PoolServiceBindingBase) Config() interface{} {
+// 	return &p.PoolServiceBindingBaseConfig
+// }
 
-func (PoolServiceBindingBase) TableName() string {
-	return "pool_service_bindings"
-}
+// func (PoolServiceBindingBase) TableName() string {
+// 	return "pool_service_bindings"
+// }
