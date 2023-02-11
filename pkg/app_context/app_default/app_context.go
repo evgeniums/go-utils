@@ -3,6 +3,8 @@ package app_default
 import (
 	"fmt"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
@@ -24,7 +26,8 @@ var Time = "unknown"
 var Revision = "unknown"
 
 type contextConfig struct {
-	TESTING bool
+	TESTING      bool
+	APP_INSTANCE string
 }
 
 type Context struct {
@@ -60,6 +63,15 @@ func (c *Context) Validator() validator.Validator {
 
 func (c *Context) Testing() bool {
 	return c.TESTING
+}
+
+func (c *Context) AppInstance() string {
+	return c.APP_INSTANCE
+}
+
+func (c *Context) Application() string {
+	proc, _ := os.Executable()
+	return filepath.Base(proc)
 }
 
 func (c *Context) TestParameters() map[string]interface{} {

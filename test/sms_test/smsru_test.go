@@ -7,7 +7,7 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context/app_default"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms/providers/smsru"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 )
@@ -43,7 +43,7 @@ func TestSmsru(t *testing.T) {
 		t.Fatalf("failed to init smsru module")
 	}
 
-	opCtx := &op_context.ContextBase{}
+	opCtx := &default_op_context.ContextBase{}
 	opCtx.Init(app, app.Logger(), app.Db())
 	errManager := &generic_error.ErrorManagerBase{}
 	errManager.Init(http.StatusBadRequest)

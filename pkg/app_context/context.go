@@ -27,5 +27,8 @@ type Context interface {
 	SetTestParameter(key string, value interface{})
 	GetTestParameter(key string) (interface{}, bool)
 
+	AppInstance() string
+	Application() string
+
 	Close()
 }

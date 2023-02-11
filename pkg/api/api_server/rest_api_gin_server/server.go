@@ -19,6 +19,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/gin-gonic/gin"
 
@@ -232,6 +233,8 @@ func (s *Server) Run(fin *finish.Finisher) {
 	}()
 }
 
+const OriginType = "rest_api"
+
 func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 	return func(ginCtx *gin.Context) {
 
@@ -275,6 +278,15 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 				request.SetGenericError(s.MakeGenericError(auth.ErrorCodeUnauthorized, request.Tr))
 			}
 		}
+		origin := &default_op_context.Origin{}
+		origin.SetType(s.App().Application())
+		origin.SetName(s.App().AppInstance())
+		if request.AuthUser() != nil {
+			origin.SetUser(request.AuthUser().Display())
+		}
+		origin.SetSource(ginCtx.ClientIP())
+		origin.SetSessionClient(request.GetClientId())
+		request.SetOrigin(origin)
 
 		// TODO process access control
 		if err == nil {

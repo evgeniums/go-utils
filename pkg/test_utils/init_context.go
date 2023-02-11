@@ -11,6 +11,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/stretchr/testify/require"
 )
@@ -58,9 +59,17 @@ func prepareOpContext(ctx op_context.Context, name string) {
 }
 
 func SimpleOpContext(app app_context.Context, name string) op_context.Context {
-	ctx := &op_context.ContextBase{}
+	ctx := &default_op_context.ContextBase{}
 	ctx.Init(app, app.Logger(), app.Db())
 	prepareOpContext(ctx, name)
+
+	origin := &default_op_context.Origin{}
+	origin.SetType(app.Application())
+	origin.SetName(app.AppInstance())
+	hostname, _ := os.Hostname()
+	origin.SetSource(hostname)
+	ctx.SetOrigin(origin)
+
 	return ctx
 }
 
@@ -73,5 +82,12 @@ func UserOpContext(app app_context.Context, name string, user auth.User, tenancy
 	if t != nil {
 		ctx.SetTenancy(t)
 	}
+	origin := &default_op_context.Origin{}
+	origin.SetType(app.Application())
+	origin.SetName(app.AppInstance())
+	hostname, _ := os.Hostname()
+	origin.SetSource(hostname)
+	origin.SetUser(user.Display())
+	ctx.SetOrigin(origin)
 	return ctx
 }

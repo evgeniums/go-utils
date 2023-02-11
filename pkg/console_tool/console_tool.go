@@ -12,6 +12,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger/logger_logrus"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -20,6 +21,7 @@ type MainOptions struct {
 	ConfigFormat string `long:"config-format" description:"Format of configuration file" default:"json"`
 	InitDb       string `long:"init-database" description:"Initialize database" default:"true"`
 	DbSection    string `long:"database-section" description:"Database section in configuration file" default:"db"`
+	InkokerName  string `long:"invoker-name" description:"Name of the user who invoked this utility"`
 }
 
 type Dummy struct{}
@@ -75,12 +77,21 @@ func (c *ConsoleUtility) InitCommandContext(group string, command string) op_con
 		}
 	}
 
-	opCtx := &op_context.ContextBase{}
+	opCtx := &default_op_context.ContextBase{}
 	opCtx.Init(c.App, c.App.Logger(), c.App.Db())
 	opCtx.SetName(fmt.Sprintf("%s.%s", group, command))
 	errManager := &generic_error.ErrorManagerBase{}
 	errManager.Init(http.StatusBadRequest)
 	opCtx.SetErrorManager(errManager)
+
+	origin := &default_op_context.Origin{}
+	origin.SetType(c.App.Application())
+	origin.SetName(c.App.AppInstance())
+	hostname, _ := os.Hostname()
+	origin.SetSource(hostname)
+	origin.SetUser(c.Opts.InkokerName)
+	opCtx.SetOrigin(origin)
+
 	return opCtx
 }
 

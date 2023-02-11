@@ -19,6 +19,10 @@ type Oplog interface {
 	SetOriginName(val string)
 	OriginSource() string
 	SetOriginSource(val string)
+	OriginClient() string
+	SetOriginClient(string)
+	OriginUser() string
+	SetOriginUser(string)
 }
 
 type OplogHolder struct {
@@ -27,7 +31,9 @@ type OplogHolder struct {
 	ContextName  string `gorm:"index" json:"context_name"`
 	OriginType   string `gorm:"index" json:"origin_type"`
 	OriginName   string `gorm:"index" json:"origin_name"`
+	OriginUser   string `gorm:"index" json:"origin_user"`
 	OriginSource string `gorm:"index" json:"origin_source"`
+	OriginClient string `gorm:"index" json:"origin_client"`
 }
 
 type OplogBase struct {
@@ -81,6 +87,22 @@ func (o *OplogBase) OriginSource() string {
 
 func (o *OplogBase) SetOriginSource(val string) {
 	o.OplogHolder.OriginSource = val
+}
+
+func (o *OplogBase) OriginClient() string {
+	return o.OplogHolder.OriginClient
+}
+
+func (o *OplogBase) SetOriginClient(val string) {
+	o.OplogHolder.OriginClient = val
+}
+
+func (o *OplogBase) OriginUser() string {
+	return o.OplogHolder.OriginUser
+}
+
+func (o *OplogBase) SetOriginUser(val string) {
+	o.OplogHolder.OriginUser = val
 }
 
 type OplogController interface {

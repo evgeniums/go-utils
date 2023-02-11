@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
@@ -238,13 +237,7 @@ func Transaction(db *gorm.DB, handler TransactionHandler) error {
 	return db.Transaction(handler)
 }
 
-func ObjectTypeName(obj interface{}) string {
-	t := reflect.TypeOf(obj)
-	if reflect.ValueOf(obj).Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
-	return t.Name()
-}
+var ObjectTypeName = utils.ObjectTypeName
 
 func UpdateFieldMulti(db *gorm.DB, fields db.Fields, doc interface{}, field string, value interface{}) error {
 	result := db.Model(doc).Where(fields).Update(field, value)

@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
 )
 
 type User interface {
@@ -90,7 +91,7 @@ func Tenancy(ctx UserContext) string {
 }
 
 type UserContextBase struct {
-	op_context.ContextBase
+	default_op_context.ContextBase
 	User    User
 	Tenancy multitenancy.Tenancy
 }
