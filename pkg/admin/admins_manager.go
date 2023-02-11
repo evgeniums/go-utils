@@ -12,7 +12,7 @@ type Manager struct {
 type AdminControllers = user.UsersWithSessionBaseConfig[*Admin]
 
 func NewManager(controllers ...AdminControllers) *Manager {
-	m := &Manager{UsersWithSessionBase: user.NewUsersWithSession(NewAdmin, NewAdminSession, NewAdminSessionClient, controllers...)}
+	m := &Manager{UsersWithSessionBase: user.NewUsersWithSession(NewAdmin, NewAdminSession, NewAdminSessionClient, NewOplog, controllers...)}
 	return m
 }
 

@@ -33,6 +33,8 @@ type UserController[UserType User] interface {
 
 	SetUserBuilder(builder func() UserType)
 	MakeUser() UserType
+
+	SetOplogBuilder(builder func() OpLogUserI)
 }
 
 type Users[UserType User] interface {
@@ -42,16 +44,21 @@ type Users[UserType User] interface {
 
 type UserControllerBase[UserType User] struct {
 	userBuilder    func() UserType
+	oplogBuilder   func() OpLogUserI
 	crudController crud.CRUD
 	userValidators auth_session.UserValidators
 }
 
 func LocalUserController[UserType User]() *UserControllerBase[UserType] {
-	return &UserControllerBase[UserType]{crudController: &crud.DbCRUD{}}
+	return &UserControllerBase[UserType]{crudController: &crud.DbCRUD{}, oplogBuilder: func() OpLogUserI { return &OpLogUser{} }}
 }
 
 func (u *UserControllerBase[UserType]) SetUserBuilder(userBuilder func() UserType) {
 	u.userBuilder = userBuilder
+}
+
+func (u *UserControllerBase[UserType]) SetOplogBuilder(builder func() OpLogUserI) {
+	u.oplogBuilder = builder
 }
 
 func (u *UserControllerBase[UserType]) SetUserValidators(validators auth_session.UserValidators) {
@@ -114,6 +121,7 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 		c.SetMessage("failed to create user")
 		return nilUser, err
 	}
+	u.OpLog(ctx, "add", user.GetID(), login)
 
 	// done
 	return user, nil
@@ -233,6 +241,7 @@ func (u *UserControllerBase[UserType]) SetPassword(ctx op_context.Context, id st
 	}
 
 	// done
+	u.OpLog(ctx, "set_password", user.GetID(), user.Login())
 	return nil
 }
 
@@ -263,6 +272,7 @@ func (u *UserControllerBase[UserType]) SetPhone(ctx op_context.Context, id strin
 	}
 
 	// done
+	u.OpLog(ctx, "set_phone", user.GetID(), user.Login())
 	return nil
 }
 
@@ -293,6 +303,7 @@ func (u *UserControllerBase[UserType]) SetEmail(ctx op_context.Context, id strin
 	}
 
 	// done
+	u.OpLog(ctx, "set_email", user.GetID(), user.Login())
 	return nil
 }
 
@@ -327,11 +338,20 @@ func (u *UserControllerBase[UserType]) SetBlocked(ctx op_context.Context, id str
 	}
 
 	// done
+	u.OpLog(ctx, "set_blocked", user.GetID(), user.Login())
 	return nil
 }
 
 func (u *UserControllerBase[UserType]) FindUsers(ctx op_context.Context, filter *db.Filter, users *[]UserType) error {
 	return u.crudController.List(ctx, filter, users)
+}
+
+func (u *UserControllerBase[UserType]) OpLog(ctx op_context.Context, op string, userId string, login string) {
+	oplog := u.oplogBuilder()
+	oplog.SetOperation(op)
+	oplog.SetLogin(login)
+	oplog.SetUserId(userId)
+	ctx.Oplog(oplog)
 }
 
 type UsersBase[UserType User] struct {

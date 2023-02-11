@@ -16,6 +16,10 @@ func NewUser() *User {
 	return &User{}
 }
 
+func NewOplog() user.OpLogUserI {
+	return &user.OpLogUser{}
+}
+
 func NewUsers(userController ...user.UserController[*User]) *Users {
 	m := &Users{}
 	if len(userController) == 0 {

@@ -54,6 +54,9 @@ func (c *UserClient[U]) SetUserBuilder(userBuilder func() U) {
 	c.userBuilder = userBuilder
 }
 
+func (c *UserClient[U]) SetOplogBuilder(userBuilder func() user.OpLogUserI) {
+}
+
 func (c *UserClient[U]) MakeUser() U {
 	return c.userBuilder()
 }

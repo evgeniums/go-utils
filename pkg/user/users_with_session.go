@@ -25,6 +25,7 @@ func NewUsersWithSession[UserType User, SessionType auth_session.Session, Sessio
 	userBuilder func() UserType,
 	sessionBuilder func() SessionType,
 	sessionClientBuilder func() SessionClientType,
+	oplogBuilder func() OpLogUserI,
 	config ...UsersWithSessionBaseConfig[UserType]) *UsersWithSessionBase[UserType, SessionType, SessionClientType] {
 
 	m := &UsersWithSessionBase[UserType, SessionType, SessionClientType]{}
@@ -45,6 +46,7 @@ func NewUsersWithSession[UserType User, SessionType auth_session.Session, Sessio
 	m.SetUserBuilder(userBuilder)
 	m.SetSessionBuilder(func() auth_session.Session { return sessionBuilder() })
 	m.SetSessionClientBuilder(func() auth_session.SessionClient { return sessionClientBuilder() })
+	m.SetOplogBuilder(oplogBuilder)
 
 	return m
 }

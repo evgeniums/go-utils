@@ -124,6 +124,13 @@ func StrToInt64(s string) (int64, error) {
 	return val, nil
 }
 
+func BoolToStr(val bool) string {
+	if val {
+		return "true"
+	}
+	return "false"
+}
+
 func StrToBool(s string) (bool, error) {
 	str := strings.ToLower(s)
 	if str == "true" {
