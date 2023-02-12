@@ -21,7 +21,7 @@ func (s *SetPhoneEndpoint) HandleRequest(request api_server.Request) error {
 		return err
 	}
 
-	err = s.users.SetPhone(request, request.GetResourceId(s.userTypeName), cmd.PHONE)
+	err = Setter(s.users, request).SetPhone(request, request.GetResourceId(s.userTypeName), cmd.PHONE)
 	if err != nil {
 		return c.SetError(err)
 	}

@@ -17,9 +17,11 @@ func (e *ListEndpoint[U]) HandleRequest(request api_server.Request) error {
 	c := request.TraceInMethod("users.List")
 	defer request.TraceOutMethod()
 
+	u := Users(e.service, request)
+
 	cmd := &api.DbQuery{}
 	queryName := request.Endpoint().Resource().ServicePathPrototype()
-	models := []interface{}{e.service.Users.MakeUser()}
+	models := []interface{}{u.MakeUser()}
 	filter, err := api_server.ParseDbQuery(request, models, cmd, queryName)
 	if err != nil {
 		return c.SetError(err)
@@ -28,7 +30,7 @@ func (e *ListEndpoint[U]) HandleRequest(request api_server.Request) error {
 	resp := &user_api.ListResponse[U]{}
 	users := make([]U, 0)
 	resp.Users = &users
-	err = e.service.Users.FindUsers(request, filter, resp.Users)
+	err = u.FindUsers(request, filter, resp.Users)
 	if err != nil {
 		return c.SetError(err)
 	}

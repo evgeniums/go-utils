@@ -11,14 +11,14 @@ type FindEndpoint[U user.User] struct {
 	UserEndpoint[U]
 }
 
-func (s *FindEndpoint[U]) HandleRequest(request api_server.Request) error {
+func (e *FindEndpoint[U]) HandleRequest(request api_server.Request) error {
 
 	var err error
 	c := request.TraceInMethod("users.Find")
 	defer request.TraceOutMethod()
 
 	resp := &user_api.UserResponse[U]{}
-	resp.User, err = s.service.Users.Find(request, request.GetResourceId(s.service.UserTypeName))
+	resp.User, err = Users(e.service, request).Find(request, request.GetResourceId(e.service.UserTypeName))
 	if err != nil {
 		return c.SetError(err)
 	}

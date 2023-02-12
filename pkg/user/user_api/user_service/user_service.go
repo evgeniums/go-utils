@@ -68,3 +68,37 @@ func (e *SetUserFieldEndpoint) Init(ep api_server.ResourceEndpointI, userTypeNam
 	e.userTypeName = userTypeName
 	return ep
 }
+
+type TenancyWithSetter interface {
+	UserFieldSetter() user.MainFieldSetters
+}
+
+type TenancyWithUsers[U user.User] interface {
+	UserController() user.Users[U]
+}
+
+func Users[U user.User](service *UserService[U], request api_server.Request) user.Users[U] {
+
+	t := request.GetTenancy()
+	if t != nil {
+		ts, ok := t.(TenancyWithUsers[U])
+		if ok {
+			return ts.UserController()
+		}
+	}
+
+	return service.Users
+}
+
+func Setter(setters user.MainFieldSetters, request api_server.Request) user.MainFieldSetters {
+
+	t := request.GetTenancy()
+	if t != nil {
+		ts, ok := t.(TenancyWithSetter)
+		if ok {
+			return ts.UserFieldSetter()
+		}
+	}
+
+	return setters
+}

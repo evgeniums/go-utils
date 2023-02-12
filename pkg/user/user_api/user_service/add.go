@@ -25,7 +25,7 @@ func (e *AddEndpoint[U]) HandleRequest(request api_server.Request) error {
 	}
 
 	resp := &user_api.UserResponse[U]{}
-	resp.User, err = e.service.Users.Add(request, cmd.Login(), cmd.Password(), cmd.SetUserFields)
+	resp.User, err = Users(e.service, request).Add(request, cmd.Login(), cmd.Password(), cmd.SetUserFields)
 	if err != nil {
 		return c.SetError(err)
 	}
