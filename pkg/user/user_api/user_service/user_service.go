@@ -69,7 +69,7 @@ func (e *SetUserFieldEndpoint) Init(ep api_server.ResourceEndpointI, userTypeNam
 	return ep
 }
 
-type TenancyWithSetter interface {
+type TenancyWithUserSetter interface {
 	UserFieldSetter() user.MainFieldSetters
 }
 
@@ -94,7 +94,7 @@ func Setter(setters user.MainFieldSetters, request api_server.Request) user.Main
 
 	t := request.GetTenancy()
 	if t != nil {
-		ts, ok := t.(TenancyWithSetter)
+		ts, ok := t.(TenancyWithUserSetter)
 		if ok {
 			return ts.UserFieldSetter()
 		}

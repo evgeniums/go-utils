@@ -265,7 +265,7 @@ func (u *UserControllerBase[UserType]) SetPhone(ctx op_context.Context, id strin
 		return err
 	}
 
-	// set password
+	// set phone
 	err = u.crudController.Update(ctx, user, db.Fields{"phone": phone})
 	if err != nil {
 		return err
@@ -296,7 +296,7 @@ func (u *UserControllerBase[UserType]) SetEmail(ctx op_context.Context, id strin
 		return err
 	}
 
-	// set password
+	// set email
 	err = u.crudController.Update(ctx, user, db.Fields{"email": email})
 	if err != nil {
 		return err
@@ -331,7 +331,7 @@ func (u *UserControllerBase[UserType]) SetBlocked(ctx op_context.Context, id str
 		return err
 	}
 
-	// set password
+	// set blocked
 	err = u.crudController.Update(ctx, user, db.Fields{"blocked": blocked})
 	if err != nil {
 		return err
@@ -354,27 +354,12 @@ func (u *UserControllerBase[UserType]) OpLog(ctx op_context.Context, op string, 
 	ctx.Oplog(oplog)
 }
 
-type UsersBase[UserType User] struct {
+type UsersValidator struct {
 	Validator            validator.Validator
 	LoginValidationRules string
-
-	UserController[UserType]
 }
 
-func (u *UsersBase[UserType]) Construct(userController UserController[UserType]) {
-	u.UserController = userController
-}
-
-func (u *UsersBase[UserType]) Init(vld validator.Validator, loginValidationRules ...string) {
-	u.Validator = vld
-	u.LoginValidationRules = utils.OptionalArg("required,alphanum_|email,lowercase", loginValidationRules...)
-}
-
-func (u *UsersBase[UserType]) MakeAuthUser() auth.User {
-	return u.MakeUser()
-}
-
-func (u *UsersBase[UserType]) ValidateLogin(login string) error {
+func (u *UsersValidator) ValidateLogin(login string) error {
 	err := u.Validator.ValidateValue(login, u.LoginValidationRules)
 	if err != nil {
 		return &validator.ValidationError{Message: "Invalid format of login", Field: "login"}
@@ -382,11 +367,29 @@ func (u *UsersBase[UserType]) ValidateLogin(login string) error {
 	return nil
 }
 
-func (u *UsersBase[UserType]) ValidatePassword(password string) error {
+func (u *UsersValidator) ValidatePassword(password string) error {
 	if len(password) < 8 {
 		return &validator.ValidationError{Message: "Password must be at least 8 characters", Field: "password"}
 	}
 	return nil
+}
+
+func (u *UsersValidator) Init(vld validator.Validator, loginValidationRules ...string) {
+	u.Validator = vld
+	u.LoginValidationRules = utils.OptionalArg("required,alphanum_|email,lowercase", loginValidationRules...)
+}
+
+type UsersBase[UserType User] struct {
+	UsersValidator
+	UserController[UserType]
+}
+
+func (u *UsersBase[UserType]) Construct(userController UserController[UserType]) {
+	u.UserController = userController
+}
+
+func (u *UsersBase[UserType]) MakeAuthUser() auth.User {
+	return u.MakeUser()
 }
 
 func (m *UsersBase[UserType]) AuthUserManager() auth_session.AuthUserManager {
