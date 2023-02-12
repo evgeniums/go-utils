@@ -26,14 +26,14 @@ func (e *AddPoolEndpoint) HandleRequest(request api_server.Request) error {
 	}
 
 	// add pool
-	pool, err := e.service.Pools.AddPool(request, cmd)
+	p, err := e.service.Pools.AddPool(request, cmd)
 	if err != nil {
 		c.SetMessage("failed to add pool")
 		return c.SetError(err)
 	}
 
 	// set response
-	resp := &pool_api.PoolResponse{Pool: pool}
+	resp := &pool_api.PoolResponse{Pool: p.(*pool.PoolBase)}
 	request.Response().SetMessage(resp)
 
 	// done

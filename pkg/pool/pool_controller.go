@@ -27,13 +27,13 @@ type PoolController interface {
 	DeleteService(ctx op_context.Context, id string, idIsName ...bool) error
 	GetServices(ctx op_context.Context, filter *db.Filter) ([]*PoolServiceBase, error)
 
-	AddServiceToPool(ctx op_context.Context, poolId string, serviceId string, role string, idIsName ...bool) error
+	AddServiceToPool(ctx op_context.Context, poolId string, serviceId string, role string, idIsName ...bool) (PoolServiceBinding, error)
 	RemoveServiceFromPool(ctx op_context.Context, poolId string, role string, idIsName ...bool) error
 	RemoveAllServicesFromPool(ctx op_context.Context, poolId string, idIsName ...bool) error
 	RemoveServiceFromAllPools(ctx op_context.Context, id string, idIsName ...bool) error
 
-	GetPoolBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBindingBase, error)
-	GetServiceBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBindingBase, error)
+	// GetPoolBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBindingBase, error)
+	// GetServiceBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBindingBase, error)
 }
 
 func NewPoolController(crud crud.CRUD) *PoolControllerBase {
@@ -71,7 +71,7 @@ func (m *PoolControllerBase) AddPool(ctx op_context.Context, pool Pool) (Pool, e
 
 func (m *PoolControllerBase) FindPool(ctx op_context.Context, id string, idIsName ...bool) (Pool, error) {
 	field := fieldName(idIsName...)
-	pool, err := crud.FindByField(m.CRUD, ctx, "PoolController.FindPool", field, id, &PoolBase{}, logger.Fields{field: id})
+	pool, err := crud.FindByField(m.CRUD, ctx, "PoolController.FindPool", field, id, &PoolBase{})
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (m *PoolControllerBase) UpdatePool(ctx op_context.Context, id string, field
 	return nil
 }
 
-func (m *PoolControllerBase) DeletePool(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) error {
+func (m *PoolControllerBase) DeletePool(ctx op_context.Context, id string, idIsName ...bool) error {
 	c := ctx.TraceInMethod("PoolController.DeletePool")
 	defer ctx.TraceOutMethod()
 
@@ -141,7 +141,7 @@ func (m *PoolControllerBase) AddService(ctx op_context.Context, service PoolServ
 
 func (m *PoolControllerBase) FindService(ctx op_context.Context, id string, idIsName ...bool) (PoolService, error) {
 	field := fieldName(idIsName...)
-	service, err := crud.FindByField(m.CRUD, ctx, "PoolController.FindService", field, id, &PoolServiceBase{}, logger.Fields{field: id})
+	service, err := crud.FindByField(m.CRUD, ctx, "PoolController.FindService", field, id, &PoolServiceBase{})
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (m *PoolControllerBase) UpdateService(ctx op_context.Context, id string, fi
 	return nil
 }
 
-func (m *PoolControllerBase) DeleteService(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) error {
+func (m *PoolControllerBase) DeleteService(ctx op_context.Context, id string, idIsName ...bool) error {
 
 	c := ctx.TraceInMethod("PoolController.DeleteService")
 	defer ctx.TraceOutMethod()

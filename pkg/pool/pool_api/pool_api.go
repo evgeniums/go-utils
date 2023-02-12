@@ -7,7 +7,7 @@ import (
 
 type PoolResponse struct {
 	api.ResponseHateous
-	pool.Pool `json:"pool"`
+	Pool *pool.PoolBase `json:"pool"`
 }
 
 type PoolServiceResponse struct {

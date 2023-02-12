@@ -104,7 +104,7 @@ func TestAdd(t *testing.T) {
 
 	b1, _ := json.Marshal(addedAdmin1)
 	b2, _ := json.Marshal(dbAdmin1)
-	assert.Equal(t, b1, b2)
+	assert.Equal(t, string(b1), string(b2))
 
 	login2 := "admin2"
 	password2 := "admin_password2"
@@ -123,7 +123,7 @@ func TestAdd(t *testing.T) {
 
 	c1, _ := json.Marshal(addedAdmin2)
 	c2, _ := json.Marshal(dbAdmin2)
-	assert.Equal(t, c1, c2)
+	assert.Equal(t, string(c1), string(c2))
 
 	restClient1 := test_utils.PrepareHttpClient(t, test_utils.BBGinEngine(t, ctx.Server))
 	restClient1.Login(login1, password1)

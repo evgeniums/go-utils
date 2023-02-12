@@ -48,6 +48,7 @@ type PoolBase struct {
 
 func NewPool() *PoolBase {
 	p := &PoolBase{}
+	p.WithActiveBase.Init()
 	return p
 }
 
