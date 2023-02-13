@@ -79,6 +79,10 @@ func New(dbConnector ...*DbConnector) *GormDB {
 	return g
 }
 
+func (g *GormDB) NativeHandler() interface{} {
+	return g.db
+}
+
 func (g *GormDB) NewDB() db.DB {
 	return New(g.dbConnector)
 }

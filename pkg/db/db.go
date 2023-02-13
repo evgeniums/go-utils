@@ -72,6 +72,8 @@ type DB interface {
 
 	AutoMigrate(ctx logger.WithLogger, models []interface{}) error
 
+	NativeHandler() interface{}
+
 	Close()
 }
 

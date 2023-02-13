@@ -2,5 +2,8 @@
     "db":{
         "db_provider": "sqlite",
         "db_extra_config" : "maindb.sqlite"
+    },
+    "logger": {
+        "level": "debug"
     }
 }
