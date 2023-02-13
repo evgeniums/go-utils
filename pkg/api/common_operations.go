@@ -21,3 +21,11 @@ func Delete() Operation {
 func Update() Operation {
 	return NewOperation("update", access_control.Put)
 }
+
+func UpdatePartial() Operation {
+	return NewOperation("update_partial", access_control.Patch)
+}
+
+type UpdateCmd struct {
+	Fields map[string]interface{} `json:"field"`
+}

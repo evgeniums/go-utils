@@ -13,7 +13,8 @@ type PoolClient struct {
 	ServicesResource api.Resource
 	ServiceResource  api.Resource
 
-	add_pool api.Operation
+	add_pool    api.Operation
+	add_service api.Operation
 }
 
 func NewPoolClient(client api_client.Client) *PoolClient {
@@ -29,6 +30,9 @@ func NewPoolClient(client api_client.Client) *PoolClient {
 
 	c.add_pool = api.Add()
 	c.PoolsResource.AddOperations(c.add_pool)
+
+	c.add_service = api.Add()
+	c.ServicesResource.AddOperations(c.add_service)
 
 	return c
 }

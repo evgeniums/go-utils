@@ -4,6 +4,11 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 )
 
+type Secrets interface {
+	Secret1() string
+	Secret2() string
+}
+
 type ServiceConfig interface {
 	PublicHost() string
 	PublicPort() uint16
@@ -11,8 +16,6 @@ type ServiceConfig interface {
 	PrivateHost() string
 	PrivatePort() uint16
 	PrivateUrl() string
-	Secret1() string
-	Secret2() string
 	Parameter1() string
 	Parameter2() string
 	Parameter3() string
@@ -31,9 +34,23 @@ type PoolServiceEssentials interface {
 type PoolService interface {
 	common.Object
 	PoolServiceEssentials
+	Secrets
 }
 
 var NilService PoolService
+
+type SecretsBase struct {
+	SECRET1 string `json:"secret1"`
+	SECRET2 string `json:"secret2"`
+}
+
+func (s *SecretsBase) Secret1() string {
+	return s.SECRET1
+}
+
+func (s *SecretsBase) Secret2() string {
+	return s.SECRET2
+}
 
 type ServiceConfigBase struct {
 	PUBLIC_HOST  string `gorm:"index" json:"public_host"`
@@ -42,8 +59,6 @@ type ServiceConfigBase struct {
 	PRIVATE_HOST string `gorm:"index" json:"private_host"`
 	PRIVATE_PORT uint16 `gorm:"index" json:"private_port"`
 	PRIVATE_URL  string `gorm:"index" json:"private_url"`
-	SECRET1      string `json:"-" mask:"true"`
-	SECRET2      string `json:"-" mask:"true"`
 	PARAMETER1   string `gorm:"index" json:"parameter1"`
 	PARAMETER2   string `gorm:"index" json:"parameter2"`
 	PARAMETER3   string `gorm:"index" json:"parameter3"`
@@ -73,14 +88,6 @@ func (s *ServiceConfigBase) PrivateUrl() string {
 	return s.PRIVATE_URL
 }
 
-func (s *ServiceConfigBase) Secret1() string {
-	return s.SECRET1
-}
-
-func (s *ServiceConfigBase) Secret2() string {
-	return s.SECRET2
-}
-
 func (s *ServiceConfigBase) Parameter1() string {
 	return s.PARAMETER1
 }
@@ -106,6 +113,7 @@ type PoolServiceBaseEssentials struct {
 type PoolServiceBase struct {
 	common.ObjectBase
 	PoolServiceBaseEssentials
+	SecretsBase
 }
 
 func NewPoolService() *PoolServiceBase {

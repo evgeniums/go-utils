@@ -12,6 +12,8 @@ import (
 
 const ErrorCodePoolNotFound = "pool_not_found"
 const ErrorCodeServiceNotFound = "service_not_found"
+const ErrorCodePoolNameConflict = "pool_name_conflict"
+const ErrorCodeServiceNameConflict = "service_name_conflict"
 const ErrorCodePoolServiceBindingsExist = "pool_service_bindings_exist"
 
 type PoolController interface {
@@ -21,7 +23,7 @@ type PoolController interface {
 	DeletePool(ctx op_context.Context, id string, idIsName ...bool) error
 	GetPools(ctx op_context.Context, filter *db.Filter) ([]*PoolBase, error)
 
-	AddService(ctx op_context.Context, service PoolService) error
+	AddService(ctx op_context.Context, service PoolService) (PoolService, error)
 	FindService(ctx op_context.Context, id string, idIsName ...bool) (PoolService, error)
 	UpdateService(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) error
 	DeleteService(ctx op_context.Context, id string, idIsName ...bool) error
@@ -82,10 +84,34 @@ func (m *PoolControllerBase) FindPool(ctx op_context.Context, id string, idIsNam
 }
 
 func (m *PoolControllerBase) UpdatePool(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) error {
+
+	c := ctx.TraceInMethod("PoolController.UpdatePool", logger.Fields{"pool": id, "user_name": utils.OptionalArg(false, idIsName...)})
+	defer ctx.TraceOutMethod()
+
+	// check if name is unique
+	if name, found := fields["name"]; found {
+		filter := db.NewFilter()
+		filter.AddField("name", name)
+		exists, err := m.CRUD.Exists(ctx, filter, &PoolBase{})
+		if err != nil {
+			c.SetMessage("failed to check existence of pool with desired name")
+			return c.SetError(err)
+		}
+		if exists {
+			ctx.SetGenericErrorCode(ErrorCodePoolNameConflict)
+			return c.SetError(errors.New("pool with desired name exists"))
+		}
+	}
+
+	// update
 	field := fieldName(idIsName...)
-	obj, err := crud.FindUpdate(m.CRUD, ctx, "PoolController.UpdatePool", field, id, fields, &PoolBase{}, logger.Fields{field: id})
+	obj, err := crud.FindUpdate(m.CRUD, ctx, "PoolController.FindUpdatePool", field, id, fields, &PoolBase{}, logger.Fields{field: id})
 	if err != nil {
 		return err
+	}
+	if obj == nil {
+		ctx.SetGenericErrorCode(ErrorCodePoolNotFound)
+		return c.SetError(errors.New("pool not found"))
 	}
 	m.OpLog(ctx, "update_pool", &OpLogPool{PoolId: obj.GetID(), PoolName: obj.Name()})
 	return nil
@@ -129,14 +155,14 @@ func (m *PoolControllerBase) DeletePool(ctx op_context.Context, id string, idIsN
 	return nil
 }
 
-func (m *PoolControllerBase) AddService(ctx op_context.Context, service PoolService) error {
+func (m *PoolControllerBase) AddService(ctx op_context.Context, service PoolService) (PoolService, error) {
 	service.InitObject()
 	err := crud.Create(m.CRUD, ctx, "PoolController.AddService", service, logger.Fields{"name": service.Name()})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	m.OpLog(ctx, "add_service", &OpLogPool{ServiceId: service.GetID(), ServiceName: service.Name()})
-	return nil
+	return service, nil
 }
 
 func (m *PoolControllerBase) FindService(ctx op_context.Context, id string, idIsName ...bool) (PoolService, error) {
@@ -152,10 +178,33 @@ func (m *PoolControllerBase) FindService(ctx op_context.Context, id string, idIs
 }
 
 func (m *PoolControllerBase) UpdateService(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) error {
+
+	c := ctx.TraceInMethod("PoolController.UpdateService", logger.Fields{"service": id, "use_name": utils.OptionalArg(false, idIsName...)})
+	defer ctx.TraceOutMethod()
+
+	// check if name is unique
+	if name, found := fields["name"]; found {
+		filter := db.NewFilter()
+		filter.AddField("name", name)
+		exists, err := m.CRUD.Exists(ctx, filter, &PoolServiceBase{})
+		if err != nil {
+			return c.SetError(err)
+		}
+		if exists {
+			ctx.SetGenericErrorCode(ErrorCodeServiceNameConflict)
+			return c.SetError(errors.New("service with such name exists"))
+		}
+	}
+
+	// update
 	field := fieldName(idIsName...)
-	obj, err := crud.FindUpdate(m.CRUD, ctx, "PoolController.UpdateService", field, id, fields, &PoolServiceBase{}, logger.Fields{field: id})
+	obj, err := crud.FindUpdate(m.CRUD, ctx, "PoolController.FindUpdateService", field, id, fields, &PoolServiceBase{}, logger.Fields{field: id})
 	if err != nil {
-		return err
+		return c.SetError(err)
+	}
+	if obj == nil {
+		ctx.SetGenericErrorCode(ErrorCodeServiceNotFound)
+		return c.SetError(errors.New("service not found"))
 	}
 	m.OpLog(ctx, "update_service", &OpLogPool{ServiceId: obj.GetID(), ServiceName: obj.Name()})
 	return nil

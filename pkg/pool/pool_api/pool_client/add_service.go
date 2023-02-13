@@ -8,14 +8,14 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api"
 )
 
-type AddPool struct {
-	cmd    pool.Pool
-	result *pool_api.PoolResponse
+type AddService struct {
+	cmd    pool.PoolService
+	result *pool_api.ServiceResponse
 }
 
-func (a *AddPool) Exec(client api_client.Client, ctx op_context.Context, operation api.Operation) error {
+func (a *AddService) Exec(client api_client.Client, ctx op_context.Context, operation api.Operation) error {
 
-	c := ctx.TraceInMethod("AddPool.Exec")
+	c := ctx.TraceInMethod("AddService.Exec")
 	defer ctx.TraceOutMethod()
 
 	err := client.Exec(ctx, operation, a.cmd, a.result)
@@ -23,11 +23,11 @@ func (a *AddPool) Exec(client api_client.Client, ctx op_context.Context, operati
 	return err
 }
 
-func (p *PoolClient) AddPool(ctx op_context.Context, pool pool.Pool) (pool.Pool, error) {
+func (p *PoolClient) AddService(ctx op_context.Context, service pool.PoolService) (pool.PoolService, error) {
 
 	// setup
 	var err error
-	c := ctx.TraceInMethod("PoolClient.AddPool")
+	c := ctx.TraceInMethod("PoolClient.AddService")
 	onExit := func() {
 		if err != nil {
 			c.SetError(err)
@@ -37,16 +37,16 @@ func (p *PoolClient) AddPool(ctx op_context.Context, pool pool.Pool) (pool.Pool,
 	defer onExit()
 
 	// prepare and exec handler
-	handler := &AddPool{
-		cmd:    pool,
-		result: &pool_api.PoolResponse{},
+	handler := &AddService{
+		cmd:    service,
+		result: &pool_api.ServiceResponse{},
 	}
-	err = p.add_pool.Exec(ctx, api_client.MakeOperationHandler(p.Client(), handler))
+	err = p.add_service.Exec(ctx, api_client.MakeOperationHandler(p.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")
 		return nil, err
 	}
 
 	// done
-	return handler.result.PoolBase, nil
+	return handler.result.PoolServiceBase, nil
 }

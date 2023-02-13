@@ -7,10 +7,15 @@ import (
 
 type PoolResponse struct {
 	api.ResponseHateous
-	Pool *pool.PoolBase `json:"pool"`
+	*pool.PoolBase
 }
 
-type PoolServiceResponse struct {
+type ServiceResponse struct {
 	api.ResponseHateous
-	pool.PoolServiceBase `json:"pool_service"`
+	*pool.PoolServiceBase
+}
+
+type ListServicesResponse struct {
+	api.ResponseHateous
+	Services []*pool.PoolServiceBase `json:"services"`
 }
