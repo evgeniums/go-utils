@@ -44,7 +44,7 @@ type WithType interface {
 }
 
 type WithTypeBase struct {
-	TYPE string `gorm:"index" json:"type"`
+	TYPE string `gorm:"index" json:"type" validate:"required" vmessage:"Type can not be empty"`
 }
 
 func (t *WithTypeBase) Type() string {
@@ -94,7 +94,7 @@ type WithUniqueName interface {
 }
 
 type WithUniqueNameBase struct {
-	NAME string `gorm:"uniqueIndex" json:"name"`
+	NAME string `gorm:"uniqueIndex" json:"name" validate:"required" vmessage:"Name can not be empty"`
 }
 
 func (w *WithUniqueNameBase) Name() string {
