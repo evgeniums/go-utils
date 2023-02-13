@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/mitchellh/mapstructure"
 )
 
 type Validator interface {
@@ -35,4 +37,52 @@ func (e *ValidationError) GenericError() generic_error.Error {
 	err := generic_error.New(generic_error.ErrorCodeFormat, e.Message)
 	err.SetDetails(e.Field)
 	return err
+}
+
+func ValidateMap(v Validator, m map[string]interface{}, sampleStruct interface{}, allowedFields ...string) error {
+
+	// collect keys
+	keys := utils.AllMapKeys(m)
+
+	// check if there are not allowed keys in the map
+	if len(allowedFields) != 0 {
+		notAllowedMap := make(map[string]bool)
+		for _, field := range allowedFields {
+			notAllowedMap[field] = true
+		}
+		for _, key := range keys {
+			_, found := notAllowedMap[key]
+			if found {
+				err := &ValidationError{}
+				err.Message = "map contains not allowed fields"
+				err.Field = key
+				return err
+			}
+		}
+	}
+
+	// create new decoder
+	meta := &mapstructure.Metadata{}
+	config := &mapstructure.DecoderConfig{Metadata: meta, TagName: "json", Result: sampleStruct}
+	dec, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		panic(fmt.Errorf("failed to create decoder: %s", err))
+	}
+
+	// fill struct with data from map
+	err = dec.Decode(m)
+	if err != nil {
+		err := &ValidationError{}
+		err.Message = "could not decode provided fields"
+		return err
+	}
+
+	// invoke partial validation
+	err = v.ValidatePartial(sampleStruct, keys...)
+	if err != nil {
+		return err
+	}
+
+	// done
+	return nil
 }
