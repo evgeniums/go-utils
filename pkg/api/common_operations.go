@@ -29,3 +29,11 @@ func UpdatePartial() Operation {
 type UpdateCmd struct {
 	Fields map[string]interface{} `json:"field"`
 }
+
+func Bind() Operation {
+	return NewOperation("bind", access_control.Create)
+}
+
+func Unbind() Operation {
+	return NewOperation("unbind", access_control.Delete)
+}

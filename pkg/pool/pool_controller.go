@@ -45,7 +45,7 @@ type PoolController interface {
 	DeleteService(ctx op_context.Context, id string, idIsName ...bool) error
 	GetServices(ctx op_context.Context, filter *db.Filter) ([]*PoolServiceBase, int64, error)
 
-	AddServiceToPool(ctx op_context.Context, poolId string, serviceId string, role string, idIsName ...bool) (PoolServiceBinding, error)
+	AddServiceToPool(ctx op_context.Context, poolId string, serviceId string, role string, idIsName ...bool) error
 	RemoveServiceFromPool(ctx op_context.Context, poolId string, role string, idIsName ...bool) error
 	RemoveAllServicesFromPool(ctx op_context.Context, poolId string, idIsName ...bool) error
 	RemoveServiceFromAllPools(ctx op_context.Context, id string, idIsName ...bool) error
@@ -148,7 +148,7 @@ func (m *PoolControllerBase) DeletePool(ctx op_context.Context, id string, idIsN
 
 	filter := db.NewFilter()
 	filter.AddField("pool_id", poolId)
-	exists, err := m.CRUD.Exists(ctx, filter, &PoolServiceAssociacionBase{})
+	exists, err := m.CRUD.Exists(ctx, filter, &PoolServiceAssociationBase{})
 	if err != nil {
 		c.SetMessage("failed to check associations")
 		return c.SetError(err)
@@ -242,7 +242,7 @@ func (m *PoolControllerBase) DeleteService(ctx op_context.Context, id string, id
 
 	filter := db.NewFilter()
 	filter.AddField("service_id", serviceId)
-	exists, err := m.CRUD.Exists(ctx, filter, &PoolServiceAssociacionBase{})
+	exists, err := m.CRUD.Exists(ctx, filter, &PoolServiceAssociationBase{})
 	if err != nil {
 		c.SetMessage("failed to check associations")
 		return c.SetError(err)
@@ -283,7 +283,7 @@ func (p *PoolControllerBase) GetServices(ctx op_context.Context, filter *db.Filt
 	return services, count, nil
 }
 
-func (m *PoolControllerBase) AddServiceToPool(ctx op_context.Context, poolId string, serviceId string, role string, idIsName ...bool) (PoolServiceBinding, error) {
+func (m *PoolControllerBase) AddServiceToPool(ctx op_context.Context, poolId string, serviceId string, role string, idIsName ...bool) error {
 
 	field := fieldName(idIsName...)
 
@@ -294,46 +294,46 @@ func (m *PoolControllerBase) AddServiceToPool(ctx op_context.Context, poolId str
 	pool, err := m.FindPool(ctx, poolId, idIsName...)
 	if err != nil {
 		c.SetMessage("failed to find pool")
-		return nil, c.SetError(err)
+		return c.SetError(err)
 	}
 	if pool == nil {
-		return nil, c.SetError(errors.New("pool not found"))
+		return c.SetError(errors.New("pool not found"))
 	}
 
 	// find service
 	service, err := m.FindService(ctx, serviceId, idIsName...)
 	if err != nil {
 		c.SetMessage("failed to find service")
-		return nil, c.SetError(err)
+		return c.SetError(err)
 	}
 	if service == nil {
-		return nil, c.SetError(errors.New("unknown service"))
+		return c.SetError(errors.New("unknown service"))
 	}
 
 	// check if name is unique
-	binding := &PoolServiceBindingBase{}
 	filter := db.NewFilter()
 	filter.AddField("pool_id", pool.GetID())
 	filter.AddField("role", role)
-	exists, err := m.CRUD.Exists(ctx, filter, &PoolServiceBindingBase{})
+	exists, err := m.CRUD.Exists(ctx, filter, &PoolServiceAssociationBase{})
 	if err != nil {
 		c.SetMessage("failed to check existence of pool service binding")
-		return nil, c.SetError(err)
+		return c.SetError(err)
 	}
 	if exists {
 		ctx.SetGenericErrorCode(ErrorCodeServiceRoleConflict)
-		return nil, c.SetError(errors.New("pool already has service with such role"))
+		return c.SetError(errors.New("pool already has service with such role"))
 	}
 
-	// create binding
-	binding.InitObject()
-	binding.POOL_ID = pool.GetID()
-	binding.SERVICE_ID = service.GetID()
-	binding.ROLE = role
-	err = m.CRUD.Create(ctx, binding)
+	// create association
+	association := &PoolServiceAssociationBase{}
+	association.InitObject()
+	association.POOL_ID = pool.GetID()
+	association.SERVICE_ID = service.GetID()
+	association.ROLE = role
+	err = m.CRUD.Create(ctx, association)
 	if err != nil {
-		c.SetMessage("failed to save binding in database")
-		return nil, c.SetError(err)
+		c.SetMessage("failed to save association in database")
+		return c.SetError(err)
 	}
 
 	// add oplog
@@ -343,7 +343,7 @@ func (m *PoolControllerBase) AddServiceToPool(ctx op_context.Context, poolId str
 	})
 
 	// done
-	return binding, nil
+	return nil
 }
 
 func (m *PoolControllerBase) PoolId(c op_context.CallContext, ctx op_context.Context, id string, idIsName ...bool) (string, error) {
@@ -402,7 +402,7 @@ func (m *PoolControllerBase) RemoveServiceFromPool(ctx op_context.Context, id st
 		return nil
 	}
 
-	association := &PoolServiceAssociacionBase{}
+	association := &PoolServiceAssociationBase{}
 	fields := db.Fields{"pool_id": poolId, "role": role}
 	found, err := m.CRUD.Read(ctx, fields, association)
 	if err != nil {

@@ -1,0 +1,43 @@
+package pool_service
+
+import (
+	"github.com/evgeniums/go-backend-helpers/pkg/api"
+	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool"
+)
+
+type AddServiceToPoolEndpoint struct {
+	PoolEndpoint
+}
+
+func (e *AddServiceToPoolEndpoint) HandleRequest(request api_server.Request) error {
+
+	// setup
+	c := request.TraceInMethod("pool.AddServiceToPool")
+	defer request.TraceOutMethod()
+
+	// parse command
+	cmd := &pool.PoolServiceAssociationCmd{}
+	err := request.ParseValidate(cmd)
+	if err != nil {
+		c.SetMessage("faield to parse/validate command")
+		return err
+	}
+
+	// add service to pool
+	poolId := request.GetResourceId("pool")
+	err = e.service.Pools.AddServiceToPool(request, poolId, cmd.ROLE, cmd.SERVICE_ID)
+	if err != nil {
+		c.SetMessage("failed to add service to pool")
+		return c.SetError(err)
+	}
+
+	// done
+	return nil
+}
+
+func AddServiceToPool(s *PoolService) *AddServiceToPoolEndpoint {
+	e := &AddServiceToPoolEndpoint{}
+	e.Construct(s, api.Bind())
+	return e
+}
