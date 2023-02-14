@@ -241,6 +241,6 @@ func (g *GormDB) Join(ctx logger.WithLogger, joinConfig *db.JoinQueryConfig, fil
 	return q.Join(ctx, filter, dest)
 }
 
-func (g *GormDB) JoinModels(joinConfig *db.JoinQueryConfig) []interface{} {
+func (g *GormDB) JoinerModels(joinConfig *db.JoinQueryConfig) []interface{} {
 	return g.joinQueries.Models(joinConfig)
 }
