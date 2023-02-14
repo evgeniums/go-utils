@@ -83,10 +83,10 @@ const ErrorCodeUnknownUser = "unknown_user"
 
 func (a *AuthTokenHandler) ErrorDescriptions() map[string]string {
 	m := map[string]string{
-		ErrorCodeTokenExpired:   "Provided authentication token token expired",
-		ErrorCodeInvalidToken:   "Invalid authentication token token",
-		ErrorCodeSessionExpired: "Session expired",
-		ErrorCodeUnknownUser:    "Unknown user",
+		ErrorCodeTokenExpired:   "Provided authentication token token expired.",
+		ErrorCodeInvalidToken:   "Invalid authentication token token.",
+		ErrorCodeSessionExpired: "Session expired.",
+		ErrorCodeUnknownUser:    "Unknown user.",
 	}
 	return m
 }

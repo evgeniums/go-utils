@@ -15,15 +15,15 @@ const (
 )
 
 var CommonErrorDescriptions = map[string]string{
-	ErrorCodeUnknown:                    "Unknown error",
-	ErrorCodeInternalServerError:        "Internal server error",
-	ErrorCodeFormat:                     "Invalid format of request",
-	ErrorCodeFieldValue:                 "Invalid value of request field",
-	ErrorCodeValidation:                 "Validation failed",
-	ErrorCodeForbidden:                  "Access denied",
-	ErrorCodeNotFound:                   "Resource not found",
-	ErrorCodeExternalServiceUnavailable: "External service is temporarily unavailable",
-	ErrorCodeExternalServiceError:       "External service reported error",
+	ErrorCodeUnknown:                    "Unknown error.",
+	ErrorCodeInternalServerError:        "Internal server error.",
+	ErrorCodeFormat:                     "Invalid format of request.",
+	ErrorCodeFieldValue:                 "Invalid value of request field.",
+	ErrorCodeValidation:                 "Validation failed.",
+	ErrorCodeForbidden:                  "Access denied.",
+	ErrorCodeNotFound:                   "Resource not found.",
+	ErrorCodeExternalServiceUnavailable: "External service is temporarily unavailable.",
+	ErrorCodeExternalServiceError:       "External service reported error.",
 }
 
 var CommonErrorHttpCodes = map[string]int{

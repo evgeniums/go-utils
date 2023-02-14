@@ -71,8 +71,8 @@ const ErrorCodeCredentialsRequired = "login_credentials_required"
 
 func (l *LoginHandler) ErrorDescriptions() map[string]string {
 	m := map[string]string{
-		ErrorCodeLoginFailed:         "Invalid login or password",
-		ErrorCodeCredentialsRequired: "Credentials hash must be provided in request",
+		ErrorCodeLoginFailed:         "Invalid login or password.",
+		ErrorCodeCredentialsRequired: "Credentials hash must be provided in request.",
 	}
 	return m
 }
