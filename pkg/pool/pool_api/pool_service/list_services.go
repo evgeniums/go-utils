@@ -18,6 +18,7 @@ func (e *ListServicesEndpoint) HandleRequest(request api_server.Request) error {
 	c := request.TraceInMethod("pool.FindService")
 	defer request.TraceOutMethod()
 
+	// parse query
 	cmd := &api.DbQuery{}
 	queryName := request.Endpoint().Resource().ServicePathPrototype()
 	filter, err := api_server.ParseDbQuery(request, utils.List(&pool.PoolServiceBase{}), cmd, queryName)
@@ -25,6 +26,7 @@ func (e *ListServicesEndpoint) HandleRequest(request api_server.Request) error {
 		return c.SetError(err)
 	}
 
+	// get services
 	resp := &pool_api.ListServicesResponse{}
 	resp.Services, resp.Count, err = e.service.Pools.GetServices(request, filter)
 	if err != nil {
