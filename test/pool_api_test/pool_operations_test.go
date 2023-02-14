@@ -133,3 +133,13 @@ func TestAddService(t *testing.T) {
 	b2, _ := json.Marshal(dbService1)
 	assert.Equal(t, string(b1), string(b2))
 }
+
+func TestQuery(t *testing.T) {
+	ctx := initTest(t)
+	defer ctx.Close()
+
+	ctx.AdminOp.Db().EnableDebug(true)
+
+	poolId := "11223"
+	ctx.LocalPoolController.GetPoolBindings(ctx.AdminOp, poolId)
+}

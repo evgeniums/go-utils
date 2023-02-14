@@ -50,7 +50,7 @@ type PoolController interface {
 	RemoveAllServicesFromPool(ctx op_context.Context, poolId string, idIsName ...bool) error
 	RemoveServiceFromAllPools(ctx op_context.Context, id string, idIsName ...bool) error
 
-	// GetPoolBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBindingBase, error)
+	GetPoolBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBinding, int64, error)
 	// GetServiceBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBindingBase, error)
 }
 
@@ -391,7 +391,14 @@ func (m *PoolControllerBase) ServiceId(c op_context.CallContext, ctx op_context.
 func (m *PoolControllerBase) RemoveServiceFromPool(ctx op_context.Context, id string, role string, idIsName ...bool) error {
 
 	c := ctx.TraceInMethod("PoolController.RemoveServiceFromPool", logger.Fields{"role": role})
-	defer ctx.TraceOutMethod()
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
 
 	poolId, err := m.PoolId(c, ctx, id, idIsName...)
 	if err != nil {
@@ -407,7 +414,7 @@ func (m *PoolControllerBase) RemoveServiceFromPool(ctx op_context.Context, id st
 	found, err := m.CRUD.Read(ctx, fields, association)
 	if err != nil {
 		c.SetMessage("failed to find association")
-		return c.SetError(err)
+		return err
 	}
 	if !found {
 		return nil
@@ -416,7 +423,7 @@ func (m *PoolControllerBase) RemoveServiceFromPool(ctx op_context.Context, id st
 	err = m.CRUD.Delete(ctx, association)
 	if err != nil {
 		c.SetMessage("failed to delete association")
-		return c.SetError(err)
+		return err
 	}
 
 	o := &OpLogPool{PoolId: poolId, Role: role}
@@ -430,7 +437,14 @@ func (m *PoolControllerBase) RemoveServiceFromPool(ctx op_context.Context, id st
 func (m *PoolControllerBase) RemoveAllServicesFromPool(ctx op_context.Context, id string, idIsName ...bool) error {
 
 	c := ctx.TraceInMethod("PoolController.RemoveAllServicesFromPool")
-	defer ctx.TraceOutMethod()
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
 
 	poolId, err := m.PoolId(c, ctx, id, idIsName...)
 	if err != nil {
@@ -442,7 +456,7 @@ func (m *PoolControllerBase) RemoveAllServicesFromPool(ctx op_context.Context, i
 	}
 
 	fields := db.Fields{"pool_id": poolId}
-	err = m.CRUD.DeleteByFields(ctx, fields, &PoolServiceBindingBase{})
+	err = m.CRUD.DeleteByFields(ctx, fields, &PoolServiceAssociationBase{})
 	if err != nil {
 		return err
 	}
@@ -458,7 +472,14 @@ func (m *PoolControllerBase) RemoveAllServicesFromPool(ctx op_context.Context, i
 func (m *PoolControllerBase) RemoveServiceFromAllPools(ctx op_context.Context, id string, idIsName ...bool) error {
 
 	c := ctx.TraceInMethod("PoolController.RemoveServiceFromAllPools")
-	defer ctx.TraceOutMethod()
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
 
 	serviceId, err := m.ServiceId(c, ctx, id, idIsName...)
 	if err != nil {
@@ -470,7 +491,7 @@ func (m *PoolControllerBase) RemoveServiceFromAllPools(ctx op_context.Context, i
 	}
 
 	fields := db.Fields{"service_id": serviceId}
-	err = m.CRUD.DeleteByFields(ctx, fields, &PoolServiceBindingBase{})
+	err = m.CRUD.DeleteByFields(ctx, fields, &PoolServiceAssociationBase{})
 	if err != nil {
 		return err
 	}
@@ -481,4 +502,48 @@ func (m *PoolControllerBase) RemoveServiceFromAllPools(ctx op_context.Context, i
 	}
 	m.OpLog(ctx, "remove_service_from_all_pools", o)
 	return nil
+}
+
+func (p *PoolControllerBase) GetPoolBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBinding, int64, error) {
+
+	// setup
+	var services []*PoolServiceBinding
+	var count int64
+	c := ctx.TraceInMethod("PoolController.GetPoolBindings")
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
+
+	// adjust pool ID
+	poolId, err := p.PoolId(c, ctx, id, idIsName...)
+	if err != nil {
+		return nil, 0, err
+	}
+	if poolId == "" {
+		ctx.SetGenericError(nil)
+		return nil, 0, nil
+	}
+
+	// construct join query
+	queryBuilder := func() (db.JoinQuery, error) {
+		return ctx.Db().Joiner().Join(&PoolServiceAssociationBase{}, "pool_id").On(&PoolBase{}, "id").
+			Join(&PoolServiceAssociationBase{}, "service_id").On(&PoolServiceBase{}, "id").
+			Destination(&PoolServiceBinding{})
+	}
+
+	// invoke join
+	filter := db.NewFilter()
+	filter.AddField("pools.id", id)
+	count, err = p.CRUD.Join(ctx, db.NewJoin(queryBuilder, "GetPoolBindings"), filter, &services)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// done
+	return services, count, nil
 }

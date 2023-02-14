@@ -13,7 +13,7 @@ type Pool interface {
 	common.WithDescription
 	common.WithActive
 
-	Service(role string) (PoolServiceBinding, error)
+	Service(role string) (*PoolServiceBinding, error)
 }
 
 type PoolBaseData struct {
@@ -43,7 +43,7 @@ type PoolItem struct {
 
 type PoolBase struct {
 	PoolBaseEssentials
-	Services map[string]PoolServiceBinding `gorm:"-:all"`
+	Services map[string]*PoolServiceBinding `gorm:"-:all"`
 }
 
 func NewPool() *PoolBase {
@@ -56,7 +56,7 @@ func (PoolBase) TableName() string {
 	return "pools"
 }
 
-func (p *PoolBase) Service(role string) (PoolServiceBinding, error) {
+func (p *PoolBase) Service(role string) (*PoolServiceBinding, error) {
 
 	service, ok := p.Services[role]
 	if !ok {

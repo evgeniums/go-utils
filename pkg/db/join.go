@@ -35,11 +35,11 @@ type JoinTableBase struct {
 }
 
 func (j *JoinTableBase) Model() interface{} {
-	return j.Model
+	return j.JoinTableData.Model
 }
 
 func (j *JoinTableBase) FieldsModel() interface{} {
-	return j.FieldsModel
+	return j.JoinTableData.FieldsModel
 }
 
 type JoinPairData struct {
@@ -60,7 +60,7 @@ func (j *JoinPairBase) RightField() string {
 }
 
 type JoinQueryData struct {
-	Destination interface{}
+	destination interface{}
 }
 
 type JoinQueryBase struct {
@@ -68,14 +68,14 @@ type JoinQueryBase struct {
 }
 
 func (j *JoinQueryBase) Destination() interface{} {
-	return j.JoinQueryData.Destination
+	return j.JoinQueryData.destination
 }
 
 func (j *JoinQueryBase) SetDestination(destination interface{}) {
-	j.JoinQueryData.Destination = destination
+	j.JoinQueryData.destination = destination
 }
 
-type JoinQueryBuilder = func() JoinQuery
+type JoinQueryBuilder = func() (JoinQuery, error)
 
 type JoinQueryConfig struct {
 	Builder JoinQueryBuilder
@@ -96,15 +96,20 @@ type JoinQueries struct {
 func NewJoinQueries() *JoinQueries {
 	j := &JoinQueries{}
 	j.cache = make(map[string]JoinQuery)
+	j.modelsCache = make(map[string][]interface{})
 	return j
 }
 
-func (j *JoinQueries) FindOrCreate(config *JoinQueryConfig) JoinQuery {
+func (j *JoinQueries) FindOrCreate(config *JoinQueryConfig) (JoinQuery, error) {
+	var err error
 	j.mutex.Lock()
 	q, ok := j.cache[config.Name]
 	j.mutex.Unlock()
 	if !ok || config.Nocache {
-		q = config.Builder()
+		q, err = config.Builder()
+		if err != nil {
+			return nil, err
+		}
 	}
 	j.mutex.Lock()
 	if !config.Nocache {
@@ -112,15 +117,19 @@ func (j *JoinQueries) FindOrCreate(config *JoinQueryConfig) JoinQuery {
 	}
 	j.modelsCache[config.Name] = q.Models()
 	j.mutex.Unlock()
-	return q
+	return q, nil
 }
 
-func (j *JoinQueries) Models(config *JoinQueryConfig) []interface{} {
+func (j *JoinQueries) Models(config *JoinQueryConfig) ([]interface{}, error) {
 	j.mutex.Lock()
 	models, ok := j.modelsCache[config.Name]
 	j.mutex.Unlock()
 	if !ok {
-		return j.FindOrCreate(config).Models()
+		q, err := j.FindOrCreate(config)
+		if err != nil {
+			return nil, err
+		}
+		return q.Models(), nil
 	}
-	return models
+	return models, nil
 }

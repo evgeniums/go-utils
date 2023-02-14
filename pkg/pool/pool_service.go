@@ -59,9 +59,9 @@ type ServiceConfigBase struct {
 	PRIVATE_HOST string `gorm:"index" json:"private_host"`
 	PRIVATE_PORT uint16 `gorm:"index" json:"private_port"`
 	PRIVATE_URL  string `gorm:"index" json:"private_url"`
-	PARAMETER1   string `gorm:"index" json:"parameter1"`
-	PARAMETER2   string `gorm:"index" json:"parameter2"`
-	PARAMETER3   string `gorm:"index" json:"parameter3"`
+	PARAMETER1   string `gorm:"index;column:parameter1" json:"parameter1"`
+	PARAMETER2   string `gorm:"index;column:parameter2" json:"parameter2"`
+	PARAMETER3   string `gorm:"index;column:parameter3" json:"parameter3"`
 }
 
 func (s *ServiceConfigBase) PublicHost() string {

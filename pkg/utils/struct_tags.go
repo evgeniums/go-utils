@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"reflect"
 )
 
@@ -11,6 +12,9 @@ func eachStrucTag(handler StructTagHandler, tag string, objectValue reflect.Valu
 	objectType := objectValue.Type()
 	if objectValue.Kind() == reflect.Ptr {
 		objectType = objectValue.Elem().Type()
+	}
+	if objectType.Kind() != reflect.Struct {
+		return errors.New("object must be of struct type")
 	}
 
 	for i := 0; i < objectType.NumField(); i++ {

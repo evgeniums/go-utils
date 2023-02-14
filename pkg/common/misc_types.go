@@ -6,7 +6,7 @@ type WithDescription interface {
 }
 
 type WithDescriptionBase struct {
-	DESCRIPTION string `json:"description"`
+	DESCRIPTION string `json:"description" gorm:"column:description"`
 }
 
 func (d *WithDescriptionBase) Description() string {

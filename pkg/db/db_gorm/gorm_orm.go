@@ -110,7 +110,12 @@ func SetFilter(g *gorm.DB, filter *Filter, docs interface{}, paginate ...bool) *
 		return g
 	}
 
-	h := prepareFilter(g.Model(docs), filter)
+	h := g
+	if docs != nil {
+		h = g.Model(docs)
+	}
+
+	h = prepareFilter(h, filter)
 
 	if filter.SortField != "" && (filter.SortDirection == db.SORT_ASC || filter.SortDirection == db.SORT_DESC) {
 		h = h.Order(fmt.Sprintf("\"%v\" %v", filter.SortField, filter.SortDirection))
@@ -141,7 +146,7 @@ func find(g *gorm.DB, filter *Filter, dest interface{}) (int64, error) {
 
 	h := g
 	if filter != nil {
-		h = SetFilter(g, filter, dest, !filter.Count)
+		h = SetFilter(g, filter, nil, !filter.Count)
 		if filter.Count {
 			counter := g.Session(&gorm.Session{})
 			result := counter.Count(&count)

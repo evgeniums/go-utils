@@ -19,7 +19,7 @@ type JoinTable struct {
 func (jt *JoinTable) Schema(f *FilterManager) (*schema.Schema, error) {
 	if jt.schema == nil {
 		var err error
-		jt.schema, err = schema.Parse(jt.Model, f.SchemaCache, f.SchemaNamer)
+		jt.schema, err = schema.Parse(jt.Model(), f.SchemaCache, f.SchemaNamer)
 		return jt.schema, err
 	}
 	return jt.schema, nil
@@ -95,7 +95,7 @@ func PrepareJoin(f *FilterManager, g *gorm.DB, constructor *JoinQueryConstructor
 
 	q := constructor
 
-	mainModel := q.pairs[0].left.Model
+	mainModel := q.pairs[0].left.Model()
 	db := g.Model(mainModel)
 
 	tables := make(map[string]*JoinTable)
@@ -127,7 +127,7 @@ func PrepareJoin(f *FilterManager, g *gorm.DB, constructor *JoinQueryConstructor
 
 		return nil
 	}
-	err := utils.EachStructTag(fillDestinationFields, "json", q.Destination)
+	err := utils.EachStructTag(fillDestinationFields, "json", q.Destination())
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract tags from: %s", err)
 	}
@@ -174,7 +174,7 @@ type Joiner struct {
 func newJoiner(db *GormDB) *Joiner {
 	j := &Joiner{}
 	j.constructor = newJoinQueryConstuctor()
-	j.session = db.db.Session(&gorm.Session{})
+	j.session = db.db_().Session(&gorm.Session{})
 	j.db = db
 	return j
 }
@@ -223,7 +223,6 @@ func (j *Joiner) On(model interface{}, field string, fieldsModel ...interface{})
 	if j.constructor == nil || j.pair == nil {
 		panic("can not call ON without calling Join first")
 	}
-	j.pair = &JoinPair{}
 	j.pair.right = &JoinTable{}
 	j.pair.right.JoinTableData.Model = model
 	j.pair.right.JoinTableData.FieldsModel = utils.OptionalArg(nil, fieldsModel...)
@@ -237,10 +236,13 @@ func (g *GormDB) Joiner() db.Joiner {
 }
 
 func (g *GormDB) Join(ctx logger.WithLogger, joinConfig *db.JoinQueryConfig, filter *Filter, dest interface{}) (int64, error) {
-	q := g.joinQueries.FindOrCreate(joinConfig)
+	q, err := g.joinQueries.FindOrCreate(joinConfig)
+	if err != nil {
+		return 0, err
+	}
 	return q.Join(ctx, filter, dest)
 }
 
-func (g *GormDB) JoinerModels(joinConfig *db.JoinQueryConfig) []interface{} {
+func (g *GormDB) JoinerModels(joinConfig *db.JoinQueryConfig) ([]interface{}, error) {
 	return g.joinQueries.Models(joinConfig)
 }

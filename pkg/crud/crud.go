@@ -18,6 +18,8 @@ type CRUD interface {
 
 	List(ctx op_context.Context, filter *db.Filter, object interface{}, dest ...interface{}) (int64, error)
 	Exists(ctx op_context.Context, filter *db.Filter, object interface{}) (bool, error)
+
+	Join(ctx op_context.Context, joinConfig *db.JoinQueryConfig, filter *db.Filter, dest interface{}) (int64, error)
 }
 
 type WithCRUD interface {
@@ -136,6 +138,16 @@ func (d *DbCRUD) Exists(ctx op_context.Context, filter *db.Filter, object interf
 		return false, c.SetError(err)
 	}
 	return exists, nil
+}
+
+func (d *DbCRUD) Join(ctx op_context.Context, joinConfig *db.JoinQueryConfig, filter *db.Filter, dest interface{}) (int64, error) {
+	c := ctx.TraceInMethod("CRUD.Join")
+	defer ctx.TraceOutMethod()
+	count, err := op_context.DB(ctx).Join(ctx, joinConfig, filter, dest)
+	if err != nil {
+		return 0, c.SetError(err)
+	}
+	return count, nil
 }
 
 func List[T common.Object](crud CRUD, ctx op_context.Context, methodName string, filter *db.Filter, objects *[]T, dest ...interface{}) (int64, error) {
