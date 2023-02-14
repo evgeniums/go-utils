@@ -151,12 +151,17 @@ func PrepareJoin(f *FilterManager, g *gorm.DB, constructor *JoinQueryConstructor
 }
 
 type JoinQuery struct {
-	PreparedSession *gorm.DB
+	preparedSession *gorm.DB
+	models          []interface{}
 }
 
 func (j *JoinQuery) Join(ctx logger.WithLogger, filter *Filter, dest interface{}) (int64, error) {
-	session := j.PreparedSession.Session(&gorm.Session{})
+	session := j.preparedSession.Session(&gorm.Session{})
 	return find(session, filter, dest)
+}
+
+func (j *JoinQuery) Models() []interface{} {
+	return j.models
 }
 
 type Joiner struct {
@@ -191,7 +196,14 @@ func (j *Joiner) Destination(destination interface{}) (db.JoinQuery, error) {
 		return nil, err
 	}
 
-	q := &JoinQuery{PreparedSession: preparedSession}
+	q := &JoinQuery{preparedSession: preparedSession}
+	models := make(map[string]interface{})
+	for _, pair := range j.constructor.pairs {
+		models[pair.left.schema.Table] = pair.left.Model
+		models[pair.right.schema.Table] = pair.right.Model
+	}
+	q.models = utils.AllMapValues(models)
+
 	return q, nil
 }
 
@@ -227,4 +239,8 @@ func (g *GormDB) Joiner() db.Joiner {
 func (g *GormDB) Join(ctx logger.WithLogger, joinConfig *db.JoinQueryConfig, filter *Filter, dest interface{}) (int64, error) {
 	q := g.joinQueries.FindOrCreate(joinConfig)
 	return q.Join(ctx, filter, dest)
+}
+
+func (g *GormDB) JoinModels(joinConfig *db.JoinQueryConfig) []interface{} {
+	return g.joinQueries.Models(joinConfig)
 }

@@ -9,6 +9,7 @@ import (
 
 type JoinQuery interface {
 	Join(ctx logger.WithLogger, filter *Filter, dest interface{}) (int64, error)
+	Models() []interface{}
 }
 
 type Joiner interface {
@@ -87,8 +88,9 @@ func NewJoin(builder JoinQueryBuilder, name string, nocache ...bool) *JoinQueryC
 }
 
 type JoinQueries struct {
-	mutex sync.Mutex
-	cache map[string]JoinQuery
+	mutex       sync.Mutex
+	cache       map[string]JoinQuery
+	modelsCache map[string][]interface{}
 }
 
 func NewJoinQueries() *JoinQueries {
@@ -104,10 +106,21 @@ func (j *JoinQueries) FindOrCreate(config *JoinQueryConfig) JoinQuery {
 	if !ok || config.Nocache {
 		q = config.Builder()
 	}
+	j.mutex.Lock()
 	if !config.Nocache {
-		j.mutex.Lock()
 		j.cache[config.Name] = q
-		j.mutex.Unlock()
 	}
+	j.modelsCache[config.Name] = q.Models()
+	j.mutex.Unlock()
 	return q
+}
+
+func (j *JoinQueries) Models(config *JoinQueryConfig) []interface{} {
+	j.mutex.Lock()
+	models, ok := j.modelsCache[config.Name]
+	j.mutex.Unlock()
+	if !ok {
+		return j.FindOrCreate(config).Models()
+	}
+	return models
 }

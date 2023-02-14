@@ -43,8 +43,10 @@ type DBHandlers interface {
 	Update(ctx logger.WithLogger, obj interface{}, filter Fields, fields Fields) error
 	UpdateAll(ctx logger.WithLogger, obj interface{}, newFields Fields) error
 
-	Joiner() Joiner
 	Join(ctx logger.WithLogger, joinConfig *JoinQueryConfig, filter *Filter, dest interface{}) (int64, error)
+
+	Joiner() Joiner
+	JoinerModels(joinConfig *JoinQueryConfig) []interface{}
 }
 
 type Transaction interface {
