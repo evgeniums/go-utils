@@ -2,6 +2,7 @@ package pool
 
 import (
 	"errors"
+	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/crud"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
@@ -14,7 +15,22 @@ const ErrorCodePoolNotFound = "pool_not_found"
 const ErrorCodeServiceNotFound = "service_not_found"
 const ErrorCodePoolNameConflict = "pool_name_conflict"
 const ErrorCodeServiceNameConflict = "service_name_conflict"
+const ErrorCodeServiceRoleConflict = "service_role_conflict"
 const ErrorCodePoolServiceBindingsExist = "pool_service_bindings_exist"
+
+var ErrorDescriptions = map[string]string{
+	ErrorCodePoolNotFound:             "Pool not found.",
+	ErrorCodeServiceNotFound:          "Service not found.",
+	ErrorCodePoolNameConflict:         "Pool with such name already exists, choose another name.",
+	ErrorCodeServiceNameConflict:      "Service with such name already exists, choose another name.",
+	ErrorCodeServiceRoleConflict:      "Pool already has service for that role.",
+	ErrorCodePoolServiceBindingsExist: "Can't delete pool with services. First, remove all services from the pool.",
+}
+
+var ErrorHttpCodes = map[string]int{
+	ErrorCodePoolNotFound:    http.StatusNotFound,
+	ErrorCodeServiceNotFound: http.StatusNotFound,
+}
 
 type PoolController interface {
 	AddPool(ctx op_context.Context, pool Pool) (Pool, error)
@@ -274,6 +290,7 @@ func (m *PoolControllerBase) AddServiceToPool(ctx op_context.Context, poolId str
 	c := ctx.TraceInMethod("PoolController.AddServiceToPool", logger.Fields{utils.ConcatStrings("pool_", field): poolId, utils.ConcatStrings("service_", field): serviceId, "role": role})
 	defer ctx.TraceOutMethod()
 
+	// find pool
 	pool, err := m.FindPool(ctx, poolId, idIsName...)
 	if err != nil {
 		c.SetMessage("failed to find pool")
@@ -283,6 +300,7 @@ func (m *PoolControllerBase) AddServiceToPool(ctx op_context.Context, poolId str
 		return nil, c.SetError(errors.New("pool not found"))
 	}
 
+	// find service
 	service, err := m.FindService(ctx, serviceId, idIsName...)
 	if err != nil {
 		c.SetMessage("failed to find service")
@@ -292,7 +310,22 @@ func (m *PoolControllerBase) AddServiceToPool(ctx op_context.Context, poolId str
 		return nil, c.SetError(errors.New("unknown service"))
 	}
 
+	// check if name is unique
 	binding := &PoolServiceBindingBase{}
+	filter := db.NewFilter()
+	filter.AddField("pool_id", pool.GetID())
+	filter.AddField("role", role)
+	exists, err := m.CRUD.Exists(ctx, filter, &PoolServiceBindingBase{})
+	if err != nil {
+		c.SetMessage("failed to check existence of pool service binding")
+		return nil, c.SetError(err)
+	}
+	if exists {
+		ctx.SetGenericErrorCode(ErrorCodeServiceRoleConflict)
+		return nil, c.SetError(errors.New("pool already has service with such role"))
+	}
+
+	// create binding
 	binding.InitObject()
 	binding.POOL_ID = pool.GetID()
 	binding.SERVICE_ID = service.GetID()
@@ -303,10 +336,13 @@ func (m *PoolControllerBase) AddServiceToPool(ctx op_context.Context, poolId str
 		return nil, c.SetError(err)
 	}
 
+	// add oplog
 	m.OpLog(ctx, "add_service_to_pool", &OpLogPool{ServiceId: service.GetID(), ServiceName: service.Name(),
 		PoolId: pool.GetID(), PoolName: pool.Name(),
 		Role: role,
 	})
+
+	// done
 	return binding, nil
 }
 

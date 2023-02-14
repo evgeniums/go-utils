@@ -29,6 +29,7 @@ type PoolService struct {
 func NewPoolService(poolController pool.PoolController) *PoolService {
 
 	s := &PoolService{}
+	s.ErrorsExtenderBase.Init(pool.ErrorDescriptions, pool.ErrorHttpCodes)
 	s.Pools = poolController
 
 	var serviceName string
