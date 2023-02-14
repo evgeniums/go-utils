@@ -13,10 +13,26 @@ import (
 )
 
 type FilterParser struct {
+	mutex  sync.Mutex
+	models map[string]bool
+
 	Manager      *FilterManager
 	DefaultModel string
-	Models       map[string]bool
 	Validator    *db.FilterValidator
+}
+
+func (f *FilterParser) FindModel(name string) bool {
+	f.mutex.Lock()
+	_, ok := f.models[name]
+	f.mutex.Unlock()
+	return ok
+}
+
+func (f *FilterParser) AddModel(name string) {
+	f.mutex.Lock()
+	f.models[name] = true
+	f.mutex.Unlock()
+
 }
 
 func convertValue(field *schema.Field, value string) (interface{}, error) {
@@ -76,13 +92,13 @@ func (f *FilterParser) ParseValidateField(name string, value string, onlyName ..
 	fullName := utils.ConcatStrings(modelName, ".", fieldName)
 
 	// check if model defined for this parser
-	_, ok := f.Models[modelName]
+	ok := f.FindModel(modelName)
 	if !ok {
 		return nil, &validator.ValidationError{Message: "invalid model name", Field: modelName}
 	}
 
 	// find schema
-	model, ok := f.Manager.Models[modelName]
+	model, ok := f.Manager.FindModel(modelName)
 	if !ok {
 		return nil, &validator.ValidationError{Message: "unknown model schema", Field: modelName}
 	}
@@ -146,6 +162,7 @@ func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 	filter.SortField = query.SortField
 	filter.Limit = query.Limit
 	filter.Offset = query.Offset
+	filter.Count = query.Count
 
 	// fill fields
 	if len(query.Fields) > 0 {
@@ -227,15 +244,29 @@ func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 }
 
 type FilterManager struct {
-	Models        map[string]*schema.Schema
+	mutex         sync.Mutex
+	models        map[string]*schema.Schema
 	FilterParsers map[string]*FilterParser
 
 	SchemaCache *sync.Map
 	SchemaNamer schema.Namer
 }
 
+func NewFilterManager() *FilterManager {
+	f := &FilterManager{}
+	f.Construct()
+	return f
+}
+
+func (f *FilterManager) FindModel(name string) (*schema.Schema, bool) {
+	f.mutex.Lock()
+	m, ok := f.models[name]
+	f.mutex.Unlock()
+	return m, ok
+}
+
 func (f *FilterManager) Construct() {
-	f.Models = make(map[string]*schema.Schema)
+	f.models = make(map[string]*schema.Schema)
 	f.FilterParsers = make(map[string]*FilterParser)
 	f.SchemaCache = &sync.Map{}
 	f.SchemaNamer = &schema.NamingStrategy{}
@@ -243,9 +274,11 @@ func (f *FilterManager) Construct() {
 
 func (f *FilterManager) PrepareFilterParser(models []interface{}, name string, validator ...*db.FilterValidator) (db.FilterParser, error) {
 
+	f.mutex.Lock()
+
 	parser := &FilterParser{}
 	parser.Manager = f
-	parser.Models = make(map[string]bool)
+	parser.models = make(map[string]bool)
 
 	// parse schemas
 	for i, model := range models {
@@ -253,11 +286,11 @@ func (f *FilterManager) PrepareFilterParser(models []interface{}, name string, v
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse %d model's schema: %s", i, err)
 		}
-		f.Models[s.Table] = s
+		f.models[s.Table] = s
 		if i == 0 {
 			parser.DefaultModel = s.Table
 		}
-		parser.Models[s.Table] = true
+		parser.AddModel(s.Table)
 	}
 
 	// keep validator
@@ -267,11 +300,14 @@ func (f *FilterManager) PrepareFilterParser(models []interface{}, name string, v
 	f.FilterParsers[name] = parser
 
 	// done
+	f.mutex.Unlock()
 	return parser, nil
 }
 
 func (f *FilterManager) ParseFilter(query *db.Query, parserName string) (*db.Filter, error) {
+	f.mutex.Lock()
 	parser, ok := f.FilterParsers[parserName]
+	f.mutex.Unlock()
 	if !ok {
 		return nil, &validator.ValidationError{Message: "unknown parser"}
 	}
@@ -280,7 +316,9 @@ func (f *FilterManager) ParseFilter(query *db.Query, parserName string) (*db.Fil
 
 func (f *FilterManager) ParseFilterDirect(query *db.Query, models []interface{}, parserName string, vld ...*db.FilterValidator) (*db.Filter, error) {
 
+	f.mutex.Lock()
 	parser, ok := f.FilterParsers[parserName]
+	f.mutex.Unlock()
 	if ok {
 		return parser.Parse(query)
 	}
@@ -292,44 +330,3 @@ func (f *FilterManager) ParseFilterDirect(query *db.Query, models []interface{},
 
 	return p.Parse(query)
 }
-
-// switch field.FieldType.Kind() {
-// case reflect.String:
-// 	return value, nil
-// case reflect.Int, reflect.Int64:
-// 	val, err := utils.StrToInt64(value)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return val, nil
-// case reflect.Int8, reflect.Int16, reflect.Int32:
-// 	val, err := utils.StrToInt32(value)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return val, nil
-// case reflect.Bool:
-// 	val, err := utils.StrToBool(value)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return val, nil
-// case reflect.Uint, reflect.Uint64:
-// 	val, err := utils.StrToUint64(value)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return val, nil
-// case reflect.Uint8, reflect.Uint16, reflect.Uint32:
-// 	val, err := utils.StrToUint32(value)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return val, nil
-// case reflect.Float64, reflect.Float32:
-// 	val, err := utils.StrToFloat(value)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return val, nil
-// }

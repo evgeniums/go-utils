@@ -129,6 +129,12 @@ type Parent struct {
 	ParentEssentials
 }
 
+type ParentDest struct {
+	common.IDBase
+	common.WithNameBase
+	ParentEssentials
+}
+
 type ChildEssentials struct {
 	ChildField1 string `json:"child_field1"`
 	ChildField2 string `json:"child_field2"`
@@ -394,7 +400,7 @@ func TestOneToMany(t *testing.T) {
 	q.Destination = &ChildWithParent{}
 	q.Pairs = make([]*JoinPair, 1)
 	left := &JoinTable{Model: &Child{}}
-	right := &JoinTable{Model: &Parent{}}
+	right := &JoinTable{Model: &Parent{}, FieldsModel: &ParentDest{}}
 	q.Pairs[0] = &JoinPair{Left: left, LeftField: "parent_id", Right: right, RightField: "id"}
 
 	db, err := ConstructJoin(f, g, q)
@@ -402,9 +408,9 @@ func TestOneToMany(t *testing.T) {
 
 	childWithParent := &ChildWithParent{}
 
-	db = db.Session(&gorm.Session{DryRun: true})
-	stmt := db.Find(childWithParent).Statement
-	t.Logf("Query: \n, %s", stmt.SQL.String())
+	// db = db.Session(&gorm.Session{DryRun: true})
+	// stmt := db.Find(childWithParent).Statement
+	// t.Logf("Query: \n, %s", stmt.SQL.String())
 
 	res := db.Find(childWithParent)
 	require.NoError(t, res.Error)

@@ -26,10 +26,12 @@ type DbConnector struct {
 }
 
 type GormDB struct {
-	FilterManager
 	db *gorm.DB
 	gormDBConfig
 	dbConnector *DbConnector
+
+	joinQueries   *db.JoinQueries
+	filterManager *FilterManager
 }
 
 func (g *GormDB) Config() interface{} {
@@ -68,7 +70,9 @@ var DefaultDbConnector = postgresDbConnector
 
 func New(dbConnector ...*DbConnector) *GormDB {
 	g := &GormDB{}
-	g.FilterManager.Construct()
+
+	g.filterManager = NewFilterManager()
+	g.joinQueries = db.NewJoinQueries()
 
 	g.dbConnector = DefaultDbConnector()
 
@@ -77,6 +81,18 @@ func New(dbConnector ...*DbConnector) *GormDB {
 	}
 
 	return g
+}
+
+func (g *GormDB) ParseFilter(query *db.Query, parserName string) (*db.Filter, error) {
+	return g.filterManager.ParseFilter(query, parserName)
+}
+
+func (g *GormDB) ParseFilterDirect(query *db.Query, models []interface{}, parserName string, vld ...*db.FilterValidator) (*db.Filter, error) {
+	return g.filterManager.ParseFilterDirect(query, models, parserName, vld...)
+}
+
+func (g *GormDB) PrepareFilterParser(models []interface{}, name string, validator ...*db.FilterValidator) (db.FilterParser, error) {
+	return g.filterManager.PrepareFilterParser(models, name, validator...)
 }
 
 func (g *GormDB) NativeHandler() interface{} {

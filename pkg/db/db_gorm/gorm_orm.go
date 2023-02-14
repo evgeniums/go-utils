@@ -104,16 +104,19 @@ func prepareFilter(db *gorm.DB, filter *Filter) *gorm.DB {
 	return h
 }
 
-func FindWithFilter(db_ *gorm.DB, filter *Filter, docs interface{}, dest ...interface{}) error {
+func SetFilter(g *gorm.DB, filter *Filter, docs interface{}, offsetLimit ...bool) *gorm.DB {
 
-	h := db_.Model(docs)
-	if filter != nil {
-		h = prepareFilter(db_.Model(docs), filter)
+	if filter == nil {
+		return g
+	}
 
-		if filter.SortField != "" && (filter.SortDirection == db.SORT_ASC || filter.SortDirection == db.SORT_DESC) {
-			h = h.Order(fmt.Sprintf("\"%v\" %v", filter.SortField, filter.SortDirection))
-		}
+	h := prepareFilter(g.Model(docs), filter)
 
+	if filter.SortField != "" && (filter.SortDirection == db.SORT_ASC || filter.SortDirection == db.SORT_DESC) {
+		h = h.Order(fmt.Sprintf("\"%v\" %v", filter.SortField, filter.SortDirection))
+	}
+
+	if utils.OptionalArg(true, offsetLimit...) {
 		if filter.Offset > 0 {
 			h = h.Offset(filter.Offset)
 		}
@@ -122,6 +125,14 @@ func FindWithFilter(db_ *gorm.DB, filter *Filter, docs interface{}, dest ...inte
 			h = h.Limit(filter.Limit)
 		}
 	}
+
+	return h
+}
+
+func FindWithFilter(db *gorm.DB, filter *Filter, docs interface{}, dest ...interface{}) error {
+
+	h := db.Model(docs)
+	h = SetFilter(h, filter, docs)
 
 	dst := utils.OptionalArg(docs, dest...)
 	result := h.Find(dst)
@@ -134,19 +145,8 @@ func FindWithFilter(db_ *gorm.DB, filter *Filter, docs interface{}, dest ...inte
 
 func RowsWithFilter(db *gorm.DB, filter *Filter, docs interface{}) (*sql.Rows, error) {
 
-	h := prepareFilter(db.Model(docs), filter)
-
-	if filter.SortField != "" && (filter.SortDirection == "asc" || filter.SortDirection == "desc") {
-		h = h.Order(fmt.Sprintf("\"%v\" %v", filter.SortField, filter.SortDirection))
-	}
-
-	if filter.Offset > 0 {
-		h = h.Offset(filter.Offset)
-	}
-
-	if filter.Limit > 0 {
-		h = h.Limit(filter.Limit)
-	}
+	h := db.Model(docs)
+	h = SetFilter(h, filter, docs)
 
 	rows, err := h.Rows()
 	if err != nil {

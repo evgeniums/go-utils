@@ -33,6 +33,8 @@ type Filter struct {
 	SortDirection string
 	Offset        int
 	Limit         int
+
+	Count bool
 }
 
 func NewFilter() *Filter {
@@ -166,6 +168,7 @@ type Query struct {
 	SortDirection string `json:"sort_direction,omitempty" validate:"omitempty,oneof=asc desc"`
 	Offset        int    `json:"offset,omitempty" validate:"gte=0"`
 	Limit         int    `json:"limit,omitempty" validate:"gte=0"`
+	Count         bool   `json:"count,omitempty"`
 }
 
 type WithFilterParser interface {
