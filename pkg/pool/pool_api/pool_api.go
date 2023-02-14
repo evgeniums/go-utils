@@ -16,6 +16,7 @@ type ServiceResponse struct {
 }
 
 type ListServicesResponse struct {
+	api.ResponseCount
 	api.ResponseHateous
 	Services []*pool.PoolServiceBase `json:"services"`
 }

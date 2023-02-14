@@ -5,6 +5,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type ListEndpoint[U user.User] struct {
@@ -21,8 +22,7 @@ func (e *ListEndpoint[U]) HandleRequest(request api_server.Request) error {
 
 	cmd := &api.DbQuery{}
 	queryName := request.Endpoint().Resource().ServicePathPrototype()
-	models := []interface{}{u.MakeUser()}
-	filter, err := api_server.ParseDbQuery(request, models, cmd, queryName)
+	filter, err := api_server.ParseDbQuery(request, utils.List(u.MakeUser()), cmd, queryName)
 	if err != nil {
 		return c.SetError(err)
 	}

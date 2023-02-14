@@ -5,6 +5,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type ListServicesEndpoint struct {
@@ -19,14 +20,13 @@ func (e *ListServicesEndpoint) HandleRequest(request api_server.Request) error {
 
 	cmd := &api.DbQuery{}
 	queryName := request.Endpoint().Resource().ServicePathPrototype()
-	models := []interface{}{&pool.PoolServiceBase{}}
-	filter, err := api_server.ParseDbQuery(request, models, cmd, queryName)
+	filter, err := api_server.ParseDbQuery(request, utils.List(&pool.PoolServiceBase{}), cmd, queryName)
 	if err != nil {
 		return c.SetError(err)
 	}
 
 	resp := &pool_api.ListServicesResponse{}
-	resp.Services, err = e.service.Pools.GetServices(request, filter)
+	resp.Services, resp.Count, err = e.service.Pools.GetServices(request, filter)
 	if err != nil {
 		return c.SetError(err)
 	}

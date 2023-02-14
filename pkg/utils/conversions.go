@@ -151,3 +151,8 @@ const float64EqualityThreshold = 1e-9
 func FloatAlmostEqual[T Float](a, b T) bool {
 	return math.Abs(float64(a)-float64(b)) <= float64EqualityThreshold
 }
+
+func List(vals ...interface{}) []interface{} {
+	l := make([]interface{}, 0, len(vals))
+	return append(l, vals...)
+}
