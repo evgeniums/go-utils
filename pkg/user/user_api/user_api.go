@@ -34,6 +34,7 @@ type UserResponse[T user.User] struct {
 }
 
 type ListResponse[T any] struct {
+	api.ResponseCount
 	api.ResponseHateous
 	Users *[]T `json:"users"`
 }

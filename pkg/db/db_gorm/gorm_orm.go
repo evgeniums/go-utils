@@ -139,14 +139,17 @@ func find(g *gorm.DB, filter *Filter, dest interface{}) (int64, error) {
 
 	var count int64
 
-	h := SetFilter(g, filter, dest, !filter.Count)
-	if filter.Count {
-		counter := g.Session(&gorm.Session{})
-		result := counter.Count(&count)
-		if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return 0, result.Error
+	h := g
+	if filter != nil {
+		h = SetFilter(g, filter, dest, !filter.Count)
+		if filter.Count {
+			counter := g.Session(&gorm.Session{})
+			result := counter.Count(&count)
+			if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				return 0, result.Error
+			}
+			h = Paginate(g, filter)
 		}
-		h = Paginate(g, filter)
 	}
 
 	result := h.Find(dest)

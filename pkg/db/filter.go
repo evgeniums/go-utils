@@ -87,6 +87,7 @@ func (f *Filter) ToQuery() *Query {
 	q.SortDirection = f.SortDirection
 	q.Limit = f.Limit
 	q.Offset = f.Offset
+	q.Count = f.Count
 
 	// fill fields
 	if len(f.Fields) > 0 {

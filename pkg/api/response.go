@@ -34,3 +34,7 @@ type ResponseNoHateous struct {
 type ResponseHateous struct {
 	HateoasLinksContainer
 }
+
+type ResponseCount struct {
+	Count int64 `json:"count,omitempty"`
+}

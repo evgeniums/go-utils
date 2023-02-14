@@ -30,7 +30,7 @@ func (e *ListEndpoint[U]) HandleRequest(request api_server.Request) error {
 	resp := &user_api.ListResponse[U]{}
 	users := make([]U, 0)
 	resp.Users = &users
-	err = u.FindUsers(request, filter, resp.Users)
+	resp.Count, err = u.FindUsers(request, filter, resp.Users)
 	if err != nil {
 		return c.SetError(err)
 	}

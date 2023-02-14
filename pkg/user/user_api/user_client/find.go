@@ -63,7 +63,7 @@ func (u *UserClient[U]) FindByLogin(ctx op_context.Context, login string) (U, er
 	filter.AddField("login", login)
 
 	var users []U
-	err := u.FindUsers(ctx, filter, &users)
+	_, err := u.FindUsers(ctx, filter, &users)
 	if err != nil {
 		return nilU, c.SetError(err)
 	}

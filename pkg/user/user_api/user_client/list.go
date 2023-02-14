@@ -25,7 +25,7 @@ func (a *List[U]) Exec(client api_client.Client, ctx op_context.Context, operati
 	return err
 }
 
-func (u *UserClient[U]) FindUsers(ctx op_context.Context, filter *db.Filter, users *[]U) error {
+func (u *UserClient[U]) FindUsers(ctx op_context.Context, filter *db.Filter, users *[]U) (int64, error) {
 
 	// setup
 	var err error
@@ -53,9 +53,9 @@ func (u *UserClient[U]) FindUsers(ctx op_context.Context, filter *db.Filter, use
 	err = u.list.Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")
-		return err
+		return 0, err
 	}
 
 	// return result
-	return nil
+	return handler.result.Count, nil
 }

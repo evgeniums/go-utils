@@ -28,8 +28,7 @@ type UserController[UserType User] interface {
 	Find(ctx op_context.Context, id string) (UserType, error)
 	FindByLogin(ctx op_context.Context, login string) (UserType, error)
 	FindAuthUser(ctx op_context.Context, login string, user auth.User, dest ...interface{}) (bool, error)
-	// TODO paginate users
-	FindUsers(ctx op_context.Context, filter *db.Filter, users *[]UserType) error
+	FindUsers(ctx op_context.Context, filter *db.Filter, users *[]UserType) (int64, error)
 
 	SetUserBuilder(builder func() UserType)
 	MakeUser() UserType
@@ -342,7 +341,7 @@ func (u *UserControllerBase[UserType]) SetBlocked(ctx op_context.Context, id str
 	return nil
 }
 
-func (u *UserControllerBase[UserType]) FindUsers(ctx op_context.Context, filter *db.Filter, users *[]UserType) error {
+func (u *UserControllerBase[UserType]) FindUsers(ctx op_context.Context, filter *db.Filter, users *[]UserType) (int64, error) {
 	return u.crudController.List(ctx, filter, users)
 }
 
