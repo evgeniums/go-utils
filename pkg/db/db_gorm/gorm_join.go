@@ -45,8 +45,9 @@ func constructTableSelect(f *FilterManager, table *JoinTable, destinationFields 
 		return nil, fmt.Errorf("failed to parse table model: %s", err)
 	}
 	var fieldsModel *schema.Schema
-	if table.FieldsModel() != nil {
-		fieldsModel, err = schema.Parse(table.FieldsModel, f.SchemaCache, f.SchemaNamer)
+	fm := table.FieldsModel()
+	if fm != nil {
+		fieldsModel, err = schema.Parse(fm, f.SchemaCache, f.SchemaNamer)
 	} else {
 		fieldsModel = tableModel
 	}

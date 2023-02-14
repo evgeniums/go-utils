@@ -98,5 +98,8 @@ func InitTest(t *testing.T, packageName string, testDir string, createDb func(t 
 	require.NotNil(t, resp)
 	require.Equal(t, http.StatusOK, resp.Code())
 
+	ctx.AdminOp.Reset()
+	ctx.ClientOp.Reset()
+
 	return ctx
 }

@@ -51,7 +51,7 @@ type PoolController interface {
 	RemoveServiceFromAllPools(ctx op_context.Context, id string, idIsName ...bool) error
 
 	GetPoolBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBinding, int64, error)
-	// GetServiceBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBindingBase, error)
+	GetServiceBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBinding, int64, error)
 }
 
 func NewPoolController(crud crud.CRUD) *PoolControllerBase {
@@ -531,8 +531,9 @@ func (p *PoolControllerBase) GetPoolBindings(ctx op_context.Context, id string, 
 
 	// construct join query
 	queryBuilder := func() (db.JoinQuery, error) {
-		return ctx.Db().Joiner().Join(&PoolServiceAssociationBase{}, "pool_id").On(&PoolBase{}, "id").
-			Join(&PoolServiceAssociationBase{}, "service_id").On(&PoolServiceBase{}, "id").
+		return ctx.Db().Joiner().
+			Join(&PoolServiceAssociationBase{}, "pool_id").On(&PoolBase{}, "id", &PoolBindingPoolFields{}).
+			Join(&PoolServiceAssociationBase{}, "service_id").On(&PoolServiceBase{}, "id", &PoolBindingServiceFields{}).
 			Destination(&PoolServiceBinding{})
 	}
 
@@ -540,6 +541,51 @@ func (p *PoolControllerBase) GetPoolBindings(ctx op_context.Context, id string, 
 	filter := db.NewFilter()
 	filter.AddField("pools.id", id)
 	count, err = p.CRUD.Join(ctx, db.NewJoin(queryBuilder, "GetPoolBindings"), filter, &services)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// done
+	return services, count, nil
+}
+
+func (p *PoolControllerBase) GetServiceBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBinding, int64, error) {
+
+	// setup
+	var services []*PoolServiceBinding
+	var count int64
+	c := ctx.TraceInMethod("PoolController.GetServiceBindings")
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
+
+	// adjust service ID
+	serviceId, err := p.ServiceId(c, ctx, id, idIsName...)
+	if err != nil {
+		return nil, 0, err
+	}
+	if serviceId == "" {
+		ctx.SetGenericError(nil)
+		return nil, 0, nil
+	}
+
+	// construct join query
+	queryBuilder := func() (db.JoinQuery, error) {
+		return ctx.Db().Joiner().
+			Join(&PoolServiceAssociationBase{}, "service_id").On(&PoolServiceBase{}, "id", &PoolBindingServiceFields{}).
+			Join(&PoolServiceAssociationBase{}, "pool_id").On(&PoolBase{}, "id", &PoolBindingPoolFields{}).
+			Destination(&PoolServiceBinding{})
+	}
+
+	// invoke join
+	filter := db.NewFilter()
+	filter.AddField("pool_services.id", id)
+	count, err = p.CRUD.Join(ctx, db.NewJoin(queryBuilder, "GetServiceBindings"), filter, &services)
 	if err != nil {
 		return nil, 0, err
 	}

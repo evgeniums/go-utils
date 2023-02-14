@@ -142,4 +142,7 @@ func TestQuery(t *testing.T) {
 
 	poolId := "11223"
 	ctx.LocalPoolController.GetPoolBindings(ctx.AdminOp, poolId)
+
+	serviceId := "556677"
+	ctx.LocalPoolController.GetServiceBindings(ctx.AdminOp, serviceId)
 }

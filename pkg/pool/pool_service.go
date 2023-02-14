@@ -22,7 +22,6 @@ type ServiceConfig interface {
 }
 
 type PoolServiceEssentials interface {
-	common.WithUniqueName
 	common.WithLongName
 	common.WithDescription
 	common.WithActive
@@ -33,6 +32,7 @@ type PoolServiceEssentials interface {
 
 type PoolService interface {
 	common.Object
+	common.WithUniqueName
 	PoolServiceEssentials
 	Secrets
 }
@@ -100,14 +100,18 @@ func (s *ServiceConfigBase) Parameter3() string {
 	return s.PARAMETER3
 }
 
-type PoolServiceBaseEssentials struct {
-	common.WithUniqueNameBase
+type PoolServiceBaseData struct {
 	common.WithLongNameBase
 	common.WithDescriptionBase
 	common.WithActiveBase
 	common.WithTypeBase
 	common.WithRefIdBase
 	ServiceConfigBase
+}
+
+type PoolServiceBaseEssentials struct {
+	PoolServiceBaseData
+	common.WithUniqueNameBase
 }
 
 type PoolServiceBase struct {

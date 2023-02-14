@@ -50,9 +50,22 @@ func (PoolServiceAssociationBase) TableName() string {
 	return "pool_service_associations"
 }
 
+type PoolBindingServiceFields struct {
+	common.IDBase
+	PoolServiceBaseEssentials
+}
+
+type PoolBindingPoolFields struct {
+	common.IDBase
+	common.WithUniqueNameBase
+}
+
 type PoolServiceBinding struct {
 	common.ObjectBase
 	WithRole
-	PoolId    string `json:"pools.id"`
-	ServiceId string `json:"pool_services.id"`
+	PoolServiceBaseData `json_parent:"pool_services"`
+	PoolId              string `json:"pools.id" gorm:"->;column:pools_id"`
+	PoolName            string `json:"pools.name" gorm:"->;column:pools_name"`
+	ServiceId           string `json:"pool_services.id" gorm:"->;column:pool_services_id"`
+	ServiceName         string `json:"pool_services.name" gorm:"->;column:pool_services_name"`
 }
