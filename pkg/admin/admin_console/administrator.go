@@ -176,7 +176,7 @@ func (a *ListAdmins) Execute(args []string) error {
 	defer ctx.Close()
 	manager := a.Administrator.MakeManager(ctx.App())
 	var admins []*admin.Admin
-	err := manager.FindUsers(ctx, nil, &admins)
+	_, err := manager.FindUsers(ctx, nil, &admins)
 	if err != nil {
 		return err
 	}
