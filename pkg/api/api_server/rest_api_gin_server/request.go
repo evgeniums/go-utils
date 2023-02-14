@@ -177,13 +177,13 @@ func (r *Request) Validate(cmd interface{}) error {
 	return nil
 }
 
-func (r *Request) ParseVerifyQuery(cmd interface{}) error {
+func (r *Request) ParseValidateQuery(cmd interface{}) error {
 
 	if cmd == nil {
 		return nil
 	}
 
-	c := r.TraceInMethod("Request.ParseVerifyQuery")
+	c := r.TraceInMethod("Request.ParseValidateQuery")
 	defer r.TraceOutMethod()
 
 	err := http_request.ParseQuery(r, r.ginCtx.Request, cmd)
@@ -199,13 +199,13 @@ func (r *Request) ParseVerifyQuery(cmd interface{}) error {
 	return nil
 }
 
-func (r *Request) ParseVerifyBody(cmd interface{}) error {
+func (r *Request) ParseValidateBody(cmd interface{}) error {
 
 	if cmd == nil {
 		return nil
 	}
 
-	c := r.TraceInMethod("Request.ParseVerifyBody")
+	c := r.TraceInMethod("Request.ParseValidateBody")
 	defer r.TraceOutMethod()
 
 	err := http_request.ParseBody(r, r.ginCtx.Request, cmd)
@@ -221,11 +221,11 @@ func (r *Request) ParseVerifyBody(cmd interface{}) error {
 	return nil
 }
 
-func (r *Request) ParseVerify(cmd interface{}) error {
+func (r *Request) ParseValidate(cmd interface{}) error {
 
 	if access_control.HttpContentInQuery(r.Endpoint().AccessType()) {
-		return r.ParseVerifyQuery(cmd)
+		return r.ParseValidateQuery(cmd)
 	}
 
-	return r.ParseVerifyBody(cmd)
+	return r.ParseValidateBody(cmd)
 }

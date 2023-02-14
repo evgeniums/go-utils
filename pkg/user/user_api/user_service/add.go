@@ -18,7 +18,7 @@ func (e *AddEndpoint[U]) HandleRequest(request api_server.Request) error {
 	defer request.TraceOutMethod()
 
 	cmd := e.setterBuilder()
-	err := request.ParseVerify(cmd)
+	err := request.ParseValidate(cmd)
 	if err != nil {
 		c.SetMessage("faield to parse/validate command")
 		return err

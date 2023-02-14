@@ -23,7 +23,7 @@ type Request interface {
 
 	GetResourceId(resourceType string) string
 
-	ParseVerify(cmd interface{}) error
+	ParseValidate(cmd interface{}) error
 }
 
 type RequestBase struct {
@@ -67,7 +67,7 @@ func ParseDbQuery(request Request, models []interface{}, q api.Query, queryName 
 	c := request.TraceInMethod("ParseDbQuery", logger.Fields{"query_name": queryName, "query": q.Query()})
 	defer request.TraceOutMethod()
 
-	err := request.ParseVerify(q)
+	err := request.ParseValidate(q)
 	if err != nil {
 		c.SetMessage("faield to parse/verify query")
 		return nil, c.SetError(err)

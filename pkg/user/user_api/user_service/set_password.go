@@ -16,7 +16,7 @@ func (s *SetPasswordEndpoint) HandleRequest(request api_server.Request) error {
 	defer request.TraceOutMethod()
 
 	cmd := &user.UserPlainPassword{}
-	err := request.ParseVerify(cmd)
+	err := request.ParseValidate(cmd)
 	if err != nil {
 		return err
 	}

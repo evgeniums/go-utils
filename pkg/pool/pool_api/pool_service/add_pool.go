@@ -19,7 +19,7 @@ func (e *AddPoolEndpoint) HandleRequest(request api_server.Request) error {
 
 	// parse command
 	cmd := pool.NewPool()
-	err := request.ParseVerify(cmd)
+	err := request.ParseValidate(cmd)
 	if err != nil {
 		c.SetMessage("faield to parse/validate command")
 		return err
