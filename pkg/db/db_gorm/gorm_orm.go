@@ -104,7 +104,7 @@ func prepareFilter(db *gorm.DB, filter *Filter) *gorm.DB {
 	return h
 }
 
-func SetFilter(g *gorm.DB, filter *Filter, docs interface{}, offsetLimit ...bool) *gorm.DB {
+func SetFilter(g *gorm.DB, filter *Filter, docs interface{}, paginate ...bool) *gorm.DB {
 
 	if filter == nil {
 		return g
@@ -116,7 +116,14 @@ func SetFilter(g *gorm.DB, filter *Filter, docs interface{}, offsetLimit ...bool
 		h = h.Order(fmt.Sprintf("\"%v\" %v", filter.SortField, filter.SortDirection))
 	}
 
-	if utils.OptionalArg(true, offsetLimit...) {
+	h = Paginate(h, filter, paginate...)
+
+	return h
+}
+
+func Paginate(g *gorm.DB, filter *Filter, paginate ...bool) *gorm.DB {
+	h := g
+	if utils.OptionalArg(true, paginate...) {
 		if filter.Offset > 0 {
 			h = h.Offset(filter.Offset)
 		}
@@ -125,22 +132,35 @@ func SetFilter(g *gorm.DB, filter *Filter, docs interface{}, offsetLimit ...bool
 			h = h.Limit(filter.Limit)
 		}
 	}
-
 	return h
 }
 
-func FindWithFilter(db *gorm.DB, filter *Filter, docs interface{}, dest ...interface{}) error {
+func find(g *gorm.DB, filter *Filter, dest interface{}) (int64, error) {
 
-	h := db.Model(docs)
-	h = SetFilter(h, filter, docs)
+	var count int64
 
-	dst := utils.OptionalArg(docs, dest...)
-	result := h.Find(dst)
-	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return result.Error
+	h := SetFilter(g, filter, dest, !filter.Count)
+	if filter.Count {
+		counter := g.Session(&gorm.Session{})
+		result := counter.Count(&count)
+		if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return 0, result.Error
+		}
+		h = Paginate(g, filter)
 	}
 
-	return nil
+	result := h.Find(dest)
+	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return 0, result.Error
+	}
+
+	return count, nil
+}
+
+func FindWithFilter(db *gorm.DB, filter *Filter, docs interface{}, dest ...interface{}) (int64, error) {
+	g := db.Model(docs)
+	dst := utils.OptionalArg(docs, dest...)
+	return find(g, filter, dst)
 }
 
 func RowsWithFilter(db *gorm.DB, filter *Filter, docs interface{}) (*sql.Rows, error) {

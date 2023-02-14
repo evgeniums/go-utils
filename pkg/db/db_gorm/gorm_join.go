@@ -1,7 +1,6 @@
 package db_gorm
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -156,33 +155,8 @@ type JoinQuery struct {
 }
 
 func (j *JoinQuery) Join(ctx logger.WithLogger, filter *Filter, dest interface{}) (int64, error) {
-
-	var count int64
 	session := j.PreparedSession.Session(&gorm.Session{})
-
-	g := SetFilter(session, filter, dest, !filter.Count)
-	if filter.Count {
-		counter := g.Session(&gorm.Session{})
-		result := counter.Count(&count)
-		if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return 0, result.Error
-		}
-
-		if filter.Offset > 0 {
-			g = g.Offset(filter.Offset)
-		}
-
-		if filter.Limit > 0 {
-			g = g.Limit(filter.Limit)
-		}
-	}
-
-	result := g.Find(dest)
-	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return 0, result.Error
-	}
-
-	return 0, nil
+	return find(session, filter, dest)
 }
 
 type Joiner struct {

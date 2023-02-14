@@ -16,7 +16,7 @@ type CRUD interface {
 	Delete(ctx op_context.Context, object common.Object) error
 	DeleteByFields(ctx op_context.Context, field db.Fields, object common.Object) error
 
-	List(ctx op_context.Context, filter *db.Filter, object interface{}, dest ...interface{}) error
+	List(ctx op_context.Context, filter *db.Filter, object interface{}, dest ...interface{}) (int64, error)
 	Exists(ctx op_context.Context, filter *db.Filter, object interface{}) (bool, error)
 }
 
@@ -118,14 +118,14 @@ func (crud *DbCRUD) DeleteByFields(ctx op_context.Context, fields db.Fields, obj
 	return nil
 }
 
-func (d *DbCRUD) List(ctx op_context.Context, filter *db.Filter, objects interface{}, dest ...interface{}) error {
+func (d *DbCRUD) List(ctx op_context.Context, filter *db.Filter, objects interface{}, dest ...interface{}) (int64, error) {
 	c := ctx.TraceInMethod("CRUD.List")
 	defer ctx.TraceOutMethod()
-	err := op_context.DB(ctx).FindWithFilter(ctx, filter, objects, dest...)
+	count, err := op_context.DB(ctx).FindWithFilter(ctx, filter, objects, dest...)
 	if err != nil {
-		return c.SetError(err)
+		return 0, c.SetError(err)
 	}
-	return nil
+	return count, nil
 }
 
 func (d *DbCRUD) Exists(ctx op_context.Context, filter *db.Filter, object interface{}) (bool, error) {
@@ -138,17 +138,17 @@ func (d *DbCRUD) Exists(ctx op_context.Context, filter *db.Filter, object interf
 	return exists, nil
 }
 
-func List[T common.Object](crud CRUD, ctx op_context.Context, methodName string, filter *db.Filter, objects *[]T, dest ...interface{}) error {
+func List[T common.Object](crud CRUD, ctx op_context.Context, methodName string, filter *db.Filter, objects *[]T, dest ...interface{}) (int64, error) {
 
 	c := ctx.TraceInMethod(methodName)
 	defer ctx.TraceOutMethod()
 
-	err := crud.List(ctx, filter, objects, dest...)
+	count, err := crud.List(ctx, filter, objects, dest...)
 	if err != nil {
-		return c.SetError(err)
+		return 0, c.SetError(err)
 	}
 
-	return nil
+	return count, nil
 }
 
 func Find[T common.Object](crud CRUD, ctx op_context.Context, methodName string, fields db.Fields, object T, dest ...interface{}) (T, error) {

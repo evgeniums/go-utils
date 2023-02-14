@@ -30,7 +30,7 @@ type DBConfig struct {
 type DBHandlers interface {
 	FindByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}, dest ...interface{}) (found bool, err error)
 	FindByFields(ctx logger.WithLogger, fields Fields, obj interface{}, dest ...interface{}) (found bool, err error)
-	FindWithFilter(ctx logger.WithLogger, filter *Filter, docs interface{}, dest ...interface{}) error
+	FindWithFilter(ctx logger.WithLogger, filter *Filter, docs interface{}, dest ...interface{}) (int64, error)
 	Exists(ctx logger.WithLogger, filter *Filter, doc interface{}) (bool, error)
 
 	Create(ctx logger.WithLogger, obj interface{}) error

@@ -21,13 +21,13 @@ type PoolController interface {
 	FindPool(ctx op_context.Context, id string, idIsName ...bool) (Pool, error)
 	UpdatePool(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) error
 	DeletePool(ctx op_context.Context, id string, idIsName ...bool) error
-	GetPools(ctx op_context.Context, filter *db.Filter) ([]*PoolBase, error)
+	GetPools(ctx op_context.Context, filter *db.Filter) ([]*PoolBase, int64, error)
 
 	AddService(ctx op_context.Context, service PoolService) (PoolService, error)
 	FindService(ctx op_context.Context, id string, idIsName ...bool) (PoolService, error)
 	UpdateService(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) error
 	DeleteService(ctx op_context.Context, id string, idIsName ...bool) error
-	GetServices(ctx op_context.Context, filter *db.Filter) ([]*PoolServiceBase, error)
+	GetServices(ctx op_context.Context, filter *db.Filter) ([]*PoolServiceBase, int64, error)
 
 	AddServiceToPool(ctx op_context.Context, poolId string, serviceId string, role string, idIsName ...bool) (PoolServiceBinding, error)
 	RemoveServiceFromPool(ctx op_context.Context, poolId string, role string, idIsName ...bool) error
@@ -249,22 +249,22 @@ func (m *PoolControllerBase) DeleteService(ctx op_context.Context, id string, id
 	return nil
 }
 
-func (p *PoolControllerBase) GetPools(ctx op_context.Context, filter *db.Filter) ([]*PoolBase, error) {
+func (p *PoolControllerBase) GetPools(ctx op_context.Context, filter *db.Filter) ([]*PoolBase, int64, error) {
 	var pools []*PoolBase
-	err := crud.List(p.CRUD, ctx, "", filter, &pools)
+	count, err := crud.List(p.CRUD, ctx, "", filter, &pools)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return pools, nil
+	return pools, count, nil
 }
 
-func (p *PoolControllerBase) GetServices(ctx op_context.Context, filter *db.Filter) ([]*PoolServiceBase, error) {
+func (p *PoolControllerBase) GetServices(ctx op_context.Context, filter *db.Filter) ([]*PoolServiceBase, int64, error) {
 	var services []*PoolServiceBase
-	err := crud.List(p.CRUD, ctx, "PoolController.GetServices", filter, &services)
+	count, err := crud.List(p.CRUD, ctx, "PoolController.GetServices", filter, &services)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return services, nil
+	return services, count, nil
 }
 
 func (m *PoolControllerBase) AddServiceToPool(ctx op_context.Context, poolId string, serviceId string, role string, idIsName ...bool) (PoolServiceBinding, error) {

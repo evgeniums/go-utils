@@ -76,8 +76,11 @@ func TestMainDbOperations(t *testing.T) {
 	filter.Fields = db.Fields{"field2": "value2"}
 	filter.SortField = "field1"
 	filter.SortDirection = db.SORT_ASC
+	filter.Count = true
 	docsDb1 := make([]*SampleModel1, 0)
-	require.NoError(t, app.Db().FindWithFilter(app, filter, &docsDb1), "failed to find docs with filter in database")
+	count, err := app.Db().FindWithFilter(app, filter, &docsDb1)
+	require.NoError(t, err, "failed to find docs with filter in database")
+	assert.Equal(t, int64(1), count)
 	require.Len(t, docsDb1, 1)
 	assert.Equal(t, doc1, docsDb1[0])
 
@@ -87,7 +90,10 @@ func TestMainDbOperations(t *testing.T) {
 	doc2.Field2 = "value2"
 	assert.Error(t, app.Db().Create(app, doc1), "doc with field1=valu1e must be unique in database")
 	docsDb2 := make([]*SampleModel1, 0)
-	require.NoError(t, app.Db().FindWithFilter(app, filter, &docsDb2), "failed to find docs with filter in database")
+	filter.Count = false
+	count, err = app.Db().FindWithFilter(app, filter, &docsDb2)
+	require.NoError(t, err, "failed to find docs with filter in database")
+	assert.Equal(t, int64(0), count)
 	require.Len(t, docsDb2, 1)
 	assert.Equal(t, doc1, docsDb2[0])
 
@@ -98,7 +104,8 @@ func TestMainDbOperations(t *testing.T) {
 	assert.NoError(t, app.Db().Create(app, doc3), "failed to create doc3 in database")
 
 	docsDb3 := make([]*SampleModel1, 0)
-	require.NoError(t, app.Db().FindWithFilter(app, filter, &docsDb3), "failed to find docs with filter in database")
+	_, err = app.Db().FindWithFilter(app, filter, &docsDb3)
+	require.NoError(t, err, "failed to find docs with filter in database")
 	require.Len(t, docsDb3, 2)
 	assert.Equal(t, doc1, docsDb3[0])
 	assert.Equal(t, doc3, docsDb3[1])
@@ -106,7 +113,8 @@ func TestMainDbOperations(t *testing.T) {
 	require.NoError(t, app.Db().Update(app, doc3, db.Fields{"field1": "value3"}, db.Fields{"field2": "value33"}), "failed to update doc3 in database")
 
 	docsDb4 := make([]*SampleModel1, 0)
-	require.NoError(t, app.Db().FindWithFilter(app, filter, &docsDb4), "failed to find docsDb4 with filter in database")
+	_, err = app.Db().FindWithFilter(app, filter, &docsDb4)
+	require.NoError(t, err, "failed to find docsDb4 with filter in database")
 	require.Len(t, docsDb4, 1)
 	assert.Equal(t, doc1, docsDb4[0])
 

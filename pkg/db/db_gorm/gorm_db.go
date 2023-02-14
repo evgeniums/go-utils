@@ -295,13 +295,13 @@ func (g *GormDB) RowsWithFilter(ctx logger.WithLogger, filter *Filter, obj inter
 	return cursor, err
 }
 
-func (g *GormDB) FindWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}, dest ...interface{}) error {
-	err := FindWithFilter(g.db_(), filter, obj, dest...)
+func (g *GormDB) FindWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}, dest ...interface{}) (int64, error) {
+	count, err := FindWithFilter(g.db_(), filter, obj, dest...)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to FindWithFilter %v", ObjectTypeName(obj))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
 	}
-	return err
+	return count, err
 }
 
 func (g *GormDB) Update(ctx logger.WithLogger, obj interface{}, filter db.Fields, newFields db.Fields) error {

@@ -19,8 +19,8 @@ type SessionController interface {
 	InvalidateUserSessions(ctx op_context.Context, userId string) error
 	InvalidateAllSessions(ctx op_context.Context) error
 
-	GetSessions(ctx op_context.Context, filter *db.Filter, sessions interface{}) error
-	GetSessionClients(ctx op_context.Context, filter *db.Filter, sessionClients interface{}) error
+	GetSessions(ctx op_context.Context, filter *db.Filter, sessions interface{}) (int64, error)
+	GetSessionClients(ctx op_context.Context, filter *db.Filter, sessionClients interface{}) (int64, error)
 
 	SetSessionBuilder(func() Session)
 	MakeSession() Session
@@ -197,25 +197,25 @@ func (s *SessionControllerBase) InvalidateAllSessions(ctx op_context.Context) er
 }
 
 // Get sessions using filter. Note that sessions argument must be of *[]Session type.
-func (s *SessionControllerBase) GetSessions(ctx op_context.Context, filter *db.Filter, sessions interface{}) error {
+func (s *SessionControllerBase) GetSessions(ctx op_context.Context, filter *db.Filter, sessions interface{}) (int64, error) {
 
 	c := ctx.TraceInMethod("auth_session.GetSessions")
 	defer ctx.TraceOutMethod()
-	err := s.crud.List(ctx, filter, sessions)
+	count, err := s.crud.List(ctx, filter, sessions)
 	if err != nil {
-		return c.SetError(err)
+		return 0, c.SetError(err)
 	}
-	return nil
+	return count, nil
 }
 
 // Get sessions using filter. Note that sessions argument must be of *[]SessionClient type.
-func (s *SessionControllerBase) GetSessionClients(ctx op_context.Context, filter *db.Filter, sessions interface{}) error {
+func (s *SessionControllerBase) GetSessionClients(ctx op_context.Context, filter *db.Filter, sessions interface{}) (int64, error) {
 
 	c := ctx.TraceInMethod("auth_session.GetSessionClients")
 	defer ctx.TraceOutMethod()
-	err := s.crud.List(ctx, filter, sessions)
+	count, err := s.crud.List(ctx, filter, sessions)
 	if err != nil {
-		return c.SetError(err)
+		return 0, c.SetError(err)
 	}
-	return nil
+	return count, nil
 }

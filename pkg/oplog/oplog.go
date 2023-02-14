@@ -107,5 +107,5 @@ func (o *OplogBase) SetOriginUser(val string) {
 
 type OplogController interface {
 	Write(o Oplog) error
-	Read(filter *db.Filter, docs interface{}) error
+	Read(filter *db.Filter, docs interface{}) (int64, error)
 }

@@ -20,12 +20,12 @@ func (o *OplogConteollerDb) Write(op oplog.Oplog) error {
 	return err
 }
 
-func (o *OplogConteollerDb) Read(filter *db.Filter, docs interface{}) error {
-	err := db.DB(o.Ctx.Db()).FindWithFilter(o.Ctx, filter, docs)
+func (o *OplogConteollerDb) Read(filter *db.Filter, docs interface{}) (int64, error) {
+	count, err := db.DB(o.Ctx.Db()).FindWithFilter(o.Ctx, filter, docs)
 	if err != nil {
 		o.Ctx.Logger().Error("failed to read oplog", err, logger.Fields{"oplog": utils.ObjectTypeName(docs)})
 	}
-	return err
+	return count, err
 }
 
 func MakeOplogController(ctx op_context.Context) oplog.OplogController {
