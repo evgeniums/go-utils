@@ -109,7 +109,7 @@ func addService(t *testing.T, ctx *testContext) pool.PoolService {
 	p1Sample.ServiceConfigBase.PARAMETER2 = "param2"
 	p1Sample.ServiceConfigBase.PARAMETER3 = "param3"
 
-	p1 := pool.NewPoolService()
+	p1 := pool.NewService()
 	p1.SetName(p1Sample.Name())
 	p1.SetLongName(p1Sample.LongName())
 	p1.SetDescription(p1Sample.Description())

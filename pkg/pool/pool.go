@@ -36,12 +36,6 @@ type PoolBaseEssentials struct {
 	PoolBaseData
 }
 
-type PoolItem struct {
-	PoolBaseEssentials
-
-	Services []PoolServiceBinding `json:"services"`
-}
-
 type PoolBase struct {
 	PoolBaseEssentials
 	Services map[string]*PoolServiceBinding `gorm:"-:all" json:"-"`

@@ -40,8 +40,8 @@ type PoolService interface {
 var NilService PoolService
 
 type SecretsBase struct {
-	SECRET1 string `json:"secret1"`
-	SECRET2 string `json:"secret2"`
+	SECRET1 string `json:"secret1" long:"secret1" description:"Secret1 the service (optional)"`
+	SECRET2 string `json:"secret2" long:"secret2" description:"Secret2 the service (optional)"`
 }
 
 func (s *SecretsBase) Secret1() string {
@@ -53,15 +53,15 @@ func (s *SecretsBase) Secret2() string {
 }
 
 type ServiceConfigBase struct {
-	PUBLIC_HOST  string `gorm:"index" json:"public_host"`
-	PUBLIC_PORT  uint16 `gorm:"index" json:"public_port"`
-	PUBLIC_URL   string `gorm:"index" json:"public_url"`
-	PRIVATE_HOST string `gorm:"index" json:"private_host"`
-	PRIVATE_PORT uint16 `gorm:"index" json:"private_port"`
-	PRIVATE_URL  string `gorm:"index" json:"private_url"`
-	PARAMETER1   string `gorm:"index;column:parameter1" json:"parameter1"`
-	PARAMETER2   string `gorm:"index;column:parameter2" json:"parameter2"`
-	PARAMETER3   string `gorm:"index;column:parameter3" json:"parameter3"`
+	PUBLIC_HOST  string `gorm:"index" json:"public_host" long:"public-host" description:"Public host of the service (optional)"`
+	PUBLIC_PORT  uint16 `gorm:"index" json:"public_port" long:"public-port" description:"Public port of the service (optional)"`
+	PUBLIC_URL   string `gorm:"index" json:"public_url" long:"public-url" description:"Public url of the service (optional)"`
+	PRIVATE_HOST string `gorm:"index" json:"private_host" long:"private-host" description:"Private host of the service (optional)"`
+	PRIVATE_PORT uint16 `gorm:"index" json:"private_port" long:"private-port" description:"Private port of the service (optional)"`
+	PRIVATE_URL  string `gorm:"index" json:"private_url" long:"private-url" description:"Private URL of the service (optional)"`
+	PARAMETER1   string `gorm:"index;column:parameter1" json:"parameter1" long:"parameter1" description:"Generic parameter1 of the service (optional)"`
+	PARAMETER2   string `gorm:"index;column:parameter2" json:"parameter2" long:"parameter2" description:"Generic parameter2 of the service (optional)"`
+	PARAMETER3   string `gorm:"index;column:parameter3" json:"parameter3" long:"parameter3" description:"Generic parameter3 of the service (optional)"`
 }
 
 func (s *ServiceConfigBase) PublicHost() string {
@@ -120,7 +120,7 @@ type PoolServiceBase struct {
 	SecretsBase
 }
 
-func NewPoolService() *PoolServiceBase {
+func NewService() *PoolServiceBase {
 	p := &PoolServiceBase{}
 	return p
 }
