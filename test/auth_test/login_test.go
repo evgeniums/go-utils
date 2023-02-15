@@ -114,7 +114,8 @@ func TestSession(t *testing.T) {
 	filter.SortField = "user_login"
 
 	sessions := make([]user_session_default.UserSession, 0)
-	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessions))
+	_, err = users.SessionManager().GetSessions(opCtx, filter, &sessions)
+	require.NoError(t, err)
 	require.Equal(t, 2, len(sessions))
 	assert.True(t, sessions[0].IsValid())
 	assert.True(t, sessions[1].IsValid())
@@ -126,7 +127,8 @@ func TestSession(t *testing.T) {
 	assert.Equal(t, user2.Display(), sessions[1].GetUserDisplay())
 
 	sessionClients := make([]user_session_default.UserSessionClient, 0)
-	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessionClients))
+	_, err = users.SessionManager().GetSessions(opCtx, filter, &sessionClients)
+	require.NoError(t, err)
 	require.Equal(t, 2, len(sessionClients))
 	assert.Equal(t, user1.GetID(), sessionClients[0].GetUserId())
 	assert.Equal(t, user2.GetID(), sessionClients[1].GetUserId())
@@ -151,7 +153,8 @@ func TestSession(t *testing.T) {
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{Message: `{"status":"success"}`})
 
 	sessions = make([]user_session_default.UserSession, 0)
-	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessions))
+	_, err = users.SessionManager().GetSessions(opCtx, filter, &sessions)
+	require.NoError(t, err)
 	require.Equal(t, 2, len(sessions))
 	assert.False(t, sessions[0].IsValid())
 	assert.True(t, sessions[1].IsValid())
@@ -161,7 +164,8 @@ func TestSession(t *testing.T) {
 	resp = client2.Get("/status/logged", nil)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{Error: auth_token.ErrorCodeSessionExpired, HttpCode: http.StatusUnauthorized})
 	sessions = make([]user_session_default.UserSession, 0)
-	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessions))
+	_, err = users.SessionManager().GetSessions(opCtx, filter, &sessions)
+	require.NoError(t, err)
 	require.Equal(t, 2, len(sessions))
 	assert.False(t, sessions[1].IsValid())
 
@@ -172,7 +176,8 @@ func TestSession(t *testing.T) {
 	filter.SortDirection = db.SORT_DESC
 	filter.SortField = "created_at"
 	sessions = make([]user_session_default.UserSession, 0)
-	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessions))
+	_, err = users.SessionManager().GetSessions(opCtx, filter, &sessions)
+	require.NoError(t, err)
 	require.Equal(t, 3, len(sessions))
 	assert.True(t, sessions[0].IsValid())
 	assert.False(t, sessions[1].IsValid())
@@ -181,7 +186,8 @@ func TestSession(t *testing.T) {
 	resp = client1.Get("/status/logged", nil)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{Error: auth_token.ErrorCodeSessionExpired, HttpCode: http.StatusUnauthorized})
 	sessions = make([]user_session_default.UserSession, 0)
-	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessions))
+	_, err = users.SessionManager().GetSessions(opCtx, filter, &sessions)
+	require.NoError(t, err)
 	require.Equal(t, 3, len(sessions))
 	assert.False(t, sessions[0].IsValid())
 	assert.False(t, sessions[1].IsValid())
@@ -197,7 +203,8 @@ func TestSession(t *testing.T) {
 	filter.SortDirection = db.SORT_DESC
 	filter.SortField = "created_at"
 	sessions = make([]user_session_default.UserSession, 0)
-	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessions))
+	_, err = users.SessionManager().GetSessions(opCtx, filter, &sessions)
+	require.NoError(t, err)
 	require.Equal(t, 5, len(sessions))
 	assert.True(t, sessions[0].IsValid())
 	assert.True(t, sessions[1].IsValid())
@@ -206,7 +213,8 @@ func TestSession(t *testing.T) {
 	assert.False(t, sessions[4].IsValid())
 
 	strippedSessions := []StrippedSession{}
-	require.NoError(t, app.Db().FindWithFilter(app, filter, sessions, &strippedSessions))
+	_, err = app.Db().FindWithFilter(app, filter, sessions, &strippedSessions)
+	require.NoError(t, err)
 	require.Equal(t, 5, len(strippedSessions))
 	assert.True(t, strippedSessions[0].Valid)
 	assert.True(t, strippedSessions[1].Valid)
@@ -220,7 +228,8 @@ func TestSession(t *testing.T) {
 	resp = client2.Get("/status/logged", nil)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{Error: auth_token.ErrorCodeSessionExpired, HttpCode: http.StatusUnauthorized})
 	sessions = make([]user_session_default.UserSession, 0)
-	require.NoError(t, users.SessionManager().GetSessions(opCtx, filter, &sessions))
+	_, err = users.SessionManager().GetSessions(opCtx, filter, &sessions)
+	require.NoError(t, err)
 	require.Equal(t, 5, len(sessions))
 	assert.False(t, sessions[0].IsValid())
 	assert.False(t, sessions[1].IsValid())

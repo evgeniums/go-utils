@@ -211,7 +211,7 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 	s.ginEngine.Use(s.ginDefaultLogger(), gin.Recovery())
 
 	// set noroute
-	s.notFoundError = &api.ResponseError{Code: "not_found", Message: "Requested resource was not found"}
+	s.notFoundError = &api.ResponseError{Code: "not_found", Message: "Requested resource was not found."}
 	s.ginEngine.NoRoute(s.NoRoute())
 
 	// done
