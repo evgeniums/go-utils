@@ -16,6 +16,7 @@ type FieldDescriptor struct {
 	DbTable    string
 	DbField    string
 	FullDbName string
+	Index      bool
 	Schema     *schema.Field
 }
 
@@ -60,6 +61,12 @@ func (d *ModelDescriptor) ParseFields() error {
 			fd.DbField = field.DBName
 			fd.FullDbName = fmt.Sprintf("%s.%s", fd.DbTable, fd.DbField)
 		}
+
+		// NOTE If field is additional part of composite index only then searching with that index can be slow
+		if field.PrimaryKey || field.TagSettings["INDEX"] != "" || field.TagSettings["UNIQUEINDEX"] != "" {
+			fd.Index = true
+		}
+
 		d.FieldsJson[fd.Json] = fd
 	}
 

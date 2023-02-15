@@ -59,12 +59,15 @@ func convertValue(field *schema.Field, value string) (interface{}, error) {
 
 func (f *FilterParser) ParseValidateField(name string, value string, onlyName ...bool) (string, interface{}, error) {
 
-	// TODO allow only indexed fields
-
 	// find field by json name
 	field, err := f.Destination.FindJsonField(name)
 	if err != nil {
 		return "", nil, &validator.ValidationError{Message: "Invalid field name", Field: name}
+	}
+
+	// allow only indexed fields
+	if !field.Index {
+		return "", nil, &validator.ValidationError{Message: "Field can not be used in queries", Field: name}
 	}
 
 	// break if only field name validation required
