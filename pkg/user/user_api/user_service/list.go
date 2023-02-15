@@ -19,9 +19,8 @@ func (e *ListEndpoint[U]) HandleRequest(request api_server.Request) error {
 
 	u := Users(e.service, request)
 
-	cmd := &api.DbQuery{}
 	queryName := request.Endpoint().Resource().ServicePathPrototype()
-	filter, err := api_server.ParseDbQuery(request, u.MakeUser(), cmd, queryName)
+	filter, err := api_server.ParseDbQuery(request, u.MakeUser(), queryName)
 	if err != nil {
 		return c.SetError(err)
 	}

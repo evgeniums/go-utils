@@ -591,3 +591,32 @@ func (p *PoolControllerBase) GetServiceBindings(ctx op_context.Context, id strin
 	// done
 	return services, nil
 }
+
+func LoadPool(ctrl PoolController, ctx op_context.Context, id string, idIsName ...bool) (Pool, error) {
+
+	c := ctx.TraceInMethod("LoadPool")
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
+
+	pool, err := ctrl.FindPool(ctx, id, idIsName...)
+	if err != nil {
+		return nil, err
+	}
+	if pool == nil {
+		return nil, nil
+	}
+
+	services, err := ctrl.GetPoolBindings(ctx, pool.GetID())
+	if err != nil {
+		return nil, err
+	}
+
+	pool.SetServices(services)
+	return pool, nil
+}

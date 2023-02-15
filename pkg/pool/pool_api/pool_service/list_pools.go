@@ -6,14 +6,14 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api"
 )
 
-type ListServicesEndpoint struct {
+type ListPoolsEndpoint struct {
 	PoolEndpoint
 }
 
-func (e *ListServicesEndpoint) HandleRequest(request api_server.Request) error {
+func (e *ListPoolsEndpoint) HandleRequest(request api_server.Request) error {
 
 	// setup
-	c := request.TraceInMethod("pool.ListServices")
+	c := request.TraceInMethod("pool.ListPools")
 	defer request.TraceOutMethod()
 
 	// parse query
@@ -24,8 +24,8 @@ func (e *ListServicesEndpoint) HandleRequest(request api_server.Request) error {
 	}
 
 	// get services
-	resp := &pool_api.ListServicesResponse{}
-	resp.Services, resp.Count, err = e.service.Pools.GetServices(request, filter)
+	resp := &pool_api.ListPoolsResponse{}
+	resp.Pools, resp.Count, err = e.service.Pools.GetPools(request, filter)
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -42,8 +42,8 @@ func (e *ListServicesEndpoint) HandleRequest(request api_server.Request) error {
 	return nil
 }
 
-func ListServices(s *PoolService) *ListServicesEndpoint {
-	e := &ListServicesEndpoint{}
-	e.Construct(s, pool_api.ListServices())
+func ListPools(s *PoolService) *ListPoolsEndpoint {
+	e := &ListPoolsEndpoint{}
+	e.Construct(s, pool_api.ListPools())
 	return e
 }

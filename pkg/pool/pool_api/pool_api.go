@@ -21,6 +21,12 @@ type ListServicesResponse struct {
 	Services []*pool.PoolServiceBase `json:"services"`
 }
 
+type ListPoolsResponse struct {
+	api.ResponseCount
+	api.ResponseHateous
+	Pools []*pool.PoolBase `json:"pools"`
+}
+
 type ListServicePoolsResponse struct {
 	api.ResponseHateous
 	PoolServices []*pool.PoolServiceBinding `json:"pool_services"`
@@ -41,4 +47,6 @@ var (
 	AddService                = func() api.Operation { return api.Add("add_service") }
 	AddServiceToPool          = func() api.Operation { return api.Bind("add_service_to_pool") }
 	AddPool                   = func() api.Operation { return api.Add("add_pool") }
+	ListPools                 = func() api.Operation { return api.List("list_pools") }
+	ListPoolServices          = func() api.Operation { return api.List("list_pool_services") }
 )

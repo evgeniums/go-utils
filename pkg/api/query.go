@@ -1,5 +1,7 @@
 package api
 
+import "github.com/evgeniums/go-backend-helpers/pkg/db"
+
 type Query interface {
 	Query() string
 	SetQuery(q string)
@@ -19,4 +21,12 @@ func (d *DbQuery) Query() string {
 
 func (d *DbQuery) SetQuery(q string) {
 	d.WithDbQuery.Query = q
+}
+
+func NewDbQuery(filter *db.Filter) *DbQuery {
+	cmd := &DbQuery{}
+	if filter != nil {
+		cmd.SetQuery(filter.ToQueryString())
+	}
+	return cmd
 }
