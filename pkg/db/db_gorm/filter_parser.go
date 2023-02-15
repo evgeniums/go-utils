@@ -3,7 +3,6 @@ package db_gorm
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
@@ -13,26 +12,9 @@ import (
 )
 
 type FilterParser struct {
-	mutex  sync.Mutex
-	models map[string]bool
-
-	Manager      *FilterManager
-	DefaultModel string
-	Validator    *db.FilterValidator
-}
-
-func (f *FilterParser) FindModel(name string) bool {
-	f.mutex.Lock()
-	_, ok := f.models[name]
-	f.mutex.Unlock()
-	return ok
-}
-
-func (f *FilterParser) AddModel(name string) {
-	f.mutex.Lock()
-	f.models[name] = true
-	f.mutex.Unlock()
-
+	Manager     *FilterManager
+	Destination *ModelDescriptor
+	Validator   *db.FilterValidator
 }
 
 func convertValue(field *schema.Field, value string) (interface{}, error) {
@@ -75,49 +57,23 @@ func convertValue(field *schema.Field, value string) (interface{}, error) {
 	return nil, errors.New("unsupported field type")
 }
 
-func (f *FilterParser) ParseValidateField(name string, value string, onlyName ...bool) (interface{}, error) {
+func (f *FilterParser) ParseValidateField(name string, value string, onlyName ...bool) (string, interface{}, error) {
 
-	justName := utils.OptionalArg(false, onlyName...)
-
-	// extract model name
-	modelName := f.DefaultModel
-	fieldName := name
-	parts := strings.Split(name, ".")
-	if len(parts) == 2 {
-		modelName = parts[0]
-		fieldName = parts[1]
-	} else if len(parts) != 1 {
-		return nil, &validator.ValidationError{Message: "invalid field name", Field: name}
-	}
-	fullName := utils.ConcatStrings(modelName, ".", fieldName)
-
-	// check if model defined for this parser
-	ok := f.FindModel(modelName)
-	if !ok {
-		return nil, &validator.ValidationError{Message: "invalid model name", Field: modelName}
-	}
-
-	// find schema
-	model, ok := f.Manager.FindModel(modelName)
-	if !ok {
-		return nil, &validator.ValidationError{Message: "unknown model schema", Field: modelName}
-	}
-
-	// find field
-	field, ok := model.FieldsByDBName[fieldName]
-	if !ok {
-		return nil, &validator.ValidationError{Message: "invalid field name", Field: fieldName}
+	// find field by json name
+	field, err := f.Destination.FindJsonField(name)
+	if err != nil {
+		return "", nil, &validator.ValidationError{Message: "Invalid field name", Field: name}
 	}
 
 	// break if only field name validation required
-	if justName {
-		return value, nil
+	if utils.OptionalArg(false, onlyName...) {
+		return "", value, nil
 	}
 
 	// convert string value to desired type
-	result, err := convertValue(field, value)
+	result, err := convertValue(field.Schema, value)
 	if err != nil {
-		return nil, &validator.ValidationError{Message: "invalid value", Field: fieldName}
+		return "", nil, &validator.ValidationError{Message: "Invalid field value", Field: name}
 	}
 
 	// validate result
@@ -125,22 +81,22 @@ func (f *FilterParser) ParseValidateField(name string, value string, onlyName ..
 		useExplicitRules := false
 		fieldRules := ""
 		if f.Validator.Rules != nil {
-			fieldRules, useExplicitRules = f.Validator.Rules[fullName]
+			fieldRules, useExplicitRules = f.Validator.Rules[name]
 		}
 		if !useExplicitRules {
 			// use tag rules
-			fieldRules = field.Tag.Get("validate")
+			fieldRules = field.Schema.Tag.Get("validate")
 		}
 		if fieldRules != "" {
 			err = f.Validator.Validator.ValidateValue(result, fieldRules)
 			if err != nil {
-				return nil, err
+				return "", nil, err
 			}
 		}
 	}
 
 	// done
-	return result, nil
+	return field.FullDbName, result, nil
 }
 
 func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
@@ -150,30 +106,31 @@ func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 	if query == nil {
 		return nil, nil
 	}
-
-	if query.SortField != "" {
-		_, err = f.ParseValidateField(query.SortField, "", true)
-		if err != nil {
-			return nil, err
-		}
-	}
 	filter := &db.Filter{}
 	filter.SortDirection = query.SortDirection
-	filter.SortField = query.SortField
 	filter.Limit = query.Limit
 	filter.Offset = query.Offset
 	filter.Count = query.Count
+
+	// sort field
+	if query.SortField != "" {
+		field, _, err := f.ParseValidateField(query.SortField, "", true)
+		if err != nil {
+			return nil, err
+		}
+		filter.SortField = field
+	}
 
 	// fill fields
 	if len(query.Fields) > 0 {
 		filter.Fields = make(map[string]interface{})
 	}
 	for key, value := range query.Fields {
-		value, err := f.ParseValidateField(key, value)
+		field, value, err := f.ParseValidateField(key, value)
 		if err != nil {
 			return nil, err
 		}
-		filter.Fields[key] = value
+		filter.Fields[field] = value
 	}
 
 	// fill fields_in
@@ -182,13 +139,14 @@ func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 	}
 	for key, values := range query.FieldsIn {
 		arr := make([]interface{}, len(values))
+		field := key
 		for i := 0; i < len(values); i++ {
-			arr[i], err = f.ParseValidateField(key, values[i])
+			field, arr[i], err = f.ParseValidateField(key, values[i])
 			if err != nil {
 				return nil, err
 			}
 		}
-		filter.FieldsIn[key] = arr
+		filter.FieldsIn[field] = arr
 	}
 
 	// fill fields_not_in
@@ -197,13 +155,14 @@ func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 	}
 	for key, values := range query.FieldsNotIn {
 		arr := make([]interface{}, len(values))
+		field := key
 		for i := 0; i < len(values); i++ {
-			arr[i], err = f.ParseValidateField(key, values[i])
+			field, arr[i], err = f.ParseValidateField(key, values[i])
 			if err != nil {
 				return nil, err
 			}
 		}
-		filter.FieldsNotIn[key] = arr
+		filter.FieldsNotIn[field] = arr
 	}
 
 	// fill intervals
@@ -211,15 +170,15 @@ func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 		filter.Intervals = make(map[string]*Interval)
 	}
 	for key, interval := range query.Intervals {
-		from, err := f.ParseValidateField(key, interval.From)
+		field, from, err := f.ParseValidateField(key, interval.From)
 		if err != nil {
 			return nil, err
 		}
-		to, err := f.ParseValidateField(key, interval.From)
+		_, to, err := f.ParseValidateField(key, interval.From)
 		if err != nil {
 			return nil, err
 		}
-		filter.Intervals[key] = &Interval{From: from, To: to}
+		filter.Intervals[field] = &Interval{From: from, To: to}
 	}
 
 	// fill betweens
@@ -228,15 +187,15 @@ func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 	}
 	for i := 0; i < len(query.BetweenFields); i++ {
 		betweenQ := query.BetweenFields[i]
-		val, err := f.ParseValidateField(betweenQ.FromField, betweenQ.Value)
+		fromField, val, err := f.ParseValidateField(betweenQ.FromField, betweenQ.Value)
 		if err != nil {
 			return nil, err
 		}
-		_, err = f.ParseValidateField(betweenQ.ToField, betweenQ.Value)
+		toField, _, err := f.ParseValidateField(betweenQ.ToField, betweenQ.Value)
 		if err != nil {
 			return nil, err
 		}
-		filter.BetweenFields[i] = &db.BetweenFields{FromField: betweenQ.FromField, ToField: betweenQ.ToField, Value: val}
+		filter.BetweenFields[i] = &db.BetweenFields{FromField: fromField, ToField: toField, Value: val}
 	}
 
 	// done
@@ -244,69 +203,53 @@ func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 }
 
 type FilterManager struct {
-	mutex         sync.Mutex
-	models        map[string]*schema.Schema
-	FilterParsers map[string]*FilterParser
-
-	SchemaCache *sync.Map
-	SchemaNamer schema.Namer
+	mutex      sync.Mutex
+	modelStore *ModelStore
+	parsers    map[string]*FilterParser
 }
 
-func NewFilterManager() *FilterManager {
+func NewFilterManager(modelStore ...*ModelStore) *FilterManager {
 	f := &FilterManager{}
-	f.Construct()
+	f.modelStore = utils.OptionalArg(GlobalModelStore, modelStore...)
+	f.parsers = make(map[string]*FilterParser)
 	return f
 }
 
-func (f *FilterManager) FindModel(name string) (*schema.Schema, bool) {
-	f.mutex.Lock()
-	m, ok := f.models[name]
-	f.mutex.Unlock()
-	return m, ok
-}
-
-func (f *FilterManager) Construct() {
-	f.models = make(map[string]*schema.Schema)
-	f.FilterParsers = make(map[string]*FilterParser)
-	f.SchemaCache = &sync.Map{}
-	f.SchemaNamer = &schema.NamingStrategy{}
-}
-
-func (f *FilterManager) PrepareFilterParser(models []interface{}, name string, validator ...*db.FilterValidator) (db.FilterParser, error) {
-
-	f.mutex.Lock()
+func (f *FilterManager) PrepareFilterParser(model interface{}, name string, validator ...*db.FilterValidator) (db.FilterParser, error) {
 
 	parser := &FilterParser{}
 	parser.Manager = f
-	parser.models = make(map[string]bool)
 
-	// parse schemas
-	for i, model := range models {
-		s, err := schema.Parse(model, f.SchemaCache, f.SchemaNamer)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse %d model's schema: %s", i, err)
-		}
-		f.models[s.Table] = s
-		if i == 0 {
-			parser.DefaultModel = s.Table
-		}
-		parser.AddModel(s.Table)
+	// parse schema
+	s, err := schema.Parse(model, f.modelStore.schemaCache, f.modelStore.schemaNamer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse model schema: %s", err)
 	}
+	descriptor := f.modelStore.FindDescriptor(s.Table)
+	if descriptor == nil {
+		return nil, fmt.Errorf("model %s (table %s) not registered", s.Name, s.Table)
+	}
+	if !descriptor.FieldsReady() {
+		err = f.modelStore.ParseModelFields(descriptor)
+		return nil, fmt.Errorf("failed to parse fields for model %s (table %s): %s", s.Name, s.Table, err)
+	}
+	parser.Destination = descriptor
 
 	// keep validator
 	parser.Validator = utils.OptionalArg(nil, validator...)
 
 	// save parser in cache
-	f.FilterParsers[name] = parser
+	f.mutex.Lock()
+	f.parsers[name] = parser
+	f.mutex.Unlock()
 
 	// done
-	f.mutex.Unlock()
 	return parser, nil
 }
 
 func (f *FilterManager) ParseFilter(query *db.Query, parserName string) (*db.Filter, error) {
 	f.mutex.Lock()
-	parser, ok := f.FilterParsers[parserName]
+	parser, ok := f.parsers[parserName]
 	f.mutex.Unlock()
 	if !ok {
 		return nil, &validator.ValidationError{Message: "unknown parser"}
@@ -314,16 +257,16 @@ func (f *FilterManager) ParseFilter(query *db.Query, parserName string) (*db.Fil
 	return parser.Parse(query)
 }
 
-func (f *FilterManager) ParseFilterDirect(query *db.Query, models []interface{}, parserName string, vld ...*db.FilterValidator) (*db.Filter, error) {
+func (f *FilterManager) ParseFilterDirect(query *db.Query, model interface{}, parserName string, vld ...*db.FilterValidator) (*db.Filter, error) {
 
 	f.mutex.Lock()
-	parser, ok := f.FilterParsers[parserName]
+	parser, ok := f.parsers[parserName]
 	f.mutex.Unlock()
 	if ok {
 		return parser.Parse(query)
 	}
 
-	p, err := f.PrepareFilterParser(models, parserName, vld...)
+	p, err := f.PrepareFilterParser(model, parserName, vld...)
 	if err != nil {
 		return nil, err
 	}

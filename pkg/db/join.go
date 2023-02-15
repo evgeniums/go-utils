@@ -88,15 +88,13 @@ func NewJoin(builder JoinQueryBuilder, name string, nocache ...bool) *JoinQueryC
 }
 
 type JoinQueries struct {
-	mutex       sync.Mutex
-	cache       map[string]JoinQuery
-	modelsCache map[string][]interface{}
+	mutex sync.Mutex
+	cache map[string]JoinQuery
 }
 
 func NewJoinQueries() *JoinQueries {
 	j := &JoinQueries{}
 	j.cache = make(map[string]JoinQuery)
-	j.modelsCache = make(map[string][]interface{})
 	return j
 }
 
@@ -115,21 +113,6 @@ func (j *JoinQueries) FindOrCreate(config *JoinQueryConfig) (JoinQuery, error) {
 	if !config.Nocache {
 		j.cache[config.Name] = q
 	}
-	j.modelsCache[config.Name] = q.Models()
 	j.mutex.Unlock()
 	return q, nil
-}
-
-func (j *JoinQueries) Models(config *JoinQueryConfig) ([]interface{}, error) {
-	j.mutex.Lock()
-	models, ok := j.modelsCache[config.Name]
-	j.mutex.Unlock()
-	if !ok {
-		q, err := j.FindOrCreate(config)
-		if err != nil {
-			return nil, err
-		}
-		return q.Models(), nil
-	}
-	return models, nil
 }
