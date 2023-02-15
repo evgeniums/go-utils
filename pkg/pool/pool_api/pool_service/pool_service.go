@@ -56,7 +56,7 @@ func NewPoolService(poolController pool.PoolController) *PoolService {
 	s.ServiceResource.AddOperations(UpdateService(s), DeleteService(s))
 
 	servicePoolAssociations := api.NewResource("pool")
-	servicePoolAssociations.AddOperation(RemoveServiceFromAllPools(s))
+	servicePoolAssociations.AddOperations(ListServicePools(s), RemoveServiceFromAllPools(s))
 	s.ServiceResource.AddChild(servicePoolAssociations)
 
 	return s

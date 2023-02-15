@@ -21,6 +21,11 @@ type ListServicesResponse struct {
 	Services []*pool.PoolServiceBase `json:"services"`
 }
 
+type ListServicePoolsResponse struct {
+	api.ResponseHateous
+	PoolServices []*pool.PoolServiceBinding `json:"pool_services"`
+}
+
 var (
 	UpdateService             = func() api.Operation { return api.UpdatePartial("update_service") }
 	UpdatePool                = func() api.Operation { return api.UpdatePartial("update_pool") }
@@ -28,6 +33,7 @@ var (
 	RemoveServiceFromAllPools = func() api.Operation { return api.Unbind("remove_service_from_all_pools") }
 	RemoveAllServicesFromPool = func() api.Operation { return api.Unbind("remove_all_services_from_pool") }
 	ListServices              = func() api.Operation { return api.List("list_services") }
+	ListServicePools          = func() api.Operation { return api.List("list_service_pools") }
 	FindService               = func() api.Operation { return api.Find("find_service") }
 	FindPool                  = func() api.Operation { return api.Find("find_pool") }
 	DeleteService             = func() api.Operation { return api.Delete("delete_service") }
