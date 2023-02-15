@@ -18,7 +18,21 @@ const PoolGroup string = "pool"
 func (a *PoolCommands) FillHandlers(ctxBuilder console_tool.ContextBulder, group *flags.Command) {
 
 	AddCommand(group, ctxBuilder, a, AddPool)
+	AddCommand(group, ctxBuilder, a, DeletePool)
+	AddCommand(group, ctxBuilder, a, ListPools)
 	AddCommand(group, ctxBuilder, a, AddService)
+	AddCommand(group, ctxBuilder, a, DeleteService)
+	AddCommand(group, ctxBuilder, a, ListServices)
+	AddCommand(group, ctxBuilder, a, AddServiceToPool)
+	AddCommand(group, ctxBuilder, a, RemoveServiceFromPool)
+	AddCommand(group, ctxBuilder, a, RemoveAllServicesFromPool)
+	AddCommand(group, ctxBuilder, a, ListPoolServices)
+	AddCommand(group, ctxBuilder, a, ListServicePools)
+	AddCommand(group, ctxBuilder, a, RemoveServiceFromAllPools)
+	AddCommand(group, ctxBuilder, a, ShowPool)
+	AddCommand(group, ctxBuilder, a, ShowService)
+	AddCommand(group, ctxBuilder, a, UpdatePool)
+	AddCommand(group, ctxBuilder, a, UpdateService)
 }
 
 func (a *PoolCommands) Handlers(ctxBuilder console_tool.ContextBulder, parser *flags.Parser) {
