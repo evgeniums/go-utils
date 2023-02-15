@@ -40,10 +40,11 @@ func AddServiceToServer(s Server, service Service) {
 }
 
 type ServerBaseConfig struct {
-	API_VERSION string `validate:"required"`
-	HATEOAS     bool
 	common.WithNameBaseConfig
 	multitenancy.MultitenancyBaseConfig
+	API_VERSION     string `validate:"required"`
+	HATEOAS         bool
+	OPLOG_USER_TYPE string
 }
 
 func (s *ServerBaseConfig) ApiVersion() string {

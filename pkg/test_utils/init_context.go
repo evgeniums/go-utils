@@ -69,6 +69,7 @@ func SimpleOpContext(app app_context.Context, name string) op_context.Context {
 	origin.SetName(app.AppInstance())
 	hostname, _ := os.Hostname()
 	origin.SetSource(hostname)
+	origin.SetUserType("simple_op_context")
 	ctx.SetOrigin(origin)
 
 	return ctx

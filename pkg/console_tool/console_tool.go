@@ -90,6 +90,7 @@ func (c *ConsoleUtility) InitCommandContext(group string, command string) op_con
 	hostname, _ := os.Hostname()
 	origin.SetSource(hostname)
 	origin.SetUser(c.Opts.InkokerName)
+	origin.SetUserType("console")
 	opCtx.SetOrigin(origin)
 
 	return opCtx

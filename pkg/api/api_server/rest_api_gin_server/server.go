@@ -286,11 +286,11 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		}
 		origin.SetSource(ginCtx.ClientIP())
 		origin.SetSessionClient(request.GetClientId())
+		origin.SetUserType(s.OPLOG_USER_TYPE)
 		request.SetOrigin(origin)
 
 		// TODO process access control
 		if err == nil {
-			// errors must be processed in handler
 		}
 
 		// call endpoint's request handler

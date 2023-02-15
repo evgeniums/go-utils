@@ -36,6 +36,8 @@ type Origin interface {
 	SetSessionClient(string)
 	User() string
 	SetUser(string)
+	UserType() string
+	SetUserType(string)
 }
 
 type Context interface {

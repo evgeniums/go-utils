@@ -228,8 +228,9 @@ func (c *ContextBase) Close(successMessage ...string) {
 				o.SetOriginType(c.origin.Type())
 				o.SetOriginName(c.origin.Name())
 				o.SetOriginSource(c.origin.Source())
-				o.SetOriginUser(c.origin.User())
+				o.SetUser(c.origin.User())
 				o.SetOriginClient(c.origin.SessionClient())
+				o.SetUserType(c.origin.UserType())
 			}
 			oplog.Write(o)
 		}
@@ -334,6 +335,7 @@ type OriginHolder struct {
 	Source        string
 	SessionClient string
 	User          string
+	UserType      string
 }
 
 type Origin struct {
@@ -378,4 +380,12 @@ func (o *Origin) SetUser(val string) {
 
 func (o *Origin) User() string {
 	return o.OriginHolder.User
+}
+
+func (o *Origin) SetUserType(val string) {
+	o.OriginHolder.UserType = val
+}
+
+func (o *Origin) UserType() string {
+	return o.OriginHolder.UserType
 }
