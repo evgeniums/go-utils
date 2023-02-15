@@ -27,7 +27,7 @@ func (u *UserClient[U]) SetEmail(ctx op_context.Context, id string, email string
 	handler.Cmd.EMAIL = email
 
 	// prepare and exec handler
-	err = u.UserOperation(userId, "email", user_api.SetEmail()).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
+	err = u.UserOperation(userId, "email", user_api.SetEmail(u.userTypeName)).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")
 		return c.SetError(err)

@@ -1,7 +1,6 @@
 package pool_service
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api"
@@ -43,6 +42,6 @@ func (e *AddServiceEndpoint) HandleRequest(request api_server.Request) error {
 
 func AddService(s *PoolService) *AddServiceEndpoint {
 	e := &AddServiceEndpoint{}
-	e.Construct(s, api.Add())
+	e.Construct(s, pool_api.AddService())
 	return e
 }

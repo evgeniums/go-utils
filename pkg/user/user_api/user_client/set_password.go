@@ -27,7 +27,7 @@ func (u *UserClient[U]) SetPassword(ctx op_context.Context, id string, password 
 	handler.Cmd.PlainPassword = password
 
 	// prepare and exec handler
-	err = u.UserOperation(userId, "password", user_api.SetPassword()).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
+	err = u.UserOperation(userId, "password", user_api.SetPassword(u.userTypeName)).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")
 		return c.SetError(err)

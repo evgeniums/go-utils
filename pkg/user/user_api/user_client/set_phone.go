@@ -27,7 +27,7 @@ func (u *UserClient[U]) SetPhone(ctx op_context.Context, id string, phone string
 	handler.Cmd.PHONE = phone
 
 	// prepare and exec handler
-	err = u.UserOperation(userId, "phone", user_api.SetPhone()).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
+	err = u.UserOperation(userId, "phone", user_api.SetPhone(u.userTypeName)).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")
 		return c.SetError(err)

@@ -3,7 +3,6 @@ package pool_service
 import (
 	"errors"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api"
@@ -41,6 +40,6 @@ func (e *FindServiceEndpoint) HandleRequest(request api_server.Request) error {
 
 func FindService(s *PoolService) *FindServiceEndpoint {
 	e := &FindServiceEndpoint{}
-	e.Construct(s, api.Find())
+	e.Construct(s, pool_api.FindService())
 	return e
 }

@@ -31,5 +31,5 @@ func (s *SetPasswordEndpoint) HandleRequest(request api_server.Request) error {
 
 func SetPassword(userTypeName string, users user.MainFieldSetters) api_server.ResourceEndpointI {
 	e := &SetPasswordEndpoint{}
-	return e.Init(e, userTypeName, "password", users, user_api.SetPassword())
+	return e.Init(e, userTypeName, "password", users, user_api.SetPassword(userTypeName))
 }

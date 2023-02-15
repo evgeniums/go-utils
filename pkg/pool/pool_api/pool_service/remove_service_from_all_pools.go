@@ -1,8 +1,8 @@
 package pool_service
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api"
 )
 
 type RemoveServiceFromAllPoolsEndpoint struct {
@@ -29,6 +29,6 @@ func (e *RemoveServiceFromAllPoolsEndpoint) HandleRequest(request api_server.Req
 
 func RemoveServiceFromAllPools(s *PoolService) *RemoveServiceFromAllPoolsEndpoint {
 	e := &RemoveServiceFromAllPoolsEndpoint{}
-	e.Construct(s, api.Unbind())
+	e.Construct(s, pool_api.RemoveServiceFromAllPools())
 	return e
 }

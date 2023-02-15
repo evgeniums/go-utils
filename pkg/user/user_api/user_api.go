@@ -43,26 +43,26 @@ func List() api.Operation {
 	return api.NewOperation("list", access_control.Read)
 }
 
-func Add() api.Operation {
-	return api.NewOperation("add", access_control.Create)
+func Add(name string) api.Operation {
+	return api.NewOperation(utils.ConcatStrings("add_", name), access_control.Create)
 }
 
-func Find() api.Operation {
-	return api.NewOperation("find", access_control.Get)
+func Find(name string) api.Operation {
+	return api.NewOperation(utils.ConcatStrings("find_", name), access_control.Get)
 }
 
-func SetPassword() api.Operation {
-	return api.NewOperation("set_password", access_control.Put)
+func SetPassword(name string) api.Operation {
+	return api.NewOperation(utils.ConcatStrings("find_", name, "_password"), access_control.Put)
 }
 
-func SetEmail() api.Operation {
-	return api.NewOperation("set_email", access_control.Put)
+func SetEmail(name string) api.Operation {
+	return api.NewOperation(utils.ConcatStrings("find_", name, "_email"), access_control.Put)
 }
 
-func SetPhone() api.Operation {
-	return api.NewOperation("set_phone", access_control.Put)
+func SetPhone(name string) api.Operation {
+	return api.NewOperation(utils.ConcatStrings("find_", name, "_phone"), access_control.Put)
 }
 
-func SetBlocked() api.Operation {
-	return api.NewOperation("set_blocked", access_control.Put)
+func SetBlocked(name string) api.Operation {
+	return api.NewOperation(utils.ConcatStrings("find_", name, "_blocked"), access_control.Put)
 }

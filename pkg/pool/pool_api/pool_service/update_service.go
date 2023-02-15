@@ -64,6 +64,6 @@ func (e *UpdateServiceEndpoint) HandleRequest(request api_server.Request) error 
 
 func UpdateService(s *PoolService) *UpdateServiceEndpoint {
 	e := &UpdateServiceEndpoint{}
-	e.Construct(s, api.UpdatePartial())
+	e.Construct(s, pool_api.UpdateService())
 	return e
 }

@@ -43,7 +43,7 @@ func NewUserClient[U user.User](client api_client.Client,
 	c.ServiceClient.Init(client, serviceName)
 
 	c.AddChild(c.collectionResource)
-	c.add = user_api.Add()
+	c.add = user_api.Add(c.userTypeName)
 	c.list = user_api.List()
 	c.collectionResource.AddOperations(c.add, c.list)
 

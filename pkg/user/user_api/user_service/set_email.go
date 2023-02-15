@@ -31,5 +31,5 @@ func (s *SetEmailEndpoint) HandleRequest(request api_server.Request) error {
 
 func SetEmail(userTypeName string, users user.MainFieldSetters) api_server.ResourceEndpointI {
 	e := &SetEmailEndpoint{}
-	return e.Init(e, userTypeName, "email", users, user_api.SetEmail())
+	return e.Init(e, userTypeName, "email", users, user_api.SetEmail(userTypeName))
 }

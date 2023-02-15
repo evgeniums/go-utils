@@ -31,5 +31,5 @@ func (s *SetPhoneEndpoint) HandleRequest(request api_server.Request) error {
 
 func SetPhone(userTypeName string, users user.MainFieldSetters) api_server.ResourceEndpointI {
 	e := &SetPhoneEndpoint{}
-	return e.Init(e, userTypeName, "phone", users, user_api.SetPhone())
+	return e.Init(e, userTypeName, "phone", users, user_api.SetPhone(userTypeName))
 }

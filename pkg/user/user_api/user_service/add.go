@@ -39,6 +39,6 @@ func Add[U user.User](service *UserService[U], setterBuilder func() user.UserFie
 	e := &AddEndpoint[U]{}
 	e.service = service
 	e.setterBuilder = setterBuilder
-	e.Construct(user_api.Add())
+	e.Construct(user_api.Add(service.UserTypeName))
 	return e
 }

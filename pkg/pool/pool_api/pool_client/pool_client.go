@@ -3,6 +3,7 @@ package pool_client
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api"
 )
 
 type PoolClient struct {
@@ -28,10 +29,10 @@ func NewPoolClient(client api_client.Client) *PoolClient {
 	_, c.ServicesResource, c.ServiceResource = api.PrepareCollectionAndNameResource("service")
 	c.AddChild(c.ServicesResource)
 
-	c.add_pool = api.Add()
+	c.add_pool = pool_api.AddPool()
 	c.PoolsResource.AddOperations(c.add_pool)
 
-	c.add_service = api.Add()
+	c.add_service = pool_api.AddService()
 	c.ServicesResource.AddOperations(c.add_service)
 
 	return c

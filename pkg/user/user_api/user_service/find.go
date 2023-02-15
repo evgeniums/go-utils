@@ -31,6 +31,6 @@ func (e *FindEndpoint[U]) HandleRequest(request api_server.Request) error {
 func Find[U user.User](service *UserService[U]) *FindEndpoint[U] {
 	e := &FindEndpoint[U]{}
 	e.service = service
-	e.Construct(user_api.Find())
+	e.Construct(user_api.Find(service.UserTypeName))
 	return e
 }

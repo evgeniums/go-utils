@@ -41,7 +41,7 @@ func (u *UserClient[U]) Find(ctx op_context.Context, id string) (U, error) {
 	// prepare and exec handler
 	userResource := u.userResource.CloneChain(false)
 	userResource.SetId(id)
-	op := user_api.Find()
+	op := user_api.Find(u.userTypeName)
 	userResource.AddOperation(op)
 	err := op.Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
 	if err != nil {

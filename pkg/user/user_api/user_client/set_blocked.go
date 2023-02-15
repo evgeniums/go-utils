@@ -27,7 +27,7 @@ func (u *UserClient[U]) SetBlocked(ctx op_context.Context, id string, blocked bo
 	handler.Cmd.BLOCKED = blocked
 
 	// prepare and exec handler
-	err = u.UserOperation(userId, "blocked", user_api.SetBlocked()).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
+	err = u.UserOperation(userId, "blocked", user_api.SetBlocked(u.userTypeName)).Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")
 		return c.SetError(err)

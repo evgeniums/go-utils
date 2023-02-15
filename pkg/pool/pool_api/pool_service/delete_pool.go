@@ -1,8 +1,8 @@
 package pool_service
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api"
 )
 
 type DeletePoolEndpoint struct {
@@ -28,6 +28,6 @@ func (e *DeletePoolEndpoint) HandleRequest(request api_server.Request) error {
 
 func DeletePool(s *PoolService) *DeletePoolEndpoint {
 	e := &DeletePoolEndpoint{}
-	e.Construct(s, api.Delete())
+	e.Construct(s, pool_api.DeletePool())
 	return e
 }

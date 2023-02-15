@@ -31,5 +31,5 @@ func (s *SetBlockedEndpoint) HandleRequest(request api_server.Request) error {
 
 func SetBlocked(userTypeName string, users user.MainFieldSetters) api_server.ResourceEndpointI {
 	e := &SetBlockedEndpoint{}
-	return e.Init(e, userTypeName, "blocked", users, user_api.SetBlocked())
+	return e.Init(e, userTypeName, "blocked", users, user_api.SetBlocked(userTypeName))
 }

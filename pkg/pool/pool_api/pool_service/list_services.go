@@ -47,6 +47,6 @@ func (e *ListServicesEndpoint) HandleRequest(request api_server.Request) error {
 
 func ListServices(s *PoolService) *ListServicesEndpoint {
 	e := &ListServicesEndpoint{}
-	e.Construct(s, api.List())
+	e.Construct(s, pool_api.ListServices())
 	return e
 }
