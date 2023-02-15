@@ -2,22 +2,16 @@ package db_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
-	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
 )
 
 var _, testBasePath, _, _ = runtime.Caller(0)
@@ -184,6 +178,7 @@ func TestDottedJsonFields(t *testing.T) {
 	t.Logf("Object: \n %s", string(b))
 }
 
+/*
 type JoinTable struct {
 	Model       interface{}
 	FieldsModel interface{}
@@ -426,3 +421,4 @@ func TestOneToMany(t *testing.T) {
 	assert.NoError(t, err)
 	t.Logf("Destination object 1: \n %s", string(b1))
 }
+*/

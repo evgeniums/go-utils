@@ -87,12 +87,12 @@ func (g *GormDB) ParseFilter(query *db.Query, parserName string) (*db.Filter, er
 	return g.filterManager.ParseFilter(query, parserName)
 }
 
-func (g *GormDB) ParseFilterDirect(query *db.Query, models []interface{}, parserName string, vld ...*db.FilterValidator) (*db.Filter, error) {
-	return g.filterManager.ParseFilterDirect(query, models, parserName, vld...)
+func (g *GormDB) ParseFilterDirect(query *db.Query, model interface{}, parserName string, vld ...*db.FilterValidator) (*db.Filter, error) {
+	return g.filterManager.ParseFilterDirect(query, model, parserName, vld...)
 }
 
-func (g *GormDB) PrepareFilterParser(models []interface{}, name string, validator ...*db.FilterValidator) (db.FilterParser, error) {
-	return g.filterManager.PrepareFilterParser(models, name, validator...)
+func (g *GormDB) PrepareFilterParser(model interface{}, name string, validator ...*db.FilterValidator) (db.FilterParser, error) {
+	return g.filterManager.PrepareFilterParser(model, name, validator...)
 }
 
 func (g *GormDB) NativeHandler() interface{} {

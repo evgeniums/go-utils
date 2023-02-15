@@ -47,6 +47,7 @@ func InitAppContext(t *testing.T, testDir string, config ...string) app_context.
 	app := app_default.New(nil)
 	require.NoErrorf(t, app.Init(configFile), "failed to init application context")
 	require.NoErrorf(t, app.InitDB("db"), "failed to init database")
+	app.Db().EnableDebug(true)
 
 	return app
 }

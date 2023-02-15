@@ -59,6 +59,8 @@ func convertValue(field *schema.Field, value string) (interface{}, error) {
 
 func (f *FilterParser) ParseValidateField(name string, value string, onlyName ...bool) (string, interface{}, error) {
 
+	// TODO allow only indexed fields
+
 	// find field by json name
 	field, err := f.Destination.FindJsonField(name)
 	if err != nil {
@@ -231,7 +233,9 @@ func (f *FilterManager) PrepareFilterParser(model interface{}, name string, vali
 	}
 	if !descriptor.FieldsReady() {
 		err = f.modelStore.ParseModelFields(descriptor)
-		return nil, fmt.Errorf("failed to parse fields for model %s (table %s): %s", s.Name, s.Table, err)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse fields for model %s (table %s): %s", s.Name, s.Table, err)
+		}
 	}
 	parser.Destination = descriptor
 

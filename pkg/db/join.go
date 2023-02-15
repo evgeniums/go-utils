@@ -9,15 +9,14 @@ import (
 
 type JoinQuery interface {
 	Join(ctx logger.WithLogger, filter *Filter, dest interface{}) (int64, error)
-	Models() []interface{}
 }
 
 type Joiner interface {
-	Join(model interface{}, field string, fieldsModel ...interface{}) JoinBegin
+	Join(model interface{}, field string) JoinBegin
 }
 
 type JoinBegin interface {
-	On(model interface{}, field string, fieldsModel ...interface{}) JoinEnd
+	On(model interface{}, field string) JoinEnd
 }
 
 type JoinEnd interface {
@@ -26,8 +25,7 @@ type JoinEnd interface {
 }
 
 type JoinTableData struct {
-	Model       interface{}
-	FieldsModel interface{}
+	Model interface{}
 }
 
 type JoinTableBase struct {
@@ -36,10 +34,6 @@ type JoinTableBase struct {
 
 func (j *JoinTableBase) Model() interface{} {
 	return j.JoinTableData.Model
-}
-
-func (j *JoinTableBase) FieldsModel() interface{} {
-	return j.JoinTableData.FieldsModel
 }
 
 type JoinPairData struct {

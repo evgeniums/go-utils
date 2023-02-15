@@ -2,11 +2,9 @@ package db_gorm
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
@@ -19,7 +17,7 @@ type JoinTable struct {
 func (jt *JoinTable) Schema(f *FilterManager) (*schema.Schema, error) {
 	if jt.schema == nil {
 		var err error
-		jt.schema, err = schema.Parse(jt.Model(), f.SchemaCache, f.SchemaNamer)
+		jt.schema, err = schema.Parse(jt.Model(), f.modelStore.schemaCache, f.modelStore.schemaNamer)
 		return jt.schema, err
 	}
 	return jt.schema, nil
@@ -34,43 +32,6 @@ type JoinPair struct {
 type JoinQueryConstructor struct {
 	db.JoinQueryBase
 	pairs []*JoinPair
-}
-
-func constructTableSelect(f *FilterManager, table *JoinTable, destinationFields map[string]map[string]string) ([]string, error) {
-	var err error
-	fields := make([]string, 0)
-
-	tableModel, err := table.Schema(f)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse table model: %s", err)
-	}
-	var fieldsModel *schema.Schema
-	fm := table.FieldsModel()
-	if fm != nil {
-		fieldsModel, err = schema.Parse(fm, f.SchemaCache, f.SchemaNamer)
-	} else {
-		fieldsModel = tableModel
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse table model: %s", err)
-	}
-
-	tableDestinationFields := destinationFields[tableModel.Table]
-	for _, field := range fieldsModel.DBNames {
-		substituted := false
-		if tableDestinationFields != nil {
-			substitution, ok := tableDestinationFields[field]
-			if ok {
-				substituted = true
-				fields = append(fields, fmt.Sprintf("%s.%s AS %s", tableModel.Table, field, substitution))
-			}
-		}
-		if !substituted {
-			fields = append(fields, utils.ConcatStrings(tableModel.Table, ".", field))
-		}
-	}
-
-	return fields, nil
 }
 
 func constructJoins(g *gorm.DB, f *FilterManager, q *JoinQueryConstructor) (*gorm.DB, error) {
@@ -99,47 +60,27 @@ func PrepareJoin(f *FilterManager, g *gorm.DB, constructor *JoinQueryConstructor
 	mainModel := q.pairs[0].left.Model()
 	db := g.Model(mainModel)
 
-	tables := make(map[string]*JoinTable)
-	for _, pair := range q.pairs {
-		left, err := pair.left.Schema(f)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse table model: %s", err)
-		}
-		tables[left.Table] = pair.left
-		right, err := pair.right.Schema(f)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse table model: %s", err)
-		}
-		tables[right.Table] = pair.right
-	}
-
-	destinationFields := make(map[string]map[string]string)
-	fillDestinationFields := func(jsonTag string) error {
-
-		parts := strings.Split(jsonTag, ".")
-		if len(parts) == 2 {
-			tableFields, ok := destinationFields[parts[0]]
-			if !ok {
-				tableFields = make(map[string]string)
-			}
-			tableFields[parts[1]] = strings.Join(parts, "_")
-			destinationFields[parts[0]] = tableFields
-		}
-
-		return nil
-	}
-	err := utils.EachStructTag(fillDestinationFields, "json", q.Destination())
+	destinationSchema, err := schema.Parse(constructor.Destination(), f.modelStore.schemaCache, f.modelStore.schemaNamer)
 	if err != nil {
-		return nil, fmt.Errorf("failed to extract tags from: %s", err)
+		return nil, fmt.Errorf("failed to parse destination model: %s", err)
 	}
 
-	selects := make([]string, 0)
-	for tableName, table := range tables {
-		tableSelects, err := constructTableSelect(f, table, destinationFields)
+	destinationDescriptor := f.modelStore.FindDescriptor(destinationSchema.Table)
+	if destinationDescriptor == nil {
+		f.modelStore.RegisterModel(constructor.Destination())
+		destinationDescriptor = f.modelStore.FindDescriptor(destinationSchema.Table)
+	}
+
+	selects := make([]string, 0, len(destinationDescriptor.FieldsJson))
+	if destinationDescriptor.FieldsJson == nil {
+		err = f.modelStore.ParseModelFields(destinationDescriptor)
 		if err != nil {
-			return nil, fmt.Errorf("failed to make selects for %s: %s", tableName, err)
+			return nil, fmt.Errorf("failed to parse destination model fields: %s", err)
 		}
-		selects = append(selects, tableSelects...)
+	}
+	for _, field := range destinationDescriptor.FieldsJson {
+		fieldSelect := fmt.Sprintf("\"%s\".\"%s\" AS \"%s\"", field.DbTable, field.DbField, field.Schema.DBName)
+		selects = append(selects, fieldSelect)
 	}
 
 	db = db.Select(selects)
@@ -153,16 +94,11 @@ func PrepareJoin(f *FilterManager, g *gorm.DB, constructor *JoinQueryConstructor
 
 type JoinQuery struct {
 	preparedSession *gorm.DB
-	models          []interface{}
 }
 
 func (j *JoinQuery) Join(ctx logger.WithLogger, filter *Filter, dest interface{}) (int64, error) {
 	session := j.preparedSession.Session(&gorm.Session{})
 	return find(session, filter, dest)
-}
-
-func (j *JoinQuery) Models() []interface{} {
-	return j.models
 }
 
 type Joiner struct {
@@ -203,30 +139,27 @@ func (j *Joiner) Destination(destination interface{}) (db.JoinQuery, error) {
 		models[pair.left.schema.Table] = pair.left.Model
 		models[pair.right.schema.Table] = pair.right.Model
 	}
-	q.models = utils.AllMapValues(models)
 
 	return q, nil
 }
 
-func (j *Joiner) Join(model interface{}, field string, fieldsModel ...interface{}) db.JoinBegin {
+func (j *Joiner) Join(model interface{}, field string) db.JoinBegin {
 	if j.constructor == nil {
 		j.constructor = newJoinQueryConstuctor()
 	}
 	j.pair = &JoinPair{}
 	j.pair.left = &JoinTable{}
 	j.pair.left.JoinTableData.Model = model
-	j.pair.left.JoinTableData.FieldsModel = utils.OptionalArg(nil, fieldsModel...)
 	j.pair.JoinPairData.LeftField = field
 	return j
 }
 
-func (j *Joiner) On(model interface{}, field string, fieldsModel ...interface{}) db.JoinEnd {
+func (j *Joiner) On(model interface{}, field string) db.JoinEnd {
 	if j.constructor == nil || j.pair == nil {
 		panic("can not call ON without calling Join first")
 	}
 	j.pair.right = &JoinTable{}
 	j.pair.right.JoinTableData.Model = model
-	j.pair.right.JoinTableData.FieldsModel = utils.OptionalArg(nil, fieldsModel...)
 	j.pair.JoinPairData.RightField = field
 	j.constructor.pairs = append(j.constructor.pairs, j.pair)
 	return j
@@ -242,8 +175,4 @@ func (g *GormDB) Join(ctx logger.WithLogger, joinConfig *db.JoinQueryConfig, fil
 		return 0, err
 	}
 	return q.Join(ctx, filter, dest)
-}
-
-func (g *GormDB) JoinerModels(joinConfig *db.JoinQueryConfig) ([]interface{}, error) {
-	return g.joinQueries.Models(joinConfig)
 }

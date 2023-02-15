@@ -3,6 +3,8 @@ package db_gorm
 import (
 	"errors"
 	"fmt"
+	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
@@ -35,6 +37,60 @@ func (d *ModelDescriptor) FieldsReady() bool {
 	return d.FieldsJson != nil
 }
 
+func (d *ModelDescriptor) ParseFields() error {
+	d.FieldsJson = make(map[string]*FieldDescriptor)
+
+	// first run with plain list
+	for _, field := range d.Schema.Fields {
+		fd := &FieldDescriptor{Schema: field}
+		fd.Json = field.Tag.Get("json")
+		if fd.Json == "" {
+			fd.Json = field.DBName
+		}
+		fd.FullDbName = field.Tag.Get("source")
+		if fd.FullDbName == "" {
+			fd.FullDbName = fmt.Sprintf("%s.%s", d.Schema.Table, field.DBName)
+		}
+		parts := strings.Split(fd.FullDbName, ".")
+		if len(parts) == 2 {
+			fd.DbTable = parts[0]
+			fd.DbField = parts[1]
+		} else {
+			fd.DbTable = fd.FullDbName
+			fd.DbField = field.DBName
+			fd.FullDbName = fmt.Sprintf("%s.%s", fd.DbTable, fd.DbField)
+		}
+		d.FieldsJson[fd.Json] = fd
+	}
+
+	// second run, find sources of embedded structs
+	embeddedSources := make(map[string]string)
+	for i := 0; i < d.Schema.ModelType.NumField(); i++ {
+		field := d.Schema.ModelType.Field(i)
+		if field.Type.Kind() == reflect.Struct && field.Anonymous {
+			name := field.Type.Name()
+			source := field.Tag.Get("source")
+			if source != "" {
+				embeddedSources[name] = source
+			}
+		}
+	}
+
+	// third run - replace field sources
+	for _, fd := range d.FieldsJson {
+		if fd.Schema.OwnerSchema != nil {
+			sourceTable, ok := embeddedSources[fd.Schema.OwnerSchema.Name]
+			if ok {
+				fd.DbTable = sourceTable
+				fd.FullDbName = fmt.Sprintf("%s.%s", fd.DbTable, fd.DbField)
+			}
+		}
+	}
+
+	// done
+	return nil
+}
+
 type ModelStore struct {
 	mutex       sync.Mutex
 	descriptors map[string]*ModelDescriptor
@@ -56,16 +112,29 @@ func NewModelStore(global bool) *ModelStore {
 	return m
 }
 
-func (m *ModelStore) RegisterModel(model interface{}) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	ms := &ModelDescriptor{Sample: model}
+func NewModelDescriptor(model interface{}, cacheStore *sync.Map, namer schema.Namer) *ModelDescriptor {
+	d := &ModelDescriptor{Sample: model}
 	var err error
-	ms.Schema, err = schema.Parse(model, m.schemaCache, m.schemaNamer)
+	d.Schema, err = schema.Parse(model, cacheStore, namer)
 	if err != nil {
 		panic(fmt.Sprintf("invalid model: %s", err))
 	}
-	// ms.FieldsJson = make(map[string]*FieldDescriptor)
+	return d
+}
+
+func (m *ModelStore) RegisterModel(model interface{}) {
+
+	d := NewModelDescriptor(model, m.schemaCache, m.schemaNamer)
+
+	m.mutex.Lock()
+	m.descriptors[d.Schema.Table] = d
+	m.mutex.Unlock()
+}
+
+func (m *ModelStore) RegisterModels(models []interface{}) {
+	for _, model := range models {
+		m.RegisterModel(model)
+	}
 }
 
 func (m *ModelStore) FindModel(name string) interface{} {
@@ -102,7 +171,13 @@ func (m *ModelStore) FindDescriptor(name string) *ModelDescriptor {
 
 func (m *ModelStore) ParseModelFields(descriptor *ModelDescriptor) error {
 
-	// TODO parse fields
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	err := descriptor.ParseFields()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -58,7 +58,7 @@ func FullRequestServicePath(r Request) string {
 	return r.Endpoint().Resource().BuildActualPath(r.ResourceIds(), true)
 }
 
-func ParseDbQuery(request Request, models []interface{}, q api.Query, queryName string) (*db.Filter, error) {
+func ParseDbQuery(request Request, model interface{}, q api.Query, queryName string) (*db.Filter, error) {
 
 	if q == nil {
 		return nil, nil
@@ -76,7 +76,7 @@ func ParseDbQuery(request Request, models []interface{}, q api.Query, queryName 
 		return nil, nil
 	}
 
-	filter, err := db.ParseQuery(request.Db(), q.Query(), models, queryName, db.EmptyFilterValidator(request.App().Validator()))
+	filter, err := db.ParseQuery(request.Db(), q.Query(), model, queryName, db.EmptyFilterValidator(request.App().Validator()))
 	if err != nil {
 		vErr, ok := err.(*validator.ValidationError)
 		if ok {

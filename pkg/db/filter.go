@@ -173,9 +173,9 @@ type Query struct {
 }
 
 type WithFilterParser interface {
-	PrepareFilterParser(models []interface{}, name string, validator ...*FilterValidator) (FilterParser, error)
+	PrepareFilterParser(model interface{}, name string, validator ...*FilterValidator) (FilterParser, error)
 	ParseFilter(query *Query, parserName string) (*Filter, error)
-	ParseFilterDirect(query *Query, models []interface{}, name string, validator ...*FilterValidator) (*Filter, error)
+	ParseFilterDirect(query *Query, model interface{}, name string, validator ...*FilterValidator) (*Filter, error)
 }
 
 type FilterParser interface {
@@ -187,7 +187,7 @@ type FilterValidator struct {
 	Rules     map[string]string
 }
 
-func ParseQuery(db DB, query string, models []interface{}, parserName string, validator ...*FilterValidator) (*Filter, error) {
+func ParseQuery(db DB, query string, model interface{}, parserName string, validator ...*FilterValidator) (*Filter, error) {
 
 	q := &Query{}
 	err := json.Unmarshal([]byte(query), q)
@@ -195,7 +195,7 @@ func ParseQuery(db DB, query string, models []interface{}, parserName string, va
 		return nil, err
 	}
 
-	return db.ParseFilterDirect(q, models, parserName, validator...)
+	return db.ParseFilterDirect(q, model, parserName, validator...)
 }
 
 func EmptyFilterValidator(vld validator.Validator) *FilterValidator {

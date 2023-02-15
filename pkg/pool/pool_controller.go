@@ -50,8 +50,8 @@ type PoolController interface {
 	RemoveAllServicesFromPool(ctx op_context.Context, poolId string, idIsName ...bool) error
 	RemoveServiceFromAllPools(ctx op_context.Context, id string, idIsName ...bool) error
 
-	GetPoolBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBinding, int64, error)
-	GetServiceBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBinding, int64, error)
+	GetPoolBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBinding, error)
+	GetServiceBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBinding, error)
 }
 
 func NewPoolController(crud crud.CRUD) *PoolControllerBase {
@@ -504,11 +504,10 @@ func (m *PoolControllerBase) RemoveServiceFromAllPools(ctx op_context.Context, i
 	return nil
 }
 
-func (p *PoolControllerBase) GetPoolBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBinding, int64, error) {
+func (p *PoolControllerBase) GetPoolBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBinding, error) {
 
 	// setup
 	var services []*PoolServiceBinding
-	var count int64
 	c := ctx.TraceInMethod("PoolController.GetPoolBindings")
 	var err error
 	onExit := func() {
@@ -522,38 +521,37 @@ func (p *PoolControllerBase) GetPoolBindings(ctx op_context.Context, id string, 
 	// adjust pool ID
 	poolId, err := p.PoolId(c, ctx, id, idIsName...)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	if poolId == "" {
 		ctx.SetGenericError(nil)
-		return nil, 0, nil
+		return nil, nil
 	}
 
 	// construct join query
 	queryBuilder := func() (db.JoinQuery, error) {
 		return ctx.Db().Joiner().
-			Join(&PoolServiceAssociationBase{}, "pool_id").On(&PoolBase{}, "id", &PoolBindingPoolFields{}).
-			Join(&PoolServiceAssociationBase{}, "service_id").On(&PoolServiceBase{}, "id", &PoolBindingServiceFields{}).
+			Join(&PoolServiceAssociationBase{}, "pool_id").On(&PoolBase{}, "id").
+			Join(&PoolServiceAssociationBase{}, "service_id").On(&PoolServiceBase{}, "id").
 			Destination(&PoolServiceBinding{})
 	}
 
 	// invoke join
 	filter := db.NewFilter()
 	filter.AddField("pools.id", id)
-	count, err = p.CRUD.Join(ctx, db.NewJoin(queryBuilder, "GetPoolBindings"), filter, &services)
+	_, err = p.CRUD.Join(ctx, db.NewJoin(queryBuilder, "GetPoolBindings"), filter, &services)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	// done
-	return services, count, nil
+	return services, nil
 }
 
-func (p *PoolControllerBase) GetServiceBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBinding, int64, error) {
+func (p *PoolControllerBase) GetServiceBindings(ctx op_context.Context, id string, idIsName ...bool) ([]*PoolServiceBinding, error) {
 
 	// setup
 	var services []*PoolServiceBinding
-	var count int64
 	c := ctx.TraceInMethod("PoolController.GetServiceBindings")
 	var err error
 	onExit := func() {
@@ -567,29 +565,29 @@ func (p *PoolControllerBase) GetServiceBindings(ctx op_context.Context, id strin
 	// adjust service ID
 	serviceId, err := p.ServiceId(c, ctx, id, idIsName...)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	if serviceId == "" {
 		ctx.SetGenericError(nil)
-		return nil, 0, nil
+		return nil, nil
 	}
 
 	// construct join query
 	queryBuilder := func() (db.JoinQuery, error) {
 		return ctx.Db().Joiner().
-			Join(&PoolServiceAssociationBase{}, "service_id").On(&PoolServiceBase{}, "id", &PoolBindingServiceFields{}).
-			Join(&PoolServiceAssociationBase{}, "pool_id").On(&PoolBase{}, "id", &PoolBindingPoolFields{}).
+			Join(&PoolServiceAssociationBase{}, "service_id").On(&PoolServiceBase{}, "id").
+			Join(&PoolServiceAssociationBase{}, "pool_id").On(&PoolBase{}, "id").
 			Destination(&PoolServiceBinding{})
 	}
 
 	// invoke join
 	filter := db.NewFilter()
 	filter.AddField("pool_services.id", id)
-	count, err = p.CRUD.Join(ctx, db.NewJoin(queryBuilder, "GetServiceBindings"), filter, &services)
+	_, err = p.CRUD.Join(ctx, db.NewJoin(queryBuilder, "GetServiceBindings"), filter, &services)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	// done
-	return services, count, nil
+	return services, nil
 }

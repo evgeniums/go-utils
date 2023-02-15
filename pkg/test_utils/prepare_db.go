@@ -59,6 +59,7 @@ func DbDsnBuilder(t *testing.T, config *db.DBConfig) (string, error) {
 }
 
 func SetupGormDB(t *testing.T) {
+	db_gorm.NewModelStore(true)
 	db_gorm.DefaultDbConnector = func() *db_gorm.DbConnector {
 		c := &db_gorm.DbConnector{}
 		c.DialectorOpener = DbGormOpener
@@ -76,4 +77,5 @@ func CreateDbModel(t *testing.T, app app_context.Context, models ...interface{})
 
 func CreateDbModels(t *testing.T, app app_context.Context, models []interface{}) {
 	require.NoErrorf(t, app.Db().AutoMigrate(app, models), "failed to create database")
+	db_gorm.GlobalModelStore.RegisterModels(models)
 }

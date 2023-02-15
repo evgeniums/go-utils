@@ -54,9 +54,7 @@ func TestInit(t *testing.T) {
 	ctx.Close()
 }
 
-func TestAddPool(t *testing.T) {
-	ctx := initTest(t)
-	defer ctx.Close()
+func addPool(t *testing.T, ctx *testContext) pool.Pool {
 
 	p1Sample := &pool.PoolBaseData{}
 	p1Sample.SetName("pool1")
@@ -82,12 +80,18 @@ func TestAddPool(t *testing.T) {
 	b1, _ := json.Marshal(addedPool1)
 	b2, _ := json.Marshal(dbPool1)
 	assert.Equal(t, string(b1), string(b2))
+
+	return addedPool1
 }
 
-func TestAddService(t *testing.T) {
+func TestAddPool(t *testing.T) {
 	ctx := initTest(t)
 	defer ctx.Close()
 
+	addPool(t, ctx)
+}
+
+func addService(t *testing.T, ctx *testContext) pool.PoolService {
 	p1Sample := &pool.PoolServiceBaseEssentials{}
 	p1Sample.SetName("service1")
 	p1Sample.SetLongName("service1 long name")
@@ -132,17 +136,48 @@ func TestAddService(t *testing.T) {
 	b1, _ := json.Marshal(addedService1)
 	b2, _ := json.Marshal(dbService1)
 	assert.Equal(t, string(b1), string(b2))
+
+	return addedService1
 }
 
-func TestQuery(t *testing.T) {
+func TestAddService(t *testing.T) {
+	ctx := initTest(t)
+	defer ctx.Close()
+
+	addService(t, ctx)
+}
+
+func TestGetBindings(t *testing.T) {
 	ctx := initTest(t)
 	defer ctx.Close()
 
 	ctx.AdminOp.Db().EnableDebug(true)
 
-	poolId := "11223"
-	ctx.LocalPoolController.GetPoolBindings(ctx.AdminOp, poolId)
+	service := addService(t, ctx)
+	p := addPool(t, ctx)
+	role := "main_webservice"
 
-	serviceId := "556677"
-	ctx.LocalPoolController.GetServiceBindings(ctx.AdminOp, serviceId)
+	err := ctx.LocalPoolController.AddServiceToPool(ctx.AdminOp, p.GetID(), service.GetID(), role)
+	require.NoError(t, err)
+
+	bindings, err := ctx.LocalPoolController.GetPoolBindings(ctx.AdminOp, p.GetID())
+	require.NoError(t, err)
+	require.Equal(t, 1, len(bindings))
+
+	binding := bindings[0]
+	assert.Equal(t, p.Name(), binding.PoolName)
+	assert.Equal(t, p.GetID(), binding.PoolId)
+	assert.Equal(t, service.Name(), binding.ServiceName)
+	assert.Equal(t, service.GetID(), binding.ServiceId)
+	assert.Equal(t, role, binding.Role())
+
+	serviceB := service.(*pool.PoolServiceBase)
+	assert.Equal(t, serviceB.PoolServiceBaseData, binding.PoolServiceBaseData)
+
+	b1, _ := json.MarshalIndent(bindings[0], "", "  ")
+	t.Logf("Pool services: \n\n%s\n\n", string(b1))
+
+	bindings, err = ctx.LocalPoolController.GetServiceBindings(ctx.AdminOp, service.GetID())
+	require.NoError(t, err)
+	require.Equal(t, 1, len(bindings))
 }

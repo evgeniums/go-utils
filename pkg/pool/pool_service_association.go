@@ -61,11 +61,11 @@ type PoolBindingPoolFields struct {
 }
 
 type PoolServiceBinding struct {
-	common.ObjectBase
-	WithRole
-	PoolServiceBaseData `json_parent:"pool_services"`
-	PoolId              string `json:"pools.id" gorm:"->;column:pools_id"`
-	PoolName            string `json:"pools.name" gorm:"->;column:pools_name"`
-	ServiceId           string `json:"pool_services.id" gorm:"->;column:pool_services_id"`
-	ServiceName         string `json:"pool_services.name" gorm:"->;column:pool_services_name"`
+	common.ObjectBase   `source:"pool_service_associations"`
+	WithRole            `source:"pool_service_associations"`
+	PoolServiceBaseData `source:"pool_services"`
+	PoolId              string `json:"pool_id" source:"pools.id"`
+	PoolName            string `json:"pool_name" source:"pools.name"`
+	ServiceId           string `json:"service_id" source:"pool_services.id"`
+	ServiceName         string `json:"service_name" source:"pool_services.name"`
 }

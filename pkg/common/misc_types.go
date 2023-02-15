@@ -44,7 +44,7 @@ type WithType interface {
 }
 
 type WithTypeBase struct {
-	TYPE string `gorm:"index" json:"type" validate:"required" vmessage:"Type can not be empty"`
+	TYPE string `gorm:"index" json:"type_name" validate:"required" vmessage:"Type can not be empty"`
 }
 
 func (t *WithTypeBase) Type() string {
