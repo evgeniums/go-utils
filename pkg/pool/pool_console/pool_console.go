@@ -33,6 +33,10 @@ func (a *PoolCommands) FillHandlers(ctxBuilder console_tool.ContextBulder, group
 	AddCommand(group, ctxBuilder, a, ShowService)
 	AddCommand(group, ctxBuilder, a, UpdatePool)
 	AddCommand(group, ctxBuilder, a, UpdateService)
+	AddCommand(group, ctxBuilder, a, EnablePool)
+	AddCommand(group, ctxBuilder, a, DisablePool)
+	AddCommand(group, ctxBuilder, a, EnableService)
+	AddCommand(group, ctxBuilder, a, DisableService)
 }
 
 func (a *PoolCommands) Handlers(ctxBuilder console_tool.ContextBulder, parser *flags.Parser) {
