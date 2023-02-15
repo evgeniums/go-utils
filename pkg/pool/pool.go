@@ -2,6 +2,7 @@ package pool
 
 import (
 	"errors"
+	"sort"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 )
@@ -14,6 +15,7 @@ type Pool interface {
 	common.WithActive
 
 	Service(role string) (*PoolServiceBinding, error)
+	SetServices([]*PoolServiceBinding)
 }
 
 type PoolBaseData struct {
@@ -43,11 +45,13 @@ type PoolItem struct {
 
 type PoolBase struct {
 	PoolBaseEssentials
-	Services map[string]*PoolServiceBinding `gorm:"-:all"`
+	Services    map[string]*PoolServiceBinding `gorm:"-:all" json:"-"`
+	ServiceList []*PoolServiceBinding          `gorm:"-:all" json:"services"`
 }
 
 func NewPool() *PoolBase {
 	p := &PoolBase{}
+	p.Services = make(map[string]*PoolServiceBinding)
 	p.WithActiveBase.Init()
 	return p
 }
@@ -64,4 +68,15 @@ func (p *PoolBase) Service(role string) (*PoolServiceBinding, error) {
 	}
 
 	return service, nil
+}
+
+func (p *PoolBase) SetServices(services []*PoolServiceBinding) {
+	p.Services = make(map[string]*PoolServiceBinding)
+	for _, service := range services {
+		p.Services[service.Role()] = service
+	}
+	p.ServiceList = services
+	sort.Slice(p.ServiceList, func(i int, j int) bool {
+		return p.ServiceList[i].Role() < p.ServiceList[j].Role()
+	})
 }
