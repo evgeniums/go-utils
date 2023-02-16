@@ -16,14 +16,22 @@ func AddService() Handler {
 	return a
 }
 
-type AddServiceHandler struct {
-	HandlerBase
+type AddServiceData struct {
 	pool.ServiceConfigBase
 	pool.SecretsBase
 	Name        string `long:"name" description:"Short name of the service, must be unique" required:"true"`
 	Type        string `long:"type" description:"Service type" required:"true"`
 	LongName    string `long:"long-name" description:"Long name of the service"`
 	Description string `long:"description" description:"Service description"`
+}
+
+type AddServiceHandler struct {
+	HandlerBase
+	AddServiceData
+}
+
+func (a *AddServiceHandler) Data() interface{} {
+	return &a.AddServiceData
 }
 
 func (a *AddServiceHandler) Execute(args []string) error {

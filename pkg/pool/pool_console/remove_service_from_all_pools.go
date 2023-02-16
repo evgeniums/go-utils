@@ -9,9 +9,17 @@ func RemoveServiceFromAllPools() Handler {
 	return a
 }
 
+type RemoveServiceFromAllPoolsData struct {
+	Service string `long:"service" description:"Short name of the service" required:"true"`
+}
+
 type RemoveServiceFromAllPoolsHandler struct {
 	HandlerBase
-	Service string `long:"service" description:"Short name of the service" required:"true"`
+	RemoveServiceFromAllPoolsData
+}
+
+func (a *RemoveServiceFromAllPoolsHandler) Data() interface{} {
+	return &a.RemoveServiceFromAllPoolsData
 }
 
 func (a *RemoveServiceFromAllPoolsHandler) Execute(args []string) error {

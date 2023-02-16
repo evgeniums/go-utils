@@ -9,16 +9,24 @@ func DeletePool() Handler {
 	return a
 }
 
-type DeletePoolHandler struct {
-	HandlerBase
+type DeletePoolData struct {
 	Pool string `long:"pool" description:"Short name of the pool" required:"true"`
 }
 
-func (a *DeletePoolHandler) Execute(args []string) error {
+type DeletePoolHandler struct {
+	HandlerBase
+	DeletePoolData
+}
 
-	ctx, controller := a.Context()
+func (d *DeletePoolHandler) Data() interface{} {
+	return &d.DeletePoolData
+}
+
+func (d *DeletePoolHandler) Execute(args []string) error {
+
+	ctx, controller := d.Context()
 	defer ctx.Close()
 
-	err := controller.DeletePool(ctx, a.Pool, true)
+	err := controller.DeletePool(ctx, d.Pool, true)
 	return err
 }

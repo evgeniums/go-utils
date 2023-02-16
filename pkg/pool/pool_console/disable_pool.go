@@ -11,27 +11,35 @@ const DisablePoolCmd string = "disable_pool"
 const DisablePoolDescription string = "Disable pool"
 
 func DisablePool() Handler {
-	a := &DisablePoolHandler{}
-	a.Init(DisablePoolCmd, DisablePoolDescription)
-	return a
+	d := &DisablePoolHandler{}
+	d.Init(DisablePoolCmd, DisablePoolDescription)
+	return d
+}
+
+type DisablePoolData struct {
+	Pool string `long:"pool" description:"Short name of the pool" required:"true"`
 }
 
 type DisablePoolHandler struct {
 	HandlerBase
-	Pool string `long:"pool" description:"Short name of the pool" required:"true"`
+	DisablePoolData
 }
 
-func (a *DisablePoolHandler) Execute(args []string) error {
+func (d *DisablePoolHandler) Data() interface{} {
+	return &d.DisablePoolData
+}
 
-	ctx, controller := a.Context()
+func (d *DisablePoolHandler) Execute(args []string) error {
+
+	ctx, controller := d.Context()
 	defer ctx.Close()
 
 	fields := db.Fields{}
 	fields["active"] = false
 
-	err := controller.UpdatePool(ctx, a.Pool, fields, true)
+	err := controller.UpdatePool(ctx, d.Pool, fields, true)
 	if err == nil {
-		pool, err := controller.FindPool(ctx, a.Pool, true)
+		pool, err := controller.FindPool(ctx, d.Pool, true)
 		if err == nil {
 			if pool != nil {
 				fmt.Printf("Updated pool:\n\n%s\n\n", utils.DumpPrettyJson(pool))

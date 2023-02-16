@@ -15,9 +15,17 @@ func ShowPool() Handler {
 	return a
 }
 
+type ShowPoolData struct {
+	Pool string `long:"pool" description:"Short name of the pool" required:"true"`
+}
+
 type ShowPoolHandler struct {
 	HandlerBase
-	Pool string `long:"pool" description:"Short name of the pool" required:"true"`
+	ShowPoolData
+}
+
+func (a *ShowPoolHandler) Data() interface{} {
+	return &a.ShowPoolData
 }
 
 func (a *ShowPoolHandler) Execute(args []string) error {

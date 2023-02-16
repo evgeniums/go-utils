@@ -9,16 +9,24 @@ func DeleteService() Handler {
 	return a
 }
 
-type DeleteServiceHandler struct {
-	HandlerBase
+type DeleteServiceData struct {
 	Service string `long:"service" description:"Short name of the service" required:"true"`
 }
 
-func (a *DeleteServiceHandler) Execute(args []string) error {
+type DeleteServiceHandler struct {
+	HandlerBase
+	DeleteServiceData
+}
 
-	ctx, controller := a.Context()
+func (d *DeleteServiceHandler) Data() interface{} {
+	return &d.DeleteServiceData
+}
+
+func (d *DeleteServiceHandler) Execute(args []string) error {
+
+	ctx, controller := d.Context()
 	defer ctx.Close()
 
-	err := controller.DeleteService(ctx, a.Service, true)
+	err := controller.DeleteService(ctx, d.Service, true)
 	return err
 }

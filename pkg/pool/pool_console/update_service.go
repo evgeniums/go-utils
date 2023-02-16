@@ -17,11 +17,19 @@ func UpdateService() Handler {
 	return a
 }
 
-type UpdateServiceHandler struct {
-	HandlerBase
+type UpdateServiceData struct {
 	Service string `long:"service" description:"Short name of the service" required:"true"`
 	Field   string `long:"field" description:"Field name" required:"true"`
 	Value   string `long:"value" description:"Field value"`
+}
+
+type UpdateServiceHandler struct {
+	HandlerBase
+	UpdateServiceData
+}
+
+func (a *UpdateServiceHandler) Data() interface{} {
+	return &a.UpdateServiceData
 }
 
 func (a *UpdateServiceHandler) Execute(args []string) error {

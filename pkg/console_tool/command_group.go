@@ -4,76 +4,107 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/jessevdk/go-flags"
 )
 
-type ControllerBuilder[T any] func(app app_context.Context) T
-
-type CommandGroupI interface {
+type CommandGroup interface {
 	Name() string
-}
-
-type CommandGroup[T any] struct {
-	CommandGroupBase
-	MakeController ControllerBuilder[T]
-}
-
-func (c *CommandGroup[T]) NewController(app app_context.Context) T {
-	return c.MakeController(app)
-}
-
-func (c *CommandGroup[T]) Init(groupName string, groupDescription string, controllerBuilder ControllerBuilder[T]) {
-	c.GroupName = groupName
-	c.GroupDescription = groupDescription
-	c.MakeController = controllerBuilder
+	Description() string
 }
 
 type CommandGroupBase struct {
 	GroupName        string
 	GroupDescription string
+}
 
-	FillHandlers func(ctxBuilder ContextBulder, group *flags.Command)
+func NewCommandGroup(groupName string, groupDescription string) *CommandGroupBase {
+	c := &CommandGroupBase{}
+	c.GroupName = groupName
+	c.GroupDescription = groupDescription
+	return c
 }
 
 func (c *CommandGroupBase) Name() string {
 	return c.GroupName
 }
 
-func (c *CommandGroupBase) Handlers(ctxBuilder ContextBulder, parser *flags.Parser) {
+func (c *CommandGroupBase) Description() string {
+	return c.GroupDescription
+}
 
-	group, err := parser.AddCommand(c.GroupName, c.GroupDescription, "", &Dummy{})
+type HandlerBuilder[T CommandGroup] func() Handler[T]
+
+type Commands[T CommandGroup] struct {
+	*CommandGroupBase
+	Self          T
+	ExtraHandlers []HandlerBuilder[T]
+}
+
+func (c *Commands[T]) AddHandlers(handlers ...HandlerBuilder[T]) {
+	c.ExtraHandlers = append(c.ExtraHandlers, handlers...)
+}
+
+func (c Commands[T]) AddCommand(parent *flags.Command, ctxBuilder ContextBulder, group T) {
+	for _, handler := range c.ExtraHandlers {
+		AddCommand(parent, ctxBuilder, group, handler)
+	}
+}
+
+func (c *Commands[T]) Handlers(ctxBuilder ContextBulder, parser *flags.Parser) {
+
+	parent, err := parser.AddCommand(c.Name(), c.Description(), "", &Dummy{})
 	if err != nil {
-		fmt.Printf("failed to add %s group: %s", c.GroupName, err)
+		fmt.Printf("failed to add %s group: %s", c.Name(), err)
 		os.Exit(1)
 	}
 
-	c.FillHandlers(ctxBuilder, group)
+	for _, handler := range c.ExtraHandlers {
+		AddCommand(parent, ctxBuilder, c.Self, handler)
+	}
 }
 
-func AddCommand[T CommandGroupI](parent *flags.Command, ctxBuilder ContextBulder, group T, makeHandler func() Handler[T]) {
+func (c *Commands[T]) Description() string {
+	return c.CommandGroupBase.Description()
+}
+
+func (c *Commands[T]) Name() string {
+	return c.CommandGroupBase.Name()
+}
+
+func (c *Commands[T]) Construct(self T, name string, description string) {
+	c.Self = self
+	c.CommandGroupBase = NewCommandGroup(name, description)
+	c.ExtraHandlers = make([]HandlerBuilder[T], 0)
+}
+
+//-------------------------------------------------
+
+func AddCommand[T CommandGroup](parent *flags.Command, ctxBuilder ContextBulder, group T, makeHandler HandlerBuilder[T]) {
 	handler := makeHandler()
 	handler.Construct(ctxBuilder, group)
-	parent.AddCommand(handler.HandlerName(), handler.HandlerDescription(), "", handler)
+	parent.AddCommand(handler.HandlerName(), handler.HandlerDescription(), "", handler.Data())
 }
 
-type Handler[T CommandGroupI] interface {
+//-------------------------------------------------
+
+type Handler[T CommandGroup] interface {
 	CtxBuilder() ContextBulder
 	HandlerGroup() T
 	Construct(ctxBuilder ContextBulder, group T)
 	HandlerName() string
 	HandlerDescription() string
+	Data() interface{}
 }
 
-type HandlerBaseHolder[T CommandGroupI] struct {
+type HandlerBaseHolder[T CommandGroup] struct {
 	CtxBuilder  ContextBulder
 	Group       T
 	Name        string
 	Description string
 }
 
-type HandlerBase[T CommandGroupI] struct {
+type HandlerBase[T CommandGroup] struct {
 	HandlerBaseHolder[T]
 }
 
@@ -106,4 +137,8 @@ func (h *HandlerBase[T]) HandlerDescription() string {
 func (h *HandlerBase[T]) Context() op_context.Context {
 	ctx := h.HandlerBaseHolder.CtxBuilder(h.Group.Name(), h.HandlerBaseHolder.Name)
 	return ctx
+}
+
+func (h *HandlerBase[T]) Data() interface{} {
+	return &Dummy{}
 }

@@ -17,11 +17,19 @@ func UpdatePool() Handler {
 	return a
 }
 
-type UpdatePoolHandler struct {
-	HandlerBase
+type UpdatePoolData struct {
 	Pool  string `long:"pool" description:"Short name of the pool" required:"true"`
 	Field string `long:"field" description:"Field name" required:"true"`
 	Value string `long:"value" description:"Field value"`
+}
+
+type UpdatePoolHandler struct {
+	HandlerBase
+	UpdatePoolData
+}
+
+func (a *UpdatePoolHandler) Data() interface{} {
+	return &a.UpdatePoolData
 }
 
 func (a *UpdatePoolHandler) Execute(args []string) error {

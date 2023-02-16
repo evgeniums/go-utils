@@ -16,9 +16,17 @@ func EnableService() Handler {
 	return a
 }
 
+type EnableServiceData struct {
+	Service string `long:"pool" description:"Short name of the service" required:"true"`
+}
+
 type EnableServiceHandler struct {
 	HandlerBase
-	Service string `long:"pool" description:"Short name of the service" required:"true"`
+	EnableServiceData
+}
+
+func (a *EnableServiceHandler) Data() interface{} {
+	return &a.EnableServiceData
 }
 
 func (a *EnableServiceHandler) Execute(args []string) error {

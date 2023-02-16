@@ -16,11 +16,19 @@ func AddPool() Handler {
 	return a
 }
 
-type AddPoolHandler struct {
-	HandlerBase
+type AddPoolData struct {
 	Name        string `long:"name" description:"Short name of the pool, must be unique" required:"true"`
 	LongName    string `long:"long-name" description:"Long name of the pool"`
 	Description string `long:"description" description:"Pool description"`
+}
+
+type AddPoolHandler struct {
+	HandlerBase
+	AddPoolData
+}
+
+func (a *AddPoolHandler) Data() interface{} {
+	return &a.AddPoolData
 }
 
 func (a *AddPoolHandler) Execute(args []string) error {

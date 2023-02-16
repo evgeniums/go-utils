@@ -15,9 +15,17 @@ func ListPoolServices() Handler {
 	return a
 }
 
+type ListPoolServicesData struct {
+	Name string `long:"name" description:"Short name of the pool" required:"true"`
+}
+
 type ListPoolServicesHandler struct {
 	HandlerBase
-	Name string `long:"name" description:"Short name of the pool" required:"true"`
+	ListPoolServicesData
+}
+
+func (a *ListPoolServicesHandler) Data() interface{} {
+	return &a.ListPoolServicesData
 }
 
 func (a *ListPoolServicesHandler) Execute(args []string) error {
