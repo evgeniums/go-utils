@@ -1,0 +1,32 @@
+package user_console
+
+import (
+	"github.com/evgeniums/go-backend-helpers/pkg/console_tool"
+	"github.com/evgeniums/go-backend-helpers/pkg/user"
+)
+
+const EmailCmd string = "email"
+const EmailDescription string = "Set email"
+
+func Email[T user.User]() console_tool.Handler[*UserCommands[T]] {
+	a := &EmailHandler[T]{}
+	a.Init(EmailCmd, EmailDescription)
+	return a
+}
+
+type EmailHandler[T user.User] struct {
+	HandlerBase[T]
+	WithEmailData
+}
+
+func (a *EmailHandler[T]) Data() interface{} {
+	return &a.WithEmailData
+}
+
+func (a *EmailHandler[T]) Execute(args []string) error {
+
+	ctx, ctrl := a.Context(a.Login)
+	defer ctx.Close()
+
+	return ctrl.SetEmail(ctx, a.Login, a.Email, true)
+}

@@ -189,6 +189,10 @@ type FilterValidator struct {
 
 func ParseQuery(db DB, query string, model interface{}, parserName string, validator ...*FilterValidator) (*Filter, error) {
 
+	if query == "" {
+		return nil, nil
+	}
+
 	q := &Query{}
 	err := json.Unmarshal([]byte(query), q)
 	if err != nil {
