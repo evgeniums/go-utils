@@ -9,14 +9,14 @@ import (
 const ListPoolServicesCmd string = "list_pool_services"
 const ListPoolServicesDescription string = "List pool services"
 
-func ListPoolServices() poolsHandler {
+func ListPoolServices() Handler {
 	a := &ListPoolServicesHandler{}
 	a.Init(ListPoolServicesCmd, ListPoolServicesDescription)
 	return a
 }
 
 type ListPoolServicesHandler struct {
-	poolsHandlerBase
+	HandlerBase
 	Name string `long:"name" description:"Short name of the pool" required:"true"`
 }
 

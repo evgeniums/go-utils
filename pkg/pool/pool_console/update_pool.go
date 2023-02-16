@@ -11,14 +11,14 @@ import (
 const UpdatePoolCmd string = "update_pool"
 const UpdatePoolDescription string = "Update pool"
 
-func UpdatePool() poolsHandler {
+func UpdatePool() Handler {
 	a := &UpdatePoolHandler{}
 	a.Init(UpdatePoolCmd, UpdatePoolDescription)
 	return a
 }
 
 type UpdatePoolHandler struct {
-	poolsHandlerBase
+	HandlerBase
 	Pool  string `long:"pool" description:"Short name of the pool" required:"true"`
 	Field string `long:"field" description:"Field name" required:"true"`
 	Value string `long:"value" description:"Field value"`

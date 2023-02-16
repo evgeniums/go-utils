@@ -10,14 +10,14 @@ import (
 const AddServiceCmd string = "add_service"
 const AddServiceDescription string = "Add service"
 
-func AddService() poolsHandler {
+func AddService() Handler {
 	a := &AddServiceHandler{}
 	a.Init(AddServiceCmd, AddServiceDescription)
 	return a
 }
 
 type AddServiceHandler struct {
-	poolsHandlerBase
+	HandlerBase
 	pool.ServiceConfigBase
 	pool.SecretsBase
 	Name        string `long:"name" description:"Short name of the service, must be unique" required:"true"`
@@ -28,9 +28,8 @@ type AddServiceHandler struct {
 
 func (a *AddServiceHandler) Execute(args []string) error {
 
-	ctx := a.ctxBuilder(PoolGroup, AddServiceCmd)
+	ctx, controller := a.Context()
 	defer ctx.Close()
-	controller := a.group.NewController(ctx.App())
 
 	s := pool.NewService()
 	s.SetName(a.Name)

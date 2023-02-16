@@ -3,14 +3,14 @@ package pool_console
 const DeletePoolCmd string = "delete_pool"
 const DeletePoolDescription string = "Delete pool"
 
-func DeletePool() poolsHandler {
+func DeletePool() Handler {
 	a := &DeletePoolHandler{}
 	a.Init(DeletePoolCmd, DeletePoolDescription)
 	return a
 }
 
 type DeletePoolHandler struct {
-	poolsHandlerBase
+	HandlerBase
 	Pool string `long:"pool" description:"Short name of the pool" required:"true"`
 }
 

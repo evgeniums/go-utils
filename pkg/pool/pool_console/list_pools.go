@@ -9,14 +9,14 @@ import (
 const ListPoolsCmd string = "list_pools"
 const ListPoolsDescription string = "List pools"
 
-func ListPools() poolsHandler {
+func ListPools() Handler {
 	a := &ListPoolsHandler{}
 	a.Init(ListPoolsCmd, ListPoolsDescription)
 	return a
 }
 
 type ListPoolsHandler struct {
-	poolsHandlerBase
+	HandlerBase
 }
 
 func (a *ListPoolsHandler) Execute(args []string) error {

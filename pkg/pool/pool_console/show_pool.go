@@ -9,14 +9,14 @@ import (
 const ShowPoolCmd string = "show_pool"
 const ShowPoolDescription string = "Show pool"
 
-func ShowPool() poolsHandler {
+func ShowPool() Handler {
 	a := &ShowPoolHandler{}
 	a.Init(ShowPoolCmd, ShowPoolDescription)
 	return a
 }
 
 type ShowPoolHandler struct {
-	poolsHandlerBase
+	HandlerBase
 	Pool string `long:"pool" description:"Short name of the pool" required:"true"`
 }
 

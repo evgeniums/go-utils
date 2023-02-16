@@ -10,14 +10,14 @@ import (
 const EnablePoolCmd string = "enable_pool"
 const EnablePoolDescription string = "Enable pool"
 
-func EnablePool() poolsHandler {
+func EnablePool() Handler {
 	a := &EnablePoolHandler{}
 	a.Init(EnablePoolCmd, EnablePoolDescription)
 	return a
 }
 
 type EnablePoolHandler struct {
-	poolsHandlerBase
+	HandlerBase
 	Pool string `long:"pool" description:"Short name of the pool" required:"true"`
 }
 

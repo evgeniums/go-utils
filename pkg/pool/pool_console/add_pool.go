@@ -10,14 +10,14 @@ import (
 const AddPoolCmd string = "add_pool"
 const AddPoolDescription string = "Add pool"
 
-func AddPool() poolsHandler {
+func AddPool() Handler {
 	a := &AddPoolHandler{}
 	a.Init(AddPoolCmd, AddPoolDescription)
 	return a
 }
 
 type AddPoolHandler struct {
-	poolsHandlerBase
+	HandlerBase
 	Name        string `long:"name" description:"Short name of the pool, must be unique" required:"true"`
 	LongName    string `long:"long-name" description:"Long name of the pool"`
 	Description string `long:"description" description:"Pool description"`

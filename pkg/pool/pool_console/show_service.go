@@ -9,14 +9,14 @@ import (
 const ShowServiceCmd string = "show_service"
 const ShowServiceDescription string = "Show service"
 
-func ShowService() poolsHandler {
+func ShowService() Handler {
 	a := &ShowServiceHandler{}
 	a.Init(ShowServiceCmd, ShowServiceDescription)
 	return a
 }
 
 type ShowServiceHandler struct {
-	poolsHandlerBase
+	HandlerBase
 	Service string `long:"pool" description:"Short name of the service" required:"true"`
 }
 

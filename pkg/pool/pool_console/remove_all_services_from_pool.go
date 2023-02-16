@@ -3,14 +3,14 @@ package pool_console
 const RemoveAllServicesFromPoolCmd string = "remove_all_services_from_pool"
 const RemoveAllServicesFromPoolDescription string = "Remove all services from pool"
 
-func RemoveAllServicesFromPool() poolsHandler {
+func RemoveAllServicesFromPool() Handler {
 	a := &RemoveAllServicesFromPoolHandler{}
 	a.Init(RemoveAllServicesFromPoolCmd, RemoveAllServicesFromPoolDescription)
 	return a
 }
 
 type RemoveAllServicesFromPoolHandler struct {
-	poolsHandlerBase
+	HandlerBase
 	Pool string `long:"pool" description:"Short name of the pool" required:"true"`
 }
 

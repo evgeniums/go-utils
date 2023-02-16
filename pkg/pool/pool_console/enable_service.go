@@ -10,14 +10,14 @@ import (
 const EnableServiceCmd string = "enable_service"
 const EnableServiceDescription string = "Enable service"
 
-func EnableService() poolsHandler {
+func EnableService() Handler {
 	a := &EnableServiceHandler{}
 	a.Init(EnableServiceCmd, EnableServiceDescription)
 	return a
 }
 
 type EnableServiceHandler struct {
-	poolsHandlerBase
+	HandlerBase
 	Service string `long:"pool" description:"Short name of the service" required:"true"`
 }
 
