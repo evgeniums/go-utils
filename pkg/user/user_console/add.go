@@ -77,6 +77,32 @@ func (a *AddHandler[T]) Execute(args []string) error {
 
 //----------------------------------------
 
+func AddNoPassword[T user.User]() console_tool.Handler[*UserCommands[T]] {
+	a := &AddHandler[T]{}
+	a.Init(AddCmd, AddDescription)
+	return a
+}
+
+type AddNoPasswordHandler[T user.User] struct {
+	HandlerBase[T]
+	AddData
+}
+
+func (a *AddNoPasswordHandler[T]) Data() interface{} {
+	return &a.AddData
+}
+
+func (a *AddNoPasswordHandler[T]) Execute(args []string) error {
+
+	ctx, ctrl := a.Context(a.Login)
+	defer ctx.Close()
+
+	_, err := ctrl.Add(ctx, a.Login, "")
+	return err
+}
+
+//----------------------------------------
+
 func AddWithPhone[T user.User]() console_tool.Handler[*UserCommands[T]] {
 	a := &AddHandler[T]{}
 	a.Init(AddCmd, AddDescription)
