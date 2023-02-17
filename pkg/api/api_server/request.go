@@ -4,17 +4,17 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
+	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/parameter"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
 // Interface of request to server API.
 type Request interface {
 	auth.AuthContext
-	parameter.WithParameters
+	common.WithParameters
 
 	Server() Server
 	Response() Response

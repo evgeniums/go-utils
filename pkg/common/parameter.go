@@ -1,4 +1,4 @@
-package parameter
+package common
 
 import "time"
 
