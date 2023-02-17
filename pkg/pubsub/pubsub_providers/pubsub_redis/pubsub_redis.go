@@ -92,7 +92,7 @@ type Subscriber struct {
 func NewSubscriber(app app_context.Context, serializer ...message.Serializer) *Subscriber {
 	s := &Subscriber{}
 	s.Construct(app, serializer...)
-
+	s.channels = make(map[string]*redis.PubSub)
 	return s
 }
 
