@@ -10,6 +10,7 @@ type Secrets interface {
 }
 
 type ServiceConfig interface {
+	Provider() string
 	PublicHost() string
 	PublicPort() uint16
 	PublicUrl() string
@@ -53,6 +54,7 @@ func (s *SecretsBase) Secret2() string {
 }
 
 type ServiceConfigBase struct {
+	PROVIDER     string `gorm:"index" json:"provider" long:"provider" description:"Provider type"`
 	PUBLIC_HOST  string `gorm:"index" json:"public_host" long:"public-host" description:"Public host of the service (optional)"`
 	PUBLIC_PORT  uint16 `gorm:"index" json:"public_port" long:"public-port" description:"Public port of the service (optional)"`
 	PUBLIC_URL   string `gorm:"index" json:"public_url" long:"public-url" description:"Public url of the service (optional)"`
@@ -62,6 +64,10 @@ type ServiceConfigBase struct {
 	PARAMETER1   string `gorm:"index;column:parameter1" json:"parameter1" long:"parameter1" description:"Generic parameter1 of the service (optional)"`
 	PARAMETER2   string `gorm:"index;column:parameter2" json:"parameter2" long:"parameter2" description:"Generic parameter2 of the service (optional)"`
 	PARAMETER3   string `gorm:"index;column:parameter3" json:"parameter3" long:"parameter3" description:"Generic parameter3 of the service (optional)"`
+}
+
+func (s *ServiceConfigBase) Provider() string {
+	return s.PUBLIC_HOST
 }
 
 func (s *ServiceConfigBase) PublicHost() string {

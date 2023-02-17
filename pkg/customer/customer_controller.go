@@ -1,10 +1,24 @@
 package customer
 
 import (
+	"net/http"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 )
+
+const (
+	ErrorCodeCustomerNotFound string = "customer_not_found"
+)
+
+var ErrorDescriptions = map[string]string{
+	ErrorCodeCustomerNotFound: "Customer not found.",
+}
+
+var ErrorHttpCodes = map[string]int{
+	ErrorCodeCustomerNotFound: http.StatusNotFound,
+}
 
 type CustomerFieldSetter interface {
 	SetName(ctx op_context.Context, id string, name string, idIsLogin ...bool) error

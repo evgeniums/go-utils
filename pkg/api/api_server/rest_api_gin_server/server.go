@@ -31,12 +31,13 @@ const TenancyParameter string = "tenancy"
 type ServerConfig struct {
 	api_server.ServerBaseConfig
 
-	HOST                    string `validate:"ip" default:"127.0.0.1"`
-	PORT                    uint16 `validate:"required"`
-	PATH_PREFIX             string `default:"/api"`
-	TRUSTED_PROXIES         []string
-	VERBOSE                 bool
-	VERBOSE_BODY_MAX_LENGTH int `default:"2048"`
+	HOST                     string `validate:"ip" default:"127.0.0.1"`
+	PORT                     uint16 `validate:"required"`
+	PATH_PREFIX              string `default:"/api"`
+	TRUSTED_PROXIES          []string
+	VERBOSE                  bool
+	VERBOSE_BODY_MAX_LENGTH  int `default:"2048"`
+	ALLOW_NOT_ACTIVE_TENANCY bool
 }
 
 type AuthParameterGetter = func(r *Request, key string) string
@@ -44,10 +45,11 @@ type AuthParameterSetter = func(r *Request, key string, value string)
 
 type Server struct {
 	ServerConfig
-	multitenancy.MultitenancyBase
 	app_context.WithAppBase
 	generic_error.ErrorManagerBaseHttp
 	auth.WithAuthBase
+
+	tenancies multitenancy.Multitenancy
 
 	ginEngine     *gin.Engine
 	notFoundError *api.ResponseError
@@ -66,6 +68,9 @@ func getHttpHeader(g *gin.Context, name string) string {
 
 func NewServer() *Server {
 	s := &Server{}
+
+	// TODO create and init tenancy manager
+	// s.tenancies = tenancy_manager.NewTenancyManager()
 
 	csrfKey := func(key string) string {
 		return utils.ConcatStrings("x-", key)
@@ -91,6 +96,10 @@ func (s *Server) Config() interface{} {
 
 func (s *Server) Testing() bool {
 	return s.App().Testing()
+}
+
+func (s *Server) TenancyManager() multitenancy.Multitenancy {
+	return s.tenancies
 }
 
 func (s *Server) address() string {
@@ -178,7 +187,7 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 	s.WithAuthBase.Init(auth)
 	auth.AttachToErrorManager(s)
 
-	if s.IsMultiTenancy() {
+	if s.tenancies.IsMultiTenancy() {
 		s.tenancyResource = api.NewResource(TenancyParameter, api.ResourceConfig{HasId: true})
 	}
 
@@ -245,6 +254,9 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		request.Init(s, ginCtx, ep)
 		request.SetName(ep.Name())
 
+		c := request.TraceInMethod("Server.RequestHandler")
+
+		// dum request in verbose mode
 		if s.VERBOSE {
 			dumpBody := ginCtx.Request.ContentLength > 0 && int(ginCtx.Request.ContentLength) <= s.VERBOSE_BODY_MAX_LENGTH
 			b, _ := httputil.DumpRequest(ginCtx.Request, dumpBody)
@@ -252,15 +264,21 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		}
 
 		// extract tenancy if applicable
-		if s.IsMultiTenancy() {
+		if s.tenancies.IsMultiTenancy() {
 			tenancyInPath := request.GetResourceId(TenancyParameter)
-			tenancy, err := s.TenancyByPath(tenancyInPath)
+			request.SetLoggerField("tenancy", tenancyInPath)
+			var tenancy multitenancy.Tenancy
+			tenancy, err = s.tenancies.TenancyByPath(tenancyInPath)
 			if err != nil {
-				// report that tenancy was not found
-				request.SetGenericError(s.MakeGenericError(generic_error.ErrorCodeNotFound, request.Tr))
-				request.Logger().ErrorNative(err, logger.Fields{"tenancy": tenancyInPath})
+				request.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
+				c.SetMessage("unknown tenancy")
 			} else {
-				request.SetTenancy(tenancy)
+				if !s.ALLOW_NOT_ACTIVE_TENANCY && !tenancy.IsActive() {
+					request.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
+					err = errors.New("tenancy is not active")
+				} else {
+					request.SetTenancy(tenancy)
+				}
 			}
 		}
 
@@ -275,7 +293,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		if err == nil {
 			err = s.Auth().HandleRequest(request, ep.Resource().ServicePathPrototype(), ep.AccessType())
 			if err != nil {
-				request.SetGenericError(s.MakeGenericError(auth.ErrorCodeUnauthorized, request.Tr))
+				request.SetGenericErrorCode(auth.ErrorCodeUnauthorized)
 			}
 		}
 		origin := &default_op_context.Origin{}
@@ -302,6 +320,10 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		}
 
 		// close context with sending response to client
+		if err != nil {
+			c.SetError(err)
+		}
+		request.TraceOutMethod()
 		request.Close()
 	}
 }
@@ -319,7 +341,7 @@ func (s *Server) AddEndpoint(ep api_server.Endpoint) {
 		panic(fmt.Sprintf("Invalid HTTP method in endpoint %s for access %d", ep.Name(), ep.AccessType()))
 	}
 
-	if s.IsMultiTenancy() {
+	if s.tenancies.IsMultiTenancy() {
 		s.tenancyResource.AddChild(ep.Resource())
 	}
 

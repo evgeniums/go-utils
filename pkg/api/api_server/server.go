@@ -13,7 +13,6 @@ import (
 // Interface of generic server that implements some API.
 type Server interface {
 	generic_error.ErrorManager
-	multitenancy.Multitenancy
 	auth.WithAuth
 
 	// Get API version.
@@ -28,6 +27,9 @@ type Server interface {
 	// Check if hateoas links are enabled.
 	IsHateoas() bool
 
+	// Get tenancy manager
+	TenancyManager() multitenancy.Multitenancy
+
 	// Check for testing mode.
 	Testing() bool
 }
@@ -41,7 +43,6 @@ func AddServiceToServer(s Server, service Service) {
 
 type ServerBaseConfig struct {
 	common.WithNameBaseConfig
-	multitenancy.MultitenancyBaseConfig
 	API_VERSION     string `validate:"required"`
 	HATEOAS         bool
 	OPLOG_USER_TYPE string
