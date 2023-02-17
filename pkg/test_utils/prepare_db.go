@@ -4,11 +4,13 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -25,11 +27,17 @@ func SqliteDatabasesPath() string {
 }
 
 func SqliteDbPath(fileName string) string {
-	return filepath.Join(SqliteDatabasesPath(), fileName)
+
+	f := fileName
+	if !strings.HasSuffix(f, ".sqlite") {
+		f = utils.ConcatStrings(f, ".sqlite")
+	}
+
+	return filepath.Join(SqliteDatabasesPath(), f)
 }
 
 func SqlitePath(config *db.DBConfig) string {
-	return SqliteDbPath(config.DB_EXTRA_CONFIG)
+	return SqliteDbPath(config.DB_NAME)
 }
 
 func DbGormOpener(provider string, dsn string) (gorm.Dialector, error) {

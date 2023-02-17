@@ -2,7 +2,7 @@
     "testing" : "true",
     "db":{
         "db_provider": "sqlite",
-        "db_extra_config" : "auth_test.sqlite"
+        "db_name" : "auth_test.sqlite"
     },
     "logger" : {
         "level" : "debug"

@@ -1,7 +1,7 @@
 {
     "db":{
         "db_provider": "sqlite",
-        "db_extra_config" : "sms_test.sqlite"
+        "db_name" : "sms_test.sqlite"
     },
     "sms": {
         "default_provider": "mock_default",

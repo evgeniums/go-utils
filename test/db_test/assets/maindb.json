@@ -1,7 +1,7 @@
 {
     "db":{
         "db_provider": "sqlite",
-        "db_extra_config" : "maindb.sqlite"
+        "db_name" : "maindb.sqlite"
     },
     "logger": {
         "level": "debug"

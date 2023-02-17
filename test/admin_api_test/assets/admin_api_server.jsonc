@@ -3,7 +3,7 @@
     "app_instance" : "admin_api_test",
     "db":{
         "db_provider": "sqlite",
-        "db_extra_config" : "server_db.sqlite"
+        "db_name" : "server_db.sqlite"
     },
     "logger" : {
         "level" : "debug"
