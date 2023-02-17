@@ -29,9 +29,9 @@ func (p *PubsubInmem) Unsubscribe(topicName string) {
 	p.DeleteTopic(topicName)
 }
 
-func (p *PubsubInmem) Publish(topicName string, msg interface{}) error {
+func (p *PubsubInmem) Publish(topicName string, obj interface{}) error {
 
-	obj, err := p.Serialize(msg)
+	msg, err := p.Serialize(obj)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func (p *PubsubInmem) Publish(topicName string, msg interface{}) error {
 	opCtx := p.NewOpContext(topicName)
 	defer opCtx.Close()
 
-	p.Handle(opCtx, topicName, obj)
+	p.Handle(opCtx, topicName, msg)
 
 	return nil
 }

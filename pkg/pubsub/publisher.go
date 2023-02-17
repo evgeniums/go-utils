@@ -7,7 +7,7 @@ import (
 )
 
 type Publisher interface {
-	Publish(topicName string, msg interface{}) error
+	Publish(topicName string, obj interface{}) error
 	Shutdown()
 }
 
