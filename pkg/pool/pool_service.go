@@ -40,8 +40,8 @@ type PoolService interface {
 var NilService PoolService
 
 type SecretsBase struct {
-	SECRET1 string `json:"secret1" long:"secret1" description:"Secret1 the service (optional)"`
-	SECRET2 string `json:"secret2" long:"secret2" description:"Secret2 the service (optional)"`
+	SECRET1 string `json:"secret1" long:"secret1" description:"Secret1 of the service" optional:"true"`
+	SECRET2 string `json:"secret2" long:"secret2" description:"Secret2 of the service (optional)"`
 }
 
 func (s *SecretsBase) Secret1() string {
