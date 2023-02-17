@@ -5,7 +5,6 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/message"
-	"github.com/evgeniums/go-backend-helpers/pkg/message/message_json"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
@@ -29,7 +28,7 @@ func (s *SubscriberClientBase) Name() string {
 
 type Topic interface {
 	Name() string
-	Handle(ctx op_context.Context, msg []byte) error
+	Handle(ctx op_context.Context, msg []byte, serializer message.Serializer) error
 	Unsubscribe(id string)
 }
 
@@ -39,19 +38,17 @@ type TopicT[T any] interface {
 }
 
 type TopicBase[T any] struct {
-	mutex        sync.RWMutex
-	name         string
-	subscribers  map[string]SubscriberClient[T]
-	builder      func() T
-	deserializer message.Serializer
+	mutex       sync.RWMutex
+	name        string
+	subscribers map[string]SubscriberClient[T]
+	builder     func() T
 }
 
-func New[T any](name string, builder func() T, deserializer ...message.Serializer) *TopicBase[T] {
+func New[T any](name string, builder func() T) *TopicBase[T] {
 	t := &TopicBase[T]{}
 	t.name = name
 	t.builder = builder
 	t.subscribers = make(map[string]SubscriberClient[T])
-	t.deserializer = utils.OptionalArg(message.Serializer(message_json.Serializer), deserializer...)
 	return t
 }
 
@@ -71,13 +68,13 @@ func (t *TopicBase[T]) Subscribe(subscriber SubscriberClient[T]) {
 	t.subscribers[subscriber.Name()] = subscriber
 }
 
-func (t *TopicBase[T]) Handle(ctx op_context.Context, msg []byte) error {
+func (t *TopicBase[T]) Handle(ctx op_context.Context, msg []byte, serializer message.Serializer) error {
 
 	c := ctx.TraceInMethod("pubsub.Topic.Handle")
 	defer ctx.TraceOutMethod()
 
 	obj := t.builder()
-	err := t.deserializer.ParseMessage(msg, obj)
+	err := serializer.ParseMessage(msg, obj)
 	if err != nil {
 		c.SetMessage("failed to unmarshal message")
 		return c.SetError(err)

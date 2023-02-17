@@ -8,8 +8,11 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
+	"github.com/evgeniums/go-backend-helpers/pkg/message"
+	"github.com/evgeniums/go-backend-helpers/pkg/message/message_json"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type Subscriber interface {
@@ -23,13 +26,15 @@ type Subscriber interface {
 
 type SubscriberBase struct {
 	app_context.WithAppBase
-	mutex  sync.RWMutex
-	topics map[string]Topic
+	mutex      sync.RWMutex
+	topics     map[string]Topic
+	serializer message.Serializer
 }
 
-func (s *SubscriberBase) Init(app app_context.Context) {
+func (s *SubscriberBase) Construct(app app_context.Context, serializer ...message.Serializer) {
 	s.WithAppBase.Init(app)
 	s.topics = make(map[string]Topic)
+	s.serializer = utils.OptionalArg(message.Serializer(message_json.Serializer), serializer...)
 }
 
 func (s *SubscriberBase) Topic(topicName string) (Topic, error) {
@@ -49,7 +54,7 @@ func (s *SubscriberBase) Handle(ctx op_context.Context, topicName string, msg []
 	if !ok {
 		return nil
 	}
-	return topic.Handle(ctx, msg)
+	return topic.Handle(ctx, msg, s.serializer)
 }
 
 func (s *SubscriberBase) AddTopic(topic Topic) error {
