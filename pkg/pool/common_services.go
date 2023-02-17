@@ -1,8 +1,7 @@
 package pool
 
 const (
-	TypePostgresDatabase string = "postgres"
-	TypeRestApiServer    string = "rest_api"
-	TypeRedisServer      string = "redis"
-	TypeSqliteDatabase   string = "sqlite"
+	TypeDatabase  string = "database"
+	TypeApiServer string = "api_server"
+	TypePubsub    string = "pubsub"
 )

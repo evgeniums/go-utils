@@ -20,6 +20,7 @@ type ServiceConfig interface {
 	Parameter1() string
 	Parameter2() string
 	Parameter3() string
+	User() string
 }
 
 type PoolServiceEssentials interface {
@@ -54,20 +55,21 @@ func (s *SecretsBase) Secret2() string {
 }
 
 type ServiceConfigBase struct {
-	PROVIDER     string `gorm:"index" json:"provider" long:"provider" description:"Provider type"`
+	PROVIDER     string `gorm:"index" json:"provider" long:"provider" description:"Service provider" required:"true"`
 	PUBLIC_HOST  string `gorm:"index" json:"public_host" long:"public-host" description:"Public host of the service (optional)"`
 	PUBLIC_PORT  uint16 `gorm:"index" json:"public_port" long:"public-port" description:"Public port of the service (optional)"`
 	PUBLIC_URL   string `gorm:"index" json:"public_url" long:"public-url" description:"Public url of the service (optional)"`
 	PRIVATE_HOST string `gorm:"index" json:"private_host" long:"private-host" description:"Private host of the service (optional)"`
 	PRIVATE_PORT uint16 `gorm:"index" json:"private_port" long:"private-port" description:"Private port of the service (optional)"`
 	PRIVATE_URL  string `gorm:"index" json:"private_url" long:"private-url" description:"Private URL of the service (optional)"`
+	USER         string `gorm:"index" json:"user" long:"user" description:"User for login to the service (optional)"`
 	PARAMETER1   string `gorm:"index;column:parameter1" json:"parameter1" long:"parameter1" description:"Generic parameter1 of the service (optional)"`
 	PARAMETER2   string `gorm:"index;column:parameter2" json:"parameter2" long:"parameter2" description:"Generic parameter2 of the service (optional)"`
 	PARAMETER3   string `gorm:"index;column:parameter3" json:"parameter3" long:"parameter3" description:"Generic parameter3 of the service (optional)"`
 }
 
-func (s *ServiceConfigBase) Provider() string {
-	return s.PUBLIC_HOST
+func (s *ServiceConfigBase) User() string {
+	return s.USER
 }
 
 func (s *ServiceConfigBase) PublicHost() string {
@@ -106,6 +108,10 @@ func (s *ServiceConfigBase) Parameter3() string {
 	return s.PARAMETER3
 }
 
+func (s *ServiceConfigBase) Provider() string {
+	return s.PROVIDER
+}
+
 type PoolServiceBaseData struct {
 	common.WithLongNameBase
 	common.WithDescriptionBase
@@ -113,6 +119,7 @@ type PoolServiceBaseData struct {
 	common.WithTypeBase
 	common.WithRefIdBase
 	ServiceConfigBase
+	SecretsBase
 }
 
 type PoolServiceBaseEssentials struct {
@@ -123,7 +130,6 @@ type PoolServiceBaseEssentials struct {
 type PoolServiceBase struct {
 	common.ObjectBase
 	PoolServiceBaseEssentials
-	SecretsBase
 }
 
 func NewService() *PoolServiceBase {

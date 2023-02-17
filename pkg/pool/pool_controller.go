@@ -17,19 +17,27 @@ const ErrorCodePoolNameConflict = "pool_name_conflict"
 const ErrorCodeServiceNameConflict = "service_name_conflict"
 const ErrorCodeServiceRoleConflict = "service_role_conflict"
 const ErrorCodePoolServiceBindingsExist = "pool_service_bindings_exist"
+const ErrorCodeNoServiceWithRole = "no_service_with_role"
+const ErrorCodeInvalidServiceConfiguration = "invalid_service_configuration"
+const ErrorCodeServiceInitializationFailed = "service_initialization_failed"
 
 var ErrorDescriptions = map[string]string{
-	ErrorCodePoolNotFound:             "Pool not found.",
-	ErrorCodeServiceNotFound:          "Service not found.",
-	ErrorCodePoolNameConflict:         "Pool with such name already exists, choose another name.",
-	ErrorCodeServiceNameConflict:      "Service with such name already exists, choose another name.",
-	ErrorCodeServiceRoleConflict:      "Pool already has service for that role.",
-	ErrorCodePoolServiceBindingsExist: "Can't delete pool with services. First, remove all services from the pool.",
+	ErrorCodePoolNotFound:                "Pool not found.",
+	ErrorCodeServiceNotFound:             "Service not found.",
+	ErrorCodePoolNameConflict:            "Pool with such name already exists, choose another name.",
+	ErrorCodeServiceNameConflict:         "Service with such name already exists, choose another name.",
+	ErrorCodeServiceRoleConflict:         "Pool already has service for that role.",
+	ErrorCodePoolServiceBindingsExist:    "Can't delete pool with services. First, remove all services from the pool.",
+	ErrorCodeNoServiceWithRole:           "Pool does not include service with requested role",
+	ErrorCodeInvalidServiceConfiguration: "Invalid configuration of service in the pool",
+	ErrorCodeServiceInitializationFailed: "Failed to connect to service",
 }
 
 var ErrorHttpCodes = map[string]int{
-	ErrorCodePoolNotFound:    http.StatusNotFound,
-	ErrorCodeServiceNotFound: http.StatusNotFound,
+	ErrorCodePoolNotFound:                http.StatusNotFound,
+	ErrorCodeServiceNotFound:             http.StatusNotFound,
+	ErrorCodeInvalidServiceConfiguration: http.StatusInternalServerError,
+	ErrorCodeServiceInitializationFailed: http.StatusInternalServerError,
 }
 
 type PoolController interface {
