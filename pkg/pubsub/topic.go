@@ -11,20 +11,20 @@ import (
 )
 
 type SubscriberClient[T any] interface {
-	Id() string
+	Name() string
 	Handle(ctx op_context.Context, msg T) error
 }
 
 type SubscriberClientBase struct {
-	id string
+	name string
 }
 
-func (s *SubscriberClientBase) Init(id string) {
-	s.id = id
+func (s *SubscriberClientBase) Init(name string) {
+	s.name = name
 }
 
-func (s *SubscriberClientBase) Id() string {
-	return s.id
+func (s *SubscriberClientBase) Name() string {
+	return s.name
 }
 
 type Topic interface {
@@ -68,7 +68,7 @@ func (t *TopicBase[T]) Unsubscribe(id string) {
 func (t *TopicBase[T]) Subscribe(subscriber SubscriberClient[T]) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
-	t.subscribers[subscriber.Id()] = subscriber
+	t.subscribers[subscriber.Name()] = subscriber
 }
 
 func (t *TopicBase[T]) Handle(ctx op_context.Context, msg []byte) error {
@@ -90,7 +90,7 @@ func (t *TopicBase[T]) Handle(ctx op_context.Context, msg []byte) error {
 	for _, subscriber := range subscribers {
 		err = subscriber.Handle(ctx, obj)
 		if err != nil {
-			c.Logger().Warn("failed to handle message", logger.Fields{"subscriber": subscriber.Id()})
+			c.Logger().Warn("failed to handle message", logger.Fields{"subscriber": subscriber.Name()})
 		}
 	}
 
