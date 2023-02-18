@@ -35,7 +35,7 @@ func (r *RedisClient) Config() interface{} {
 
 func (r *RedisClient) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
-	err := object_config.LoadLogValidate(cfg, log, vld, r, "redis_pubsub", configPath...)
+	err := object_config.LoadLogValidate(cfg, log, vld, r, "pubsub", configPath...)
 	if err != nil {
 		return log.PushFatalStack("failed to init Redis client", err)
 	}
