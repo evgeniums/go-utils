@@ -18,6 +18,8 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger/logger_logrus"
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub"
+	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_providers/pubsub_factory"
+	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_subscriber"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator/validator_playground"
 )
@@ -42,7 +44,9 @@ type Context struct {
 	inmemCache   *inmem_cache.InmemCache[string]
 	logrusLogger *logger_logrus.LogrusLogger
 
-	publisher pubsub.Publisher
+	publisher     pubsub.Publisher
+	subscriber    pubsub_subscriber.Subscriber
+	pubsubFactory pubsub_factory.PubsubFactory
 
 	contextConfig
 
@@ -91,7 +95,12 @@ func (c *Context) GetTestParameter(key string) (interface{}, bool) {
 	return value, ok
 }
 
-func New(buildConfig *app_context.BuildConfig, cache_ ...cache.Cache) *Context {
+type AppConfig struct {
+	PubsbFactory pubsub_factory.PubsubFactory
+	Cache        cache.Cache
+}
+
+func New(buildConfig *app_context.BuildConfig, appConfig ...*AppConfig) *Context {
 
 	if buildConfig != nil {
 		Version = buildConfig.Version
@@ -104,12 +113,19 @@ func New(buildConfig *app_context.BuildConfig, cache_ ...cache.Cache) *Context {
 	c := &Context{}
 	c.validator = validator_playground.New()
 
-	if len(cache_) == 0 {
+	if len(appConfig) != 0 {
+		c.pubsubFactory = appConfig[0].PubsbFactory
+		c.cache = appConfig[0].Cache
+	}
+
+	if c.cache == nil {
 		c.inmemCache = inmem_cache.New[string]()
 		c.cache = cache.New(c.inmemCache)
 		c.inmemCache.Start()
-	} else {
-		c.cache = cache_[0]
+	}
+
+	if c.pubsubFactory == nil {
+		c.pubsubFactory = pubsub_factory.DefaultPubsubFactory()
 	}
 
 	c.logrusLogger = logger_logrus.New()
@@ -152,6 +168,12 @@ func (c *Context) InitWithArgs(configFile string, args []string, configType ...s
 	err = object_config.LoadLogValidate(c.Cfg(), log, c.validator, c, "")
 	if err != nil {
 		return log.PushFatalStack("failed to init application configuration", err)
+	}
+
+	// init pubsub
+	err = c.InitPubsub("pubsub")
+	if err != nil {
+		return err
 	}
 
 	// setup testing
@@ -216,4 +238,25 @@ func (c *Context) SetPublisher(publisher pubsub.Publisher) {
 
 func (c *Context) Publisher() pubsub.Publisher {
 	return c.publisher
+}
+
+func (c *Context) Subscriber() pubsub_subscriber.Subscriber {
+	return c.subscriber
+}
+
+func (c *Context) InitPubsub(configPath ...string) error {
+
+	var err error
+
+	c.publisher, err = c.pubsubFactory.MakePublisher(c, configPath...)
+	if err != nil {
+		return c.Logger().PushFatalStack("failed to init pubsub publisher", err)
+	}
+
+	c.subscriber, err = c.pubsubFactory.MakeSubscriber(c, configPath...)
+	if err != nil {
+		return c.Logger().PushFatalStack("failed to init pubsub subscriber", err)
+	}
+
+	return nil
 }
