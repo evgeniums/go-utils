@@ -9,6 +9,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_service"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
@@ -55,7 +56,7 @@ func New(users auth_session.WithUserSessionManager, config ...Config) *BareBones
 	return s
 }
 
-func (s *BareBonesServerBase) Init(app app_context.Context, configPath ...string) error {
+func (s *BareBonesServerBase) Init(app app_context.Context, tenancyManager multitenancy.Multitenancy, configPath ...string) error {
 
 	path := utils.OptionalArg("server", configPath...)
 
@@ -82,7 +83,7 @@ func (s *BareBonesServerBase) Init(app app_context.Context, configPath ...string
 
 	// init REST API server
 	if s.pimpl.server == nil {
-		server := rest_api_gin_server.NewServer()
+		server := rest_api_gin_server.NewServer(tenancyManager)
 		serverPath := object_config.Key(path, "rest_api_server")
 		err := server.Init(app, s.pimpl.auth, serverPath)
 		if err != nil {

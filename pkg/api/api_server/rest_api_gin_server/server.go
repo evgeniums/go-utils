@@ -65,11 +65,10 @@ func getHttpHeader(g *gin.Context, name string) string {
 	return g.GetHeader(name)
 }
 
-func NewServer() *Server {
+func NewServer(tenancyManager multitenancy.Multitenancy) *Server {
 	s := &Server{}
 
-	// TODO create and init tenancy manager
-	// s.tenancies = tenancy_manager.NewTenancyManager()
+	s.tenancies = tenancyManager
 
 	csrfKey := func(key string) string {
 		return utils.ConcatStrings("x-", key)
@@ -183,10 +182,9 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 	s.WithAuthBase.Init(auth)
 	auth.AttachToErrorManager(s)
 
-	// TODO uncomment this
-	// if s.tenancies.IsMultiTenancy() {
-	// 	s.tenancyResource = api.NewResource(TenancyParameter, api.ResourceConfig{HasId: true})
-	// }
+	if s.tenancies.IsMultiTenancy() {
+		s.tenancyResource = api.NewResource(TenancyParameter, api.ResourceConfig{HasId: true})
+	}
 
 	defaultPath := "rest_api_server"
 
@@ -261,24 +259,23 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		}
 
 		// extract tenancy if applicable
-		// TODO uncomment this
-		// if s.tenancies.IsMultiTenancy() {
-		// 	tenancyInPath := request.GetResourceId(TenancyParameter)
-		// 	request.SetLoggerField("tenancy", tenancyInPath)
-		// 	var tenancy multitenancy.Tenancy
-		// 	tenancy, err = s.tenancies.TenancyByPath(tenancyInPath)
-		// 	if err != nil {
-		// 		request.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
-		// 		c.SetMessage("unknown tenancy")
-		// 	} else {
-		// 		if !s.ALLOW_NOT_ACTIVE_TENANCY && !tenancy.IsActive() {
-		// 			request.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
-		// 			err = errors.New("tenancy is not active")
-		// 		} else {
-		// 			request.SetTenancy(tenancy)
-		// 		}
-		// 	}
-		// }
+		if s.tenancies.IsMultiTenancy() {
+			tenancyInPath := request.GetResourceId(TenancyParameter)
+			request.SetLoggerField("tenancy", tenancyInPath)
+			var tenancy multitenancy.Tenancy
+			tenancy, err = s.tenancies.TenancyByPath(tenancyInPath)
+			if err != nil {
+				request.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
+				c.SetMessage("unknown tenancy")
+			} else {
+				if !s.ALLOW_NOT_ACTIVE_TENANCY && !tenancy.IsActive() {
+					request.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
+					err = errors.New("tenancy is not active")
+				} else {
+					request.SetTenancy(tenancy)
+				}
+			}
+		}
 
 		// process CSRF
 		if err == nil {
@@ -337,10 +334,9 @@ func (s *Server) AddEndpoint(ep api_server.Endpoint) {
 		panic(fmt.Sprintf("Invalid HTTP method in endpoint %s for access %d", ep.Name(), ep.AccessType()))
 	}
 
-	// TODO uncomment this
-	// if s.tenancies.IsMultiTenancy() {
-	// 	s.tenancyResource.AddChild(ep.Resource())
-	// }
+	if s.tenancies.IsMultiTenancy() {
+		s.tenancyResource.AddChild(ep.Resource())
+	}
 
 	path := fmt.Sprintf("%s/%s%s", s.PATH_PREFIX, s.ApiVersion(), ep.Resource().FullPathPrototype())
 	s.ginEngine.Handle(method, path, requestHandler(s, ep))

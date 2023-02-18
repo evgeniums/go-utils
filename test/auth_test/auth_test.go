@@ -7,6 +7,7 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/api/bare_bones_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms/sms_provider_factory"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
@@ -33,8 +34,10 @@ func initServer(t *testing.T, config ...string) (app_context.Context, *user_sess
 	users := user_session_default.NewUsers()
 	users.Init(app.Validator())
 
+	tenancyManager := &tenancy_manager.TenancyManager{}
+
 	server := bare_bones_server.New(users, bare_bones_server.Config{SmsProviders: &sms_provider_factory.MockFactory{}})
-	require.NoErrorf(t, server.Init(app), "failed to init auth server")
+	require.NoErrorf(t, server.Init(app, tenancyManager), "failed to init auth server")
 
 	return app, users, server
 }
