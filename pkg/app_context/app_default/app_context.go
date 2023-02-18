@@ -17,6 +17,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger/logger_logrus"
+	"github.com/evgeniums/go-backend-helpers/pkg/pubsub"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator/validator_playground"
 )
@@ -40,6 +41,8 @@ type Context struct {
 	cache        cache.Cache
 	inmemCache   *inmem_cache.InmemCache[string]
 	logrusLogger *logger_logrus.LogrusLogger
+
+	publisher pubsub.Publisher
 
 	contextConfig
 
@@ -205,4 +208,12 @@ func (c *Context) Hostname() string {
 		hostname = "unknow"
 	}
 	return hostname
+}
+
+func (c *Context) SetPublisher(publisher pubsub.Publisher) {
+	c.publisher = publisher
+}
+
+func (c *Context) Publisher() pubsub.Publisher {
+	return c.publisher
 }
