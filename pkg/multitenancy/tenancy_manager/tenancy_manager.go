@@ -7,7 +7,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/customer"
-	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
+	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
@@ -19,6 +19,28 @@ import (
 const (
 	TENANCY_DATABASE_ROLE string = "tenancy_db"
 )
+
+type TenancyNotificationHandler struct {
+	pubsub_subscriber.SubscriberClientBase
+	manager *TenancyManager
+}
+
+func (t *TenancyNotificationHandler) Handle(ctx op_context.Context, msg *multitenancy.PubsubNotification) error {
+
+	c := ctx.TraceInMethod("TenancyNotificationHandler.Handle")
+	defer ctx.TraceOutMethod()
+
+	if msg.Operation == multitenancy.OpDelete {
+		t.manager.UnloadTenancy(msg.Tenancy)
+	} else {
+		_, err := t.manager.LoadTenancy(ctx, msg.Tenancy)
+		if err != nil {
+			return c.SetError(err)
+		}
+	}
+
+	return nil
+}
 
 type TenancyManagerConfig struct {
 	MULTITENANCY bool
@@ -76,8 +98,6 @@ func (t *TenancyManager) Init(ctx op_context.Context, configPath ...string) erro
 		return ctx.Logger().PushFatalStack("failed to init tenancy manager", err)
 	}
 
-	// subscribe to tenancy notifications
-
 	// load tenancies
 	err = t.LoadTenancies(ctx)
 	if err != nil {
@@ -123,7 +143,7 @@ func (t *TenancyManager) LoadTenancyFromData(ctx op_context.Context, tenancyDb *
 
 	// setup
 	var err error
-	c := ctx.TraceInMethod("TenancyManager.LoadTenancyFromData", logger.Fields{"tenancy": tenancyDb.GetID(), "customer": tenancyDb.CUSTOMER, "role": tenancyDb.ROLE})
+	c := ctx.TraceInMethod("TenancyManager.LoadTenancyFromData", logger.Fields{"tenancy": tenancyDb.GetID(), "customer": tenancyDb.CUSTOMER_ID, "role": tenancyDb.ROLE})
 	onExit := func() {
 		if err != nil {
 			c.SetError(err)
@@ -164,11 +184,12 @@ func (t *TenancyManager) LoadTenancy(ctx op_context.Context, id string) (multite
 	defer onExit()
 
 	// load from database
-	tenancyDb, err := t.Controller.Find(ctx, id)
+	tenancyItem, err := t.Controller.Find(ctx, id)
 	if err != nil {
 		c.SetMessage("failed to find tenancy")
 		return nil, err
 	}
+	tenancyDb := &tenancyItem.TenancyDb
 	if tenancyDb == nil {
 		err := errors.New("tenancy not found")
 		return nil, err
@@ -184,28 +205,15 @@ func (t *TenancyManager) LoadTenancy(ctx op_context.Context, id string) (multite
 	return tenancy, nil
 }
 
-func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenancy.TenancyData) (*multitenancy.TenancyDb, error) {
-
-	// setup
-	var err error
-	c := ctx.TraceInMethod("TenancyManager.LoadTenancy", logger.Fields{"customer": data.CUSTOMER, "role": data.ROLE})
-	onExit := func() {
-		if err != nil {
-			c.SetError(err)
-		}
-		ctx.TraceOutMethod()
-	}
-	defer onExit()
-
-	// check if customer exists
-	owner, err := t.Customers.Find(ctx, data.CUSTOMER)
+func (t *TenancyManager) FindCustomer(ctx op_context.Context, c op_context.CallContext, id string) (*customer.Customer, error) {
+	owner, err := t.Customers.Find(ctx, id)
 	if err != nil {
 		c.SetMessage("failed to find customer")
 		return nil, err
 	}
 	if owner == nil {
 		// try to find by login
-		owner, err = t.Customers.FindByLogin(ctx, data.CUSTOMER)
+		owner, err = t.Customers.FindByLogin(ctx, id)
 		if err != nil {
 			c.SetMessage("failed to find customer")
 			return nil, err
@@ -217,12 +225,84 @@ func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenanc
 		ctx.SetGenericErrorCode(customer.ErrorCodeCustomerNotFound, true)
 		return nil, err
 	}
+	return owner, nil
+}
+
+func (t *TenancyManager) FindPool(ctx op_context.Context, c op_context.CallContext, id string) (pool.Pool, error) {
+	p, err := t.Pools.Pool(id)
+	if err != nil {
+		p, err = t.Pools.PoolByName(id)
+		if err != nil {
+			ctx.SetGenericErrorCode(pool.ErrorCodePoolNotFound)
+			c.SetMessage("unknown pool")
+			return nil, err
+		}
+	}
+	return p, nil
+}
+
+func (t *TenancyManager) CheckDuplicateRole(ctx op_context.Context, c op_context.CallContext, customerId string, role string) error {
+	c.SetLoggerField("customer_id", customerId)
+	c.SetLoggerField("role", role)
+	fields := db.Fields{"customer_id": customerId, "role": role}
+	exists, err := t.Controller.Exists(ctx, fields)
+	if err != nil {
+		c.SetMessage("failed to check existence of tenancy")
+		return err
+	}
+	if exists {
+		err = errors.New("tenancy already exists with such role for that customer")
+		ctx.SetGenericErrorCode(multitenancy.ErrorCodeTenancyConflictRole)
+		return err
+	}
+	return nil
+}
+
+func (t *TenancyManager) CheckDuplicatePath(ctx op_context.Context, c op_context.CallContext, poolId string, path string) error {
+	c.SetLoggerField("pool_id", poolId)
+	c.SetLoggerField("path", path)
+	fields := db.Fields{"pool_id": poolId, "path": path}
+	exists, err := t.Controller.Exists(ctx, fields)
+	if err != nil {
+		c.SetMessage("failed to check existence of tenancy")
+		return err
+	}
+	if exists {
+		err = errors.New("tenancy already exists with such path in that pool")
+		ctx.SetGenericErrorCode(multitenancy.ErrorCodeTenancyConflictPath)
+		return err
+	}
+	return nil
+}
+
+func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenancy.TenancyData) (*multitenancy.TenancyItem, error) {
+
+	// setup
+	var err error
+	c := ctx.TraceInMethod("TenancyManager.LoadTenancy", logger.Fields{"customer": data.CUSTOMER_ID, "role": data.ROLE})
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
+
+	// find customer
+	customer, err := t.FindCustomer(ctx, c, data.CUSTOMER_ID)
+	if err != nil {
+		return nil, err
+	}
 
 	// check if pool exists
-	_, err = t.Pools.Pool(data.POOL_ID)
+	pool, err := t.FindPool(ctx, c, data.POOL_ID)
 	if err != nil {
-		ctx.SetGenericErrorCode(pool.ErrorCodePoolNotFound)
-		c.SetMessage("unknown pool")
+		return nil, err
+	}
+
+	// check if tenancy with such role for this customer exists
+	err = t.CheckDuplicateRole(ctx, c, data.CUSTOMER_ID, data.ROLE)
+	if err != nil {
 		return nil, err
 	}
 
@@ -230,12 +310,19 @@ func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenanc
 	tenancy := NewTenancy(t)
 	tenancy.InitObject()
 	tenancy.TenancyData = *data
-	tenancy.CUSTOMER = owner.GetID()
+	tenancy.CUSTOMER_ID = customer.GetID()
+	tenancy.POOL_ID = pool.GetID()
 	if tenancy.PATH == "" {
 		tenancy.PATH = crypt_utils.GenerateString()
 	}
 	if tenancy.DBNAME == "" {
-		tenancy.DBNAME = utils.ConcatStrings(t.DB_PREFIX, "_", owner.Login(), "_", data.ROLE)
+		tenancy.DBNAME = utils.ConcatStrings(t.DB_PREFIX, "_", customer.Login(), "_", data.ROLE)
+	}
+
+	// check if tenancy with such path in that pool
+	err = t.CheckDuplicatePath(ctx, c, data.POOL_ID, data.PATH)
+	if err != nil {
+		return nil, err
 	}
 
 	// connect to database server
@@ -247,14 +334,27 @@ func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenanc
 	// create database
 	err = tenancy.Db().AutoMigrate(ctx, t.DbModels)
 	if err != nil {
-		genErr := generic_error.New(pool.ErrorCodeServiceInitializationFailed, "Failed to init models of tenancy database")
-		ctx.SetGenericError(genErr)
-		err = genErr
+		ctx.SetGenericErrorCode(multitenancy.ErrorCodeTenancyDbInitializationFailed)
+		c.SetMessage("failed to initialize database models")
 		return nil, err
 	}
 
+	// set tenancy meta in the database
+	meta := &multitenancy.TenancyMeta{}
+	meta.ObjectBase = tenancy.ObjectBase
+	err = tenancy.Db().Create(ctx, meta)
+	if err != nil {
+		c.SetMessage("failed to save tenancy meta in created database")
+		return nil, err
+	}
+
+	// create item
+	item := &multitenancy.TenancyItem{}
+	item.TenancyDb = tenancy.TenancyDb
+	item.CustomerLogin = customer.Login()
+
 	// done
-	return &tenancy.TenancyDb, nil
+	return item, nil
 }
 
 func (t *TenancyManager) LoadTenancies(ctx op_context.Context) error {
@@ -279,7 +379,7 @@ func (t *TenancyManager) LoadTenancies(ctx op_context.Context) error {
 
 	// load each tenancy
 	for _, tenancy := range tenancies {
-		_, err = t.LoadTenancyFromData(ctx, tenancy)
+		_, err = t.LoadTenancyFromData(ctx, &tenancy.TenancyDb)
 		if err != nil {
 			return err
 		}
@@ -297,30 +397,8 @@ func (t *TenancyManager) MigrateDatabase(ctx op_context.Context) error {
 	for _, tenancy := range t.tenanciesById {
 		err := tenancy.Db().AutoMigrate(ctx, t.DbModels)
 		if err != nil {
-			c.SetLoggerField("tenancy", tenancy.Display())
+			c.SetLoggerField("tenancy", multitenancy.TenancyDisplay(tenancy))
 			c.SetLoggerField("tenancy_id", tenancy.GetID())
-			return c.SetError(err)
-		}
-	}
-
-	return nil
-}
-
-type TenancyNotificationHandler struct {
-	pubsub_subscriber.SubscriberClientBase
-	manager *TenancyManager
-}
-
-func (t *TenancyNotificationHandler) Handle(ctx op_context.Context, msg *multitenancy.PubsubNotification) error {
-
-	c := ctx.TraceInMethod("TenancyNotificationHandler.Handle")
-	defer ctx.TraceOutMethod()
-
-	if msg.Operation == multitenancy.OpDelete {
-		t.manager.UnloadTenancy(msg.Tenancy)
-	} else {
-		_, err := t.manager.LoadTenancy(ctx, msg.Tenancy)
-		if err != nil {
 			return c.SetError(err)
 		}
 	}

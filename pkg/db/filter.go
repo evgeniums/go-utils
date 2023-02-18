@@ -41,6 +41,12 @@ func NewFilter() *Filter {
 	return &Filter{}
 }
 
+func (f *Filter) AddFields(fields Fields) {
+	for key, value := range fields {
+		f.AddField(key, value)
+	}
+}
+
 func (f *Filter) AddField(name string, value interface{}) {
 	if f.Fields == nil {
 		f.Fields = Fields{}

@@ -32,8 +32,10 @@ type Context interface {
 	Application() string
 	Hostname() string
 
-	SetPublisher(publisher pubsub.Publisher)
-	Publisher() pubsub.Publisher
+	SetPublisher(poolID string, publisher pubsub.Publisher)
+	Publisher(poolID string) pubsub.Publisher
+
+	PoolName() string
 
 	Close()
 }

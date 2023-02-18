@@ -12,6 +12,7 @@ const (
 	ErrorCodeNotFound                   string = "resource_not_found"
 	ErrorCodeExternalServiceUnavailable string = "external_service_unavailable"
 	ErrorCodeExternalServiceError       string = "external_service_error"
+	ErrorCodeUnsupported                string = "operation_unsupported"
 )
 
 var CommonErrorDescriptions = map[string]string{
@@ -24,6 +25,7 @@ var CommonErrorDescriptions = map[string]string{
 	ErrorCodeNotFound:                   "Resource not found.",
 	ErrorCodeExternalServiceUnavailable: "External service is temporarily unavailable.",
 	ErrorCodeExternalServiceError:       "External service reported error.",
+	ErrorCodeUnsupported:                "Operation unsupported.",
 }
 
 var CommonErrorHttpCodes = map[string]int{

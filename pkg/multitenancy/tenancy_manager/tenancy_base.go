@@ -9,7 +9,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type TenancyBaseData struct {
@@ -52,7 +51,7 @@ func (t *TenancyBase) Init(ctx op_context.Context, data *multitenancy.TenancyDb)
 
 	// setup
 	var err error
-	c := ctx.TraceInMethod("TenancyBase.ConnectDatabase", logger.Fields{"customer": t.CUSTOMER, "role": t.ROLE})
+	c := ctx.TraceInMethod("TenancyBase.ConnectDatabase", logger.Fields{"customer": t.CUSTOMER_ID, "role": t.ROLE})
 	onExit := func() {
 		if err != nil {
 			c.SetError(err)
@@ -65,7 +64,7 @@ func (t *TenancyBase) Init(ctx op_context.Context, data *multitenancy.TenancyDb)
 	t.SetCache(ctx.Cache())
 
 	// find customer
-	customer, err := t.TenancyManager.Customers.Find(ctx, data.CUSTOMER)
+	customer, err := t.TenancyManager.Customers.Find(ctx, data.CUSTOMER_ID)
 	if err != nil {
 		c.SetMessage("failed to find customer")
 		return err
@@ -74,7 +73,7 @@ func (t *TenancyBase) Init(ctx op_context.Context, data *multitenancy.TenancyDb)
 		c.SetMessage("failed to find customer")
 		return err
 	}
-	c.SetLoggerField("tenancy", t.Display())
+	c.SetLoggerField("tenancy", multitenancy.TenancyDisplay(t))
 
 	// check if pool exists
 	t.TenancyBaseData.Pool, err = t.TenancyManager.Pools.Pool(data.POOL_ID)
@@ -90,19 +89,21 @@ func (t *TenancyBase) Init(ctx op_context.Context, data *multitenancy.TenancyDb)
 		return err
 	}
 
+	// check tenancy database
+	err = multitenancy.CheckTenancyDatabase(ctx, t.Db(), t.GetID())
+	if err != nil {
+		return err
+	}
+
 	// done
 	return nil
-}
-
-func (t *TenancyBase) Display() string {
-	return utils.ConcatStrings(t.Customer.Login(), "/", t.Role())
 }
 
 func (t *TenancyBase) ConnectDatabase(ctx op_context.Context) error {
 
 	// setup
 	var err error
-	c := ctx.TraceInMethod("TenancyBase.ConnectDatabase", logger.Fields{"customer": t.CUSTOMER, "role": t.ROLE})
+	c := ctx.TraceInMethod("TenancyBase.ConnectDatabase", logger.Fields{"customer": t.CUSTOMER_ID, "role": t.ROLE})
 	onExit := func() {
 		if err != nil {
 			c.SetError(err)
@@ -146,4 +147,8 @@ func (t *TenancyBase) ConnectDatabase(ctx op_context.Context) error {
 
 	// done
 	return nil
+}
+
+func (t *TenancyBase) CustomerDisplay() string {
+	return t.Customer.Display()
 }

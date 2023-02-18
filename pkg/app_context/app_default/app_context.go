@@ -32,6 +32,7 @@ type contextConfig struct {
 	TESTING      bool
 	APP_INSTANCE string
 	HOSTNAME     string
+	POOL_NAME    string
 }
 
 type Context struct {
@@ -232,14 +233,18 @@ func (c *Context) Hostname() string {
 	return hostname
 }
 
-func (c *Context) SetPublisher(publisher pubsub.Publisher) {
+// TODO support publishers for multiple pools
+func (c *Context) SetPublisher(poolID string, publisher pubsub.Publisher) {
+	// TODO implement publishers by pool ID
 	c.publisher = publisher
 }
 
-func (c *Context) Publisher() pubsub.Publisher {
+func (c *Context) Publisher(poolID string) pubsub.Publisher {
+	// TODO implement publishers by pool ID
 	return c.publisher
 }
 
+// Subcribe to pubsub of application pool
 func (c *Context) Subscriber() pubsub_subscriber.Subscriber {
 	return c.subscriber
 }
@@ -259,4 +264,8 @@ func (c *Context) InitPubsub(configPath ...string) error {
 	}
 
 	return nil
+}
+
+func (c *Context) PoolName() string {
+	return c.POOL_NAME
 }

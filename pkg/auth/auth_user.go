@@ -110,7 +110,7 @@ func (u *UserContextBase) GetTenancy() multitenancy.Tenancy {
 
 func (u *UserContextBase) SetTenancy(tenancy multitenancy.Tenancy) {
 	u.Tenancy = tenancy
-	u.SetLoggerField("tenancy", tenancy.Display())
+	u.SetLoggerField("tenancy", multitenancy.TenancyDisplay(tenancy))
 	if tenancy.Cache() != nil {
 		u.SetCache(tenancy.Cache())
 	}
