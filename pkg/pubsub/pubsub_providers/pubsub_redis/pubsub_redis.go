@@ -11,12 +11,14 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/message"
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub"
+	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_subscriber"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 	"github.com/redis/go-redis/v9"
 )
 
 type RedisConfig struct {
-	Address  string `default:"localhost:6379" validate:"required" vmessage:"Address of Redis server not set"`
+	Host     string `default:"localhost" validate:"required" vmessage:"Host of Redis server not set"`
+	Port     uint16 `default:"6379" validate:"gt=0" vmessage:"Port of Redis can not be zero"`
 	Db       int
 	Password string `mask:"true"`
 }
@@ -38,9 +40,10 @@ func (r *RedisClient) Init(cfg config.Config, log logger.Logger, vld validator.V
 		return log.PushFatalStack("failed to init Redis client", err)
 	}
 
+	address := fmt.Sprintf("%s:%d", r.Host, r.Port)
 	r.context = context.Background()
 	r.redisClient = redis.NewClient(&redis.Options{
-		Addr:     r.Address,
+		Addr:     address,
 		Password: r.Password,
 		DB:       r.Db,
 	})
@@ -83,7 +86,7 @@ func (p *Publisher) Publish(topicName string, obj interface{}) error {
 
 type Subscriber struct {
 	RedisClient
-	pubsub.SubscriberBase
+	pubsub_subscriber.SubscriberBase
 
 	mutex    sync.RWMutex
 	channels map[string]*redis.PubSub
@@ -96,7 +99,7 @@ func NewSubscriber(app app_context.Context, serializer ...message.Serializer) *S
 	return s
 }
 
-func (s *Subscriber) Subscribe(topic pubsub.Topic) error {
+func (s *Subscriber) Subscribe(topic pubsub_subscriber.Topic) error {
 
 	err := s.AddTopic(topic)
 	if err != nil {
