@@ -12,6 +12,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
+	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_subscriber"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
@@ -30,22 +31,32 @@ func (t *TenancyManagerConfig) IsMultiTenancy() bool {
 
 type TenancyManager struct {
 	TenancyManagerConfig
-	mutex           sync.Mutex
-	tenanciesById   map[string]multitenancy.Tenancy
-	tenanciesByPath map[string]multitenancy.Tenancy
-	Controller      multitenancy.TenancyController
-	Pools           pool.PoolStore
-	Customers       customer.CustomerController
-	DbModels        []interface{}
+	mutex                      sync.Mutex
+	tenanciesById              map[string]multitenancy.Tenancy
+	tenanciesByPath            map[string]multitenancy.Tenancy
+	Controller                 multitenancy.TenancyController
+	Pools                      pool.PoolStore
+	Customers                  customer.CustomerController
+	DbModels                   []interface{}
+	PubsubTopic                multitenancy.PubsubTopic
+	tenancyNotificationHandler *TenancyNotificationHandler
 }
 
-func NewTenancyManager(pools pool.PoolStore, controller multitenancy.TenancyController, dbModels []interface{}) *TenancyManager {
+func NewTenancyManager(subscriber pubsub_subscriber.Subscriber, pools pool.PoolStore, controller multitenancy.TenancyController, dbModels []interface{}) *TenancyManager {
 	m := &TenancyManager{}
 	m.Pools = pools
 	m.Controller = controller
 	m.tenanciesById = make(map[string]multitenancy.Tenancy)
 	m.tenanciesByPath = make(map[string]multitenancy.Tenancy)
 	m.DbModels = dbModels
+
+	m.PubsubTopic.TopicBase = pubsub_subscriber.New(multitenancy.PubsubTopicName, multitenancy.NewPubsubNotification)
+	subscriber.Subscribe(&m.PubsubTopic)
+
+	m.tenancyNotificationHandler = &TenancyNotificationHandler{manager: m}
+	m.tenancyNotificationHandler.Init("tenancy_manager")
+	m.PubsubTopic.Subscribe(m.tenancyNotificationHandler)
+
 	return m
 }
 
@@ -65,6 +76,9 @@ func (t *TenancyManager) Init(ctx op_context.Context, configPath ...string) erro
 		return ctx.Logger().PushFatalStack("failed to init tenancy manager", err)
 	}
 
+	// subscribe to tenancy notifications
+
+	// load tenancies
 	err = t.LoadTenancies(ctx)
 	if err != nil {
 		c.SetError(err)
@@ -292,5 +306,26 @@ func (t *TenancyManager) MigrateDatabase(ctx op_context.Context) error {
 	return nil
 }
 
+type TenancyNotificationHandler struct {
+	pubsub_subscriber.SubscriberClientBase
+	manager *TenancyManager
+}
+
+func (t *TenancyNotificationHandler) Handle(ctx op_context.Context, msg *multitenancy.PubsubNotification) error {
+
+	c := ctx.TraceInMethod("TenancyNotificationHandler.Handle")
+	defer ctx.TraceOutMethod()
+
+	if msg.Operation == multitenancy.OpDelete {
+		t.manager.UnloadTenancy(msg.Tenancy)
+	} else {
+		_, err := t.manager.LoadTenancy(ctx, msg.Tenancy)
+		if err != nil {
+			return c.SetError(err)
+		}
+	}
+
+	return nil
+}
+
 // TODO subscribe to customer blocking
-// TODO subscribe to tenancy updates
