@@ -23,6 +23,10 @@ type Subscriber interface {
 	Topic(topicName string) (Topic, error)
 }
 
+type WithSubscriber interface {
+	Subscriber() Subscriber
+}
+
 type SubscriberBase struct {
 	app_context.WithAppBase
 	mutex      sync.RWMutex
