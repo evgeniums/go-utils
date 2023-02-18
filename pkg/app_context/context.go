@@ -29,6 +29,7 @@ type Context interface {
 
 	AppInstance() string
 	Application() string
+	Hostname() string
 
 	Close()
 }

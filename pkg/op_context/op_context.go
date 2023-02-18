@@ -26,8 +26,8 @@ type CallContext interface {
 }
 
 type Origin interface {
-	Type() string
-	SetType(string)
+	App() string
+	SetApp(string)
 	Name() string
 	SetName(string)
 	Source() string

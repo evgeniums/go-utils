@@ -28,6 +28,7 @@ var Revision = "unknown"
 type contextConfig struct {
 	TESTING      bool
 	APP_INSTANCE string
+	HOSTNAME     string
 }
 
 type Context struct {
@@ -192,4 +193,16 @@ func (c *Context) InitDB(configPath string, gormDbConnector ...*db_gorm.DbConnec
 	d := db_gorm.New(gormDbConnector...)
 	c.db = d
 	return d.Init(c, c.Cfg(), c.validator, configPath)
+}
+
+func (c *Context) Hostname() string {
+	if c.HOSTNAME != "" {
+		return c.HOSTNAME
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "unknow"
+	}
+	return hostname
 }

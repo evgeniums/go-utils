@@ -225,7 +225,7 @@ func (c *ContextBase) Close(successMessage ...string) {
 			o.SetContext(c.ID())
 			o.SetContextName(c.Name())
 			if c.origin != nil {
-				o.SetOriginType(c.origin.Type())
+				o.SetOriginApp(c.origin.App())
 				o.SetOriginName(c.origin.Name())
 				o.SetOriginSource(c.origin.Source())
 				o.SetUser(c.origin.User())
@@ -330,7 +330,7 @@ func (c *ContextBase) SetOrigin(o op_context.Origin) {
 }
 
 type OriginHolder struct {
-	Type          string
+	App           string
 	Name          string
 	Source        string
 	SessionClient string
@@ -342,12 +342,20 @@ type Origin struct {
 	OriginHolder
 }
 
-func (o *Origin) Type() string {
-	return o.OriginHolder.Type
+func NewOrigin(app app_context.Context) *Origin {
+	o := &Origin{}
+	o.SetApp(app.Application())
+	o.SetName(app.AppInstance())
+	o.SetSource(app.Hostname())
+	return o
 }
 
-func (o *Origin) SetType(val string) {
-	o.OriginHolder.Type = val
+func (o *Origin) App() string {
+	return o.OriginHolder.App
+}
+
+func (o *Origin) SetApp(val string) {
+	o.OriginHolder.App = val
 }
 
 func (o *Origin) Name() string {

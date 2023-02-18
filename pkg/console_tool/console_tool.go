@@ -84,11 +84,7 @@ func (c *ConsoleUtility) InitCommandContext(group string, command string) op_con
 	errManager.Init(http.StatusBadRequest)
 	opCtx.SetErrorManager(errManager)
 
-	origin := &default_op_context.Origin{}
-	origin.SetType(c.App.Application())
-	origin.SetName(c.App.AppInstance())
-	hostname, _ := os.Hostname()
-	origin.SetSource(hostname)
+	origin := default_op_context.NewOrigin(c.App)
 	origin.SetUser(c.Opts.InkokerName)
 	origin.SetUserType("console")
 	opCtx.SetOrigin(origin)

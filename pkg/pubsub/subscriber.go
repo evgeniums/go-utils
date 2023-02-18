@@ -3,7 +3,6 @@ package pubsub
 import (
 	"errors"
 	"net/http"
-	"os"
 	"sync"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
@@ -83,11 +82,7 @@ func (s *SubscriberBase) NewOpContext(topicName string) op_context.Context {
 	errManager.Init(http.StatusInternalServerError)
 	opCtx.SetErrorManager(errManager)
 
-	origin := &default_op_context.Origin{}
-	origin.SetType(s.App().Application())
-	origin.SetName(s.App().AppInstance())
-	hostname, _ := os.Hostname()
-	origin.SetSource(hostname)
+	origin := default_op_context.NewOrigin(s.App())
 	origin.SetUserType("pubsub")
 	opCtx.SetOrigin(origin)
 

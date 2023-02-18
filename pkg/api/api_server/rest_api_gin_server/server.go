@@ -6,7 +6,6 @@ import (
 	"math"
 	"net/http"
 	"net/http/httputil"
-	"os"
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
@@ -176,10 +175,7 @@ func (s *Server) NoRoute() gin.HandlerFunc {
 func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...string) error {
 
 	var err error
-	s.hostname, err = os.Hostname()
-	if err != nil {
-		s.hostname = "unknow"
-	}
+	s.hostname = ctx.Hostname()
 	ctx.Logger().Info("Init REST API gin server", logger.Fields{"hostname": s.hostname})
 
 	s.WithAppBase.Init(ctx)
@@ -298,9 +294,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 				request.SetGenericErrorCode(auth.ErrorCodeUnauthorized)
 			}
 		}
-		origin := &default_op_context.Origin{}
-		origin.SetType(s.App().Application())
-		origin.SetName(s.App().AppInstance())
+		origin := default_op_context.NewOrigin(s.App())
 		if request.AuthUser() != nil {
 			origin.SetUser(request.AuthUser().Display())
 		}

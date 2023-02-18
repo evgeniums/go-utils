@@ -13,8 +13,8 @@ type Oplog interface {
 	SetContext(val string)
 	ContextName() string
 	SetContextName(val string)
-	OriginType() string
-	SetOriginType(val string)
+	OriginApp() string
+	SetOriginApp(val string)
 	OriginName() string
 	SetOriginName(val string)
 	OriginSource() string
@@ -31,7 +31,7 @@ type OplogHolder struct {
 	Operation    string `gorm:"index" json:"operation"`
 	Context      string `gorm:"index" json:"context"`
 	ContextName  string `gorm:"index" json:"context_name"`
-	OriginType   string `gorm:"index" json:"origin_type"`
+	OriginApp    string `gorm:"index" json:"origin_app"`
 	OriginName   string `gorm:"index" json:"origin_name"`
 	User         string `gorm:"index" json:"origin_user"`
 	OriginSource string `gorm:"index" json:"origin_source"`
@@ -68,12 +68,12 @@ func (o *OplogBase) SetContextName(val string) {
 	o.OplogHolder.ContextName = val
 }
 
-func (o *OplogBase) OriginType() string {
-	return o.OplogHolder.OriginType
+func (o *OplogBase) OriginApp() string {
+	return o.OplogHolder.OriginApp
 }
 
-func (o *OplogBase) SetOriginType(val string) {
-	o.OplogHolder.OriginType = val
+func (o *OplogBase) SetOriginApp(val string) {
+	o.OplogHolder.OriginApp = val
 }
 
 func (o *OplogBase) OriginName() string {

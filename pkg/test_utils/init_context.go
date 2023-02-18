@@ -64,11 +64,7 @@ func SimpleOpContext(app app_context.Context, name string) op_context.Context {
 	ctx.Init(app, app.Logger(), app.Db())
 	prepareOpContext(ctx, name)
 
-	origin := &default_op_context.Origin{}
-	origin.SetType(app.Application())
-	origin.SetName(app.AppInstance())
-	hostname, _ := os.Hostname()
-	origin.SetSource(hostname)
+	origin := default_op_context.NewOrigin(app)
 	origin.SetUserType("simple_op_context")
 	ctx.SetOrigin(origin)
 
@@ -84,11 +80,7 @@ func UserOpContext(app app_context.Context, name string, user auth.User, tenancy
 	if t != nil {
 		ctx.SetTenancy(t)
 	}
-	origin := &default_op_context.Origin{}
-	origin.SetType(app.Application())
-	origin.SetName(app.AppInstance())
-	hostname, _ := os.Hostname()
-	origin.SetSource(hostname)
+	origin := default_op_context.NewOrigin(app)
 	origin.SetUser(user.Display())
 	ctx.SetOrigin(origin)
 	return ctx
