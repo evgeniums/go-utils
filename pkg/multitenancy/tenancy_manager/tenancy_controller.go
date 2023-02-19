@@ -20,12 +20,21 @@ type TenancyController struct {
 }
 
 func NewTenancyController(crud crud.CRUD, manager *TenancyManager) *TenancyController {
-	c := &TenancyController{}
-	c.CRUD = crud
-	c.Manager = manager
-	c.Manager.SetController(c)
-	return c
+	t := &TenancyController{}
+	t.CRUD = crud
+	t.Manager = manager
+	t.Manager.SetController(t)
+	return t
 }
+
+func DefaultTenancyController(manager *TenancyManager) *TenancyController {
+	return NewTenancyController(&crud.DbCRUD{}, manager)
+}
+
+// func (t *TenancyController) SetManager(manager *TenancyManager) {
+// 	t.Manager = manager
+// 	t.Manager.SetController(t)
+// }
 
 func (t *TenancyController) OpLog(ctx op_context.Context, operation string, oplog *multitenancy.OpLogTenancy) {
 	oplog.SetOperation(operation)
