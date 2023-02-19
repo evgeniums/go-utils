@@ -64,26 +64,31 @@ type TenancyManager struct {
 	tenancyNotificationHandler *TenancyNotificationHandler
 }
 
-func NewTenancyManager(subscriber pubsub_subscriber.Subscriber, pools pool.PoolStore, controller multitenancy.TenancyController, dbModels []interface{}) *TenancyManager {
+func NewTenancyManager(subscriber pubsub_subscriber.Subscriber, pools pool.PoolStore, dbModels []interface{}) *TenancyManager {
 	m := &TenancyManager{}
 	m.Pools = pools
-	m.Controller = controller
 	m.tenanciesById = make(map[string]multitenancy.Tenancy)
 	m.tenanciesByPath = make(map[string]multitenancy.Tenancy)
 	m.DbModels = dbModels
 
-	m.PubsubTopic.TopicBase = pubsub_subscriber.New(multitenancy.PubsubTopicName, multitenancy.NewPubsubNotification)
-	subscriber.Subscribe(&m.PubsubTopic)
+	// TODO implement pubsub
+	/*
+		m.PubsubTopic.TopicBase = pubsub_subscriber.New(multitenancy.PubsubTopicName, multitenancy.NewPubsubNotification)
+		subscriber.Subscribe(&m.PubsubTopic)
 
-	m.tenancyNotificationHandler = &TenancyNotificationHandler{manager: m}
-	m.tenancyNotificationHandler.Init("tenancy_manager")
-	m.PubsubTopic.Subscribe(m.tenancyNotificationHandler)
-
+		m.tenancyNotificationHandler = &TenancyNotificationHandler{manager: m}
+		m.tenancyNotificationHandler.Init("tenancy_manager")
+		m.PubsubTopic.Subscribe(m.tenancyNotificationHandler)
+	*/
 	return m
 }
 
 func (t *TenancyManager) Config() interface{} {
 	return &t.TenancyManagerConfig
+}
+
+func (t *TenancyManager) SetController(controller multitenancy.TenancyController) {
+	t.Controller = controller
 }
 
 func (t *TenancyManager) Init(ctx op_context.Context, configPath ...string) error {

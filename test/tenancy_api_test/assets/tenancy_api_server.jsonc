@@ -1,0 +1,4 @@
+{
+    "include" : ["../../api_test/assets/api_server.jsonc"],
+    "app_instance" : "tenancy_api_test"
+}

@@ -23,6 +23,7 @@ func NewTenancyController(crud crud.CRUD, manager *TenancyManager) *TenancyContr
 	c := &TenancyController{}
 	c.CRUD = crud
 	c.Manager = manager
+	c.Manager.SetController(c)
 	return c
 }
 

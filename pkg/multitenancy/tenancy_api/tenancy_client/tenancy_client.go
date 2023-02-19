@@ -28,11 +28,14 @@ func NewTenancyClient(client api_client.Client) *TenancyClient {
 
 	c.add = tenancy_api.Add()
 	c.list = tenancy_api.List()
-	c.exists = tenancy_api.Exists()
 	c.TenanciesResource.AddOperations(c.add,
 		c.list,
-		c.exists,
 	)
+
+	existsResource := api.NewResource("exists")
+	c.TenanciesResource.AddChild(existsResource)
+	c.exists = tenancy_api.Exists()
+	existsResource.AddOperation(c.exists)
 
 	return c
 }
