@@ -35,32 +35,48 @@ type WithTenancy interface {
 	GetTenancy() Tenancy
 }
 
-type TenancyData struct {
-	common.WithDescriptionBase
-	CUSTOMER_ID string `gorm:"index;index:,unique,composite:u" validate:"required,alphanum_|email" vmessage:"Invalid customer ID"`
-	ROLE        string `gorm:"index;index:,unique,composite:u" validate:"required,alphanum_" vmessage:"Role must be aphanumeric not empty"`
-	PATH        string `gorm:"uniqueIndex" validate:"omitempty,alphanum_" vmessage:"Path must be alhanumeric"`
-	POOL_ID     string `gorm:"index" validate:"required,alphanum" vmessage:"Pool ID must be alhanumeric not empty"`
-	DBNAME      string `gorm:"index;column:dbname" validate:"omitempty,alphanum_" vmessage:"Database name must be alhanumeric"`
+type WithPath struct {
+	PATH string `json:"path" gorm:"uniqueIndex" validate:"omitempty,alphanum_" vmessage:"Path must be alhanumeric"`
 }
 
-func (t *TenancyData) CustomerId() string {
+type WithRole struct {
+	ROLE string `json:"role" gorm:"index;index:,unique,composite:u" validate:"required,alphanum_" vmessage:"Role must be aphanumeric not empty"`
+}
+
+type WithCustomerId struct {
+	CUSTOMER_ID string `json:"customer_id" gorm:"index;index:,unique,composite:u" validate:"required,alphanum_|email" vmessage:"Invalid customer ID"`
+}
+
+type WithPoolAndDb struct {
+	POOL_ID string `json:"pool_id" gorm:"index" validate:"omitempty,alphanum" vmessage:"Pool ID must be alhanumeric"`
+	DBNAME  string `json:"dbname" gorm:"index;column:dbname" validate:"omitempty,alphanum_" vmessage:"Database name must be alhanumeric"`
+}
+
+type TenancyData struct {
+	common.WithDescriptionBase
+	WithPath
+	WithRole
+	WithCustomerId
+	WithPoolAndDb
+}
+
+func (t *WithCustomerId) CustomerId() string {
 	return t.CUSTOMER_ID
 }
 
-func (t *TenancyData) Role() string {
+func (t *WithRole) Role() string {
 	return t.ROLE
 }
 
-func (t *TenancyData) Path() string {
+func (t *WithPath) Path() string {
 	return t.PATH
 }
 
-func (t *TenancyData) PoolId() string {
+func (t *WithPoolAndDb) PoolId() string {
 	return t.POOL_ID
 }
 
-func (t *TenancyData) DbName() string {
+func (t *WithPoolAndDb) DbName() string {
 	return t.DBNAME
 }
 

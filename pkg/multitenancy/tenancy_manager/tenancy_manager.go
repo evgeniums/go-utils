@@ -221,7 +221,6 @@ func (t *TenancyManager) FindCustomer(ctx op_context.Context, c op_context.CallC
 	}
 	if owner == nil {
 		err = errors.New("customer not found")
-		// TODO load customer errors in tenancies service
 		ctx.SetGenericErrorCode(customer.ErrorCodeCustomerNotFound, true)
 		return nil, err
 	}
