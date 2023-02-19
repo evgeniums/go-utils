@@ -104,6 +104,13 @@ func (e *ErrorsExtenderBase) Init(errorDescriptions map[string]string, errorProt
 	}
 }
 
+func (e *ErrorsExtenderBase) AddErrors(errorDescriptions map[string]string, errorProtocolCodes ...map[string]int) {
+	utils.AppendMap(e.errorDescriptions, errorDescriptions)
+	if len(errorProtocolCodes) > 0 {
+		utils.AppendMap(e.errorProtocolCodes, errorProtocolCodes[0])
+	}
+}
+
 func (e *ErrorsExtenderBase) AttachToErrorManager(manager ErrorManager) {
 	manager.AddErrorDescriptions(e.errorDescriptions)
 	manager.AddErrorProtocolCodes(e.errorProtocolCodes)
