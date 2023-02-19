@@ -16,6 +16,7 @@ type CallContext interface {
 	Message() string
 
 	SetError(err error) error
+	SetErrorStr(err string) error
 	SetMessage(msg string)
 
 	SetLoggerField(name string, value interface{})

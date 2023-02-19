@@ -1,6 +1,8 @@
 package default_op_context
 
 import (
+	"errors"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
@@ -55,6 +57,10 @@ func (c *CallContextBase) SetError(err error) error {
 func (c *CallContextBase) SetMessage(msg string) {
 	c.message = msg
 }
+func (c *CallContextBase) SetErrorStr(err string) error {
+	c.error_ = errors.New(err)
+	return c.error_
+}
 
 func DefaultCallContextBuilder(methodName string, parentLogger logger.Logger, fields ...logger.Fields) op_context.CallContext {
 	ctx := &CallContextBase{method: methodName, proxyLogger: logger.NewProxy(parentLogger, fields...)}
@@ -85,6 +91,10 @@ type ContextBase struct {
 	oplogHandler op_context.OplogHandler
 
 	origin op_context.Origin
+}
+
+func NewContext() *ContextBase {
+	return &ContextBase{}
 }
 
 func (c *ContextBase) Init(app app_context.Context, log logger.Logger, db db.DB, fields ...logger.Fields) {
