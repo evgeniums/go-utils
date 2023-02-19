@@ -48,7 +48,7 @@ func initTest(t *testing.T) *testContext {
 	ctx.LocalCustomerManager = customer.NewManager()
 
 	// TODO fix tenancy manager
-	tenancyManager := tenancy_manager.NewTenancyManager(nil, nil, nil)
+	tenancyManager := &tenancy_manager.TenancyManager{}
 	ctx.LocalTenancyController = tenancy_manager.NewTenancyController(&crud.DbCRUD{}, tenancyManager)
 
 	tenancyService := tenancy_service.NewTenancyService(ctx.LocalTenancyController)
