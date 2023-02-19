@@ -18,7 +18,7 @@ type AppWithPoolsBase struct {
 	pools *pool.PoolStoreBase
 }
 
-func (a AppWithPoolsBase) Pools() pool.PoolStore {
+func (a *AppWithPoolsBase) Pools() pool.PoolStore {
 	return a.pools
 }
 

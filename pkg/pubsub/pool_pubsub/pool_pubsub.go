@@ -30,12 +30,13 @@ type PoolPubsubBase struct {
 	selfPoolPublisher  pubsub.Publisher
 }
 
-func New(factory ...pubsub_factory.PubsubFactory) *PoolPubsubBase {
+func NewPubsub(factory ...pubsub_factory.PubsubFactory) *PoolPubsubBase {
 	p := &PoolPubsubBase{}
-	if len(factory) == 0 {
-		p.factory = pubsub_factory.DefaultPubsubFactory()
-	} else {
+	if len(factory) != 0 {
 		p.factory = factory[0]
+	}
+	if p.factory == nil {
+		p.factory = pubsub_factory.DefaultPubsubFactory()
 	}
 	return p
 }

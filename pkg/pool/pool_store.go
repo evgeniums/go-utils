@@ -48,11 +48,14 @@ func NewPoolStore(config ...PoolStoreConfigI) *PoolStoreBase {
 	p := &PoolStoreBase{}
 	p.poolsByName = make(map[string]Pool)
 	p.poolsById = make(map[string]Pool)
-	if len(config) == 0 {
-		p.poolController = NewPoolController(&crud.DbCRUD{})
-	} else {
+	if len(config) != 0 {
 		p.poolController = config[0].GetPoolController()
 	}
+
+	if p.poolController == nil {
+		p.poolController = NewPoolController(&crud.DbCRUD{})
+	}
+
 	return p
 }
 
