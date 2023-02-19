@@ -14,7 +14,7 @@ type Service interface {
 	api.Resource
 
 	Server() Server
-	AttachToServer(server Server) error
+	AttachToServer(server Server, multitenancy ...bool) error
 }
 
 type ServiceBase struct {
@@ -31,7 +31,7 @@ func (s *ServiceBase) Server() Server {
 	return s.server
 }
 
-func (s *ServiceBase) AttachToServer(server Server) error {
+func (s *ServiceBase) AttachToServer(server Server, multitenancy ...bool) error {
 	s.server = server
 	s.AttachToErrorManager(server)
 	return s.EachOperation(func(op api.Operation) error {
@@ -39,7 +39,7 @@ func (s *ServiceBase) AttachToServer(server Server) error {
 		if !ok {
 			return fmt.Errorf("invalid opertaion type, must be endpoint: %s", op.Name())
 		}
-		server.AddEndpoint(ep)
+		server.AddEndpoint(ep, multitenancy...)
 		return nil
 	})
 }

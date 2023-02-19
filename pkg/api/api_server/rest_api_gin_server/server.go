@@ -259,7 +259,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		}
 
 		// extract tenancy if applicable
-		if s.tenancies.IsMultiTenancy() {
+		if s.tenancies.IsMultiTenancy() && ep.Resource().ChainHasResourceType(s.tenancyResource.Type()) {
 			tenancyInPath := request.GetResourceId(TenancyParameter)
 			request.SetLoggerField("tenancy", tenancyInPath)
 			var tenancy multitenancy.Tenancy
@@ -321,7 +321,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 	}
 }
 
-func (s *Server) AddEndpoint(ep api_server.Endpoint) {
+func (s *Server) AddEndpoint(ep api_server.Endpoint, multitenancy ...bool) {
 
 	if ep.TestOnly() && !s.Testing() {
 		return
@@ -334,7 +334,7 @@ func (s *Server) AddEndpoint(ep api_server.Endpoint) {
 		panic(fmt.Sprintf("Invalid HTTP method in endpoint %s for access %d", ep.Name(), ep.AccessType()))
 	}
 
-	if s.tenancies.IsMultiTenancy() {
+	if s.tenancies.IsMultiTenancy() && utils.OptionalArg(false, multitenancy...) {
 		s.tenancyResource.AddChild(ep.Resource())
 	}
 

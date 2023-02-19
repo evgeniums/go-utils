@@ -22,7 +22,7 @@ type Server interface {
 	Run(fin *finish.Finisher)
 
 	// Add operation endpoint to server.
-	AddEndpoint(ep Endpoint)
+	AddEndpoint(ep Endpoint, multitenancy ...bool)
 
 	// Check if hateoas links are enabled.
 	IsHateoas() bool
@@ -34,8 +34,8 @@ type Server interface {
 	Testing() bool
 }
 
-func AddServiceToServer(s Server, service Service) {
-	err := service.AttachToServer(s)
+func AddServiceToServer(s Server, service Service, multitenancy ...bool) {
+	err := service.AttachToServer(s, multitenancy...)
 	if err != nil {
 		panic(fmt.Errorf("failed to attach service %s to server", service.Type()))
 	}

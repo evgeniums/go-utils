@@ -46,6 +46,7 @@ type Resource interface {
 
 	Chain() []Resource
 	ChainResourceId(resourceType string) string
+	ChainHasResourceType(resourceType string) bool
 
 	Clone(withOperations bool) Resource
 	CloneChain(withOperations bool) Resource
@@ -390,6 +391,16 @@ func (r *ResourceBase) CloneChain(withOperations bool) Resource {
 	topResource.RebuildPaths()
 
 	return resource
+}
+
+func (r *ResourceBase) ChainHasResourceType(resourceType string) bool {
+	if r.resourceType == resourceType {
+		return true
+	}
+	if r.parent != nil {
+		return r.parent.ChainHasResourceType(resourceType)
+	}
+	return false
 }
 
 func GroupResource(resourceType string) Resource {
