@@ -23,14 +23,6 @@ func (e *FindPoolEndpoint) HandleRequest(request api_server.Request) error {
 		return c.SetError(err)
 	}
 
-	// find pool services
-	services, err := e.service.Pools.GetPoolBindings(request, p.GetID())
-	if err != nil {
-		c.SetMessage("failed to get pool services")
-		return c.SetError(err)
-	}
-	p.SetServices(services)
-
 	// set response
 	resp := &pool_api.PoolResponse{}
 	resp.PoolBase = p.(*pool.PoolBase)
