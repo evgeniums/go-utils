@@ -48,7 +48,7 @@ func NewTenancyService(tenancyController multitenancy.TenancyController) *Tenanc
 	s.TenanciesResource = s.TenancyResource.Parent()
 	s.AddChild(s.TenanciesResource)
 
-	s.TenanciesResource.AddOperations(Add(s), List(s))
+	s.TenanciesResource.AddOperations(Add(s), List(s), Exists(s))
 
 	s.TenancyResource.AddOperation(Delete(s))
 	s.TenanciesResource.AddChildren(SetActive(s),
