@@ -8,7 +8,7 @@ type Query interface {
 }
 
 type WithDbQuery struct {
-	Query string `json:"query"`
+	Query string `json:"query" schema:"query" url:"query"`
 }
 
 type DbQuery struct {
