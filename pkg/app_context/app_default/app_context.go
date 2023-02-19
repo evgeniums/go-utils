@@ -101,7 +101,20 @@ type AppConfig struct {
 	Cache        cache.Cache
 }
 
-func New(buildConfig *app_context.BuildConfig, appConfig ...*AppConfig) *Context {
+func (a *AppConfig) GetPubsubFactory() pubsub_factory.PubsubFactory {
+	return a.PubsbFactory
+}
+
+func (a *AppConfig) GetCache() cache.Cache {
+	return a.Cache
+}
+
+type AppConfigI interface {
+	GetPubsubFactory() pubsub_factory.PubsubFactory
+	GetCache() cache.Cache
+}
+
+func New(buildConfig *app_context.BuildConfig, appConfig ...AppConfigI) *Context {
 
 	if buildConfig != nil {
 		Version = buildConfig.Version
@@ -115,8 +128,8 @@ func New(buildConfig *app_context.BuildConfig, appConfig ...*AppConfig) *Context
 	c.validator = validator_playground.New()
 
 	if len(appConfig) != 0 {
-		c.pubsubFactory = appConfig[0].PubsbFactory
-		c.cache = appConfig[0].Cache
+		c.pubsubFactory = appConfig[0].GetPubsubFactory()
+		c.cache = appConfig[0].GetCache()
 	}
 
 	if c.cache == nil {
