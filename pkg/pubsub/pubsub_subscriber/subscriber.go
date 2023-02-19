@@ -79,7 +79,7 @@ func (s *SubscriberBase) DeleteTopic(topicName string) {
 
 func (s *SubscriberBase) NewOpContext(topicName string) op_context.Context {
 
-	opCtx := &default_op_context.ContextBase{}
+	opCtx := default_op_context.NewContext()
 	opCtx.Init(s.App(), s.App().Logger(), s.App().Db())
 	opCtx.SetName(topicName)
 	errManager := &generic_error.ErrorManagerBase{}

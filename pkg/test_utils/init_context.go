@@ -60,7 +60,7 @@ func prepareOpContext(ctx op_context.Context, name string) {
 }
 
 func SimpleOpContext(app app_context.Context, name string) op_context.Context {
-	ctx := &default_op_context.ContextBase{}
+	ctx := default_op_context.NewContext()
 	ctx.Init(app, app.Logger(), app.Db())
 	prepareOpContext(ctx, name)
 

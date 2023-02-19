@@ -77,7 +77,7 @@ func (c *ConsoleUtility) InitCommandContext(group string, command string) op_con
 		}
 	}
 
-	opCtx := &default_op_context.ContextBase{}
+	opCtx := default_op_context.NewContext()
 	opCtx.Init(c.App, c.App.Logger(), c.App.Db())
 	opCtx.SetName(fmt.Sprintf("%s.%s", group, command))
 	errManager := &generic_error.ErrorManagerBase{}

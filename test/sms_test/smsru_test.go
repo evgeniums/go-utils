@@ -43,7 +43,7 @@ func TestSmsru(t *testing.T) {
 		t.Fatalf("failed to init smsru module")
 	}
 
-	opCtx := &default_op_context.ContextBase{}
+	opCtx := default_op_context.NewContext()
 	opCtx.Init(app, app.Logger(), app.Db())
 	errManager := &generic_error.ErrorManagerBase{}
 	errManager.Init(http.StatusBadRequest)
