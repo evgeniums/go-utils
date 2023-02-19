@@ -101,24 +101,32 @@ func (t *TenancyManager) Init(ctx op_context.Context, configPath ...string) erro
 		return ctx.Logger().PushFatalStack("failed to init tenancy manager", err)
 	}
 
-	// subscribe to pubsub notifications and load tenancies only if self pool is defined
+	// get self pool
 	selfPool, selfPoolErr := t.Pools.SelfPool()
-	if selfPoolErr == nil {
 
-		// subscribe to notifications
-		t.PubsubTopic.TopicBase = pubsub_subscriber.New(multitenancy.PubsubTopicName, multitenancy.NewPubsubNotification)
+	// subscribe to pubsub notifications
+	t.PubsubTopic.TopicBase = pubsub_subscriber.New(multitenancy.PubsubTopicName, multitenancy.NewPubsubNotification)
+	if selfPoolErr == nil && selfPool != nil {
+		// subscribe to notifications only from self pool
 		err = t.PoolPubsub.SubscribeSelfPool(&t.PubsubTopic)
 		if err != nil {
 			c.SetError(err)
-			return ctx.Logger().PushFatalStack("failed to subscribe to pubsub notifications", err)
+			return ctx.Logger().PushFatalStack("failed to subscribe to pubsub notifications in self pool", err)
 		}
-
-		// load tenancies
-		err = t.LoadTenancies(ctx, selfPool)
+	} else {
+		// subscribe to notifications from all pools
+		err = t.PoolPubsub.SubscribePools(&t.PubsubTopic)
 		if err != nil {
 			c.SetError(err)
-			return ctx.Logger().PushFatalStack("failed to load tenancies", err)
+			return ctx.Logger().PushFatalStack("failed to subscribe to pubsub notifications in all pools", err)
 		}
+	}
+
+	// load tenancies
+	err = t.LoadTenancies(ctx, selfPool)
+	if err != nil {
+		c.SetError(err)
+		return ctx.Logger().PushFatalStack("failed to load tenancies", err)
 	}
 
 	// done
@@ -385,10 +393,13 @@ func (t *TenancyManager) LoadTenancies(ctx op_context.Context, selfPool pool.Poo
 	}
 	defer onExit()
 
-	// load tenancies only for self pool
+	// load tenancies
 	filter := db.NewFilter()
-	filter.AddField("pool_id", selfPool.GetID())
-	tenancies, _, err := t.Controller.List(ctx, nil)
+	if selfPool != nil {
+		// load tenancies only for self pool
+		filter.AddField("pool_id", selfPool.GetID())
+	}
+	tenancies, _, err := t.Controller.List(ctx, filter)
 	if err != nil {
 		c.SetMessage("failed to load tenancies from database")
 		return err
