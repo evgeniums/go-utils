@@ -38,3 +38,8 @@ type ResponseHateous struct {
 type ResponseCount struct {
 	Count int64 `json:"count,omitempty"`
 }
+
+type ResponseExists struct {
+	Response
+	Exists bool `json:"exists"`
+}
