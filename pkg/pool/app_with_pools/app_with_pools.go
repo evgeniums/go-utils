@@ -3,6 +3,7 @@ package app_with_pools
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context/app_default"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 )
@@ -44,23 +45,27 @@ func New(buildConfig *app_context.BuildConfig, appConfig ...AppConfigI) *AppWith
 	return a
 }
 
-func (a *AppWithPoolsBase) InitWithArgs(configFile string, args []string, configType ...string) error {
+func (a *AppWithPoolsBase) InitWithArgs(configFile string, args []string, configType ...string) (op_context.Context, error) {
 
 	err := a.Context.InitWithArgs(configFile, args, configType...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	opCtx := default_op_context.NewAppInitContext(a)
+	c := opCtx.TraceInMethod("AppWithPools.Init")
+	defer opCtx.TraceOutMethod()
+
 	err = a.pools.Init(opCtx, "pools")
 	if err != nil {
-		return err
+		msg := "failed to init pools"
+		c.SetMessage(msg)
+		return opCtx, opCtx.Logger().PushFatalStack(msg, c.SetError(err))
 	}
-	opCtx.Close()
 
-	return nil
+	return opCtx, nil
 }
 
-func (a *AppWithPoolsBase) Init(configFile string, configType ...string) error {
+func (a *AppWithPoolsBase) Init(configFile string, configType ...string) (op_context.Context, error) {
 	return a.InitWithArgs(configFile, nil, configType...)
 }
