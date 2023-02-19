@@ -90,14 +90,21 @@ type ContextBase struct {
 	oplogs       []oplog.Oplog
 	oplogHandler op_context.OplogHandler
 
-	origin op_context.Origin
+	origin        op_context.Origin
+	writeCloseLog bool
 }
 
 func NewContext() *ContextBase {
 	return &ContextBase{}
 }
 
+func (c *ContextBase) SetWriteCloseLog(enable bool) {
+	c.writeCloseLog = enable
+}
+
 func (c *ContextBase) Init(app app_context.Context, log logger.Logger, db db.DB, fields ...logger.Fields) {
+
+	c.writeCloseLog = true
 
 	c.WithAppBase.Init(app)
 
@@ -274,9 +281,11 @@ func (c *ContextBase) Close(successMessage ...string) {
 		c.UnsetLoggerField("stack")
 	} else {
 		// log success
-		msg := utils.OptionalArg("success", successMessage...)
-		if msg != "" {
-			c.Logger().Info(msg)
+		if c.writeCloseLog {
+			msg := utils.OptionalArg("success", successMessage...)
+			if msg != "" {
+				c.Logger().Info(msg)
+			}
 		}
 	}
 }
