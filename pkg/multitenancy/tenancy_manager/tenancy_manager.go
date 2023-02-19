@@ -12,6 +12,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
+	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pool_pubsub"
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_subscriber"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
@@ -61,25 +62,22 @@ type TenancyManager struct {
 	Customers                  customer.CustomerController
 	DbModels                   []interface{}
 	PubsubTopic                multitenancy.PubsubTopic
+	PoolPubsub                 pool_pubsub.PoolPubsub
 	tenancyNotificationHandler *TenancyNotificationHandler
 }
 
-func NewTenancyManager(subscriber pubsub_subscriber.Subscriber, pools pool.PoolStore, dbModels []interface{}) *TenancyManager {
+func NewTenancyManager(pools pool.PoolStore, poolPubsub pool_pubsub.PoolPubsub, dbModels []interface{}) *TenancyManager {
 	m := &TenancyManager{}
 	m.Pools = pools
 	m.tenanciesById = make(map[string]multitenancy.Tenancy)
 	m.tenanciesByPath = make(map[string]multitenancy.Tenancy)
 	m.DbModels = append(dbModels, multitenancy.DbInternalModels()...)
+	m.PoolPubsub = poolPubsub
 
-	// TODO implement pubsub
-	/*
-		m.PubsubTopic.TopicBase = pubsub_subscriber.New(multitenancy.PubsubTopicName, multitenancy.NewPubsubNotification)
-		subscriber.Subscribe(&m.PubsubTopic)
+	m.tenancyNotificationHandler = &TenancyNotificationHandler{manager: m}
+	m.tenancyNotificationHandler.Init("tenancy_manager")
+	m.PubsubTopic.Subscribe(m.tenancyNotificationHandler)
 
-		m.tenancyNotificationHandler = &TenancyNotificationHandler{manager: m}
-		m.tenancyNotificationHandler.Init("tenancy_manager")
-		m.PubsubTopic.Subscribe(m.tenancyNotificationHandler)
-	*/
 	return m
 }
 
@@ -103,11 +101,24 @@ func (t *TenancyManager) Init(ctx op_context.Context, configPath ...string) erro
 		return ctx.Logger().PushFatalStack("failed to init tenancy manager", err)
 	}
 
-	// load tenancies
-	err = t.LoadTenancies(ctx)
-	if err != nil {
-		c.SetError(err)
-		return ctx.Logger().PushFatalStack("failed to load tenancies", err)
+	// subscribe to pubsub notifications and load tenancies only if self pool is defined
+	selfPool, selfPoolErr := t.Pools.SelfPool()
+	if selfPoolErr == nil {
+
+		// subscribe to notifications
+		t.PubsubTopic.TopicBase = pubsub_subscriber.New(multitenancy.PubsubTopicName, multitenancy.NewPubsubNotification)
+		err = t.PoolPubsub.SubscribeSelfPool(&t.PubsubTopic)
+		if err != nil {
+			c.SetError(err)
+			return ctx.Logger().PushFatalStack("failed to subscribe to pubsub notifications", err)
+		}
+
+		// load tenancies
+		err = t.LoadTenancies(ctx, selfPool)
+		if err != nil {
+			c.SetError(err)
+			return ctx.Logger().PushFatalStack("failed to load tenancies", err)
+		}
 	}
 
 	// done
@@ -361,7 +372,7 @@ func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenanc
 	return item, nil
 }
 
-func (t *TenancyManager) LoadTenancies(ctx op_context.Context) error {
+func (t *TenancyManager) LoadTenancies(ctx op_context.Context, selfPool pool.Pool) error {
 
 	// setup
 	var err error
@@ -374,7 +385,9 @@ func (t *TenancyManager) LoadTenancies(ctx op_context.Context) error {
 	}
 	defer onExit()
 
-	// find tenancies
+	// load tenancies only for self pool
+	filter := db.NewFilter()
+	filter.AddField("pool_id", selfPool.GetID())
 	tenancies, _, err := t.Controller.List(ctx, nil)
 	if err != nil {
 		c.SetMessage("failed to load tenancies from database")

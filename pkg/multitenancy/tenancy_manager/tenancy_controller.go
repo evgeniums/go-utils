@@ -109,6 +109,12 @@ func FindTenancy(ctrl multitenancy.TenancyController, ctx op_context.Context, id
 	return tenancy, nil
 }
 
+func (t *TenancyController) PublishOp(tenancy *multitenancy.TenancyItem, op string) {
+	t.Manager.PoolPubsub.PublishPools(multitenancy.PubsubTopicName,
+		&multitenancy.PubsubNotification{Tenancy: tenancy.GetID(), Operation: op},
+		tenancy.PoolId())
+}
+
 func (t *TenancyController) Add(ctx op_context.Context, data *multitenancy.TenancyData) (*multitenancy.TenancyItem, error) {
 
 	// setup
@@ -134,7 +140,7 @@ func (t *TenancyController) Add(ctx op_context.Context, data *multitenancy.Tenan
 		Role: tenancy.Role(), Path: tenancy.Path(), DbName: tenancy.DbName(), Pool: tenancy.PoolName, Customer: tenancy.CustomerDisplay()})
 
 	// publish notification
-	ctx.App().Publisher(tenancy.PoolId()).Publish(multitenancy.PubsubTopicName, &multitenancy.PubsubNotification{Tenancy: tenancy.GetID(), Operation: multitenancy.OpAdd})
+	t.PublishOp(tenancy, multitenancy.OpAdd)
 
 	// done
 	return tenancy, nil
@@ -206,8 +212,7 @@ func (t *TenancyController) SetPath(ctx op_context.Context, id string, path stri
 		Role: tenancy.Role(), Path: tenancy.Path(), Customer: tenancy.CustomerDisplay()})
 
 	// publish notification
-	ctx.App().Publisher(tenancy.PoolId()).Publish(multitenancy.PubsubTopicName,
-		&multitenancy.PubsubNotification{Tenancy: tenancy.GetID(), Operation: multitenancy.OpSetPath})
+	t.PublishOp(tenancy, multitenancy.OpSetPath)
 
 	// done
 	return nil
@@ -243,8 +248,7 @@ func (t *TenancyController) SetRole(ctx op_context.Context, id string, role stri
 		Role: tenancy.Role(), Customer: tenancy.CustomerDisplay()})
 
 	// publish notification
-	ctx.App().Publisher(tenancy.PoolId()).Publish(multitenancy.PubsubTopicName,
-		&multitenancy.PubsubNotification{Tenancy: tenancy.GetID(), Operation: multitenancy.OpSetRole})
+	t.PublishOp(tenancy, multitenancy.OpSetRole)
 
 	// done
 	return nil
@@ -274,8 +278,7 @@ func (t *TenancyController) Activate(ctx op_context.Context, id string, idIsDisp
 		Role: tenancy.Role(), Customer: tenancy.CustomerDisplay()})
 
 	// publish notification
-	ctx.App().Publisher(tenancy.PoolId()).Publish(multitenancy.PubsubTopicName,
-		&multitenancy.PubsubNotification{Tenancy: tenancy.GetID(), Operation: multitenancy.OpActivate})
+	t.PublishOp(tenancy, multitenancy.OpActivate)
 
 	// done
 	return nil
@@ -305,8 +308,7 @@ func (t *TenancyController) Deactivate(ctx op_context.Context, id string, idIsDi
 		Role: tenancy.Role(), Customer: tenancy.CustomerDisplay()})
 
 	// publish notification
-	ctx.App().Publisher(tenancy.PoolId()).Publish(multitenancy.PubsubTopicName,
-		&multitenancy.PubsubNotification{Tenancy: tenancy.GetID(), Operation: multitenancy.OpDeactivate})
+	t.PublishOp(tenancy, multitenancy.OpDeactivate)
 
 	// done
 	return nil
@@ -348,8 +350,7 @@ func (t *TenancyController) SetCustomer(ctx op_context.Context, id string, custo
 		Role: tenancy.Role(), Customer: cust.Display()})
 
 	// publish notification
-	ctx.App().Publisher(tenancy.PoolId()).Publish(multitenancy.PubsubTopicName,
-		&multitenancy.PubsubNotification{Tenancy: tenancy.GetID(), Operation: multitenancy.OpSetCustomer})
+	t.PublishOp(tenancy, multitenancy.OpSetCustomer)
 
 	// done
 	return nil
@@ -411,8 +412,7 @@ func (t *TenancyController) ChangePoolOrDb(ctx op_context.Context, id string, po
 		Role: tenancy.Role(), Customer: tenancy.CustomerDisplay(), Pool: pool.Name(), DbName: dbN})
 
 	// publish notification
-	ctx.App().Publisher(tenancy.PoolId()).Publish(multitenancy.PubsubTopicName,
-		&multitenancy.PubsubNotification{Tenancy: tenancy.GetID(), Operation: multitenancy.OpChangePoolOrDb})
+	t.PublishOp(tenancy, multitenancy.OpChangePoolOrDb)
 
 	// done
 	return nil
@@ -447,8 +447,7 @@ func (t *TenancyController) Delete(ctx op_context.Context, id string, withDataba
 		Role: tenancy.Role(), Customer: tenancy.CustomerDisplay()})
 
 	// publish notification
-	ctx.App().Publisher(tenancy.PoolId()).Publish(multitenancy.PubsubTopicName,
-		&multitenancy.PubsubNotification{Tenancy: tenancy.GetID(), Operation: multitenancy.OpDelete})
+	t.PublishOp(tenancy, multitenancy.OpDelete)
 
 	// done
 	return nil

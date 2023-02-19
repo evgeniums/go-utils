@@ -5,7 +5,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/pubsub"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
@@ -31,11 +30,6 @@ type Context interface {
 	AppInstance() string
 	Application() string
 	Hostname() string
-
-	SetPublisher(poolID string, publisher pubsub.Publisher)
-	Publisher(poolID string) pubsub.Publisher
-
-	PoolName() string
 
 	Close()
 }

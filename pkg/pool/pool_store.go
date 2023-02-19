@@ -6,6 +6,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/crud"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type PoolStoreConfigI interface {
@@ -24,6 +25,7 @@ type PoolStore interface {
 	Pool(id string) (Pool, error)
 	SelfPool() (Pool, error)
 	PoolByName(name string) (Pool, error)
+	Pools() []Pool
 }
 
 type poolStoreConfig struct {
@@ -67,6 +69,19 @@ func (p *PoolStoreBase) Init(ctx op_context.Context, configPath ...string) error
 		return ctx.Logger().PushFatalStack(msg, c.SetError(err))
 	}
 
+	loadServices := func(pool Pool) error {
+		services, err := p.poolController.GetPoolBindings(ctx, pool.GetID())
+		if err != nil {
+			msg := "failed to load pool services"
+			c.SetLoggerField("pool_name", pool.Name())
+			c.SetLoggerField("pool_id", pool.GetID())
+			c.SetMessage(msg)
+			return ctx.Logger().PushFatalStack(msg, c.SetError(err))
+		}
+		pool.SetServices(services)
+		return err
+	}
+
 	if p.POOL_NAME == "" {
 		pools, _, err := p.poolController.GetPools(ctx, nil)
 		if err != nil {
@@ -75,6 +90,12 @@ func (p *PoolStoreBase) Init(ctx op_context.Context, configPath ...string) error
 			return ctx.Logger().PushFatalStack(msg, c.SetError(err))
 		}
 		for _, pool := range pools {
+
+			err = loadServices(pool)
+			if err != nil {
+				return err
+			}
+
 			p.poolsById[pool.GetID()] = pool
 			p.poolsByName[pool.Name()] = pool
 		}
@@ -88,6 +109,12 @@ func (p *PoolStoreBase) Init(ctx op_context.Context, configPath ...string) error
 		if pool == nil {
 			return c.SetErrorStr("self pool not found")
 		}
+
+		err = loadServices(pool)
+		if err != nil {
+			return err
+		}
+
 		p.poolsById[pool.GetID()] = pool
 		p.poolsByName[pool.Name()] = pool
 		p.selfPool = pool
@@ -118,4 +145,8 @@ func (p *PoolStoreBase) PoolByName(id string) (Pool, error) {
 		return nil, errors.New("pool not found")
 	}
 	return pool, nil
+}
+
+func (p *PoolStoreBase) Pools() []Pool {
+	return utils.AllMapValues(p.poolsById)
 }

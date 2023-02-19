@@ -40,15 +40,15 @@ func (r *RedisClient) Init(cfg config.Config, log logger.Logger, vld validator.V
 		return log.PushFatalStack("failed to init Redis client", err)
 	}
 
-	err = r.InitWithConfig(&r.RedisConfig)
+	err = r.InitWithConfig(log, &r.RedisConfig)
 	if err != nil {
-		return log.PushFatalStack("failed to connect to Redis server", err)
+		return err
 	}
 
 	return nil
 }
 
-func (r *RedisClient) InitWithConfig(cfg *RedisConfig) error {
+func (r *RedisClient) InitWithConfig(log logger.Logger, cfg *RedisConfig) error {
 	address := fmt.Sprintf("%s:%d", r.Host, r.Port)
 	r.context = context.Background()
 	r.redisClient = redis.NewClient(&redis.Options{
@@ -56,7 +56,11 @@ func (r *RedisClient) InitWithConfig(cfg *RedisConfig) error {
 		Password: r.Password,
 		DB:       r.Db,
 	})
-	return r.redisClient.Ping(r.context).Err()
+	err := r.redisClient.Ping(r.context).Err()
+	if err != nil {
+		return log.PushFatalStack("failed to connect to Redis server", err)
+	}
+	return nil
 }
 
 func (p *RedisClient) Shutdown() {

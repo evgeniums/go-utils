@@ -17,9 +17,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger/logger_logrus"
-	"github.com/evgeniums/go-backend-helpers/pkg/pubsub"
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_providers/pubsub_factory"
-	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_subscriber"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator/validator_playground"
 )
@@ -32,7 +30,6 @@ type contextConfig struct {
 	TESTING      bool
 	APP_INSTANCE string
 	HOSTNAME     string
-	POOL_NAME    string
 }
 
 type Context struct {
@@ -44,10 +41,6 @@ type Context struct {
 	cache        cache.Cache
 	inmemCache   *inmem_cache.InmemCache[string]
 	logrusLogger *logger_logrus.LogrusLogger
-
-	publisher     pubsub.Publisher
-	subscriber    pubsub_subscriber.Subscriber
-	pubsubFactory pubsub_factory.PubsubFactory
 
 	contextConfig
 
@@ -97,12 +90,7 @@ func (c *Context) GetTestParameter(key string) (interface{}, bool) {
 }
 
 type AppConfig struct {
-	PubsbFactory pubsub_factory.PubsubFactory
-	Cache        cache.Cache
-}
-
-func (a *AppConfig) GetPubsubFactory() pubsub_factory.PubsubFactory {
-	return a.PubsbFactory
+	Cache cache.Cache
 }
 
 func (a *AppConfig) GetCache() cache.Cache {
@@ -128,7 +116,6 @@ func New(buildConfig *app_context.BuildConfig, appConfig ...AppConfigI) *Context
 	c.validator = validator_playground.New()
 
 	if len(appConfig) != 0 {
-		c.pubsubFactory = appConfig[0].GetPubsubFactory()
 		c.cache = appConfig[0].GetCache()
 	}
 
@@ -136,10 +123,6 @@ func New(buildConfig *app_context.BuildConfig, appConfig ...AppConfigI) *Context
 		c.inmemCache = inmem_cache.New[string]()
 		c.cache = cache.New(c.inmemCache)
 		c.inmemCache.Start()
-	}
-
-	if c.pubsubFactory == nil {
-		c.pubsubFactory = pubsub_factory.DefaultPubsubFactory()
 	}
 
 	c.logrusLogger = logger_logrus.New()
@@ -182,12 +165,6 @@ func (c *Context) InitWithArgs(configFile string, args []string, configType ...s
 	err = object_config.LoadLogValidate(c.Cfg(), log, c.validator, c, "")
 	if err != nil {
 		return log.PushFatalStack("failed to init application configuration", err)
-	}
-
-	// init pubsub
-	err = c.InitPubsub("pubsub")
-	if err != nil {
-		return err
 	}
 
 	// setup testing
@@ -244,41 +221,4 @@ func (c *Context) Hostname() string {
 		hostname = "unknow"
 	}
 	return hostname
-}
-
-// TODO support publishers for multiple pools
-func (c *Context) SetPublisher(poolID string, publisher pubsub.Publisher) {
-	// TODO implement publishers by pool ID
-	c.publisher = publisher
-}
-
-func (c *Context) Publisher(poolID string) pubsub.Publisher {
-	// TODO implement publishers by pool ID
-	return c.publisher
-}
-
-// Subcribe to pubsub of application pool
-func (c *Context) Subscriber() pubsub_subscriber.Subscriber {
-	return c.subscriber
-}
-
-func (c *Context) InitPubsub(configPath ...string) error {
-
-	var err error
-
-	c.publisher, err = c.pubsubFactory.MakePublisher(c, configPath...)
-	if err != nil {
-		return c.Logger().PushFatalStack("failed to init pubsub publisher", err)
-	}
-
-	c.subscriber, err = c.pubsubFactory.MakeSubscriber(c, configPath...)
-	if err != nil {
-		return c.Logger().PushFatalStack("failed to init pubsub subscriber", err)
-	}
-
-	return nil
-}
-
-func (c *Context) PoolName() string {
-	return c.POOL_NAME
 }
