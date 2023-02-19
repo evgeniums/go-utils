@@ -69,7 +69,7 @@ func NewTenancyManager(subscriber pubsub_subscriber.Subscriber, pools pool.PoolS
 	m.Pools = pools
 	m.tenanciesById = make(map[string]multitenancy.Tenancy)
 	m.tenanciesByPath = make(map[string]multitenancy.Tenancy)
-	m.DbModels = dbModels
+	m.DbModels = append(dbModels, multitenancy.DbInternalModels()...)
 
 	// TODO implement pubsub
 	/*
