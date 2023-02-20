@@ -74,7 +74,7 @@ func (p *PoolPubsubBase) Init(app app_context.Context, pools pool.PoolStore) err
 	}
 
 	selfPool, err := pools.SelfPool()
-	if err != nil {
+	if err == nil {
 		var cfg *pubsub_factory.PubsubConfig
 		p.selfPoolPublisher, cfg, err = makePublisher(selfPool)
 		if err != nil {

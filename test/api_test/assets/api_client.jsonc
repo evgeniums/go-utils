@@ -2,5 +2,9 @@
     "testing" : "true",
     "logger" : {
         "level" : "debug"
+    },
+    "db":{
+        "db_provider": "sqlite",
+        "db_name" : "server_db.sqlite"
     }
 }

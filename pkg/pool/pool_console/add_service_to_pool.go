@@ -12,7 +12,7 @@ func AddServiceToPool() Handler {
 type AddServiceToPoolData struct {
 	Pool    string `long:"pool" description:"Short name of the pool" required:"true"`
 	Service string `long:"service" description:"Short name of the service" required:"true"`
-	Role    string `long:"role" description:"Role of the service in the pool, must be unique per the pool and aphanumeric" required:"true"`
+	Role    string `long:"role" description:"Role of the service in the pool, must be unique per the pool and alphanumeric" required:"true"`
 }
 
 type AddServiceToPoolHandler struct {

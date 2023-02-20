@@ -59,6 +59,11 @@ func (a *AppWithPoolsBase) InitWithArgs(configFile string, args []string, config
 		return nil, err
 	}
 
+	err = a.InitDB("db")
+	if err != nil {
+		return nil, a.Logger().PushFatalStack("failed to init database", err)
+	}
+
 	opCtx := default_op_context.NewAppInitContext(a)
 	c := opCtx.TraceInMethod("AppWithPools.Init")
 	defer opCtx.TraceOutMethod()

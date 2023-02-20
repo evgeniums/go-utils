@@ -8,12 +8,10 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/admin"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
-	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/crud"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api/pool_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api/pool_service"
-	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 	"github.com/evgeniums/go-backend-helpers/test/api_test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,9 +20,8 @@ import (
 var _, testBasePath, _, _ = runtime.Caller(0)
 var testDir = filepath.Dir(testBasePath)
 
-func createDb(t *testing.T, app app_context.Context) {
-	test_utils.CreateDbModels(t, app, admin.DbModels())
-	test_utils.CreateDbModels(t, app, pool.DbModels())
+func dbModels() []interface{} {
+	return append([]interface{}{}, admin.DbModels(), pool.DbModels())
 }
 
 type testContext struct {
@@ -38,7 +35,7 @@ func initTest(t *testing.T) *testContext {
 
 	ctx := &testContext{}
 
-	ctx.TestContext = api_test.InitTest(t, "pool", testDir, createDb)
+	ctx.TestContext = api_test.InitTest(t, "pool", testDir, dbModels())
 	ctx.RemotePoolController = pool_client.NewPoolClient(ctx.RestApiClient)
 	p := pool.NewPoolController(&crud.DbCRUD{})
 	ctx.LocalPoolController = p

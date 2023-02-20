@@ -1,6 +1,3 @@
 {
-    "testing" : "true",
-    "logger" : {
-        "level" : "debug"
-    }
+    "include" : ["../../api_test/assets/api_client.jsonc"]
 }

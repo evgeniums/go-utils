@@ -16,19 +16,41 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type AppBuilder = func(t *testing.T, buildConfig *app_context.BuildConfig) app_context.Context
+type AppInitializer = func(t *testing.T, app app_context.Context, configFile string, args []string, configType ...string) error
+
+func DefaultAppBuilder(t *testing.T, buildConfig *app_context.BuildConfig) app_context.Context {
+	app := app_default.New(buildConfig)
+	return app
+}
+
+func DefaultAppInitializer(t *testing.T, app app_context.Context, configFile string, args []string, configType ...string) error {
+	a, ok := app.(*app_default.Context)
+	require.True(t, ok)
+	return a.InitWithArgs(configFile, args, configType...)
+}
+
+var appBuilder = DefaultAppBuilder
+var appInitializer = DefaultAppInitializer
+
+func SetAppHandlers(builder AppBuilder, initializer AppInitializer) {
+	appBuilder = builder
+	appInitializer = initializer
+}
+
 func InitAppContextNoDb(t *testing.T, testDir string, config ...string) app_context.Context {
 	configFile := utils.OptionalArg(AssetsFilePath(testDir, "test_config.json"), config...)
 	if !utils.FileExists(configFile) {
 		configFile = AssetsFilePath(testDir, configFile)
 	}
 
-	app := app_default.New(nil)
-	require.NoErrorf(t, app.Init(configFile), "failed to init application context")
+	app := appBuilder(t, nil)
+	require.NoErrorf(t, appInitializer(t, app, configFile, nil), "failed to init application context")
 
 	return app
 }
 
-func InitAppContext(t *testing.T, testDir string, config ...string) app_context.Context {
+func InitDbModels(t *testing.T, testDir string, dbModels []interface{}, config ...string) {
 	configFile := utils.OptionalArg(AssetsFilePath(testDir, "test_config.json"), config...)
 	if !utils.FileExists(configFile) {
 		configFile = AssetsFilePath(testDir, configFile)
@@ -44,9 +66,30 @@ func InitAppContext(t *testing.T, testDir string, config ...string) app_context.
 		require.NoErrorf(t, os.MkdirAll(dbPaths, os.ModePerm), "failed to create db folder")
 	}
 
-	app := app_default.New(nil)
-	require.NoErrorf(t, app.Init(configFile), "failed to init application context")
-	require.NoErrorf(t, app.InitDB("db"), "failed to init database")
+	app := DefaultAppBuilder(t, nil)
+	require.NoErrorf(t, DefaultAppInitializer(t, app, configFile, nil), "failed to init application context")
+	a, ok := app.(*app_default.Context)
+	require.True(t, ok)
+	require.NoErrorf(t, a.InitDB("db"), "failed to init database")
+
+	CreateDbModels(t, app, dbModels)
+	a.Close()
+}
+
+func InitAppContext(t *testing.T, testDir string, dbModels []interface{}, config ...string) app_context.Context {
+
+	InitDbModels(t, testDir, dbModels, config...)
+
+	configFile := utils.OptionalArg(AssetsFilePath(testDir, "test_config.json"), config...)
+	if !utils.FileExists(configFile) {
+		configFile = AssetsFilePath(testDir, configFile)
+	}
+
+	app := appBuilder(t, nil)
+	require.NoErrorf(t, appInitializer(t, app, configFile, nil), "failed to init application context")
+	a, ok := app.(app_default.WithInitGormDb)
+	require.True(t, ok)
+	require.NoErrorf(t, a.InitDB("db"), "failed to init database")
 	app.Db().EnableDebug(true)
 
 	return app

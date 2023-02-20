@@ -45,7 +45,7 @@ func (t *TenancyNotificationHandler) Handle(ctx op_context.Context, msg *multite
 
 type TenancyManagerConfig struct {
 	MULTITENANCY bool
-	DB_PREFIX    string `validate:"required,aphanum" vmessage:"Invalid prefix for names of databases"`
+	DB_PREFIX    string `validate:"required,alphanum" vmessage:"Invalid prefix for names of databases" default:"tenancy"`
 }
 
 func (t *TenancyManagerConfig) IsMultiTenancy() bool {
@@ -76,7 +76,6 @@ func NewTenancyManager(pools pool.PoolStore, poolPubsub pool_pubsub.PoolPubsub, 
 
 	m.tenancyNotificationHandler = &TenancyNotificationHandler{manager: m}
 	m.tenancyNotificationHandler.Init("tenancy_manager")
-	m.PubsubTopic.Subscribe(m.tenancyNotificationHandler)
 
 	return m
 }
@@ -95,7 +94,11 @@ func (t *TenancyManager) Init(ctx op_context.Context, configPath ...string) erro
 	defer ctx.TraceOutMethod()
 
 	// init manager
-	err := object_config.LoadLogValidate(ctx.App().Cfg(), ctx.Logger(), ctx.App().Validator(), t, "multitenancy", configPath...)
+	app := ctx.App()
+	cfg := app.Cfg()
+	log := app.Logger()
+	vld := app.Validator()
+	err := object_config.LoadLogValidate(cfg, log, vld, t, "multitenancy", configPath...)
 	if err != nil {
 		c.SetError(err)
 		return ctx.Logger().PushFatalStack("failed to init tenancy manager", err)
@@ -121,6 +124,7 @@ func (t *TenancyManager) Init(ctx op_context.Context, configPath ...string) erro
 			return ctx.Logger().PushFatalStack("failed to subscribe to pubsub notifications in all pools", err)
 		}
 	}
+	t.PubsubTopic.Subscribe(t.tenancyNotificationHandler)
 
 	// load tenancies
 	err = t.LoadTenancies(ctx, selfPool)
@@ -432,6 +436,10 @@ func (t *TenancyManager) MigrateDatabase(ctx op_context.Context) error {
 	}
 
 	return nil
+}
+
+func (t *TenancyManager) TenancyController() multitenancy.TenancyController {
+	return t.Controller
 }
 
 // TODO subscribe to customer blocking

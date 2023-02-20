@@ -22,14 +22,12 @@ var testDir = filepath.Dir(testBasePath)
 
 type User = user_default.User
 
-func createDb(t *testing.T, app app_context.Context) {
-	test_utils.CreateDbModel(t, app, &User{}, &user_session_default.UserSession{}, &user_session_default.UserSessionClient{}, &sms.SmsMessage{})
+func dbModels() []interface{} {
+	return append([]interface{}{}, &User{}, &user_session_default.UserSession{}, &user_session_default.UserSessionClient{}, &sms.SmsMessage{})
 }
 
 func initServer(t *testing.T, config ...string) (app_context.Context, *user_session_default.Users, bare_bones_server.Server) {
-	app := test_utils.InitAppContext(t, testDir, utils.OptionalArg("auth_test.jsonc", config...))
-
-	createDb(t, app)
+	app := test_utils.InitAppContext(t, testDir, dbModels(), utils.OptionalArg("auth_test.jsonc", config...))
 
 	users := user_session_default.NewUsers()
 	users.Init(app.Validator())

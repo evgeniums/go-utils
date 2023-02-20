@@ -84,6 +84,8 @@ func CreateDbModel(t *testing.T, app app_context.Context, models ...interface{})
 }
 
 func CreateDbModels(t *testing.T, app app_context.Context, models []interface{}) {
-	require.NoErrorf(t, app.Db().AutoMigrate(app, models), "failed to create database")
-	db_gorm.GlobalModelStore.RegisterModels(models)
+	if models != nil {
+		require.NoErrorf(t, app.Db().AutoMigrate(app, models), "failed to create database")
+		db_gorm.GlobalModelStore.RegisterModels(models)
+	}
 }

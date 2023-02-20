@@ -21,14 +21,12 @@ var testDir = filepath.Dir(testBasePath)
 
 type User = user_default.User
 
-func createDb(t *testing.T, app app_context.Context) {
-	test_utils.CreateDbModel(t, app, &User{}, &user.OpLogUser{})
+func dbModels() []interface{} {
+	return append([]interface{}{}, &User{}, &user.OpLogUser{})
 }
 
 func initTest(t *testing.T, config ...string) (app_context.Context, *user_default.Users, op_context.Context) {
-	app := test_utils.InitAppContext(t, testDir, utils.OptionalArg("user_test.json", config...))
-
-	createDb(t, app)
+	app := test_utils.InitAppContext(t, testDir, dbModels(), utils.OptionalArg("user_test.json", config...))
 
 	users := user_default.NewUsers()
 	users.Init(app.Validator())

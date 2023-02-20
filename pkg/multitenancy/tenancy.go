@@ -40,7 +40,7 @@ type WithPath struct {
 }
 
 type WithRole struct {
-	ROLE string `json:"role" gorm:"index;index:,unique,composite:u" validate:"required,alphanum_" vmessage:"Role must be aphanumeric not empty"`
+	ROLE string `json:"role" gorm:"index;index:,unique,composite:u" validate:"required,alphanum_" vmessage:"Role must be alphanumeric not empty"`
 }
 
 type WithCustomerId struct {

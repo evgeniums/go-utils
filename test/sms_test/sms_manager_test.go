@@ -19,14 +19,12 @@ import (
 var _, testBasePath, _, _ = runtime.Caller(0)
 var testDir = filepath.Dir(testBasePath)
 
-func createDb(t *testing.T, app app_context.Context) {
-	test_utils.CreateDbModel(t, app, &sms.SmsMessage{})
+func dbModels() []interface{} {
+	return append([]interface{}{}, &sms.SmsMessage{})
 }
 
 func initSmsManager(t *testing.T, config ...string) (app_context.Context, sms.SmsManager) {
-	app := test_utils.InitAppContext(t, testDir, utils.OptionalArg("sms_test.json", config...))
-
-	createDb(t, app)
+	app := test_utils.InitAppContext(t, testDir, dbModels(), utils.OptionalArg("sms_test.json", config...))
 
 	manager := sms.NewSmsManager()
 	require.NoErrorf(t, manager.Init(app.Cfg(), app.Logger(), app.Validator(), &sms_provider_factory.MockFactory{}, "sms"), "failed to init SMS manager")

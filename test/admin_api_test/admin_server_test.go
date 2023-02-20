@@ -23,15 +23,12 @@ var testDir = filepath.Dir(testBasePath)
 
 type Admin = admin.Admin
 
-func createDb(t *testing.T, app app_context.Context) {
-	test_utils.CreateDbModels(t, app, admin.DbModels())
-	test_utils.CreateDbModel(t, app, &sms.SmsMessage{})
+func dbModels() []interface{} {
+	return append(admin.DbModels(), &sms.SmsMessage{})
 }
 
 func initServer(t *testing.T, config ...string) (app_context.Context, *admin.Manager, bare_bones_server.Server) {
-	app := test_utils.InitAppContext(t, testDir, utils.OptionalArg("admin_api_server.jsonc", config...))
-
-	createDb(t, app)
+	app := test_utils.InitAppContext(t, testDir, dbModels(), utils.OptionalArg("admin_api_server.jsonc", config...))
 
 	admins := admin.NewManager()
 	admins.Init(app.Validator())

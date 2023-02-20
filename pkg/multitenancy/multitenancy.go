@@ -58,6 +58,9 @@ type Multitenancy interface {
 
 	// Create tenancy
 	CreateTenancy(ctx op_context.Context, data *TenancyData) (*TenancyItem, error)
+
+	//! Get tenancy controller
+	TenancyController() TenancyController
 }
 
 type PubsubNotification struct {

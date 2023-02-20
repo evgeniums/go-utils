@@ -6,7 +6,6 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
@@ -18,7 +17,7 @@ var _, testBasePath, _, _ = runtime.Caller(0)
 var testDir = filepath.Dir(testBasePath)
 
 func TestInitDb(t *testing.T) {
-	app := test_utils.InitAppContext(t, testDir, "maindb.json")
+	app := test_utils.InitAppContext(t, testDir, nil, "maindb.json")
 	app.Close()
 }
 
@@ -34,20 +33,18 @@ type SampleModel2 struct {
 	Field2 int    `gorm:"index"`
 }
 
-func createDb(t *testing.T, app app_context.Context) {
-	test_utils.CreateDbModel(t, app, &SampleModel1{}, &SampleModel2{})
+func dbModels() []interface{} {
+	return append([]interface{}{}, &SampleModel1{}, &SampleModel2{})
 }
 
 func TestCreateDatabase(t *testing.T) {
-	app := test_utils.InitAppContext(t, testDir, "maindb.json")
+	app := test_utils.InitAppContext(t, testDir, dbModels(), "maindb.json")
 	defer app.Close()
-	createDb(t, app)
 }
 
 func TestMainDbOperations(t *testing.T) {
-	app := test_utils.InitAppContext(t, testDir, "maindb.json")
+	app := test_utils.InitAppContext(t, testDir, dbModels(), "maindb.json")
 	defer app.Close()
-	createDb(t, app)
 
 	doc1 := &SampleModel1{}
 	doc1.InitObject()

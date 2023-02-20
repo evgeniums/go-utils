@@ -54,10 +54,8 @@ func initClient(t *testing.T, g *gin.Engine, testDir string, config string) (app
 	return app, client
 }
 
-func initServer(t *testing.T, testDir string, config string, createDb func(t *testing.T, app app_context.Context)) (app_context.Context, *admin.Manager, bare_bones_server.Server) {
-	app := test_utils.InitAppContext(t, testDir, config)
-
-	createDb(t, app)
+func initServer(t *testing.T, testDir string, config string, dbModels []interface{}) (app_context.Context, *admin.Manager, bare_bones_server.Server) {
+	app := test_utils.InitAppContext(t, testDir, dbModels, config)
 
 	adminManager := admin.NewManager()
 	adminManager.Init(app.Validator())
@@ -73,14 +71,14 @@ func initServer(t *testing.T, testDir string, config string, createDb func(t *te
 	return app, adminManager, server
 }
 
-func InitTest(t *testing.T, packageName string, testDir string, createDb func(t *testing.T, app app_context.Context)) *TestContext {
+func InitTest(t *testing.T, packageName string, testDir string, dbModels []interface{}) *TestContext {
 
 	ctx := &TestContext{}
 
 	clientConfig := fmt.Sprintf("%s_api_client.jsonc", packageName)
 	serverConfig := fmt.Sprintf("%s_api_server.jsonc", packageName)
 
-	ctx.ServerApp, ctx.LocalAdminManager, ctx.Server = initServer(t, testDir, serverConfig, createDb)
+	ctx.ServerApp, ctx.LocalAdminManager, ctx.Server = initServer(t, testDir, serverConfig, dbModels)
 	ctx.ClientApp, ctx.RestApiClient = initClient(t, test_utils.BBGinEngine(t, ctx.Server), testDir, clientConfig)
 
 	ctx.ClientOp = test_utils.SimpleOpContext(ctx.ClientApp, t.Name())

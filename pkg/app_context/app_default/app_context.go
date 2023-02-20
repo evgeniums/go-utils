@@ -47,7 +47,8 @@ type Context struct {
 
 	contextConfig
 
-	testValues map[string]interface{}
+	testValues  map[string]interface{}
+	initialized bool
 }
 
 func (c *Context) Config() interface{} {
@@ -135,6 +136,10 @@ func New(buildConfig *app_context.BuildConfig, appConfig ...AppConfigI) *Context
 
 func (c *Context) InitWithArgs(configFile string, args []string, configType ...string) error {
 
+	if c.initialized {
+		return nil
+	}
+
 	// load configuration
 	fmt.Printf("Application %s using configuration file %s\n", c.Application(), configFile)
 	err := c.initConfig(configFile)
@@ -176,6 +181,7 @@ func (c *Context) InitWithArgs(configFile string, args []string, configType ...s
 	}
 
 	// done
+	c.initialized = true
 	return nil
 }
 
@@ -208,6 +214,9 @@ func (c *Context) initLog(configPath string) error {
 }
 
 func (c *Context) InitDB(configPath string, gormDbConnector ...*db_gorm.DbConnector) error {
+	if c.db != nil {
+		return nil
+	}
 	d := db_gorm.New(gormDbConnector...)
 	c.db = d
 	return d.Init(c, c.Cfg(), c.validator, configPath)
