@@ -24,24 +24,31 @@ func (a *AppWithPoolsBase) Pools() pool.PoolStore {
 
 type AppConfigI interface {
 	app_default.AppConfigI
-	pool.PoolStoreConfigI
+	GetPoolControllerBuilder() func(app app_context.Context) pool.PoolController
 }
 
 type AppConfig struct {
 	app_default.AppConfig
-	pool.PoolStoreConfig
+	PoolControllerBuilder func(app app_context.Context) pool.PoolController
 }
 
 func New(buildConfig *app_context.BuildConfig, appConfig ...AppConfigI) *AppWithPoolsBase {
 	a := &AppWithPoolsBase{}
-	if len(appConfig) == 0 {
-		a.Context = app_default.New(buildConfig)
-		a.pools = pool.NewPoolStore()
-	} else {
+	if len(appConfig) != 0 {
 		cfg := appConfig[0]
 		a.Context = app_default.New(buildConfig, cfg)
-		a.pools = pool.NewPoolStore(cfg)
+		if cfg.GetPoolControllerBuilder() != nil {
+			pCfg := &pool.PoolStoreConfig{PoolController: cfg.GetPoolControllerBuilder()(a)}
+			a.pools = pool.NewPoolStore(pCfg)
+		}
 	}
+	if a.Context == nil {
+		a.Context = app_default.New(buildConfig)
+	}
+	if a.pools == nil {
+		a.pools = pool.NewPoolStore()
+	}
+
 	return a
 }
 

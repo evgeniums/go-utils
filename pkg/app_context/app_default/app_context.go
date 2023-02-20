@@ -17,7 +17,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger/logger_logrus"
-	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_providers/pubsub_factory"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator/validator_playground"
 )
@@ -30,6 +29,10 @@ type contextConfig struct {
 	TESTING      bool
 	APP_INSTANCE string
 	HOSTNAME     string
+}
+
+type WithInitGormDb interface {
+	InitDB(configPath string, gormDbConnector ...*db_gorm.DbConnector) error
 }
 
 type Context struct {
@@ -98,7 +101,6 @@ func (a *AppConfig) GetCache() cache.Cache {
 }
 
 type AppConfigI interface {
-	GetPubsubFactory() pubsub_factory.PubsubFactory
 	GetCache() cache.Cache
 }
 

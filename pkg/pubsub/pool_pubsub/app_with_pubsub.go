@@ -45,14 +45,22 @@ type AppConfig struct {
 
 func NewApp(buildConfig *app_context.BuildConfig, appConfig ...AppConfigI) *AppWithPubsubBase {
 	a := &AppWithPubsubBase{}
-	if len(appConfig) == 0 {
-		a.AppWithPoolsBase = app_with_pools.New(buildConfig)
-		a.pubsub = NewPubsub()
-	} else {
+	if len(appConfig) != 0 {
 		cfg := appConfig[0]
 		a.AppWithPoolsBase = app_with_pools.New(buildConfig, cfg)
-		a.pubsub = NewPubsub(cfg.GetPubsubFactory())
+
+		if cfg.GetPubsubFactory() != nil {
+			a.pubsub = NewPubsub(cfg.GetPubsubFactory())
+		}
 	}
+
+	if a.AppWithPoolsBase == nil {
+		a.AppWithPoolsBase = app_with_pools.New(buildConfig)
+	}
+	if a.pubsub == nil {
+		a.pubsub = NewPubsub()
+	}
+
 	return a
 }
 

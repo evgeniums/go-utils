@@ -15,23 +15,26 @@ type AppWithMultitenancy interface {
 
 type AppWithMultitenancyBase struct {
 	*pool_pubsub.AppWithPubsubBase
-	tenancyManager *tenancy_manager.TenancyManager
+	tenancyManager        multitenancy.Multitenancy
+	tenancyManagerBuilder TenancyManagerBuilder
 }
 
 func (a *AppWithMultitenancyBase) Multitenancy() multitenancy.Multitenancy {
 	return a.tenancyManager
 }
 
+type TenancyManagerBuilder = func(app pool_pubsub.AppWithPubsub, ctx op_context.Context) (multitenancy.Multitenancy, error)
+
 type MultitenancyConfigI interface {
-	GetTenancyController() multitenancy.TenancyController
+	GetTenancyManagerBuilder() TenancyManagerBuilder
 }
 
 type MultitenancyConfig struct {
-	TenancyController multitenancy.TenancyController
+	TenancyManagerBuilder TenancyManagerBuilder
 }
 
-func (p *MultitenancyConfig) GetTenancyController() multitenancy.TenancyController {
-	return p.TenancyController
+func (p *MultitenancyConfig) GetTenancyManagerBuilder() TenancyManagerBuilder {
+	return p.TenancyManagerBuilder
 }
 
 type AppConfigI interface {
@@ -46,16 +49,38 @@ type AppConfig struct {
 
 func NewApp(buildConfig *app_context.BuildConfig, tenancyDbModels []interface{}, appConfig ...AppConfigI) *AppWithMultitenancyBase {
 	a := &AppWithMultitenancyBase{}
-	if len(appConfig) == 0 {
-		a.AppWithPubsubBase = pool_pubsub.NewApp(buildConfig)
-		a.tenancyManager = tenancy_manager.NewTenancyManager(a.Pools(), a.Pubsub(), tenancyDbModels)
-		a.tenancyManager.SetController(tenancy_manager.DefaultTenancyController(a.tenancyManager))
-	} else {
+	if len(appConfig) != 0 {
 		cfg := appConfig[0]
 		a.AppWithPubsubBase = pool_pubsub.NewApp(buildConfig, cfg)
-		a.tenancyManager = tenancy_manager.NewTenancyManager(a.Pools(), a.Pubsub(), tenancyDbModels)
-		a.tenancyManager.SetController(cfg.GetTenancyController())
+
+		builder := cfg.GetTenancyManagerBuilder()
+		if builder != nil {
+			a.tenancyManagerBuilder = builder
+		}
 	}
+
+	if a.AppWithPubsubBase == nil {
+		a.AppWithPubsubBase = pool_pubsub.NewApp(buildConfig)
+	}
+
+	if a.tenancyManagerBuilder == nil {
+		tenancyManager := tenancy_manager.NewTenancyManager(a.Pools(), a.Pubsub(), tenancyDbModels)
+		tenancyManager.SetController(tenancy_manager.DefaultTenancyController(tenancyManager))
+		a.tenancyManagerBuilder = func(app pool_pubsub.AppWithPubsub, opCtx op_context.Context) (multitenancy.Multitenancy, error) {
+			c := opCtx.TraceInMethod("AppWithMultitenancy.Init")
+			defer opCtx.TraceOutMethod()
+
+			err := tenancyManager.Init(opCtx, "multitenancy")
+			if err != nil {
+				msg := "failed to init multitenancy"
+				c.SetMessage(msg)
+				return nil, opCtx.Logger().PushFatalStack(msg, c.SetError(err))
+			}
+
+			return tenancyManager, nil
+		}
+	}
+
 	return a
 }
 
@@ -66,14 +91,10 @@ func (a *AppWithMultitenancyBase) InitWithArgs(configFile string, args []string,
 		return nil, err
 	}
 
-	c := opCtx.TraceInMethod("AppWithMultitenancy.Init")
-	defer opCtx.TraceOutMethod()
-
-	err = a.tenancyManager.Init(opCtx, "multitenancy")
+	a.tenancyManager, err = a.tenancyManagerBuilder(a, opCtx)
 	if err != nil {
-		msg := "failed to init multitenancy"
-		c.SetMessage(msg)
-		return opCtx, opCtx.Logger().PushFatalStack(msg, c.SetError(err))
+		msg := "failed to build tenancy manager"
+		return nil, opCtx.Logger().PushFatalStack(msg, err)
 	}
 
 	return opCtx, nil

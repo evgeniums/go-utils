@@ -1,13 +1,13 @@
 package console_tool
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context/app_default"
-	"github.com/evgeniums/go-backend-helpers/pkg/cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger/logger_logrus"
@@ -37,14 +37,31 @@ type ConsoleUtility struct {
 	InitDB  func() error
 }
 
-func New(buildConfig *app_context.BuildConfig, cache ...cache.Cache) *ConsoleUtility {
+type InitApp = func(app app_context.Context, configFile string, args []string, configType ...string) error
+
+type AppBuilder interface {
+	NewApp() app_context.Context
+	InitApp(app app_context.Context, configFile string, args []string, configType ...string) error
+}
+
+func New(buildConfig *app_context.BuildConfig, appBuilder ...AppBuilder) *ConsoleUtility {
 	c := &ConsoleUtility{}
 	c.Parser = flags.NewParser(&c.Opts, flags.Default)
-	app := app_default.New(buildConfig)
-	c.App = app
-	c.InitApp = func(config string) error { return app.InitWithArgs(config, c.Args, c.Opts.ConfigFormat) }
+	var initApp InitApp
+	if len(appBuilder) == 0 {
+		c.App = app_default.New(buildConfig)
+		initApp = func(app app_context.Context, configFile string, args []string, configType ...string) error {
+			a := c.App.(*app_default.Context)
+			return a.InitWithArgs(configFile, c.Args, c.Opts.ConfigFormat)
+		}
+	}
+	c.InitApp = func(config string) error { return initApp(c.App, config, c.Args, c.Opts.ConfigFormat) }
 	c.InitDB = func() error {
-		return app.InitDB(c.Opts.DbSection)
+		initDbApp, ok := c.App.(app_default.WithInitGormDb)
+		if !ok {
+			return c.App.Logger().PushFatalStack("invalid type of application", errors.New("failed to cast application to app with initdb"))
+		}
+		return initDbApp.InitDB(c.Opts.DbSection)
 	}
 	return c
 }

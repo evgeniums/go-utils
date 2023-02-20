@@ -15,11 +15,11 @@ type UserCommands[T user.User] struct {
 	MakeController func(app app_context.Context) user.Users[T]
 }
 
-func NewUserCommands[T user.User](groupName string, groupDescription string, controllerBuilder func(app app_context.Context) user.Users[T], defaultHandlers ...bool) *UserCommands[T] {
+func NewUserCommands[T user.User](groupName string, groupDescription string, controllerBuilder func(app app_context.Context) user.Users[T], loadDefaultHandlers ...bool) *UserCommands[T] {
 	p := &UserCommands[T]{}
 	p.Construct(p, groupName, groupDescription)
 	p.MakeController = controllerBuilder
-	if utils.OptionalArg(true, defaultHandlers...) {
+	if utils.OptionalArg(true, loadDefaultHandlers...) {
 		p.LoadDefaultHandlers()
 	}
 	return p
