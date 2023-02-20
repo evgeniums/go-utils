@@ -41,7 +41,8 @@ func NewPoolService(poolController pool.PoolController) *PoolService {
 	s.AddChild(s.ServicesResource)
 
 	s.PoolsResource.AddOperations(AddPool(s), ListPools(s))
-	s.PoolResource.AddOperations(FindPool(s), UpdatePool(s), DeletePool(s))
+	s.PoolResource.AddOperation(FindPool(s), true)
+	s.PoolResource.AddOperations(UpdatePool(s), DeletePool(s))
 
 	poolServiceAssociations := api.NewResource("service")
 	poolServiceAssociations.AddOperations(ListPoolServices(s), AddServiceToPool(s), RemoveAllServicesFromPool(s))
@@ -52,7 +53,7 @@ func NewPoolService(poolController pool.PoolController) *PoolService {
 	poolServiceAssociations.AddChild(poolServiceAssociation)
 
 	s.ServicesResource.AddOperations(AddService(s), ListServices(s))
-	s.ServiceResource.AddOperation(FindService(s))
+	s.ServiceResource.AddOperation(FindService(s), true)
 	s.ServiceResource.AddOperations(UpdateService(s), DeleteService(s))
 
 	servicePoolAssociations := api.NewResource("pool")

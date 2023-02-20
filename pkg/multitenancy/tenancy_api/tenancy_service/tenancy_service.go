@@ -53,7 +53,8 @@ func NewTenancyService(tenancyController multitenancy.TenancyController) *Tenanc
 	existsResource.AddOperation(Exists(s))
 	s.TenanciesResource.AddChild(existsResource)
 
-	s.TenancyResource.AddOperations(Find(s), Delete(s))
+	s.TenancyResource.AddOperation(Find(s), true)
+	s.TenancyResource.AddOperation(Delete(s))
 	s.TenanciesResource.AddChildren(SetActive(s),
 		SetPath(s),
 		SetRole(s),

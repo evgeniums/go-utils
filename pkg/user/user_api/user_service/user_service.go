@@ -39,7 +39,7 @@ func NewUserService[U user.User](userController user.Users[U],
 	s.collectionResource.AddOperation(List(s))
 	s.collectionResource.AddOperation(Add(s, setterBuilder))
 
-	s.userResource.AddOperation(Find(s))
+	s.userResource.AddOperation(Find(s), true)
 	s.userResource.AddChild(SetPhone(s.UserTypeName, s.Users))
 	s.userResource.AddChild(SetEmail(s.UserTypeName, s.Users))
 	s.userResource.AddChild(SetBlocked(s.UserTypeName, s.Users))
