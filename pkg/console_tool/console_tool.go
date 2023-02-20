@@ -40,7 +40,7 @@ type ConsoleUtility struct {
 type InitApp = func(app app_context.Context, configFile string, args []string, configType ...string) error
 
 type AppBuilder interface {
-	NewApp() app_context.Context
+	NewApp(buildConfig *app_context.BuildConfig) app_context.Context
 	InitApp(app app_context.Context, configFile string, args []string, configType ...string) error
 }
 
@@ -54,6 +54,9 @@ func New(buildConfig *app_context.BuildConfig, appBuilder ...AppBuilder) *Consol
 			a := c.App.(*app_default.Context)
 			return a.InitWithArgs(configFile, c.Args, c.Opts.ConfigFormat)
 		}
+	} else {
+		c.App = appBuilder[0].NewApp(buildConfig)
+		initApp = appBuilder[0].InitApp
 	}
 	c.InitApp = func(config string) error { return initApp(c.App, config, c.Args, c.Opts.ConfigFormat) }
 	c.InitDB = func() error {
