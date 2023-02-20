@@ -36,20 +36,20 @@ type WithTenancy interface {
 }
 
 type WithPath struct {
-	PATH string `json:"path" gorm:"uniqueIndex" validate:"omitempty,alphanum_" vmessage:"Path must be alhanumeric"`
+	PATH string `json:"path" gorm:"uniqueIndex" validate:"omitempty,alphanum_" vmessage:"Path must be alhanumeric" long:"path" description:"Path of tenancy resource in API service" required:"true"`
 }
 
 type WithRole struct {
-	ROLE string `json:"role" gorm:"index;index:,unique,composite:u" validate:"required,alphanum_" vmessage:"Role must be alphanumeric not empty"`
+	ROLE string `json:"role" gorm:"index;index:,unique,composite:u" validate:"required,alphanum_" vmessage:"Role must be alphanumeric not empty" long:"role" description:"Role of this tenancy for customer, each tenancy must have unique role per customer" required:"true"`
 }
 
 type WithCustomerId struct {
-	CUSTOMER_ID string `json:"customer_id" gorm:"index;index:,unique,composite:u" validate:"required,alphanum_|email" vmessage:"Invalid customer ID"`
+	CUSTOMER_ID string `json:"customer_id" gorm:"index;index:,unique,composite:u" validate:"required,alphanum_|email" vmessage:"Invalid customer ID" long:"customer" description:"ID or name of a customer that will own the tenancy" required:"true"`
 }
 
 type WithPoolAndDb struct {
-	POOL_ID string `json:"pool_id" gorm:"index" validate:"omitempty,alphanum" vmessage:"Pool ID must be alhanumeric"`
-	DBNAME  string `json:"dbname" gorm:"index;column:dbname" validate:"omitempty,alphanum_" vmessage:"Database name must be alhanumeric"`
+	POOL_ID string `json:"pool_id" gorm:"index" validate:"omitempty,alphanum" vmessage:"Pool ID must be alhanumeric" long:"pool" description:"Name or ID of a pool this tenancy belongs to"`
+	DBNAME  string `json:"dbname" gorm:"index;column:dbname" validate:"omitempty,alphanum_" vmessage:"Database name must be alhanumeric" long:"dbname" description:"Name of tenancy's database, if empty then will be generated automatically"`
 }
 
 type TenancyData struct {
@@ -82,6 +82,10 @@ func (t *WithPoolAndDb) DbName() string {
 
 func TenancyDisplay(t Tenancy) string {
 	return utils.ConcatStrings(t.CustomerDisplay(), "/", t.Role())
+}
+
+func TenancySelector(customer string, role string) string {
+	return utils.ConcatStrings(customer, "/", role)
 }
 
 func ParseTenancyDisplay(display string) (string, string, *validator.ValidationError) {
