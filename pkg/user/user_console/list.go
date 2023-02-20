@@ -18,13 +18,8 @@ func List[T user.User]() console_tool.Handler[*UserCommands[T]] {
 	return a
 }
 
-type QueryData struct {
-	Query string `long:"query" description:"Quary to filter items in response"`
-}
-
 type WithQueryData struct {
-	LoginData
-	QueryData
+	console_tool.QueryData
 }
 
 type ListHandler[T user.User] struct {
@@ -38,7 +33,7 @@ func (a *ListHandler[T]) Data() interface{} {
 
 func (a *ListHandler[T]) Execute(args []string) error {
 
-	ctx, ctrl := a.Context(a.Login)
+	ctx, ctrl := a.Context()
 	defer ctx.Close()
 
 	filter, err := db.ParseQuery(ctx.Db(), a.Query, ctrl.MakeUser(), "")

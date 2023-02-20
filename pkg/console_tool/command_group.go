@@ -142,3 +142,7 @@ func (h *HandlerBase[T]) Context() op_context.Context {
 func (h *HandlerBase[T]) Data() interface{} {
 	return &Dummy{}
 }
+
+type QueryData struct {
+	Query string `long:"query" description:"Query to filter items in response"`
+}
