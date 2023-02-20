@@ -26,6 +26,7 @@ type PoolStore interface {
 	SelfPool() (Pool, error)
 	PoolByName(name string) (Pool, error)
 	Pools() []Pool
+	PoolController() PoolController
 }
 
 type poolStoreConfig struct {
@@ -152,4 +153,8 @@ func (p *PoolStoreBase) PoolByName(id string) (Pool, error) {
 
 func (p *PoolStoreBase) Pools() []Pool {
 	return utils.AllMapValues(p.poolsById)
+}
+
+func (p *PoolStoreBase) PoolController() PoolController {
+	return p.poolController
 }

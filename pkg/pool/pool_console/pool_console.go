@@ -1,31 +1,25 @@
 package pool_console
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/console_tool"
-	"github.com/evgeniums/go-backend-helpers/pkg/crud"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 )
 
 type PoolCommands struct {
 	console_tool.Commands[*PoolCommands]
-	MakeController func(app app_context.Context) pool.PoolController
+	PoolController pool.PoolController
 }
 
-func NewPoolCommands(controllerBuilder ...func(app app_context.Context) pool.PoolController) *PoolCommands {
+func NewPoolCommands(poolController pool.PoolController) *PoolCommands {
 	p := &PoolCommands{}
 	p.Construct(p, "pool", "Manage pools")
-	p.MakeController = DefaultPoolController
-	if len(controllerBuilder) > 0 {
-		p.MakeController = controllerBuilder[0]
-	}
+	p.PoolController = poolController
 	p.LoadHandlers()
 	return p
 }
 
 func (p *PoolCommands) LoadHandlers() {
-
 	p.AddHandlers(AddPool,
 		DeletePool,
 		ListPools,
@@ -48,11 +42,6 @@ func (p *PoolCommands) LoadHandlers() {
 		DisableService)
 }
 
-func DefaultPoolController(app app_context.Context) pool.PoolController {
-	ctrl := pool.NewPoolController(&crud.DbCRUD{})
-	return ctrl
-}
-
 type Handler = console_tool.Handler[*PoolCommands]
 
 type HandlerBase struct {
@@ -61,6 +50,5 @@ type HandlerBase struct {
 
 func (b *HandlerBase) Context() (op_context.Context, pool.PoolController) {
 	ctx := b.HandlerBase.Context()
-	ctrl := b.Group.MakeController(ctx.App())
-	return ctx, ctrl
+	return ctx, b.Group.PoolController
 }
