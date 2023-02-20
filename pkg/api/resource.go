@@ -20,6 +20,9 @@ type Resource interface {
 	IsServicePart() bool
 	Service() Resource
 
+	IsTenancy() bool
+	IsInTenancy() bool
+
 	SetParent(parent Resource, rebuild ...bool)
 	Parent() Resource
 	AddChild(resource Resource, rebuild ...bool)
@@ -57,6 +60,7 @@ type ResourceConfig struct {
 	HasId   bool
 	Service bool
 	Id      string
+	Tenancy bool
 }
 
 type ResourceBase struct {
@@ -193,6 +197,20 @@ func (r *ResourceBase) IsServicePart() bool {
 	}
 	if r.Parent() != nil {
 		return r.parent.IsServicePart()
+	}
+	return false
+}
+
+func (r *ResourceBase) IsTenancy() bool {
+	return r.ResourceConfig.Tenancy
+}
+
+func (r *ResourceBase) IsInTenancy() bool {
+	if r.IsTenancy() {
+		return true
+	}
+	if r.Parent() != nil {
+		return r.parent.IsInTenancy()
 	}
 	return false
 }

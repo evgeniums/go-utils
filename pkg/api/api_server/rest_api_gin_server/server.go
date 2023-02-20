@@ -183,7 +183,7 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 	auth.AttachToErrorManager(s)
 
 	if s.tenancies.IsMultiTenancy() {
-		s.tenancyResource = api.NewResource(TenancyParameter, api.ResourceConfig{HasId: true})
+		s.tenancyResource = api.NewResource(TenancyParameter, api.ResourceConfig{HasId: true, Tenancy: true})
 	}
 
 	defaultPath := "rest_api_server"
@@ -259,7 +259,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		}
 
 		// extract tenancy if applicable
-		if s.tenancies.IsMultiTenancy() && ep.Resource().ChainHasResourceType(s.tenancyResource.Type()) {
+		if s.tenancies.IsMultiTenancy() && ep.Resource().IsInTenancy() {
 			tenancyInPath := request.GetResourceId(TenancyParameter)
 			request.SetLoggerField("tenancy", tenancyInPath)
 			var tenancy multitenancy.Tenancy
