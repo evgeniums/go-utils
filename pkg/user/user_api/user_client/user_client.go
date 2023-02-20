@@ -50,6 +50,10 @@ func NewUserClient[U user.User](client api_client.Client,
 	return c
 }
 
+func (c *UserClient[U]) SetTenancy(tenancyResource api.Resource) {
+	tenancyResource.AddChild(c)
+}
+
 func (c *UserClient[U]) SetUserBuilder(userBuilder func() U) {
 	c.userBuilder = userBuilder
 }
