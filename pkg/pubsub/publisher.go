@@ -1,6 +1,8 @@
 package pubsub
 
 import (
+	"context"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/message"
 	"github.com/evgeniums/go-backend-helpers/pkg/message/message_json"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
@@ -8,7 +10,7 @@ import (
 
 type Publisher interface {
 	Publish(topicName string, obj interface{}) error
-	Shutdown()
+	Shutdown(ctx context.Context) error
 }
 
 type PublisherBase struct {

@@ -1,6 +1,8 @@
 package pubsub_inmem
 
 import (
+	"context"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/message"
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub"
@@ -19,7 +21,8 @@ func New(app app_context.Context, serializer ...message.Serializer) *PubsubInmem
 	return p
 }
 
-func (p *PubsubInmem) Shutdown() {
+func (p *PubsubInmem) Shutdown(ctx context.Context) error {
+	return nil
 }
 
 func (p *PubsubInmem) Subscribe(topic pubsub_subscriber.Topic) error {

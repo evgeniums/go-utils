@@ -1,6 +1,7 @@
 package pool_pubsub
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -13,7 +14,7 @@ import (
 )
 
 type PoolPubsub interface {
-	Shutdown()
+	Shutdown(ctx context.Context) error
 
 	PublishSelfPool(topicName string, msg interface{}) error
 	PublishPools(topicName string, msg interface{}, poolIds ...string) error
@@ -101,16 +102,27 @@ func (p *PoolPubsubBase) Init(app app_context.Context, pools pool.PoolStore) err
 	return nil
 }
 
-func (p *PoolPubsubBase) Shutdown() {
+func (p *PoolPubsubBase) Shutdown(ctx context.Context) error {
+	var err error
 	if p.selfPoolPublisher != nil {
-		p.selfPoolPublisher.Shutdown()
+		err1 := p.selfPoolPublisher.Shutdown(ctx)
+		if err1 != nil {
+			err = err1
+		}
 	}
 	if p.selfPoolSubscriber != nil {
-		p.selfPoolSubscriber.Shutdown()
+		err1 := p.selfPoolSubscriber.Shutdown(ctx)
+		if err1 != nil {
+			err = err1
+		}
 	}
 	for _, publisher := range p.publishers {
-		publisher.Shutdown()
+		err1 := publisher.Shutdown(ctx)
+		if err1 != nil {
+			err = err1
+		}
 	}
+	return err
 }
 
 func (p *PoolPubsubBase) PublishSelfPool(topicName string, msg interface{}) error {

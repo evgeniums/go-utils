@@ -1,6 +1,7 @@
 package pubsub_subscriber
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"sync"
@@ -17,7 +18,7 @@ import (
 type Subscriber interface {
 	Subscribe(topic Topic) error
 	Unsubscribe(topicName string)
-	Shutdown()
+	Shutdown(ctx context.Context) error
 
 	Handle(ctx op_context.Context, topicName string, msg []byte) error
 	Topic(topicName string) (Topic, error)

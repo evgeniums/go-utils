@@ -87,3 +87,7 @@ func (a *AppWithPubsubBase) InitWithArgs(configFile string, args []string, confi
 func (a *AppWithPubsubBase) Init(configFile string, configType ...string) (op_context.Context, error) {
 	return a.InitWithArgs(configFile, nil, configType...)
 }
+
+func (a *AppWithPubsubBase) Close() {
+	a.AppWithPoolsBase.Close()
+}

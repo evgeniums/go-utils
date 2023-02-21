@@ -63,8 +63,8 @@ func (r *RedisClient) InitWithConfig(log logger.Logger, cfg *RedisConfig) error 
 	return nil
 }
 
-func (p *RedisClient) Shutdown() {
-	p.redisClient.Close()
+func (p *RedisClient) Shutdown(ctx context.Context) error {
+	return p.redisClient.Close()
 }
 
 //---------------------------------------
