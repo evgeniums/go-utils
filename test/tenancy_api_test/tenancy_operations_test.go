@@ -14,6 +14,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_api/tenancy_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_api/tenancy_service"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api/pool_service"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 	"github.com/evgeniums/go-backend-helpers/test/api_test"
 	"github.com/stretchr/testify/require"
@@ -69,6 +70,9 @@ func initTest(t *testing.T) *testContext {
 
 	tenancyService := tenancy_service.NewTenancyService(ctx.LocalTenancyController)
 	api_server.AddServiceToServer(ctx.Server.ApiServer(), tenancyService)
+
+	poolService := pool_service.NewPoolService(appWithTenancy.Pools().PoolController())
+	api_server.AddServiceToServer(ctx.Server.ApiServer(), poolService)
 
 	return ctx
 }
