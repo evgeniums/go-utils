@@ -36,15 +36,15 @@ func NewCustomerSessionClient() *CustomerSessionClient {
 }
 
 func Name(name string, sample ...*Customer) user.SetUserFields[*Customer] {
-	return func(ctx op_context.Context, customer *Customer) error {
+	return func(ctx op_context.Context, customer *Customer) ([]user.CheckDuplicateField, error) {
 		customer.SetName(name)
-		return nil
+		return nil, nil
 	}
 }
 
 func Description(description string, sample ...*Customer) user.SetUserFields[*Customer] {
-	return func(ctx op_context.Context, customer *Customer) error {
+	return func(ctx op_context.Context, customer *Customer) ([]user.CheckDuplicateField, error) {
 		customer.SetDescription(description)
-		return nil
+		return nil, nil
 	}
 }

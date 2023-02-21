@@ -15,7 +15,7 @@ type CustomerFieldsSetter struct {
 	common.WithDescriptionBase
 }
 
-func (c *CustomerFieldsSetter) SetUserFields(ctx op_context.Context, customer *customer.Customer) error {
+func (c *CustomerFieldsSetter) SetUserFields(ctx op_context.Context, customer *customer.Customer) ([]user.CheckDuplicateField, error) {
 	customer.SetName(c.Name())
 	customer.SetDescription(c.Description())
 	return c.UserFieldsSetterBase.SetUserFields(ctx, customer)

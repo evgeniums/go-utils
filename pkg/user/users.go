@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
@@ -13,6 +14,18 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
+
+const ErrorCodeDuplicateLogin string = "duplicate_login"
+const ErrorCodeDuplicateEmail string = "duplicate_email"
+const ErrorCodeDuplicatePhone string = "duplicate_phone"
+
+var ErrorDescriptions = map[string]string{
+	ErrorCodeDuplicateLogin: "Login already occupied.",
+	ErrorCodeDuplicateEmail: "Email address already occupied.",
+	ErrorCodeDuplicatePhone: "Phone number already occupied.",
+}
+
+var ErrorHttpCodes = map[string]int{}
 
 type MainFieldSetters interface {
 	SetPassword(ctx op_context.Context, id string, password string, idIsLogin ...bool) error
@@ -101,16 +114,53 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 		}
 	}
 
+	// check if user with such login already exists
+	var users []UserType
+	filter := db.NewFilter()
+	filter.AddField("login", login)
+	filter.Limit = 1
+	_, err = u.FindUsers(ctx, filter, &users)
+	if err != nil {
+		c.SetMessage("faield to check login duplicates")
+		return nilUser, err
+	}
+	if len(users) > 0 {
+		err = errors.New("duplicate login")
+		ctx.SetGenericErrorCode(ErrorCodeDuplicateLogin)
+		return nilUser, err
+	}
+
 	// create user
 	user := u.MakeUser()
 	user.InitObject()
 	user.SetLogin(login)
 	user.SetPassword(password)
 	for _, setter := range extraFieldsSetters {
-		err = setter(ctx, user)
+		checkDuplicateFields, err1 := setter(ctx, user)
+		err = err1
 		if err != nil {
 			c.SetMessage("failed to set extra fields")
 			return nilUser, err
+		}
+		for _, checkDup := range checkDuplicateFields {
+			var users []UserType
+			filter := db.NewFilter()
+			filter.AddField(checkDup.Name, checkDup.Value)
+			filter.Limit = 1
+			_, err1 := u.FindUsers(ctx, filter, &users)
+			err = err1
+			if err != nil {
+				c.SetLoggerField("unique_field", checkDup.Name)
+				c.SetMessage("failed to check unique field")
+				return nilUser, err
+			}
+			if len(users) > 0 {
+				c.SetLoggerField("unique_field", checkDup.Name)
+				c.SetLoggerField("unique_value", checkDup.Value)
+				err = fmt.Errorf("duplicate %s", checkDup.Name)
+				ctx.SetGenericErrorCode(checkDup.ErrorCode)
+				return nilUser, err
+			}
 		}
 	}
 

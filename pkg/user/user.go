@@ -88,11 +88,20 @@ func (u *UserBaseFields) SetEmail(email string) {
 	u.EMAIL = email
 }
 
-func (u *UserBaseFields) SetUserFields(ctx op_context.Context, user User) error {
+func (u *UserBaseFields) SetUserFields(ctx op_context.Context, user User) ([]CheckDuplicateField, error) {
 	user.SetEmail(u.Email())
 	user.SetPhone(u.Phone())
 	user.SetBlocked(u.IsBlocked())
-	return nil
+
+	dups := make([]CheckDuplicateField, 0, 3)
+	if u.Email() != "" {
+		dups = append(dups, CheckDuplicateField{"email", u.Email(), ErrorCodeDuplicateEmail})
+	}
+	if u.Phone() != "" {
+		dups = append(dups, CheckDuplicateField{"phone", u.Phone(), ErrorCodeDuplicatePhone})
+	}
+
+	return dups, nil
 }
 
 type UserPlainPassword struct {
@@ -147,32 +156,38 @@ func (u *UserBase) DbUser() interface{} {
 type UserFieldsSetter[T User] interface {
 	Login() string
 	Password() string
-	SetUserFields(ctx op_context.Context, user T) error
+	SetUserFields(ctx op_context.Context, user T) ([]CheckDuplicateField, error)
 }
 
-type SetUserFields[UserType interface{}] func(ctx op_context.Context, user UserType) error
+type CheckDuplicateField struct {
+	Name      string
+	Value     interface{}
+	ErrorCode string
+}
+
+type SetUserFields[UserType interface{}] func(ctx op_context.Context, user UserType) ([]CheckDuplicateField, error)
 
 type UserFieldsSetterBase[T User] struct {
 	UserFieldsWithPassword
 }
 
-func (u *UserFieldsSetterBase[T]) SetUserFields(ctx op_context.Context, user T) error {
-	user.SetLogin(u.Login())
-	user.SetPassword(u.Password())
-	return u.UserFieldsWithPassword.SetUserFields(ctx, user)
-}
-
 func Phone[UserType User](phone string, userSample ...UserType) SetUserFields[UserType] {
-	return func(ctx op_context.Context, user UserType) error {
+	return func(ctx op_context.Context, user UserType) ([]CheckDuplicateField, error) {
 		user.SetPhone(phone)
-		return nil
+		if phone != "" {
+			return []CheckDuplicateField{{"phone", phone, ErrorCodeDuplicatePhone}}, nil
+		}
+		return nil, nil
 	}
 }
 
 func Email[UserType User](email string, userSample ...UserType) SetUserFields[UserType] {
-	return func(ctx op_context.Context, user UserType) error {
+	return func(ctx op_context.Context, user UserType) ([]CheckDuplicateField, error) {
 		user.SetEmail(email)
-		return nil
+		if email != "" {
+			return []CheckDuplicateField{{"email", email, ErrorCodeDuplicateEmail}}, nil
+		}
+		return nil, nil
 	}
 }
 

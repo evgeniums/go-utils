@@ -26,6 +26,8 @@ func NewUserService[U user.User](userController user.Users[U],
 
 	s := &UserService[U]{}
 
+	s.ErrorsExtenderBase.Init(user.ErrorDescriptions, user.ErrorHttpCodes)
+
 	userType, serviceName, collectionResource, userResource := user_api.PrepareResources(userTypeName...)
 	s.collectionResource = collectionResource
 	s.userResource = userResource

@@ -43,7 +43,7 @@ func (u *UserClient[U]) Add(ctx op_context.Context, login string, password strin
 	user := u.userBuilder()
 	user.SetLogin(login)
 	for _, setter := range extraFieldsSetters {
-		err := setter(ctx, user)
+		_, err := setter(ctx, user)
 		if err != nil {
 			c.SetMessage("failed to set extra field")
 			return nilU, err

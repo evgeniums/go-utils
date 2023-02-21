@@ -10,7 +10,7 @@ type AdminFieldsSetter struct {
 	user.UserFieldsSetterBase[*admin.Admin]
 }
 
-func (a *AdminFieldsSetter) SetUserFields(ctx op_context.Context, admin *admin.Admin) error {
+func (a *AdminFieldsSetter) SetUserFields(ctx op_context.Context, admin *admin.Admin) ([]user.CheckDuplicateField, error) {
 	return a.UserFieldsSetterBase.SetUserFields(ctx, admin)
 }
 
