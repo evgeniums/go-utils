@@ -83,7 +83,7 @@ func (c *Commands[T]) Construct(self T, name string, description string) {
 func AddCommand[T CommandGroup](parent *flags.Command, ctxBuilder ContextBulder, group T, makeHandler HandlerBuilder[T]) {
 	handler := makeHandler()
 	handler.Construct(ctxBuilder, group)
-	parent.AddCommand(handler.HandlerName(), handler.HandlerDescription(), "", handler.Data())
+	parent.AddCommand(handler.HandlerName(), handler.HandlerDescription(), "", handler)
 }
 
 //-------------------------------------------------
@@ -98,10 +98,10 @@ type Handler[T CommandGroup] interface {
 }
 
 type HandlerBaseHolder[T CommandGroup] struct {
-	CtxBuilder  ContextBulder
-	Group       T
-	Name        string
-	Description string
+	CtxBuilder  ContextBulder `no-flag:"true"`
+	Group       T             `no-flag:"true"`
+	Name        string        `no-flag:"true"`
+	Description string        `no-flag:"true"`
 }
 
 type HandlerBase[T CommandGroup] struct {

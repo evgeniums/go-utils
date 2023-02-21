@@ -78,7 +78,7 @@ func (a *AddHandler[T]) Execute(args []string) error {
 //----------------------------------------
 
 func AddNoPassword[T user.User]() console_tool.Handler[*UserCommands[T]] {
-	a := &AddHandler[T]{}
+	a := &AddNoPasswordHandler[T]{}
 	a.Init(AddCmd, AddDescription)
 	return a
 }
@@ -104,7 +104,7 @@ func (a *AddNoPasswordHandler[T]) Execute(args []string) error {
 //----------------------------------------
 
 func AddWithPhone[T user.User]() console_tool.Handler[*UserCommands[T]] {
-	a := &AddHandler[T]{}
+	a := &AddWithPhoneHandler[T]{}
 	a.Init(AddCmd, AddDescription)
 	return a
 }
@@ -132,7 +132,7 @@ func (a *AddWithPhoneHandler[T]) Execute(args []string) error {
 //----------------------------------------
 
 func AddWithEmail[T user.User]() console_tool.Handler[*UserCommands[T]] {
-	a := &AddHandler[T]{}
+	a := &AddWithEmailHandler[T]{}
 	a.Init(AddCmd, AddDescription)
 	return a
 }
