@@ -17,11 +17,11 @@ type LoginData struct {
 }
 
 type PhoneData struct {
-	Phone string `long:"phone" description:"Phone number for SMS confirmations" required:"true"`
+	Phone string `json:"phone" long:"phone" description:"Phone number for SMS confirmations" required:"true" validate:"omitempty,phone" vmessage:"Invalid phone format"`
 }
 
 type EmailData struct {
-	Email string `long:"email" description:"Email address" required:"true"`
+	Email string `json:"email" long:"email" description:"Email address" required:"true" validate:"omitempty,email" vmessage:"Invalid email format"`
 }
 
 type AddData struct {

@@ -147,6 +147,7 @@ func (c *ConsoleUtility) Parse() {
 			}
 			c.Parser.WriteHelp(os.Stdout)
 		}
+		app_context.ErrorLn("Failed")
 		os.Exit(1)
 	}
 }
