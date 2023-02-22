@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
+	"github.com/markphelps/optional"
 )
 
 type Interval struct {
@@ -132,7 +133,15 @@ func (f *Filter) ToQuery() *Query {
 		q.Intervals = make(map[string]QueryInterval)
 	}
 	for key, interval := range f.Intervals {
-		q.Intervals[key] = QueryInterval{From: filterValueToString(interval.From), To: filterValueToString(interval.To)}
+		to := &optional.String{}
+		from := &optional.String{}
+		if interval.From != nil {
+			from.Set(filterValueToString(interval.From))
+		}
+		if interval.To != nil {
+			to.Set(filterValueToString(interval.To))
+		}
+		q.Intervals[key] = QueryInterval{From: from, To: to}
 	}
 
 	// fill betweens
@@ -154,10 +163,11 @@ func (f *Filter) ToQueryString() string {
 }
 
 type QueryInterval struct {
-	From string `json:"from"`
-	To   string `json:"to"`
+	From *optional.String `json:"from,omitempty"`
+	To   *optional.String `json:"to,omitempty"`
 }
 
+// TODO use optional fields
 type QueryBetweenFields struct {
 	FromField string `json:"from_field,omitempty"`
 	ToField   string `json:"to_field,omitempty"`

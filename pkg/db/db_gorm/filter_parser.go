@@ -8,6 +8,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
+	"github.com/markphelps/optional"
 	"gorm.io/gorm/schema"
 )
 
@@ -170,20 +171,55 @@ func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 		filter.FieldsNotIn[field] = arr
 	}
 
+	extractOptional := func(field string, opt *optional.String) (string, bool, error) {
+		if !opt.Present() {
+			return "", false, nil
+		}
+		str, err := opt.Get()
+		if err != nil {
+			return "", true, &validator.ValidationError{Message: "Invalid field type", Field: field}
+		}
+		return str, true, nil
+	}
+
 	// fill intervals
 	if len(query.Intervals) > 0 {
 		filter.Intervals = make(map[string]*Interval)
 	}
 	for key, interval := range query.Intervals {
-		field, from, err := f.ParseValidateField(key, interval.From)
+		var from interface{}
+		var to interface{}
+		var field string
+
+		fromStr, present, err := extractOptional("interval.from", interval.From)
 		if err != nil {
 			return nil, err
 		}
-		_, to, err := f.ParseValidateField(key, interval.From)
+		if present {
+			field, from, err = f.ParseValidateField(key, fromStr)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		toStr, present, err := extractOptional("interval.to", interval.To)
 		if err != nil {
 			return nil, err
 		}
-		filter.Intervals[field] = &Interval{From: from, To: to}
+		if present {
+			var fieldTo string
+			fieldTo, to, err = f.ParseValidateField(key, toStr)
+			if err != nil {
+				return nil, err
+			}
+			if field == "" {
+				field = fieldTo
+			}
+		}
+
+		if field != "" {
+			filter.Intervals[field] = &Interval{From: from, To: to}
+		}
 	}
 
 	// fill betweens
