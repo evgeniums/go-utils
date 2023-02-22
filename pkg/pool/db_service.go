@@ -8,7 +8,7 @@ import (
 
 func ParseDbService(service *PoolServiceBaseData) (*db.DBConfig, error) {
 
-	if service.Type() != TypeDatabase {
+	if service.TypeName() != TypeDatabase {
 		return nil, errors.New("invalid service type")
 	}
 

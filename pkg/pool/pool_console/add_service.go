@@ -45,7 +45,7 @@ func (a *AddServiceHandler) Execute(args []string) error {
 	s.SetName(a.Name)
 	s.SetDescription(a.Description)
 	s.SetLongName(a.LongName)
-	s.SetType(a.Type)
+	s.SetTypeName(a.Type)
 	s.PoolServiceBaseData.ServiceConfigBase = a.ServiceConfigBase
 	s.SecretsBase = a.SecretsBase
 

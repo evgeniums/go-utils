@@ -39,20 +39,20 @@ func (d *WithActiveBase) Init() {
 }
 
 type WithType interface {
-	Type() string
-	SetType(value string)
+	TypeName() string
+	SetTypeName(value string)
 }
 
 type WithTypeBase struct {
-	TYPE string `gorm:"index" json:"type_name" validate:"required" vmessage:"Type can not be empty"`
+	TYPE_NAME string `gorm:"index;column:type_name" json:"type_name" validate:"required" vmessage:"Type can not be empty"`
 }
 
-func (t *WithTypeBase) Type() string {
-	return t.TYPE
+func (t *WithTypeBase) TypeName() string {
+	return t.TYPE_NAME
 }
 
-func (t *WithTypeBase) SetType(value string) {
-	t.TYPE = value
+func (t *WithTypeBase) SetTypeName(value string) {
+	t.TYPE_NAME = value
 }
 
 type WithRefId interface {

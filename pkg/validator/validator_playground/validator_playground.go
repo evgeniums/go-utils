@@ -39,7 +39,7 @@ func (v *PlaygroundValdator) ValidateValue(value interface{}, rules string) erro
 	return nil
 }
 
-func (v *PlaygroundValdator) ValidatePartial(s interface{}, fields ...string) error {
+func (v *PlaygroundValdator) ValidatePartial(s interface{}, fields ...string) *validator.ValidationError {
 	err := v.validator.StructPartial(s, fields...)
 	if err != nil {
 		field, msg, err := v.doValidation(s, fields...)

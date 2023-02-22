@@ -48,7 +48,7 @@ func (p *PoolClient) UpdatePool(ctx op_context.Context, id string, fields db.Fie
 	if utils.OptionalArg(false, idIsName...) && po == nil {
 		// pool not found by name
 		ctx.SetGenericErrorCode(pool.ErrorCodePoolNotFound)
-		return nil, errors.New("pool not found bu name")
+		return nil, errors.New("pool not found by name")
 	}
 
 	// prepare and exec handler

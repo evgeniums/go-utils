@@ -25,13 +25,14 @@ func (e *UpdatePoolEndpoint) HandleRequest(request api_server.Request) error {
 	err := request.ParseValidate(cmd)
 	if err != nil {
 		c.SetMessage("faield to parse/validate command")
-		return err
+		return c.SetError(err)
 	}
 	// validate fields
-	err = validator.ValidateMap(request.App().Validator(), cmd.Fields, &pool.PoolBaseData{})
-	if err != nil {
+	vErr := validator.ValidateMap(request.App().Validator(), cmd.Fields, &pool.PoolBaseData{})
+	if vErr != nil {
 		c.SetMessage("faield to validate fields")
-		return err
+		request.SetGenericError(vErr.GenericError())
+		return c.SetError(vErr.Err)
 	}
 
 	// update pool

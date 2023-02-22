@@ -10,6 +10,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool/app_with_pools"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api/pool_client"
@@ -119,7 +120,7 @@ func addService(t *testing.T, ctx *testContext) pool.PoolService {
 	p1Sample.SetName("service1")
 	p1Sample.SetLongName("service1 long name")
 	p1Sample.SetDescription("service description")
-	p1Sample.SetType("database")
+	p1Sample.SetTypeName("database")
 	p1Sample.SetRefId("reference id")
 
 	p1Sample.ServiceConfigBase.PUBLIC_HOST = "pubhost"
@@ -136,7 +137,7 @@ func addService(t *testing.T, ctx *testContext) pool.PoolService {
 	p1.SetName(p1Sample.Name())
 	p1.SetLongName(p1Sample.LongName())
 	p1.SetDescription(p1Sample.Description())
-	p1.SetType(p1Sample.Type())
+	p1.SetTypeName(p1Sample.TypeName())
 	p1.SetRefId(p1Sample.RefId())
 	p1.PoolServiceBaseEssentials.ServiceConfigBase = p1Sample.ServiceConfigBase
 	p1.SECRET1 = "secret1"
@@ -237,6 +238,16 @@ func TestUpdatePool(t *testing.T) {
 	assert.Equal(t, "updated long_name", remotePool1.LongName())
 	assert.Equal(t, "updated description", remotePool1.Description())
 	assert.False(t, remotePool1.IsActive())
+
+	fields = db.Fields{"unknown_field": "try me"}
+	_, err = ctx.RemotePoolController.UpdatePool(ctx.ClientOp, p.GetID(), fields)
+	require.Error(t, err)
+	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeFormat, "Invalid fields for update.")
+
+	fields = db.Fields{"name": "updated name"}
+	_, err = ctx.RemotePoolController.UpdatePool(ctx.ClientOp, p.GetID(), fields)
+	require.Error(t, err)
+	test_utils.CheckGenericError(t, err, pool.ErrorCodePoolNameConflict, "Pool with such name already exists, choose another name.")
 }
 
 func TestUpdateService(t *testing.T) {
@@ -246,7 +257,7 @@ func TestUpdateService(t *testing.T) {
 	s := addService(t, ctx)
 
 	fields := db.Fields{"name": "updated name", "long_name": "updated long_name", "description": "updated description", "active": false}
-	fields["type"] = "new type"
+	fields["type_name"] = "new type"
 	fields["secret1"] = "new secret 1"
 	fields["secret2"] = "new secret 2"
 	fields["provider"] = "new provider"
@@ -269,7 +280,7 @@ func TestUpdateService(t *testing.T) {
 	assert.Equal(t, "updated name", updatedS.Name())
 	assert.Equal(t, "updated long_name", updatedS.LongName())
 	assert.Equal(t, "updated description", updatedS.Description())
-	assert.Equal(t, "new type", updatedS.Type())
+	assert.Equal(t, "new type", updatedS.TypeName())
 	assert.Equal(t, "new secret 1", updatedS.Secret1())
 	assert.Equal(t, "new secret 2", updatedS.Secret2())
 	assert.Equal(t, "new provider", updatedS.Provider())
@@ -295,7 +306,7 @@ func TestUpdateService(t *testing.T) {
 	assert.Equal(t, "updated name", remoteService1.Name())
 	assert.Equal(t, "updated long_name", remoteService1.LongName())
 	assert.Equal(t, "updated description", remoteService1.Description())
-	assert.Equal(t, "new type", remoteService1.Type())
+	assert.Equal(t, "new type", remoteService1.TypeName())
 	assert.Equal(t, "new secret 1", remoteService1.Secret1())
 	assert.Equal(t, "new secret 2", remoteService1.Secret2())
 	assert.Equal(t, "new provider", remoteService1.Provider())
@@ -313,4 +324,14 @@ func TestUpdateService(t *testing.T) {
 	assert.Equal(t, "new name of parameter 2", remoteService1.Parameter2Name())
 	assert.Equal(t, "new name of parameter 3", remoteService1.Parameter3Name())
 	assert.False(t, remoteService1.IsActive())
+
+	fields = db.Fields{"unknown_field": "try me"}
+	_, err = ctx.RemotePoolController.UpdateService(ctx.ClientOp, s.GetID(), fields)
+	require.Error(t, err)
+	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeFormat, "Invalid fields for update.")
+
+	fields = db.Fields{"name": "updated name"}
+	_, err = ctx.RemotePoolController.UpdateService(ctx.ClientOp, s.GetID(), fields)
+	require.Error(t, err)
+	test_utils.CheckGenericError(t, err, pool.ErrorCodeServiceNameConflict, "Service with such name already exists, choose another name.")
 }

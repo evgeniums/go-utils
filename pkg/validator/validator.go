@@ -11,7 +11,7 @@ import (
 type Validator interface {
 	Validate(s interface{}) error
 	ValidateValue(value interface{}, rules string) error
-	ValidatePartial(s interface{}, fields ...string) error
+	ValidatePartial(s interface{}, fields ...string) *ValidationError
 }
 
 type ValidationError struct {
@@ -39,7 +39,7 @@ func (e *ValidationError) GenericError() generic_error.Error {
 	return err
 }
 
-func ValidateMap(v Validator, m map[string]interface{}, sampleStruct interface{}, allowedFields ...string) error {
+func ValidateMap(v Validator, m map[string]interface{}, sampleStruct interface{}, allowedFields ...string) *ValidationError {
 
 	// collect keys
 	keys := utils.AllMapKeys(m)
@@ -63,7 +63,7 @@ func ValidateMap(v Validator, m map[string]interface{}, sampleStruct interface{}
 
 	// create new decoder
 	meta := &mapstructure.Metadata{}
-	config := &mapstructure.DecoderConfig{Metadata: meta, TagName: "json", Result: sampleStruct}
+	config := &mapstructure.DecoderConfig{Metadata: meta, TagName: "json", Result: sampleStruct, ErrorUnused: true, Squash: true}
 	dec, err := mapstructure.NewDecoder(config)
 	if err != nil {
 		panic(fmt.Errorf("failed to create decoder: %s", err))
@@ -72,15 +72,16 @@ func ValidateMap(v Validator, m map[string]interface{}, sampleStruct interface{}
 	// fill struct with data from map
 	err = dec.Decode(m)
 	if err != nil {
-		err := &ValidationError{}
-		err.Message = "could not decode provided fields"
-		return err
+		vErr := &ValidationError{}
+		vErr.Message = "Invalid fields for update."
+		vErr.Err = err
+		return vErr
 	}
 
 	// invoke partial validation
-	err = v.ValidatePartial(sampleStruct, keys...)
-	if err != nil {
-		return err
+	vErr := v.ValidatePartial(sampleStruct, keys...)
+	if vErr != nil {
+		return vErr
 	}
 
 	// done
