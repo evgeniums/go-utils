@@ -42,7 +42,7 @@ func (t *TenancyClient) SetRole(ctx op_context.Context, id string, role string, 
 	}
 
 	// prepare and exec handler
-	op := api.NamedResourceOperation(t.TenancyResource, "role", tenancyId, tenancy_api.SetRole())
+	op := api.OperationAsResource(t.TenancyResource, "role", tenancyId, tenancy_api.SetRole())
 	err = op.Exec(ctx, api_client.MakeOperationHandler(t.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")

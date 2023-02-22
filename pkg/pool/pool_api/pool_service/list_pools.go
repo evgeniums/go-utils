@@ -18,7 +18,7 @@ func (e *ListPoolsEndpoint) HandleRequest(request api_server.Request) error {
 
 	// parse query
 	queryName := request.Endpoint().Resource().ServicePathPrototype()
-	filter, err := api_server.ParseDbQuery(request, &pool.PoolServiceBase{}, queryName)
+	filter, err := api_server.ParseDbQuery(request, &pool.PoolBase{}, queryName)
 	if err != nil {
 		return c.SetError(err)
 	}

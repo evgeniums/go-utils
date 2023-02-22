@@ -1,8 +1,6 @@
 package pool_service
 
 import (
-	"errors"
-
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
@@ -36,21 +34,10 @@ func (e *UpdateServiceEndpoint) HandleRequest(request api_server.Request) error 
 
 	// update service
 	serviceId := request.GetResourceId("service")
-	err = e.service.Pools.UpdateService(request, serviceId, cmd.Fields)
+	s, err := e.service.Pools.UpdateService(request, serviceId, cmd.Fields)
 	if err != nil {
 		c.SetMessage("failed to update service")
 		return c.SetError(err)
-	}
-
-	// find updated service
-	s, err := e.service.Pools.FindService(request, serviceId)
-	if err != nil {
-		c.SetMessage("failed to find service")
-		return c.SetError(err)
-	}
-	if s == nil {
-		request.SetGenericErrorCode(pool.ErrorCodeServiceNotFound)
-		return c.SetError(errors.New("service not found"))
 	}
 
 	// set response

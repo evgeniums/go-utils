@@ -173,7 +173,6 @@ type QueryInterval struct {
 	ToOpen   bool             `json:"to_open,omitempty"`
 }
 
-// TODO use optional fields
 type QueryBetweenFields struct {
 	FromField string `json:"from_field,omitempty"`
 	ToField   string `json:"to_field,omitempty"`

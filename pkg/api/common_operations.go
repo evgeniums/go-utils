@@ -2,12 +2,19 @@ package api
 
 import "github.com/evgeniums/go-backend-helpers/pkg/access_control"
 
-func NamedResourceOperation(sampleResource Resource, resourceName string, resourceId string, op Operation) Operation {
+func OperationAsResource(sampleResource Resource, resourceName string, resourceId string, op Operation) Operation {
 	opResource := NewResource(resourceName)
 	opResource.AddOperation(op)
 	namedResource := sampleResource.CloneChain(false)
 	namedResource.SetId(resourceId)
 	namedResource.AddChild(opResource)
+	return op
+}
+
+func NamedResourceOperation(sampleResource Resource, resourceId string, op Operation) Operation {
+	namedResource := sampleResource.CloneChain(false)
+	namedResource.SetId(resourceId)
+	namedResource.AddOperation(op)
 	return op
 }
 

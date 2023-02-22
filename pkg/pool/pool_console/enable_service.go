@@ -40,7 +40,7 @@ func (a *EnableServiceHandler) Execute(args []string) error {
 	fields := db.Fields{}
 	fields["active"] = true
 
-	err = controller.UpdateService(ctx, a.Service, fields, true)
+	_, err = controller.UpdateService(ctx, a.Service, fields, true)
 	if err == nil {
 		pool, err := controller.FindPool(ctx, a.Service, true)
 		if err == nil {

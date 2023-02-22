@@ -46,7 +46,6 @@ func (t *TenancyClient) Find(ctx op_context.Context, id string, idIsDisplay ...b
 	// prepare and exec handler
 	handler := &Find{}
 	op := api.NamedResourceOperation(t.TenancyResource,
-		tenancy_api.TenancyResource,
 		tenancyId,
 		tenancy_api.Find())
 	err = op.Exec(ctx, api_client.MakeOperationHandler(t.Client(), handler))

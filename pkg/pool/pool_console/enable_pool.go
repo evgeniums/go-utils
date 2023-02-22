@@ -40,7 +40,7 @@ func (a *EnablePoolHandler) Execute(args []string) error {
 	fields := db.Fields{}
 	fields["active"] = true
 
-	err = controller.UpdatePool(ctx, a.Pool, fields, true)
+	_, err = controller.UpdatePool(ctx, a.Pool, fields, true)
 	if err == nil {
 		pool, err := controller.FindPool(ctx, a.Pool, true)
 		if err == nil {

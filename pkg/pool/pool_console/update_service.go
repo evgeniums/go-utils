@@ -53,16 +53,11 @@ func (a *UpdateServiceHandler) Execute(args []string) error {
 		fields[field] = a.Value
 	}
 
-	err = controller.UpdateService(ctx, a.Service, fields, true)
-	if err == nil {
-		service, err := controller.FindService(ctx, a.Service, true)
-		if err == nil {
-			if service != nil {
-				fmt.Printf("Updated service:\n\n%s\n\n", utils.DumpPrettyJson(service))
-			} else {
-				fmt.Println("Service not found")
-			}
-		}
+	service, err := controller.UpdateService(ctx, a.Service, fields, true)
+	if err != nil {
+		return err
 	}
-	return err
+
+	fmt.Printf("Updated service:\n\n%s\n\n", utils.DumpPrettyJson(service))
+	return nil
 }

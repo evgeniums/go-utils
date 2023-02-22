@@ -42,7 +42,7 @@ func (t *TenancyClient) SetPath(ctx op_context.Context, id string, path string, 
 	}
 
 	// prepare and exec handler
-	op := api.NamedResourceOperation(t.TenancyResource, "path", tenancyId, tenancy_api.SetPath())
+	op := api.OperationAsResource(t.TenancyResource, "path", tenancyId, tenancy_api.SetPath())
 	err = op.Exec(ctx, api_client.MakeOperationHandler(t.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")

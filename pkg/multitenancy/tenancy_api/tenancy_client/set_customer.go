@@ -42,7 +42,7 @@ func (t *TenancyClient) SetCustomer(ctx op_context.Context, id string, customerI
 	}
 
 	// prepare and exec handler
-	op := api.NamedResourceOperation(t.TenancyResource, "customer", tenancyId, tenancy_api.SetCustomer())
+	op := api.OperationAsResource(t.TenancyResource, "customer", tenancyId, tenancy_api.SetCustomer())
 	err = op.Exec(ctx, api_client.MakeOperationHandler(t.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")

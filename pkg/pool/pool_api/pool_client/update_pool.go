@@ -1,6 +1,8 @@
 package pool_client
 
 import (
+	"errors"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
@@ -25,7 +27,7 @@ func (a *UpdatePool) Exec(client api_client.Client, ctx op_context.Context, oper
 	return err
 }
 
-func (p *PoolClient) UpdatePool(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) error {
+func (p *PoolClient) UpdatePool(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) (pool.Pool, error) {
 
 	// setup
 	var err error
@@ -41,12 +43,12 @@ func (p *PoolClient) UpdatePool(ctx op_context.Context, id string, fields db.Fie
 	// adjust id
 	pId, po, err := p.poolId(ctx, id, idIsName...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if utils.OptionalArg(false, idIsName...) && po == nil {
 		// pool not found by name
 		ctx.SetGenericErrorCode(pool.ErrorCodePoolNotFound)
-		return nil
+		return nil, errors.New("pool not found bu name")
 	}
 
 	// prepare and exec handler
@@ -55,12 +57,13 @@ func (p *PoolClient) UpdatePool(ctx op_context.Context, id string, fields db.Fie
 		result: &pool_api.PoolResponse{},
 	}
 	handler.cmd.Fields = fields
-	err = api.NamedResourceOperation(p.PoolResource, poolIdType, pId, pool_api.UpdatePool()).Exec(ctx, api_client.MakeOperationHandler(p.Client(), handler))
+	op := api.NamedResourceOperation(p.PoolResource, pId, pool_api.UpdatePool())
+	err = op.Exec(ctx, api_client.MakeOperationHandler(p.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")
-		return err
+		return nil, err
 	}
 
 	// done
-	return nil
+	return handler.result.PoolBase, nil
 }

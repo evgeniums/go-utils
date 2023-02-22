@@ -40,7 +40,7 @@ func (p *PoolClient) RemoveServiceFromPool(ctx op_context.Context, poolId string
 
 	// prepare and exec handler
 	handler := &RemoveServiceFromPool{}
-	err = api.NamedResourceOperation(p.resourceForPoolServices(pId), "role", role, pool_api.RemoveServiceFromPool()).Exec(ctx, api_client.MakeOperationHandler(p.Client(), handler))
+	err = api.OperationAsResource(p.resourceForPoolServices(pId), "role", role, pool_api.RemoveServiceFromPool()).Exec(ctx, api_client.MakeOperationHandler(p.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")
 		return err

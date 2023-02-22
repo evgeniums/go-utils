@@ -45,7 +45,6 @@ func (t *TenancyClient) Delete(ctx op_context.Context, id string, withDb bool, i
 	// prepare and exec handler
 	handler := &Delete{}
 	op := api.NamedResourceOperation(t.TenancyResource,
-		tenancy_api.TenancyResource,
 		tenancyId,
 		tenancy_api.Delete())
 	err = op.Exec(ctx, api_client.MakeOperationHandler(t.Client(), handler))

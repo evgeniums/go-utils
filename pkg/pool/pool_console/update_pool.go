@@ -44,16 +44,11 @@ func (a *UpdatePoolHandler) Execute(args []string) error {
 	fields := db.Fields{}
 	fields[field] = a.Value
 
-	err = controller.UpdatePool(ctx, a.Pool, fields, true)
-	if err == nil {
-		pool, err := controller.FindPool(ctx, a.Pool, true)
-		if err == nil {
-			if pool != nil {
-				fmt.Printf("Updated pool:\n\n%s\n\n", utils.DumpPrettyJson(pool))
-			} else {
-				fmt.Println("Pool not found")
-			}
-		}
+	p, err := controller.UpdatePool(ctx, a.Pool, fields, true)
+	if err != nil {
+		return err
 	}
-	return err
+
+	fmt.Printf("Updated pool:\n\n%s\n\n", utils.DumpPrettyJson(p))
+	return nil
 }

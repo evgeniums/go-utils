@@ -42,7 +42,7 @@ func (t *TenancyClient) ChangePoolOrDb(ctx op_context.Context, id string, poolId
 	}
 
 	// prepare and exec handler
-	op := api.NamedResourceOperation(t.TenancyResource, "pool-db", tenancyId, tenancy_api.ChangePoolOrDb())
+	op := api.OperationAsResource(t.TenancyResource, "pool-db", tenancyId, tenancy_api.ChangePoolOrDb())
 	err = op.Exec(ctx, api_client.MakeOperationHandler(t.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")

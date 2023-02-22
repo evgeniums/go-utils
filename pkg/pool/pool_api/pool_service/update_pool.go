@@ -36,18 +36,13 @@ func (e *UpdatePoolEndpoint) HandleRequest(request api_server.Request) error {
 
 	// update pool
 	poolId := request.GetResourceId("pool")
-	err = e.service.Pools.UpdatePool(request, poolId, cmd.Fields)
+	p, err := e.service.Pools.UpdatePool(request, poolId, cmd.Fields)
 	if err != nil {
 		c.SetMessage("failed to update pool")
 		return c.SetError(err)
 	}
 
 	// find updated pool
-	p, err := e.service.Pools.FindPool(request, poolId)
-	if err != nil {
-		c.SetMessage("failed to find pool")
-		return c.SetError(err)
-	}
 	if p == nil {
 		request.SetGenericErrorCode(pool.ErrorCodePoolNotFound)
 		return c.SetError(errors.New("pool not found"))
