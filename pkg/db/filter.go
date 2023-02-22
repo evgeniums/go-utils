@@ -9,14 +9,18 @@ import (
 )
 
 type Interval struct {
-	From interface{}
-	To   interface{}
+	From     interface{}
+	To       interface{}
+	FromOpen bool
+	ToOpen   bool
 }
 
 type BetweenFields struct {
 	FromField string
 	ToField   string
 	Value     interface{}
+	FromOpen  bool
+	ToOpen    bool
 }
 
 func (i *Interval) IsNull() bool {
@@ -141,7 +145,7 @@ func (f *Filter) ToQuery() *Query {
 		if interval.To != nil {
 			to.Set(filterValueToString(interval.To))
 		}
-		q.Intervals[key] = QueryInterval{From: from, To: to}
+		q.Intervals[key] = QueryInterval{From: from, To: to, FromOpen: interval.FromOpen, ToOpen: interval.ToOpen}
 	}
 
 	// fill betweens
@@ -150,7 +154,7 @@ func (f *Filter) ToQuery() *Query {
 	}
 	for i := 0; i < len(f.BetweenFields); i++ {
 		betweenQ := f.BetweenFields[i]
-		q.BetweenFields[i] = QueryBetweenFields{FromField: betweenQ.FromField, ToField: betweenQ.ToField, Value: filterValueToString(betweenQ.Value)}
+		q.BetweenFields[i] = QueryBetweenFields{FromField: betweenQ.FromField, ToField: betweenQ.ToField, Value: filterValueToString(betweenQ.Value), FromOpen: betweenQ.FromOpen, ToOpen: betweenQ.ToOpen}
 	}
 
 	return q
@@ -163,8 +167,10 @@ func (f *Filter) ToQueryString() string {
 }
 
 type QueryInterval struct {
-	From *optional.String `json:"from,omitempty"`
-	To   *optional.String `json:"to,omitempty"`
+	From     *optional.String `json:"from,omitempty"`
+	To       *optional.String `json:"to,omitempty"`
+	FromOpen bool             `json:"from_open,omitempty"`
+	ToOpen   bool             `json:"to_open,omitempty"`
 }
 
 // TODO use optional fields
@@ -172,6 +178,8 @@ type QueryBetweenFields struct {
 	FromField string `json:"from_field,omitempty"`
 	ToField   string `json:"to_field,omitempty"`
 	Value     string `json:"value"`
+	FromOpen  bool   `json:"from_open,omitempty"`
+	ToOpen    bool   `json:"to_open,omitempty"`
 }
 
 type Query struct {

@@ -61,6 +61,13 @@ func FindAll(db *gorm.DB, docs interface{}, dest ...interface{}) error {
 type Interval = db.Interval
 type Filter = db.Filter
 
+func compareOp(isOpen bool, comparator string) string {
+	if isOpen {
+		return comparator
+	}
+	return utils.ConcatStrings(comparator, "=")
+}
+
 func prepareInterval(db *gorm.DB, name string, interval *Interval) *gorm.DB {
 	h := db
 
@@ -68,12 +75,12 @@ func prepareInterval(db *gorm.DB, name string, interval *Interval) *gorm.DB {
 		if interval.From == interval.To {
 			h = h.Where(fmt.Sprintf("\"%v\" = ?", name), interval.From)
 		} else {
-			h = h.Where(fmt.Sprintf("\"%v\" >= ? AND \"%v\" <= ? ", name, name), interval.From, interval.To)
+			h = h.Where(fmt.Sprintf("\"%v\" %s ? AND \"%v\" %s ? ", name, compareOp(interval.FromOpen, ">"), compareOp(interval.ToOpen, "<"), name), interval.From, interval.To)
 		}
 	} else if interval.From != nil {
-		h = h.Where(fmt.Sprintf("\"%v\" >= ? ", name), interval.From)
+		h = h.Where(fmt.Sprintf("\"%v\" %s ? ", name, compareOp(interval.FromOpen, ">")), interval.From)
 	} else if interval.To != nil {
-		h = h.Where(fmt.Sprintf("\"%v\" <= ? ", name), interval.To)
+		h = h.Where(fmt.Sprintf("\"%v\" %s ? ", name, compareOp(interval.ToOpen, "<")), interval.To)
 	}
 	return h
 }
@@ -98,7 +105,7 @@ func prepareFilter(db *gorm.DB, filter *Filter) *gorm.DB {
 	}
 
 	for _, between := range filter.BetweenFields {
-		h = h.Where(fmt.Sprintf(`? >= "%v" AND ? <= "%v"`, between.FromField, between.ToField), between.Value, between.Value)
+		h = h.Where(fmt.Sprintf(`? %s "%v" AND ? %s "%v"`, compareOp(between.FromOpen, ">"), between.FromField, compareOp(between.ToOpen, ">"), between.ToField), between.Value, between.Value)
 	}
 
 	return h

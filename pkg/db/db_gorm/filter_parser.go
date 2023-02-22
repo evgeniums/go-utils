@@ -218,7 +218,7 @@ func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 		}
 
 		if field != "" {
-			filter.Intervals[field] = &Interval{From: from, To: to}
+			filter.Intervals[field] = &Interval{From: from, To: to, FromOpen: interval.FromOpen, ToOpen: interval.ToOpen}
 		}
 	}
 
@@ -236,7 +236,7 @@ func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 		if err != nil {
 			return nil, err
 		}
-		filter.BetweenFields[i] = &db.BetweenFields{FromField: fromField, ToField: toField, Value: val}
+		filter.BetweenFields[i] = &db.BetweenFields{FromField: fromField, ToField: toField, Value: val, FromOpen: betweenQ.FromOpen, ToOpen: betweenQ.ToOpen}
 	}
 
 	// done
