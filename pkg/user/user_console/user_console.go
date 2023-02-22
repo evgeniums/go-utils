@@ -50,7 +50,7 @@ func (b *HandlerBase[T]) Context(data interface{}, login ...string) (op_context.
 	if len(login) != 0 {
 		err := ctrl.ValidateLogin(login[0])
 		if err != nil {
-			panic(fmt.Sprintf("Invalid login format: %s", err))
+			app_context.AbortFatal(ctx.App(), fmt.Sprintf("Invalid login format: %s", err))
 		}
 	}
 	return ctx, ctrl, nil

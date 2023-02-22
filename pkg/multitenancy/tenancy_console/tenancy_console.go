@@ -9,15 +9,28 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/app_with_multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool/app_with_pools"
 )
 
 type MultitenancyAppBuilder struct {
-	Models []interface{}
-	Config app_with_multitenancy.AppConfigI
-	App    *app_with_multitenancy.AppWithMultitenancyBase
+	Models   []interface{}
+	Config   app_with_multitenancy.AppConfigI
+	App      *app_with_multitenancy.AppWithMultitenancyBase
+	SetupApp *app_with_pools.AppWithPoolsBase
+}
+
+func (m *MultitenancyAppBuilder) GetPoolController() pool.PoolController {
+	if m.SetupApp != nil {
+		return m.SetupApp.Pools().PoolController()
+	}
+	return m.App.Pools().PoolController()
 }
 
 func (m *MultitenancyAppBuilder) NewApp(buildConfig *app_context.BuildConfig) app_context.Context {
+
+	fmt.Println("Using app with tenancies")
+
 	if m.Config == nil {
 		m.App = app_with_multitenancy.NewApp(buildConfig, m.Models)
 	} else {
@@ -27,6 +40,9 @@ func (m *MultitenancyAppBuilder) NewApp(buildConfig *app_context.BuildConfig) ap
 }
 
 func (m *MultitenancyAppBuilder) InitApp(app app_context.Context, configFile string, args []string, configType ...string) error {
+
+	fmt.Println("Setup app with tenancies")
+
 	a, ok := app.(*app_with_multitenancy.AppWithMultitenancyBase)
 	if !ok {
 		return app.Logger().PushFatalStack("invalid application type", errors.New("failed to cast app to multitenancy app"))
@@ -38,9 +54,39 @@ func (m *MultitenancyAppBuilder) InitApp(app app_context.Context, configFile str
 	return err
 }
 
-type AppBuilder interface {
-	NewApp() app_context.Context
-	InitApp(app app_context.Context, configFile string, args []string, configType ...string) error
+func (m *MultitenancyAppBuilder) NewSetupApp(buildConfig *app_context.BuildConfig) app_context.Context {
+
+	fmt.Println("Using app with pools")
+
+	if m.Config == nil {
+		m.SetupApp = app_with_pools.New(buildConfig)
+	} else {
+		m.SetupApp = app_with_pools.New(buildConfig, m.Config)
+	}
+	return m.SetupApp
+}
+
+func (m *MultitenancyAppBuilder) InitSetupApp(app app_context.Context, configFile string, args []string, configType ...string) error {
+
+	if app == nil {
+		return errors.New("unexpected nil app")
+	}
+
+	fmt.Println("Setup app with pools")
+
+	a, ok := app.(*app_with_pools.AppWithPoolsBase)
+	if !ok {
+		return app.Logger().PushFatalStack("invalid application type", errors.New("failed to cast app to pools app"))
+	}
+	ctx, err := a.InitWithArgs(configFile, args, configType...)
+	if ctx != nil {
+		ctx.Close()
+	}
+	return err
+}
+
+func (m *MultitenancyAppBuilder) HasSetupApp() bool {
+	return true
 }
 
 type TenancyCommands struct {

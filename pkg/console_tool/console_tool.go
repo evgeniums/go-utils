@@ -17,11 +17,12 @@ import (
 )
 
 type MainOptions struct {
-	ConfigFile   string `long:"config" description:"Configuration file"`
-	ConfigFormat string `long:"config-format" description:"Format of configuration file" default:"json"`
-	InitDb       string `long:"init-database" description:"Initialize database" default:"true"`
-	DbSection    string `long:"database-section" description:"Database section in configuration file" default:"db"`
-	InkokerName  string `long:"invoker-name" description:"Name of the user who invoked this utility"`
+	ConfigFile   string `short:"c" long:"config" description:"Configuration file"`
+	ConfigFormat string `short:"f" long:"config-format" description:"Format of configuration file" default:"json"`
+	NoInitDb     bool   `short:"w" long:"without-database" description:"Don't initialize database"`
+	Setup        bool   `short:"s" long:"setup" description:"Use minimal application features for initial setup"`
+	DbSection    string `short:"d" long:"database-section" description:"Database section in configuration file" default:"db"`
+	InkokerName  string `short:"i" long:"invoker-name" description:"Name of the user who invoked this utility" default:"local_admin"`
 }
 
 type Dummy struct{}
@@ -33,8 +34,8 @@ type ConsoleUtility struct {
 	Opts   MainOptions
 	Args   []string
 
-	InitApp func(config string) error
-	InitDB  func() error
+	AppBuilder  AppBuilder
+	BuildConfig *app_context.BuildConfig
 }
 
 type InitApp = func(app app_context.Context, configFile string, args []string, configType ...string) error
@@ -42,50 +43,65 @@ type InitApp = func(app app_context.Context, configFile string, args []string, c
 type AppBuilder interface {
 	NewApp(buildConfig *app_context.BuildConfig) app_context.Context
 	InitApp(app app_context.Context, configFile string, args []string, configType ...string) error
+	NewSetupApp(buildConfig *app_context.BuildConfig) app_context.Context
+	InitSetupApp(app app_context.Context, configFile string, args []string, configType ...string) error
+	HasSetupApp() bool
 }
 
 func New(buildConfig *app_context.BuildConfig, appBuilder ...AppBuilder) *ConsoleUtility {
 	c := &ConsoleUtility{}
 	c.Parser = flags.NewParser(&c.Opts, flags.Default)
-	var initApp InitApp
-	if len(appBuilder) == 0 {
-		c.App = app_default.New(buildConfig)
-		initApp = func(app app_context.Context, configFile string, args []string, configType ...string) error {
-			a, ok := c.App.(*app_default.Context)
-			if !ok {
-				return errors.New("invalid application type, can't cast to *app_default.Context")
-			}
-			return a.InitWithArgs(configFile, c.Args, c.Opts.ConfigFormat)
-		}
-	} else {
-		c.App = appBuilder[0].NewApp(buildConfig)
-		initApp = appBuilder[0].InitApp
-	}
-	c.InitApp = func(config string) error { return initApp(c.App, config, c.Args, c.Opts.ConfigFormat) }
-	c.InitDB = func() error {
-		initDbApp, ok := c.App.(app_default.WithInitGormDb)
-		if !ok {
-			return c.App.Logger().PushFatalStack("invalid type of application", errors.New("failed to cast application to app with initdb"))
-		}
-		return initDbApp.InitDB(c.Opts.DbSection)
+
+	c.BuildConfig = buildConfig
+	if len(appBuilder) != 0 {
+		c.AppBuilder = appBuilder[0]
 	}
 	return c
 }
 
 func (c *ConsoleUtility) Close() {
-	c.App.Close()
+	if c.App != nil {
+		c.App.Close()
+	}
 }
 
 func (c *ConsoleUtility) InitCommandContext(group string, command string) op_context.Context {
-	err := c.InitApp(c.Opts.ConfigFile)
-	if err != nil {
-		app_context.AbortFatal(c.App, "failed to init application context", err)
+
+	if c.AppBuilder == nil || c.Opts.Setup && !c.AppBuilder.HasSetupApp() {
+
+		fmt.Println("Using minimal application context for setup")
+
+		app := app_default.New(c.BuildConfig)
+		c.App = app
+
+		err := app.InitWithArgs(c.Opts.ConfigFile, c.Args, c.Opts.ConfigFormat)
+		if err != nil {
+			app_context.AbortFatal(c.App, "failed to init context of minimal application", err)
+		}
+	} else if c.AppBuilder != nil && c.Opts.Setup && c.AppBuilder.HasSetupApp() {
+
+		fmt.Println("Using setup application context")
+
+		c.App = c.AppBuilder.NewSetupApp(c.BuildConfig)
+		err := c.AppBuilder.InitSetupApp(c.App, c.Opts.ConfigFile, c.Args, c.Opts.ConfigFormat)
+		if err != nil {
+			app_context.AbortFatal(c.App, "failed to init context of setup application", err)
+		}
+	} else {
+
+		fmt.Println("Using normal application context")
+
+		c.App = c.AppBuilder.NewApp(c.BuildConfig)
+		err := c.AppBuilder.InitApp(c.App, c.Opts.ConfigFile, c.Args, c.Opts.ConfigFormat)
+		if err != nil {
+			app_context.AbortFatal(c.App, "failed to init application context", err)
+		}
 	}
 
 	if c.App.Cfg().GetString("logger.destination") != "stdout" {
 		c.App.Cfg().Set("logger.destination", "stdout")
 		consoleLogger := logger_logrus.New()
-		err = consoleLogger.Init(c.App.Cfg(), c.App.Validator(), "logger")
+		err := consoleLogger.Init(c.App.Cfg(), c.App.Validator(), "logger")
 		if err != nil {
 			app_context.AbortFatal(c.App, "failed to init console logger", err)
 		}
@@ -93,8 +109,14 @@ func (c *ConsoleUtility) InitCommandContext(group string, command string) op_con
 		c.App.SetLogger(teeLogger)
 	}
 
-	if c.Opts.InitDb == "true" {
-		err = c.InitDB()
+	if !c.Opts.NoInitDb {
+		initDbApp, ok := c.App.(app_default.WithInitGormDb)
+		if !ok {
+			app_context.AbortFatal(c.App,
+				"failed to init database",
+				c.App.Logger().PushFatalStack("invalid type of application", errors.New("failed to cast application to app with initdb")))
+		}
+		err := initDbApp.InitDB(c.Opts.DbSection)
 		if err != nil {
 			app_context.AbortFatal(c.App, "failed to init database", err)
 		}

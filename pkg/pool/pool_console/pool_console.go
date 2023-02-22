@@ -8,13 +8,13 @@ import (
 
 type PoolCommands struct {
 	console_tool.Commands[*PoolCommands]
-	PoolController pool.PoolController
+	GetPoolController func() pool.PoolController
 }
 
-func NewPoolCommands(poolController pool.PoolController) *PoolCommands {
+func NewPoolCommands(poolController func() pool.PoolController) *PoolCommands {
 	p := &PoolCommands{}
 	p.Construct(p, "pool", "Manage pools")
-	p.PoolController = poolController
+	p.GetPoolController = poolController
 	p.LoadHandlers()
 	return p
 }
@@ -53,5 +53,5 @@ func (b *HandlerBase) Context(data interface{}) (op_context.Context, pool.PoolCo
 	if err != nil {
 		return ctx, nil, err
 	}
-	return ctx, b.Group.PoolController, nil
+	return ctx, b.Group.GetPoolController(), nil
 }

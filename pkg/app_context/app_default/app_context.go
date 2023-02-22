@@ -1,6 +1,7 @@
 package app_default
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -199,6 +200,11 @@ func (c *Context) Close() {
 }
 
 func (c *Context) initConfig(configFile string, configType ...string) error {
+
+	if configFile == "" {
+		return errors.New("configuration file not specified")
+	}
+
 	v := config_viper.New()
 	c.SetCfg(v)
 	err := v.LoadFile(configFile, configType...)
