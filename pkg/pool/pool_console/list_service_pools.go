@@ -30,9 +30,11 @@ func (a *ListServicePoolsHandler) Data() interface{} {
 
 func (a *ListServicePoolsHandler) Execute(args []string) error {
 
-	ctx, controller := a.Context()
+	ctx, controller, err := a.Context(a.Data())
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
-
 	pools, err := controller.GetServiceBindings(ctx, a.Name, true)
 	if err == nil {
 		fmt.Printf("Pools:\n\n%s\n\n", utils.DumpPrettyJson(pools))

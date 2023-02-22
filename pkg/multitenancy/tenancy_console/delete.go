@@ -32,7 +32,10 @@ func (a *DeleteHandler) Data() interface{} {
 
 func (a *DeleteHandler) Execute(args []string) error {
 
-	ctx, controller := a.Context()
+	ctx, controller, err := a.Context(a.Data())
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
 	reader := bufio.NewReader(os.Stdin)

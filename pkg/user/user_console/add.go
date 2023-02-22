@@ -66,12 +66,15 @@ func (a *AddHandler[T]) Data() interface{} {
 
 func (a *AddHandler[T]) Execute(args []string) error {
 
-	ctx, ctrl := a.Context(a.Login)
+	ctx, ctrl, err := a.Context(a.Data(), a.Login)
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
 	password := ReadPassword()
 
-	_, err := ctrl.Add(ctx, a.Login, password)
+	_, err = ctrl.Add(ctx, a.Login, password)
 	return err
 }
 
@@ -94,10 +97,13 @@ func (a *AddNoPasswordHandler[T]) Data() interface{} {
 
 func (a *AddNoPasswordHandler[T]) Execute(args []string) error {
 
-	ctx, ctrl := a.Context(a.Login)
+	ctx, ctrl, err := a.Context(a.Data(), a.Login)
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
-	_, err := ctrl.Add(ctx, a.Login, "")
+	_, err = ctrl.Add(ctx, a.Login, "")
 	return err
 }
 
@@ -120,12 +126,15 @@ func (a *AddWithPhoneHandler[T]) Data() interface{} {
 
 func (a *AddWithPhoneHandler[T]) Execute(args []string) error {
 
-	ctx, ctrl := a.Context(a.Login)
+	ctx, ctrl, err := a.Context(a.Data(), a.Login)
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
 	password := ReadPassword()
 
-	_, err := ctrl.Add(ctx, a.Login, string(password), user.Phone[T](a.Phone))
+	_, err = ctrl.Add(ctx, a.Login, string(password), user.Phone[T](a.Phone))
 	return err
 }
 
@@ -148,11 +157,14 @@ func (a *AddWithEmailHandler[T]) Data() interface{} {
 
 func (a *AddWithEmailHandler[T]) Execute(args []string) error {
 
-	ctx, ctrl := a.Context(a.Login)
+	ctx, ctrl, err := a.Context(a.Data(), a.Login)
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
 	password := ReadPassword()
 
-	_, err := ctrl.Add(ctx, a.Login, string(password), user.Email[T](a.Email))
+	_, err = ctrl.Add(ctx, a.Login, string(password), user.Email[T](a.Email))
 	return err
 }

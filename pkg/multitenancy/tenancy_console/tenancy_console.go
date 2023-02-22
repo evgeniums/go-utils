@@ -32,7 +32,9 @@ func (m *MultitenancyAppBuilder) InitApp(app app_context.Context, configFile str
 		return app.Logger().PushFatalStack("invalid application type", errors.New("failed to cast app to multitenancy app"))
 	}
 	ctx, err := a.InitWithArgs(configFile, args, configType...)
-	ctx.Close()
+	if ctx != nil {
+		ctx.Close()
+	}
 	return err
 }
 
@@ -73,13 +75,17 @@ type HandlerBase struct {
 	console_tool.HandlerBase[*TenancyCommands]
 }
 
-func (b *HandlerBase) Context() (op_context.Context, multitenancy.TenancyController) {
-	ctx := b.HandlerBase.Context()
+func (b *HandlerBase) Context(data interface{}) (op_context.Context, multitenancy.TenancyController, error) {
+
+	ctx, err := b.HandlerBase.Context(data)
+	if err != nil {
+		return ctx, nil, err
+	}
 
 	a, ok := ctx.App().(*app_with_multitenancy.AppWithMultitenancyBase)
 	if !ok {
 		panic(fmt.Errorf("invalid application type: %s", errors.New("failed to cast app to multitenancy app")))
 	}
 
-	return ctx, a.Multitenancy().TenancyController()
+	return ctx, a.Multitenancy().TenancyController(), nil
 }

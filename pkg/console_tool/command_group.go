@@ -134,9 +134,10 @@ func (h *HandlerBase[T]) HandlerDescription() string {
 	return h.HandlerBaseHolder.Description
 }
 
-func (h *HandlerBase[T]) Context() op_context.Context {
+func (h *HandlerBase[T]) Context(opData interface{}) (op_context.Context, error) {
 	ctx := h.HandlerBaseHolder.CtxBuilder(h.Group.Name(), h.HandlerBaseHolder.Name)
-	return ctx
+	err := ctx.App().Validator().Validate(opData)
+	return ctx, err
 }
 
 func (h *HandlerBase[T]) Data() interface{} {

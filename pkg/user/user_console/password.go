@@ -25,7 +25,10 @@ func (a *PasswordHandler[T]) Data() interface{} {
 
 func (a *PasswordHandler[T]) Execute(args []string) error {
 
-	ctx, ctrl := a.Context(a.Login)
+	ctx, ctrl, err := a.Context(a.Data(), a.Login)
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
 	password := ReadPassword()

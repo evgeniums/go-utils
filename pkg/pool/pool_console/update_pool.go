@@ -34,14 +34,17 @@ func (a *UpdatePoolHandler) Data() interface{} {
 
 func (a *UpdatePoolHandler) Execute(args []string) error {
 
-	ctx, controller := a.Context()
+	ctx, controller, err := a.Context(a.Data())
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
 	field := strings.ToLower(a.Field)
 	fields := db.Fields{}
 	fields[field] = a.Value
 
-	err := controller.UpdatePool(ctx, a.Pool, fields, true)
+	err = controller.UpdatePool(ctx, a.Pool, fields, true)
 	if err == nil {
 		pool, err := controller.FindPool(ctx, a.Pool, true)
 		if err == nil {

@@ -25,7 +25,10 @@ func (a *BlockHandler[T]) Data() interface{} {
 
 func (a *BlockHandler[T]) Execute(args []string) error {
 
-	ctx, ctrl := a.Context(a.Login)
+	ctx, ctrl, err := a.Context(a.Data(), a.Login)
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
 	return ctrl.SetBlocked(ctx, a.Login, true, true)

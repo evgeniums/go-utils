@@ -30,9 +30,11 @@ func (a *ShowServiceHandler) Data() interface{} {
 
 func (a *ShowServiceHandler) Execute(args []string) error {
 
-	ctx, controller := a.Context()
+	ctx, controller, err := a.Context(a.Data())
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
-
 	service, err := controller.FindPool(ctx, a.Service, true)
 	if err == nil {
 		if service != nil {

@@ -25,7 +25,10 @@ func (a *RoleHandler) Data() interface{} {
 
 func (a *RoleHandler) Execute(args []string) error {
 
-	ctx, controller := a.Context()
+	ctx, controller, err := a.Context(a.Data())
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
 	id, idIsDisplay := PrepareId(a.Id, a.Role, a.Role)

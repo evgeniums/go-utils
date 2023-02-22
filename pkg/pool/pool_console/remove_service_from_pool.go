@@ -25,9 +25,11 @@ func (a *RemoveServiceFromPoolHandler) Data() interface{} {
 
 func (a *RemoveServiceFromPoolHandler) Execute(args []string) error {
 
-	ctx, controller := a.Context()
+	ctx, controller, err := a.Context(a.Data())
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
-	err := controller.RemoveServiceFromPool(ctx, a.Pool, a.Role, true)
-	return err
+	return controller.RemoveServiceFromPool(ctx, a.Pool, a.Role, true)
 }

@@ -27,7 +27,10 @@ func (a *AddHandler) Data() interface{} {
 
 func (a *AddHandler) Execute(args []string) error {
 
-	ctx, controller := a.Context()
+	ctx, controller, err := a.Context(a.Data())
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
 	added, err := controller.Add(ctx, &a.TenancyData)

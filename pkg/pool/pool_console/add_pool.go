@@ -33,7 +33,10 @@ func (a *AddPoolHandler) Data() interface{} {
 
 func (a *AddPoolHandler) Execute(args []string) error {
 
-	ctx, controller := a.Context()
+	ctx, controller, err := a.Context(a.Data())
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
 	p := pool.NewPool()

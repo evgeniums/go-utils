@@ -31,13 +31,16 @@ func (a *EnablePoolHandler) Data() interface{} {
 
 func (a *EnablePoolHandler) Execute(args []string) error {
 
-	ctx, controller := a.Context()
+	ctx, controller, err := a.Context(a.Data())
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
 	fields := db.Fields{}
 	fields["active"] = true
 
-	err := controller.UpdatePool(ctx, a.Pool, fields, true)
+	err = controller.UpdatePool(ctx, a.Pool, fields, true)
 	if err == nil {
 		pool, err := controller.FindPool(ctx, a.Pool, true)
 		if err == nil {

@@ -30,9 +30,11 @@ func (a *ShowPoolHandler) Data() interface{} {
 
 func (a *ShowPoolHandler) Execute(args []string) error {
 
-	ctx, controller := a.Context()
+	ctx, controller, err := a.Context(a.Data())
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
-
 	pool, err := controller.FindPool(ctx, a.Pool, true)
 	if err == nil {
 		if pool != nil {

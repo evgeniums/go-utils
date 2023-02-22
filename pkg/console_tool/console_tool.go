@@ -51,7 +51,10 @@ func New(buildConfig *app_context.BuildConfig, appBuilder ...AppBuilder) *Consol
 	if len(appBuilder) == 0 {
 		c.App = app_default.New(buildConfig)
 		initApp = func(app app_context.Context, configFile string, args []string, configType ...string) error {
-			a := c.App.(*app_default.Context)
+			a, ok := c.App.(*app_default.Context)
+			if !ok {
+				return errors.New("invalid application type, can't cast to *app_default.Context")
+			}
 			return a.InitWithArgs(configFile, c.Args, c.Opts.ConfigFormat)
 		}
 	} else {

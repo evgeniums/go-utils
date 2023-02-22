@@ -25,7 +25,10 @@ func (a *EmailHandler[T]) Data() interface{} {
 
 func (a *EmailHandler[T]) Execute(args []string) error {
 
-	ctx, ctrl := a.Context(a.Login)
+	ctx, ctrl, err := a.Context(a.Data(), a.Login)
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
 	return ctrl.SetEmail(ctx, a.Login, a.Email, true)

@@ -41,8 +41,11 @@ type HandlerBase[T user.User] struct {
 	console_tool.HandlerBase[*UserCommands[T]]
 }
 
-func (b *HandlerBase[T]) Context(login ...string) (op_context.Context, user.Users[T]) {
-	ctx := b.HandlerBase.Context()
+func (b *HandlerBase[T]) Context(data interface{}, login ...string) (op_context.Context, user.Users[T], error) {
+	ctx, err := b.HandlerBase.Context(data)
+	if err != nil {
+		return ctx, nil, err
+	}
 	ctrl := b.Group.MakeController(ctx.App())
 	if len(login) != 0 {
 		err := ctrl.ValidateLogin(login[0])
@@ -50,5 +53,5 @@ func (b *HandlerBase[T]) Context(login ...string) (op_context.Context, user.User
 			panic(fmt.Sprintf("Invalid login format: %s", err))
 		}
 	}
-	return ctx, ctrl
+	return ctx, ctrl, nil
 }

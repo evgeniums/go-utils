@@ -26,9 +26,11 @@ func (a *AddServiceToPoolHandler) Data() interface{} {
 
 func (a *AddServiceToPoolHandler) Execute(args []string) error {
 
-	ctx, controller := a.Context()
+	ctx, controller, err := a.Context(a.Data())
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
-	err := controller.AddServiceToPool(ctx, a.Pool, a.Service, a.Role, true)
-	return err
+	return controller.AddServiceToPool(ctx, a.Pool, a.Service, a.Role, true)
 }

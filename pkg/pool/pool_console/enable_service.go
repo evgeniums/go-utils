@@ -31,13 +31,16 @@ func (a *EnableServiceHandler) Data() interface{} {
 
 func (a *EnableServiceHandler) Execute(args []string) error {
 
-	ctx, controller := a.Context()
+	ctx, controller, err := a.Context(a.Data())
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
 
 	fields := db.Fields{}
 	fields["active"] = true
 
-	err := controller.UpdateService(ctx, a.Service, fields, true)
+	err = controller.UpdateService(ctx, a.Service, fields, true)
 	if err == nil {
 		pool, err := controller.FindPool(ctx, a.Service, true)
 		if err == nil {

@@ -36,9 +36,11 @@ func (a *AddServiceHandler) Data() interface{} {
 
 func (a *AddServiceHandler) Execute(args []string) error {
 
-	ctx, controller := a.Context()
+	ctx, controller, err := a.Context(a.Data())
+	if err != nil {
+		return err
+	}
 	defer ctx.Close()
-
 	s := pool.NewService()
 	s.SetName(a.Name)
 	s.SetDescription(a.Description)

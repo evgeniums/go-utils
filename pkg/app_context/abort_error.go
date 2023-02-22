@@ -3,6 +3,7 @@ package app_context
 import (
 	"errors"
 	"fmt"
+	"os"
 )
 
 func AbortError(ctx Context, msg string, err ...error) {
@@ -13,12 +14,15 @@ func AbortError(ctx Context, msg string, err ...error) {
 			ctx.Logger().ErrorRaw(err[0].Error())
 		}
 	}
-	panic(e)
+	fmt.Println(e)
+	fmt.Println("Failed")
+	os.Exit(1)
 }
 
 func AbortFatal(ctx Context, msg string, err ...error) {
 	if ctx.Logger().CheckFatalStack(ctx.Logger(), msg) {
-		panic("AbortFatal")
+		fmt.Println("Failed")
+		os.Exit(1)
 	}
 	AbortError(ctx, msg, err...)
 }

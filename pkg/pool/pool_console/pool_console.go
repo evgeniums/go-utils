@@ -48,7 +48,10 @@ type HandlerBase struct {
 	console_tool.HandlerBase[*PoolCommands]
 }
 
-func (b *HandlerBase) Context() (op_context.Context, pool.PoolController) {
-	ctx := b.HandlerBase.Context()
-	return ctx, b.Group.PoolController
+func (b *HandlerBase) Context(data interface{}) (op_context.Context, pool.PoolController, error) {
+	ctx, err := b.HandlerBase.Context(data)
+	if err != nil {
+		return ctx, nil, err
+	}
+	return ctx, b.Group.PoolController, nil
 }
