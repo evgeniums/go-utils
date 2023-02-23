@@ -41,7 +41,7 @@ func (a *ListHandler[T]) Execute(args []string) error {
 
 	filter, err := db.ParseQuery(ctx.Db(), a.Query, ctrl.MakeUser(), "")
 	if err != nil {
-		return fmt.Errorf("faild to parse query: %s", err)
+		return fmt.Errorf("failed to parse query: %s", err)
 	}
 
 	var users []T
@@ -51,7 +51,7 @@ func (a *ListHandler[T]) Execute(args []string) error {
 	}
 	b, err := json.MarshalIndent(users, "", "   ")
 	if err != nil {
-		return fmt.Errorf("faild to serialize result: %s", err)
+		return fmt.Errorf("failed to serialize result: %s", err)
 	}
 	fmt.Printf("********************\n\n%s\n\n********************\n\n", string(b))
 	return nil

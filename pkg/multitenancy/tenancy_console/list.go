@@ -37,7 +37,7 @@ func (a *ListHandler) Execute(args []string) error {
 
 	filter, err := db.ParseQuery(ctx.Db(), a.Query, &multitenancy.TenancyItem{}, "")
 	if err != nil {
-		return fmt.Errorf("faild to parse query: %s", err)
+		return fmt.Errorf("failed to parse query: %s", err)
 	}
 
 	tenancies, count, err := controller.List(ctx, filter)
