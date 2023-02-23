@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
 const UpdateServiceCmd string = "update_service"
@@ -51,6 +54,11 @@ func (a *UpdateServiceHandler) Execute(args []string) error {
 		fields[field] = val
 	} else {
 		fields[field] = a.Value
+	}
+	vErr := validator.ValidateMap(ctx.App().Validator(), fields, &pool.PoolServiceBaseData{})
+	if vErr != nil {
+		app_context.ErrorLn("failed to validate fields")
+		return vErr.Err
 	}
 
 	service, err := controller.UpdateService(ctx, a.Service, fields, true)

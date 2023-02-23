@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
 const UpdatePoolCmd string = "update_pool"
@@ -43,6 +46,12 @@ func (a *UpdatePoolHandler) Execute(args []string) error {
 	field := strings.ToLower(a.Field)
 	fields := db.Fields{}
 	fields[field] = a.Value
+
+	vErr := validator.ValidateMap(ctx.App().Validator(), fields, &pool.PoolBaseData{})
+	if vErr != nil {
+		app_context.ErrorLn("failed to validate fields")
+		return vErr.Err
+	}
 
 	p, err := controller.UpdatePool(ctx, a.Pool, fields, true)
 	if err != nil {
