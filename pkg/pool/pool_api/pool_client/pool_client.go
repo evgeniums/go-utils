@@ -58,10 +58,8 @@ func NewPoolClient(client api_client.Client) *PoolClient {
 
 func (p *PoolClient) namedPoolResource(poolId string) api.Resource {
 	poolResource := p.PoolResource.CloneChain(false)
-	namedResource := api.NamedResource(poolIdType)
-	namedResource.SetId(poolId)
-	poolResource.AddChild(namedResource)
-	return namedResource
+	poolResource.SetId(poolId)
+	return poolResource
 }
 
 func (p *PoolClient) namedServiceResource(serviceId string) api.Resource {

@@ -178,18 +178,16 @@ func TestAddService(t *testing.T) {
 	addService(t, ctx)
 }
 
-func TestGetBindings(t *testing.T) {
+func TestBindings(t *testing.T) {
 	ctx := initTest(t)
 	defer ctx.Close()
 
 	ctx.AdminOp.Db().EnableDebug(true)
 
+	// setup
 	service := addService(t, ctx)
 	p := addPool(t, ctx)
 	role := "main_webservice"
-
-	err := ctx.LocalPoolController.AddServiceToPool(ctx.AdminOp, p.GetID(), service.GetID(), role)
-	require.NoError(t, err)
 
 	checkList := func(bindings []*pool.PoolServiceBinding) {
 		require.Equal(t, 1, len(bindings))
@@ -203,16 +201,33 @@ func TestGetBindings(t *testing.T) {
 		assert.Equal(t, serviceB.PoolServiceBaseData, binding.PoolServiceBaseData)
 	}
 
+	// add service to pool
+	err := ctx.RemotePoolController.AddServiceToPool(ctx.AdminOp, p.GetID(), service.GetID(), role)
+	require.NoError(t, err)
+
+	// get services added to pool
 	bindings, err := ctx.LocalPoolController.GetPoolBindings(ctx.AdminOp, p.GetID())
 	require.NoError(t, err)
 	checkList(bindings)
-
 	b1, _ := json.MarshalIndent(bindings[0], "", "  ")
 	t.Logf("Pool services: \n\n%s\n\n", string(b1))
 
+	// get pools the service is added to
 	bindings, err = ctx.LocalPoolController.GetServiceBindings(ctx.AdminOp, service.GetID())
 	require.NoError(t, err)
 	checkList(bindings)
+
+	// add duplicate service to pool
+	err = ctx.RemotePoolController.AddServiceToPool(ctx.AdminOp, p.GetID(), service.GetID(), role)
+	test_utils.CheckGenericError(t, err, pool.ErrorCodeServiceRoleConflict, "Pool already has service for that role.")
+
+	// add unknown service to pool
+	err = ctx.RemotePoolController.AddServiceToPool(ctx.AdminOp, p.GetID(), "unknown_id", role)
+	test_utils.CheckGenericError(t, err, pool.ErrorCodeServiceNotFound, "Service not found.")
+
+	// add service to unknown pool
+	err = ctx.RemotePoolController.AddServiceToPool(ctx.AdminOp, "unknown_id", "unknown_id", role)
+	test_utils.CheckGenericError(t, err, pool.ErrorCodePoolNotFound, "Pool not found.")
 }
 
 func TestUpdatePool(t *testing.T) {

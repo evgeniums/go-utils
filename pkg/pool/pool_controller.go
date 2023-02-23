@@ -103,6 +103,7 @@ func (m *PoolControllerBase) FindPool(ctx op_context.Context, id string, idIsNam
 	}
 	if pool == nil {
 		ctx.SetGenericErrorCode(ErrorCodePoolNotFound)
+		return nil, nil
 	}
 	return pool, nil
 }
@@ -144,7 +145,7 @@ func (m *PoolControllerBase) UpdatePool(ctx op_context.Context, id string, field
 	if err != nil {
 		return nil, err
 	}
-	if obj == nil {
+	if p == nil {
 		ctx.SetGenericErrorCode(ErrorCodePoolNotFound)
 		return nil, c.SetError(errors.New("pool not found"))
 	}
@@ -209,6 +210,7 @@ func (m *PoolControllerBase) FindService(ctx op_context.Context, id string, idIs
 	}
 	if service == nil {
 		ctx.SetGenericErrorCode(ErrorCodeServiceNotFound)
+		return nil, err
 	}
 	return service, nil
 }
