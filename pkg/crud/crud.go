@@ -5,6 +5,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type CRUD interface {
@@ -219,10 +220,15 @@ func FindUpdate[T common.Object](crud CRUD, ctx op_context.Context, methodName s
 	c := ctx.TraceInMethod(methodName)
 	defer ctx.TraceOutMethod()
 	var nilT T
+	var obj T
+	var err error
 
-	obj, err := FindByField(crud, ctx, "Find", fieldName, fieldValue, object)
+	obj, err = FindByField(crud, ctx, "Find", fieldName, fieldValue, object)
 	if err != nil {
 		return nilT, c.SetError(err)
+	}
+	if utils.IsNil(obj) {
+		return obj, nil
 	}
 
 	err = Update(crud, ctx, "Update", obj, fields)
