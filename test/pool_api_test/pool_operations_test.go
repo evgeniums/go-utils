@@ -221,29 +221,37 @@ func TestUpdatePool(t *testing.T) {
 
 	p := addPool(t, ctx)
 
+	// update and check pool
 	fields := db.Fields{"name": "updated name", "long_name": "updated long_name", "description": "updated description", "active": false}
 	updatedP, err := ctx.RemotePoolController.UpdatePool(ctx.ClientOp, p.GetID(), fields)
 	require.NoError(t, err)
-
 	assert.Equal(t, "updated name", updatedP.Name())
 	assert.Equal(t, "updated long_name", updatedP.LongName())
 	assert.Equal(t, "updated description", updatedP.Description())
 	assert.False(t, updatedP.IsActive())
 
+	// find and check pool
 	remotePool1, err := ctx.RemotePoolController.FindPool(ctx.AdminOp, p.GetID())
 	require.NoError(t, err)
 	require.NotNil(t, remotePool1)
-
 	assert.Equal(t, "updated name", remotePool1.Name())
 	assert.Equal(t, "updated long_name", remotePool1.LongName())
 	assert.Equal(t, "updated description", remotePool1.Description())
 	assert.False(t, remotePool1.IsActive())
 
+	// unknown pool
+	delete(fields, "name")
+	_, err = ctx.RemotePoolController.UpdatePool(ctx.ClientOp, "someid", fields)
+	require.Error(t, err)
+	test_utils.CheckGenericError(t, err, pool.ErrorCodePoolNotFound, "Pool not found.")
+
+	// unknown field
 	fields = db.Fields{"unknown_field": "try me"}
 	_, err = ctx.RemotePoolController.UpdatePool(ctx.ClientOp, p.GetID(), fields)
 	require.Error(t, err)
 	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeFormat, "Invalid fields for update.")
 
+	// duplicate name
 	fields = db.Fields{"name": "updated name"}
 	_, err = ctx.RemotePoolController.UpdatePool(ctx.ClientOp, p.GetID(), fields)
 	require.Error(t, err)
@@ -256,6 +264,7 @@ func TestUpdateService(t *testing.T) {
 
 	s := addService(t, ctx)
 
+	// fiil fields
 	fields := db.Fields{"name": "updated name", "long_name": "updated long_name", "description": "updated description", "active": false}
 	fields["type_name"] = "new type"
 	fields["secret1"] = "new secret 1"
@@ -274,9 +283,10 @@ func TestUpdateService(t *testing.T) {
 	fields["parameter1_name"] = "new name of parameter 1"
 	fields["parameter2_name"] = "new name of parameter 2"
 	fields["parameter3_name"] = "new name of parameter 3"
+
+	// update and check service
 	updatedS, err := ctx.RemotePoolController.UpdateService(ctx.ClientOp, s.GetID(), fields)
 	require.NoError(t, err)
-
 	assert.Equal(t, "updated name", updatedS.Name())
 	assert.Equal(t, "updated long_name", updatedS.LongName())
 	assert.Equal(t, "updated description", updatedS.Description())
@@ -299,10 +309,10 @@ func TestUpdateService(t *testing.T) {
 	assert.Equal(t, "new name of parameter 3", updatedS.Parameter3Name())
 	assert.False(t, updatedS.IsActive())
 
+	// find and check service
 	remoteService1, err := ctx.RemotePoolController.FindService(ctx.AdminOp, s.GetID())
 	require.NoError(t, err)
 	require.NotNil(t, remoteService1)
-
 	assert.Equal(t, "updated name", remoteService1.Name())
 	assert.Equal(t, "updated long_name", remoteService1.LongName())
 	assert.Equal(t, "updated description", remoteService1.Description())
@@ -325,11 +335,19 @@ func TestUpdateService(t *testing.T) {
 	assert.Equal(t, "new name of parameter 3", remoteService1.Parameter3Name())
 	assert.False(t, remoteService1.IsActive())
 
+	// unknown service
+	delete(fields, "name")
+	_, err = ctx.RemotePoolController.UpdateService(ctx.ClientOp, "someid", fields)
+	require.Error(t, err)
+	test_utils.CheckGenericError(t, err, pool.ErrorCodeServiceNotFound, "Service not found.")
+
+	// unknown field
 	fields = db.Fields{"unknown_field": "try me"}
 	_, err = ctx.RemotePoolController.UpdateService(ctx.ClientOp, s.GetID(), fields)
 	require.Error(t, err)
 	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeFormat, "Invalid fields for update.")
 
+	// duplicate name
 	fields = db.Fields{"name": "updated name"}
 	_, err = ctx.RemotePoolController.UpdateService(ctx.ClientOp, s.GetID(), fields)
 	require.Error(t, err)
