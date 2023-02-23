@@ -168,14 +168,12 @@ func Find[T common.Object](crud CRUD, ctx op_context.Context, methodName string,
 	c := ctx.TraceInMethod(methodName)
 	defer ctx.TraceOutMethod()
 
-	var nilT T
-
 	found, err := crud.Read(ctx, fields, object, dest...)
 	if err != nil {
-		return nilT, c.SetError(err)
+		return *new(T), c.SetError(err)
 	}
 	if !found {
-		return nilT, nil
+		return *new(T), nil
 	}
 	return object, nil
 }
@@ -184,14 +182,12 @@ func FindByField[T common.Object](crud CRUD, ctx op_context.Context, methodName 
 	c := ctx.TraceInMethod(methodName)
 	defer ctx.TraceOutMethod()
 
-	var nilT T
-
 	found, err := crud.ReadByField(ctx, fieldName, fieldValue, object, dest...)
 	if err != nil {
-		return nilT, c.SetError(err)
+		return *new(T), c.SetError(err)
 	}
 	if !found {
-		return nilT, nil
+		return *new(T), nil
 	}
 	return object, nil
 }
@@ -219,13 +215,12 @@ func Update(crud CRUD, ctx op_context.Context, methodName string, obj common.Obj
 func FindUpdate[T common.Object](crud CRUD, ctx op_context.Context, methodName string, fieldName string, fieldValue interface{}, fields db.Fields, object T, dest ...interface{}) (T, error) {
 	c := ctx.TraceInMethod(methodName)
 	defer ctx.TraceOutMethod()
-	var nilT T
 	var obj T
 	var err error
 
 	obj, err = FindByField(crud, ctx, "Find", fieldName, fieldValue, object)
 	if err != nil {
-		return nilT, c.SetError(err)
+		return *new(T), c.SetError(err)
 	}
 	if utils.IsNil(obj) {
 		return obj, nil
@@ -233,7 +228,7 @@ func FindUpdate[T common.Object](crud CRUD, ctx op_context.Context, methodName s
 
 	err = Update(crud, ctx, "Update", obj, fields)
 	if err != nil {
-		return nilT, c.SetError(err)
+		return *new(T), c.SetError(err)
 	}
 
 	return obj, nil
