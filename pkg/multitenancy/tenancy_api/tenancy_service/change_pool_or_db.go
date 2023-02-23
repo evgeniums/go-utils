@@ -20,7 +20,7 @@ func (s *ChangePoolOrDbEndpoint) HandleRequest(request api_server.Request) error
 	cmd := &multitenancy.WithPoolAndDb{}
 	err := request.ParseValidate(cmd)
 	if err != nil {
-		c.SetMessage("faield to parse/validate command")
+		c.SetMessage("failed to parse/validate command")
 		return err
 	}
 

@@ -67,7 +67,7 @@ func ParseDbQuery(request Request, model interface{}, queryName string) (*db.Fil
 
 	err := request.ParseValidate(q)
 	if err != nil {
-		c.SetMessage("faield to parse/verify query")
+		c.SetMessage("failed to parse/verify query")
 		return nil, c.SetError(err)
 	}
 	if q.Query() == "" {

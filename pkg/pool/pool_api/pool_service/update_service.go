@@ -22,13 +22,13 @@ func (e *UpdateServiceEndpoint) HandleRequest(request api_server.Request) error 
 	cmd := &api.UpdateCmd{}
 	err := request.ParseValidate(cmd)
 	if err != nil {
-		c.SetMessage("faield to parse/validate command")
+		c.SetMessage("failed to parse/validate command")
 		return c.SetError(err)
 	}
 	// validate fields
 	vErr := validator.ValidateMap(request.App().Validator(), cmd.Fields, &pool.PoolServiceBaseEssentials{})
 	if vErr != nil {
-		c.SetMessage("faield to validate fields")
+		c.SetMessage("failed to validate fields")
 		request.SetGenericError(vErr.GenericError())
 		return c.SetError(vErr.Err)
 	}

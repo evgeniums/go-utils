@@ -104,12 +104,12 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 	if u.userValidators != nil {
 		err = u.userValidators.ValidateLogin(login)
 		if err != nil {
-			c.SetMessage("faield to validate login")
+			c.SetMessage("failed to validate login")
 			return nilUser, err
 		}
 		err = u.userValidators.ValidatePassword(password)
 		if err != nil {
-			c.SetMessage("faield to validate password")
+			c.SetMessage("failed to validate password")
 			return nilUser, err
 		}
 	}
@@ -121,7 +121,7 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 	filter.Limit = 1
 	_, err = u.FindUsers(ctx, filter, &users)
 	if err != nil {
-		c.SetMessage("faield to check login duplicates")
+		c.SetMessage("failed to check login duplicates")
 		return nilUser, err
 	}
 	if len(users) > 0 {
@@ -271,7 +271,7 @@ func (u *UserControllerBase[UserType]) SetPassword(ctx op_context.Context, id st
 	if u.userValidators != nil {
 		err = u.userValidators.ValidatePassword(password)
 		if err != nil {
-			c.SetMessage("faield to validate password")
+			c.SetMessage("failed to validate password")
 			return err
 		}
 	}
