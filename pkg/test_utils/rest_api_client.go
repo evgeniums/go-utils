@@ -82,9 +82,11 @@ func HttptestSendWithQuery(t *testing.T, g *gin.Engine, method string, url strin
 	require.NoErrorf(t, err, "failed to create request")
 
 	// prepare data
-	v, err := query.Values(cmd)
-	require.NoErrorf(t, err, "failed to build query")
-	req.URL.RawQuery = v.Encode()
+	if cmd != nil {
+		v, err := query.Values(cmd)
+		require.NoErrorf(t, err, "failed to build query")
+		req.URL.RawQuery = v.Encode()
+	}
 	req.Header.Set("Accept", "application/json")
 	http_request.HttpHeadersSet(req, headers...)
 

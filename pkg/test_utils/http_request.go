@@ -56,12 +56,12 @@ func HttpPatch(t *testing.T, g *gin.Engine, path string, cmd interface{}, header
 }
 
 func HttpRequestQuery(t *testing.T, g *gin.Engine, method string, path string, args interface{}, headers ...map[string]string) (*httptest.ResponseRecorder, int, string) {
-	v, _ := query.Values(args)
-
 	req, err := http.NewRequest(method, path, nil)
-	req.URL.RawQuery = v.Encode()
-	require.NoErrorf(t, err, "failed to create request")
-
+	if args != nil {
+		v, _ := query.Values(args)
+		req.URL.RawQuery = v.Encode()
+		require.NoErrorf(t, err, "failed to create request")
+	}
 	HttpHeadersSet(req, headers...)
 
 	return HttpRequestSend(t, g, req)
