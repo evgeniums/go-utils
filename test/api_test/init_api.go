@@ -11,6 +11,8 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/bare_bones_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/app_with_multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms/sms_provider_factory"
@@ -60,7 +62,13 @@ func initServer(t *testing.T, testDir string, config string, dbModels []interfac
 	adminManager := admin.NewManager()
 	adminManager.Init(app.Validator())
 
-	tenancyManager := &tenancy_manager.TenancyManager{}
+	var tenancyManager multitenancy.Multitenancy
+	appWithTenancy, ok := app.(app_with_multitenancy.AppWithMultitenancy)
+	if ok {
+		tenancyManager = appWithTenancy.Multitenancy()
+	} else {
+		tenancyManager = &tenancy_manager.TenancyManager{}
+	}
 
 	server := bare_bones_server.New(adminManager, bare_bones_server.Config{SmsProviders: &sms_provider_factory.MockFactory{}})
 	require.NoErrorf(t, server.Init(app, tenancyManager), "failed to init server")

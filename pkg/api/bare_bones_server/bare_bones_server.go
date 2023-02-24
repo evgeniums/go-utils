@@ -83,9 +83,9 @@ func (s *BareBonesServerBase) Init(app app_context.Context, tenancyManager multi
 
 	// init REST API server
 	if s.pimpl.server == nil {
-		server := rest_api_gin_server.NewServer(tenancyManager)
+		server := rest_api_gin_server.NewServer()
 		serverPath := object_config.Key(path, "rest_api_server")
-		err := server.Init(app, s.pimpl.auth, serverPath)
+		err := server.Init(app, s.pimpl.auth, tenancyManager, serverPath)
 		if err != nil {
 			return app.Logger().PushFatalStack("failed to init REST API server", err)
 		}

@@ -65,10 +65,8 @@ func getHttpHeader(g *gin.Context, name string) string {
 	return g.GetHeader(name)
 }
 
-func NewServer(tenancyManager multitenancy.Multitenancy) *Server {
+func NewServer() *Server {
 	s := &Server{}
-
-	s.tenancies = tenancyManager
 
 	csrfKey := func(key string) string {
 		return utils.ConcatStrings("x-", key)
@@ -171,7 +169,7 @@ func (s *Server) NoRoute() gin.HandlerFunc {
 	}
 }
 
-func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...string) error {
+func (s *Server) Init(ctx app_context.Context, auth auth.Auth, tenancyManager multitenancy.Multitenancy, configPath ...string) error {
 
 	var err error
 	s.hostname = ctx.Hostname()
@@ -181,6 +179,8 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, configPath ...str
 	s.ErrorManagerBaseHttp.Init()
 	s.WithAuthBase.Init(auth)
 	auth.AttachToErrorManager(s)
+
+	s.tenancies = tenancyManager
 
 	if s.tenancies.IsMultiTenancy() {
 		s.tenancyResource = api.NewResource(TenancyParameter, api.ResourceConfig{HasId: true, Tenancy: true})
