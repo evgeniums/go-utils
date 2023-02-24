@@ -31,11 +31,6 @@ func DefaultTenancyController(manager *TenancyManager) *TenancyController {
 	return NewTenancyController(&crud.DbCRUD{}, manager)
 }
 
-// func (t *TenancyController) SetManager(manager *TenancyManager) {
-// 	t.Manager = manager
-// 	t.Manager.SetController(t)
-// }
-
 func (t *TenancyController) OpLog(ctx op_context.Context, operation string, oplog *multitenancy.OpLogTenancy) {
 	oplog.SetOperation(operation)
 	ctx.Oplog(oplog)
@@ -382,14 +377,14 @@ func (t *TenancyController) ChangePoolOrDb(ctx op_context.Context, id string, po
 	if pId == "" {
 		pId = tenancy.PoolId()
 	}
-	pool, err := t.Manager.FindPool(ctx, c, pId)
+	p, err := t.Manager.FindPool(ctx, c, pId)
 	if err != nil {
 		return c.SetError(err)
 	}
 
 	// check if tenancy with such path in new pool exists
-	if pool.GetID() != tenancy.PoolId() {
-		err = t.Manager.CheckDuplicatePath(ctx, c, pool.GetID(), tenancy.Path())
+	if p.GetID() != tenancy.PoolId() {
+		err = t.Manager.CheckDuplicatePath(ctx, c, p.GetID(), tenancy.Path())
 		if err != nil {
 			return err
 		}
@@ -401,16 +396,21 @@ func (t *TenancyController) ChangePoolOrDb(ctx op_context.Context, id string, po
 		dbN = tenancy.DbName()
 	}
 	tenancy.DBNAME = dbN
-	tenancy.POOL_ID = pool.GetID()
+	tenancy.POOL_ID = p.GetID()
 	checkTenancy := NewTenancy(t.Manager)
-	err = checkTenancy.Init(ctx, &tenancy.TenancyDb)
+	skip, err := checkTenancy.Init(ctx, &tenancy.TenancyDb)
 	if err != nil {
 		c.SetMessage("failed to init tenancy with new parameters")
 		return c.SetError(err)
 	}
+	if skip {
+		ctx.SetGenericErrorCode(pool.ErrorCodePoolNotActive)
+		err = errors.New("failed to check tenancy database as the pool is not active")
+		return c.SetError(err)
+	}
 
 	// update fields
-	err = t.CRUD.Update(ctx, &tenancy.TenancyDb, db.Fields{"pool_id": pool.GetID(), "dbname": dbN})
+	err = t.CRUD.Update(ctx, &tenancy.TenancyDb, db.Fields{"pool_id": p.GetID(), "dbname": dbN})
 	if err != nil {
 		c.SetMessage("failed to update tenancy")
 		return c.SetError(err)
@@ -418,7 +418,7 @@ func (t *TenancyController) ChangePoolOrDb(ctx op_context.Context, id string, po
 
 	// save oplog
 	t.OpLog(ctx, multitenancy.OpChangePoolOrDb, &multitenancy.OpLogTenancy{TenancyId: tenancy.GetID(),
-		Role: tenancy.Role(), Customer: tenancy.CustomerDisplay(), Pool: pool.Name(), DbName: dbN})
+		Role: tenancy.Role(), Customer: tenancy.CustomerDisplay(), Pool: p.Name(), DbName: dbN})
 
 	// publish notification
 	t.PublishOp(tenancy, multitenancy.OpChangePoolOrDb)

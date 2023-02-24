@@ -32,7 +32,8 @@ func NewTenancy(manager *TenancyManager) *TenancyBase {
 }
 
 func (d *TenancyBase) IsActive() bool {
-	return d.TenancyDb.IsActive() && !d.Customer.IsBlocked()
+
+	return d.TenancyDb.IsActive() && !d.Customer.IsBlocked() && d.TenancyBaseData.Pool.IsActive()
 }
 
 func (t *TenancyBase) Pool() pool.Pool {
@@ -47,7 +48,7 @@ func (t *TenancyBase) SetCache(c cache.Cache) {
 	t.TenancyBaseData.Cache = c
 }
 
-func (t *TenancyBase) Init(ctx op_context.Context, data *multitenancy.TenancyDb) error {
+func (t *TenancyBase) Init(ctx op_context.Context, data *multitenancy.TenancyDb) (bool, error) {
 
 	// setup
 	var err error
@@ -67,11 +68,11 @@ func (t *TenancyBase) Init(ctx op_context.Context, data *multitenancy.TenancyDb)
 	customer, err := t.TenancyManager.Customers.Find(ctx, data.CUSTOMER_ID)
 	if err != nil {
 		c.SetMessage("failed to find customer")
-		return err
+		return false, err
 	}
 	if customer == nil {
 		c.SetMessage("failed to find customer")
-		return err
+		return false, err
 	}
 	c.SetLoggerField("tenancy", multitenancy.TenancyDisplay(t))
 
@@ -80,23 +81,27 @@ func (t *TenancyBase) Init(ctx op_context.Context, data *multitenancy.TenancyDb)
 	if err != nil {
 		ctx.SetGenericErrorCode(pool.ErrorCodePoolNotFound)
 		c.SetMessage("unknown pool")
-		return err
+		return false, err
+	}
+	if !t.TenancyBaseData.Pool.IsActive() {
+		c.Logger().Warn("skipping tenancy because pool is not active", logger.Fields{"pool": t.TenancyBaseData.Pool.Name()})
+		return true, nil
 	}
 
 	// init database
 	err = t.ConnectDatabase(ctx)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// check tenancy database
 	err = multitenancy.CheckTenancyDatabase(ctx, t.Db(), t.GetID())
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// done
-	return nil
+	return false, nil
 }
 
 func (t *TenancyBase) ConnectDatabase(ctx op_context.Context) error {
@@ -114,9 +119,15 @@ func (t *TenancyBase) ConnectDatabase(ctx op_context.Context) error {
 
 	// find service for database role
 	dbService, err := t.Pool().Service(TENANCY_DATABASE_ROLE)
-	if dbService != nil {
-		genErr := generic_error.New(pool.ErrorCodeNoServiceWithRole, "Pool does not include service for tenancy database")
+	if err != nil {
+		genErr := generic_error.New(pool.ErrorCodeServiceNotActive, "Pool does not include service for tenancy database")
 		genErr.SetDetails(TENANCY_DATABASE_ROLE)
+		ctx.SetGenericError(genErr)
+		err = genErr
+		return err
+	}
+	if !dbService.IsActive() {
+		genErr := generic_error.New(pool.ErrorCodeServiceNotActive, "Service for tenancy database in the pool is not active.")
 		ctx.SetGenericError(genErr)
 		err = genErr
 		return err

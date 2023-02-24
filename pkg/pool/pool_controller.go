@@ -21,6 +21,8 @@ const ErrorCodeNoServiceWithRole = "no_service_with_role"
 const ErrorCodeInvalidServiceConfiguration = "invalid_service_configuration"
 const ErrorCodeServiceInitializationFailed = "service_initialization_failed"
 const ErrorCodePoolServiceBoundToPool = "service_bound_to_pool"
+const ErrorCodeServiceNotActive = "service_not_active"
+const ErrorCodePoolNotActive = "pool_not_active"
 
 var ErrorDescriptions = map[string]string{
 	ErrorCodePoolNotFound:                "Pool not found.",
@@ -33,6 +35,8 @@ var ErrorDescriptions = map[string]string{
 	ErrorCodeNoServiceWithRole:           "Pool does not include service with requested role",
 	ErrorCodeInvalidServiceConfiguration: "Invalid configuration of service in the pool",
 	ErrorCodeServiceInitializationFailed: "Failed to connect to service",
+	ErrorCodeServiceNotActive:            "Service not active. First, activate corresponsing service.",
+	ErrorCodePoolNotActive:               "Pool not active. First, activate corresponsing pool.",
 }
 
 var ErrorHttpCodes = map[string]int{
@@ -40,6 +44,8 @@ var ErrorHttpCodes = map[string]int{
 	ErrorCodeServiceNotFound:             http.StatusNotFound,
 	ErrorCodeInvalidServiceConfiguration: http.StatusInternalServerError,
 	ErrorCodeServiceInitializationFailed: http.StatusInternalServerError,
+	ErrorCodeServiceNotActive:            http.StatusInternalServerError,
+	ErrorCodePoolNotActive:               http.StatusInternalServerError,
 }
 
 type PoolController interface {

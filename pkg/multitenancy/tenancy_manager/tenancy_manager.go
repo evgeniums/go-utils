@@ -111,10 +111,12 @@ func (t *TenancyManager) Init(ctx op_context.Context, configPath ...string) erro
 	t.PubsubTopic.TopicBase = pubsub_subscriber.New(multitenancy.PubsubTopicName, multitenancy.NewPubsubNotification)
 	if selfPoolErr == nil && selfPool != nil {
 		// subscribe to notifications only from self pool
-		err = t.PoolPubsub.SubscribeSelfPool(&t.PubsubTopic)
-		if err != nil {
-			c.SetError(err)
-			return ctx.Logger().PushFatalStack("failed to subscribe to pubsub notifications in self pool", err)
+		if selfPool.IsActive() {
+			err = t.PoolPubsub.SubscribeSelfPool(&t.PubsubTopic)
+			if err != nil {
+				c.SetError(err)
+				return ctx.Logger().PushFatalStack("failed to subscribe to pubsub notifications in self pool", err)
+			}
 		}
 	} else {
 		// subscribe to notifications from all pools
@@ -183,9 +185,12 @@ func (t *TenancyManager) LoadTenancyFromData(ctx op_context.Context, tenancyDb *
 	// TODO use tenancy builder to support derived tenancy types
 	// init tenancy
 	tenancy := NewTenancy(t)
-	err = tenancy.Init(ctx, tenancyDb)
+	skip, err := tenancy.Init(ctx, tenancyDb)
 	if err != nil {
 		return nil, err
+	}
+	if skip {
+		return nil, nil
 	}
 
 	// keep it
