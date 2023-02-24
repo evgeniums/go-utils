@@ -20,6 +20,7 @@ const ErrorCodePoolServiceBindingsExist = "pool_service_bindings_exist"
 const ErrorCodeNoServiceWithRole = "no_service_with_role"
 const ErrorCodeInvalidServiceConfiguration = "invalid_service_configuration"
 const ErrorCodeServiceInitializationFailed = "service_initialization_failed"
+const ErrorCodePoolServiceBoundToPool = "service_bound_to_pool"
 
 var ErrorDescriptions = map[string]string{
 	ErrorCodePoolNotFound:                "Pool not found.",
@@ -28,6 +29,7 @@ var ErrorDescriptions = map[string]string{
 	ErrorCodeServiceNameConflict:         "Service with such name already exists, choose another name.",
 	ErrorCodeServiceRoleConflict:         "Pool already has service for that role.",
 	ErrorCodePoolServiceBindingsExist:    "Can't delete pool with services. First, remove all services from the pool.",
+	ErrorCodePoolServiceBoundToPool:      "Can't delete service bound to pool. First, remove the services from all pools.",
 	ErrorCodeNoServiceWithRole:           "Pool does not include service with requested role",
 	ErrorCodeInvalidServiceConfiguration: "Invalid configuration of service in the pool",
 	ErrorCodeServiceInitializationFailed: "Failed to connect to service",
@@ -86,12 +88,27 @@ func (m *PoolControllerBase) OpLog(ctx op_context.Context, operation string, opl
 }
 
 func (m *PoolControllerBase) AddPool(ctx op_context.Context, pool Pool) (Pool, error) {
-	pool.InitObject()
-	err := crud.Create(m.CRUD, ctx, "PoolController.AddPool", pool, logger.Fields{"pool_name": pool.Name()})
+
+	c := ctx.TraceInMethod("PoolController.AddPool", logger.Fields{"name": pool.Name()})
+	defer ctx.TraceOutMethod()
+
+	// check if pool name is unique
+	err := m.CheckPoolNameUnique(ctx, pool.Name())
 	if err != nil {
-		return nil, err
+		return nil, c.SetError(err)
 	}
+
+	// create pool
+	pool.InitObject()
+	err = m.CRUD.Create(ctx, pool)
+	if err != nil {
+		return nil, c.SetError(err)
+	}
+
+	// save oplog
 	m.OpLog(ctx, "add_pool", &OpLogPool{PoolId: pool.GetID(), PoolName: pool.Name()})
+
+	// done
 	return pool, nil
 }
 
@@ -108,23 +125,35 @@ func (m *PoolControllerBase) FindPool(ctx op_context.Context, id string, idIsNam
 	return pool, nil
 }
 
+func (m *PoolControllerBase) CheckPoolNameUnique(ctx op_context.Context, name interface{}) error {
+
+	c := ctx.TraceInMethod("PoolController.CheckPoolNameUnique", logger.Fields{"name": name})
+	defer ctx.TraceOutMethod()
+
+	filter := db.NewFilter()
+	filter.AddField("name", name)
+	exists, err := m.CRUD.Exists(ctx, filter, &PoolBase{})
+	if err != nil {
+		c.SetMessage("failed to check existence of pool with desired name")
+		return c.SetError(err)
+	}
+	if exists {
+		ctx.SetGenericErrorCode(ErrorCodePoolNameConflict)
+		return c.SetError(errors.New("pool with desired name exists"))
+	}
+	return nil
+}
+
 func (m *PoolControllerBase) UpdatePool(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) (Pool, error) {
 
-	c := ctx.TraceInMethod("PoolController.UpdatePool", logger.Fields{"pool": id, "user_name": utils.OptionalArg(false, idIsName...)})
+	c := ctx.TraceInMethod("PoolController.UpdatePool", logger.Fields{"pool": id, "use_name": utils.OptionalArg(false, idIsName...)})
 	defer ctx.TraceOutMethod()
 
 	// check if name is unique
 	if name, found := fields["name"]; found {
-		filter := db.NewFilter()
-		filter.AddField("name", name)
-		exists, err := m.CRUD.Exists(ctx, filter, &PoolBase{})
+		err := m.CheckPoolNameUnique(ctx, name)
 		if err != nil {
-			c.SetMessage("failed to check existence of pool with desired name")
 			return nil, c.SetError(err)
-		}
-		if exists {
-			ctx.SetGenericErrorCode(ErrorCodePoolNameConflict)
-			return nil, c.SetError(errors.New("pool with desired name exists"))
 		}
 	}
 
@@ -193,12 +222,23 @@ func (m *PoolControllerBase) DeletePool(ctx op_context.Context, id string, idIsN
 }
 
 func (m *PoolControllerBase) AddService(ctx op_context.Context, service PoolService) (PoolService, error) {
+
+	c := ctx.TraceInMethod("PoolController.AddService", logger.Fields{"name": service.Name()})
+	defer ctx.TraceOutMethod()
+
+	err := m.CheckServiceNameUnique(ctx, service.Name())
+	if err != nil {
+		return nil, c.SetError(err)
+	}
+
 	service.InitObject()
-	err := crud.Create(m.CRUD, ctx, "PoolController.AddService", service, logger.Fields{"name": service.Name()})
+	err = m.CRUD.Create(ctx, service)
 	if err != nil {
 		return nil, err
 	}
+
 	m.OpLog(ctx, "add_service", &OpLogPool{ServiceId: service.GetID(), ServiceName: service.Name()})
+
 	return service, nil
 }
 
@@ -215,6 +255,25 @@ func (m *PoolControllerBase) FindService(ctx op_context.Context, id string, idIs
 	return service, nil
 }
 
+func (m *PoolControllerBase) CheckServiceNameUnique(ctx op_context.Context, name interface{}) error {
+
+	c := ctx.TraceInMethod("PoolController.CheckServiceNameUnique", logger.Fields{"name": name})
+	defer ctx.TraceOutMethod()
+
+	filter := db.NewFilter()
+	filter.AddField("name", name)
+	exists, err := m.CRUD.Exists(ctx, filter, &PoolServiceBase{})
+	if err != nil {
+		return c.SetError(err)
+	}
+	if exists {
+		ctx.SetGenericErrorCode(ErrorCodeServiceNameConflict)
+		return c.SetError(errors.New("service with such name exists"))
+	}
+
+	return nil
+}
+
 func (m *PoolControllerBase) UpdateService(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) (PoolService, error) {
 
 	c := ctx.TraceInMethod("PoolController.UpdateService", logger.Fields{"service": id, "use_name": utils.OptionalArg(false, idIsName...)})
@@ -222,15 +281,9 @@ func (m *PoolControllerBase) UpdateService(ctx op_context.Context, id string, fi
 
 	// check if name is unique
 	if name, found := fields["name"]; found {
-		filter := db.NewFilter()
-		filter.AddField("name", name)
-		exists, err := m.CRUD.Exists(ctx, filter, &PoolServiceBase{})
+		err := m.CheckServiceNameUnique(ctx, name)
 		if err != nil {
 			return nil, c.SetError(err)
-		}
-		if exists {
-			ctx.SetGenericErrorCode(ErrorCodeServiceNameConflict)
-			return nil, c.SetError(errors.New("service with such name exists"))
 		}
 	}
 
@@ -282,11 +335,11 @@ func (m *PoolControllerBase) DeleteService(ctx op_context.Context, id string, id
 		return c.SetError(err)
 	}
 	if exists {
-		ctx.SetGenericErrorCode(ErrorCodePoolServiceBindingsExist)
+		ctx.SetGenericErrorCode(ErrorCodePoolServiceBoundToPool)
 		return c.SetError(errors.New("can not delete service bound to pools, remove all service bindings first"))
 	}
 
-	err = crud.Delete(m.CRUD, ctx, "PoolController.DeleteService", "id", serviceId, &PoolBase{}, logger.Fields{"id": id})
+	err = crud.Delete(m.CRUD, ctx, "PoolController.DeleteService", "id", serviceId, &PoolServiceBase{}, logger.Fields{"id": id})
 	if err != nil {
 		return err
 	}

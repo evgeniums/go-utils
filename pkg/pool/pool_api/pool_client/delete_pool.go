@@ -44,7 +44,8 @@ func (p *PoolClient) DeletePool(ctx op_context.Context, id string, idIsName ...b
 
 	// prepare and exec handler
 	handler := &DeletePool{}
-	err = api.NamedResourceOperation(p.PoolResource, pId, pool_api.DeletePool()).Exec(ctx, api_client.MakeOperationHandler(p.Client(), handler))
+	op := api.NamedResourceOperation(p.PoolResource, pId, pool_api.DeletePool())
+	err = op.Exec(ctx, api_client.MakeOperationHandler(p.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")
 		return err

@@ -64,10 +64,8 @@ func (p *PoolClient) namedPoolResource(poolId string) api.Resource {
 
 func (p *PoolClient) namedServiceResource(serviceId string) api.Resource {
 	serviceResource := p.ServiceResource.CloneChain(false)
-	namedResource := api.NamedResource(serviceIdType)
-	namedResource.SetId(serviceId)
-	serviceResource.AddChild(namedResource)
-	return namedResource
+	serviceResource.SetId(serviceId)
+	return serviceResource
 }
 
 func (p *PoolClient) resourceForPoolServices(poolId string) api.Resource {
@@ -81,7 +79,7 @@ func (p *PoolClient) resourceForServicePools(serviceId string) api.Resource {
 	serviceResource := p.namedServiceResource(serviceId)
 	poolsResource := api.NewResource(poolIdType)
 	serviceResource.AddChild(poolsResource)
-	return serviceResource
+	return poolsResource
 }
 
 func (p *PoolClient) poolId(ctx op_context.Context, id string, idIsName ...bool) (string, pool.Pool, error) {
