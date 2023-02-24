@@ -75,7 +75,7 @@ func (p *PoolPubsubBase) Init(app app_context.Context, pools pool.PoolStore) err
 	}
 
 	selfPool, err := pools.SelfPool()
-	if err == nil {
+	if err == nil && selfPool.IsActive() {
 		var cfg *pubsub_factory.PubsubConfig
 		p.selfPoolPublisher, cfg, err = makePublisher(selfPool)
 		if err != nil {
@@ -89,13 +89,15 @@ func (p *PoolPubsubBase) Init(app app_context.Context, pools pool.PoolStore) err
 	}
 
 	for _, pool := range pools.Pools() {
-		_, cfg, err := makePublisher(pool)
-		if err != nil {
-			return err
-		}
-		_, err = makeSubscriber(pool, cfg)
-		if err != nil {
-			return err
+		if pool.IsActive() {
+			_, cfg, err := makePublisher(pool)
+			if err != nil {
+				return err
+			}
+			_, err = makeSubscriber(pool, cfg)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
