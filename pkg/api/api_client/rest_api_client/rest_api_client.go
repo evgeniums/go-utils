@@ -243,7 +243,7 @@ func (r *RestApiClientBase) Get(ctx op_context.Context, path string, cmd interfa
 }
 
 func (r *RestApiClientBase) Delete(ctx op_context.Context, path string, cmd interface{}, response interface{}, headers ...map[string]string) (Response, error) {
-	return r.RequestQuery(ctx, http.MethodGet, path, cmd, response, headers...)
+	return r.RequestQuery(ctx, http.MethodDelete, path, cmd, response, headers...)
 }
 
 func (r *RestApiClientBase) Logout(ctx op_context.Context) (Response, error) {
@@ -374,12 +374,14 @@ func DefaultSendWithQuery(ctx op_context.Context, method string, url string, cmd
 	}
 
 	// prepare data
-	v, err := query.Values(cmd)
-	if err != nil {
-		c.SetMessage("failed to build query")
-		return nil, c.SetError(err)
+	if cmd != nil {
+		v, err := query.Values(cmd)
+		if err != nil {
+			c.SetMessage("failed to build query")
+			return nil, c.SetError(err)
+		}
+		req.URL.RawQuery = v.Encode()
 	}
-	req.URL.RawQuery = v.Encode()
 	req.Header.Set("Accept", "application/json")
 	http_request.HttpHeadersSet(req, headers...)
 
