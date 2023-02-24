@@ -68,13 +68,14 @@ func NewGet(ctx op_context.Context, url string, msg interface{}) (*Request, erro
 		return nil, c.SetError(err)
 	}
 
-	v, err := query.Values(msg)
-	if err != nil {
-		c.SetMessage("failed to build query")
-		return nil, c.SetError(err)
+	if msg != nil {
+		v, err := query.Values(msg)
+		if err != nil {
+			c.SetMessage("failed to build query")
+			return nil, c.SetError(err)
+		}
+		r.NativeRequest.URL.RawQuery = v.Encode()
 	}
-
-	r.NativeRequest.URL.RawQuery = v.Encode()
 
 	return r, nil
 }
