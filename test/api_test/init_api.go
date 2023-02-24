@@ -65,6 +65,13 @@ func initServer(t *testing.T, testDir string, config string, dbModels []interfac
 	server := bare_bones_server.New(adminManager, bare_bones_server.Config{SmsProviders: &sms_provider_factory.MockFactory{}})
 	require.NoErrorf(t, server.Init(app, tenancyManager), "failed to init server")
 
+	// Workaround for bug in gin engine.
+	// Sometimes gin would panic because of number of path parameters cached in pool of gin contexts would mismatch
+	// number of parameters in new added routes. We add stub route to ensure that number of params will be enough for most
+	// useful routes later.
+	ginEngine := test_utils.BBGinEngine(t, server)
+	ginEngine.GET("/a/:a/b/:b/c/:c/e/:e/f/:f/g/:g/h/:h/i/:i/j/:j/k/:k")
+
 	adminService := admin_api_service.NewAdminService(adminManager)
 	api_server.AddServiceToServer(server.ApiServer(), adminService)
 
