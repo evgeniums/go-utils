@@ -34,7 +34,8 @@ type DBHandlers interface {
 	Exists(ctx logger.WithLogger, filter *Filter, doc interface{}) (bool, error)
 
 	Create(ctx logger.WithLogger, obj interface{}) error
-	DeleteByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}) error
+	Delete(ctx logger.WithLogger, obj common.Object) error
+	DeleteByField(ctx logger.WithLogger, field string, value interface{}, model interface{}) error
 	DeleteByFields(ctx logger.WithLogger, fields Fields, obj interface{}) error
 
 	RowsWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) (Cursor, error)

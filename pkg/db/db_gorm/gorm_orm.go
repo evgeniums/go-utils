@@ -241,12 +241,17 @@ func FindSelectNotIn(db *gorm.DB, fields db.Fields, docModel interface{}, docs i
 	return nil
 }
 
-func RemoveById(db *gorm.DB, id interface{}, doc interface{}) error {
+func Delete(db *gorm.DB, doc interface{}) error {
+	result := db.Delete(doc)
+	return result.Error
+}
+
+func DeleteById(db *gorm.DB, id interface{}, doc interface{}) error {
 	result := db.Where("id = ?", id).Delete(doc)
 	return result.Error
 }
 
-func RemoveByField(db *gorm.DB, field string, value interface{}, doc interface{}) error {
+func DeleteByField(db *gorm.DB, field string, value interface{}, doc interface{}) error {
 	result := db.Where(fmt.Sprintf("\"%v\" = ?", field), value).Delete(doc)
 	return result.Error
 }

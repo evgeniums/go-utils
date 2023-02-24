@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
@@ -252,11 +253,20 @@ func (g *GormDB) Create(ctx logger.WithLogger, obj interface{}) error {
 	return err
 }
 
-func (g *GormDB) DeleteByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}) error {
-	err := RemoveByField(g.db_(), field, value, obj)
+func (g *GormDB) DeleteByField(ctx logger.WithLogger, field string, value interface{}, model interface{}) error {
+	err := DeleteByField(g.db_(), field, value, model)
 	if err != nil && g.VERBOSE_ERRORS {
-		e := fmt.Errorf("failed to DeleteByField %v", ObjectTypeName(obj))
+		e := fmt.Errorf("failed to DeleteByField %v", ObjectTypeName(model))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"field": field, "value": value, "error": err})
+	}
+	return err
+}
+
+func (g *GormDB) Delete(ctx logger.WithLogger, obj common.Object) error {
+	err := Delete(g.db_(), obj)
+	if err != nil && g.VERBOSE_ERRORS {
+		e := fmt.Errorf("failed to Delete %v", ObjectTypeName(obj))
+		ctx.Logger().Error("GormDB", e, logger.Fields{"id": obj.GetID(), "error": err})
 	}
 	return err
 }

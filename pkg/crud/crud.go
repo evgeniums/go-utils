@@ -101,7 +101,7 @@ func (crud *DbCRUD) Delete(ctx op_context.Context, object common.Object) error {
 	c := ctx.TraceInMethod("CRUD.Delete")
 	defer ctx.TraceOutMethod()
 
-	err := op_context.DB(ctx).DeleteByField(ctx, "id", object.GetID(), object)
+	err := op_context.DB(ctx).Delete(ctx, object)
 	if err != nil {
 		return c.SetError(err)
 	}
