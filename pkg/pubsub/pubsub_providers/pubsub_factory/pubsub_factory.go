@@ -15,6 +15,8 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
+const SingletonInmem string = "singleton_inmem"
+
 type PubsubConfigI interface {
 	GetPoolService() *pool.PoolServiceBinding
 	GetConfigKeyPath() string
@@ -37,6 +39,8 @@ type PubsubFactory interface {
 	MakePublisher(app app_context.Context, config ...PubsubConfigI) (pubsub.Publisher, error)
 	MakeSubscriber(app app_context.Context, config ...PubsubConfigI) (pubsub_subscriber.Subscriber, error)
 }
+
+var singletonInmem *pubsub_inmem.PubsubInmem
 
 type PubsubFactoryBase struct {
 	serializer message.Serializer
@@ -74,6 +78,16 @@ func (p *PubsubFactoryBase) MakeInmemPubsub(app app_context.Context) (*pubsub_in
 	return p.inmem, nil
 }
 
+func MakeSingletonInmemPubsub(serializer message.Serializer, app app_context.Context) (*pubsub_inmem.PubsubInmem, error) {
+
+	if singletonInmem != nil {
+		return singletonInmem, nil
+	}
+
+	singletonInmem = pubsub_inmem.New(app, serializer)
+	return singletonInmem, nil
+}
+
 func (p *PubsubFactoryBase) MakePublisher(app app_context.Context, config ...PubsubConfigI) (pubsub.Publisher, error) {
 
 	poolService, configPath := splitConfig(app, config...)
@@ -83,6 +97,8 @@ func (p *PubsubFactoryBase) MakePublisher(app app_context.Context, config ...Pub
 		return publisher, nil
 	} else if provider == pubsub_inmem.Provider {
 		return p.MakeInmemPubsub(app)
+	} else if provider == SingletonInmem {
+		return MakeSingletonInmemPubsub(p.serializer, app)
 	}
 
 	return nil, errors.New("unknown provider")
@@ -121,6 +137,8 @@ func (p *PubsubFactoryBase) MakeSubscriber(app app_context.Context, config ...Pu
 		}
 	} else if provider == pubsub_inmem.Provider {
 		return p.MakeInmemPubsub(app)
+	} else if provider == SingletonInmem {
+		return MakeSingletonInmemPubsub(p.serializer, app)
 	}
 
 	return nil, errors.New("unknown provider")
