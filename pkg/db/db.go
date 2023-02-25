@@ -16,6 +16,11 @@ const (
 
 type Fields = map[string]interface{}
 
+func IsFieldSet(f Fields, key string) bool {
+	_, ok := f[key]
+	return ok
+}
+
 type DBConfig struct {
 	DB_PROVIDER     string `gorm:"index"`
 	DB_HOST         string `gorm:"index"`
