@@ -78,10 +78,10 @@ func (p *PubsubFactoryBase) MakePublisher(app app_context.Context, config ...Pub
 
 	poolService, configPath := splitConfig(app, config...)
 	provider := provider(app, poolService, configPath)
-	if provider == "redis" {
+	if provider == pubsub_redis.Provider {
 		publisher := pubsub_redis.NewPublisher(p.serializer)
 		return publisher, nil
-	} else if provider == "inmem" {
+	} else if provider == pubsub_inmem.Provider {
 		return p.MakeInmemPubsub(app)
 	}
 
@@ -93,7 +93,7 @@ func (p *PubsubFactoryBase) MakeSubscriber(app app_context.Context, config ...Pu
 	poolService, configPath := splitConfig(app, config...)
 	provider := provider(app, poolService, configPath)
 
-	if provider == "redis" {
+	if provider == pubsub_redis.Provider {
 		subsciber := pubsub_redis.NewSubscriber(app, p.serializer)
 		var err error
 
@@ -119,7 +119,7 @@ func (p *PubsubFactoryBase) MakeSubscriber(app app_context.Context, config ...Pu
 		if err != nil {
 			return nil, err
 		}
-	} else if provider == "inmem" {
+	} else if provider == pubsub_inmem.Provider {
 		return p.MakeInmemPubsub(app)
 	}
 

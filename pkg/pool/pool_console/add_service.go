@@ -23,6 +23,7 @@ type AddServiceData struct {
 	Type        string `long:"type" description:"Service type" required:"true"`
 	LongName    string `long:"long-name" description:"Long name of the service"`
 	Description string `long:"description" description:"Service description"`
+	Active      string `long:"active" description:"Service is active" default:"true"`
 }
 
 type AddServiceHandler struct {
@@ -48,6 +49,7 @@ func (a *AddServiceHandler) Execute(args []string) error {
 	s.SetTypeName(a.Type)
 	s.PoolServiceBaseData.ServiceConfigBase = a.ServiceConfigBase
 	s.SecretsBase = a.SecretsBase
+	s.SetActive(a.Active == "true")
 
 	addedService, err := controller.AddService(ctx, s)
 	if err == nil {

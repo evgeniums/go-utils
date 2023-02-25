@@ -16,6 +16,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+const Provider string = "redis"
+
 type RedisConfig struct {
 	Host     string `default:"localhost" validate:"required" vmessage:"Host of Redis server not set"`
 	Port     uint16 `default:"6379" validate:"gt=0" vmessage:"Port of Redis can not be zero"`

@@ -38,6 +38,18 @@ func SetAppHandlers(builder AppBuilder, initializer AppInitializer) {
 	appInitializer = initializer
 }
 
+func InitDefaultAppContextNoDb(t *testing.T, testDir string, config ...string) app_context.Context {
+	configFile := utils.OptionalArg(AssetsFilePath(testDir, "test_config.json"), config...)
+	if !utils.FileExists(configFile) {
+		configFile = AssetsFilePath(testDir, configFile)
+	}
+
+	app := DefaultAppBuilder(t, nil)
+	require.NoErrorf(t, DefaultAppInitializer(t, app, configFile, nil), "failed to init application context")
+
+	return app
+}
+
 func InitAppContextNoDb(t *testing.T, testDir string, config ...string) app_context.Context {
 	configFile := utils.OptionalArg(AssetsFilePath(testDir, "test_config.json"), config...)
 	if !utils.FileExists(configFile) {
@@ -76,11 +88,13 @@ func InitDbModels(t *testing.T, testDir string, dbModels []interface{}, config .
 	a.Close()
 }
 
-func InitAppContext(t *testing.T, testDir string, dbModels []interface{}, config ...string) app_context.Context {
+func InitAppContext(t *testing.T, testDir string, dbModels []interface{}, config string, newDb ...bool) app_context.Context {
 
-	InitDbModels(t, testDir, dbModels, config...)
+	if utils.OptionalArg(true, newDb...) {
+		InitDbModels(t, testDir, dbModels, config)
+	}
 
-	configFile := utils.OptionalArg(AssetsFilePath(testDir, "test_config.json"), config...)
+	configFile := utils.OptionalArg(AssetsFilePath(testDir, "test_config.json"), config)
 	if !utils.FileExists(configFile) {
 		configFile = AssetsFilePath(testDir, configFile)
 	}

@@ -17,6 +17,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms/sms_provider_factory"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
@@ -46,7 +47,7 @@ func (t *TestContext) Reset() {
 }
 
 func initClient(t *testing.T, g *gin.Engine, testDir string, config string) (app_context.Context, *rest_api_client.Client) {
-	app := test_utils.InitAppContextNoDb(t, testDir, config)
+	app := test_utils.InitDefaultAppContextNoDb(t, testDir, config)
 
 	opCtx := test_utils.SimpleOpContext(app, "prepare")
 	restApiClient := test_utils.RestApiTestClient(t, g, BaseUrl)
@@ -56,8 +57,8 @@ func initClient(t *testing.T, g *gin.Engine, testDir string, config string) (app
 	return app, client
 }
 
-func initServer(t *testing.T, testDir string, config string, dbModels []interface{}) (app_context.Context, *admin.Manager, bare_bones_server.Server) {
-	app := test_utils.InitAppContext(t, testDir, dbModels, config)
+func initServer(t *testing.T, testDir string, config string, dbModels []interface{}, newDb ...bool) (app_context.Context, *admin.Manager, bare_bones_server.Server) {
+	app := test_utils.InitAppContext(t, testDir, dbModels, config, newDb...)
 
 	adminManager := admin.NewManager()
 	adminManager.Init(app.Validator())
@@ -86,14 +87,14 @@ func initServer(t *testing.T, testDir string, config string, dbModels []interfac
 	return app, adminManager, server
 }
 
-func InitTest(t *testing.T, packageName string, testDir string, dbModels []interface{}) *TestContext {
+func InitTest(t *testing.T, packageName string, testDir string, dbModels []interface{}, newDb ...bool) *TestContext {
 
 	ctx := &TestContext{}
 
 	clientConfig := fmt.Sprintf("%s_api_client.jsonc", packageName)
 	serverConfig := fmt.Sprintf("%s_api_server.jsonc", packageName)
 
-	ctx.ServerApp, ctx.LocalAdminManager, ctx.Server = initServer(t, testDir, serverConfig, dbModels)
+	ctx.ServerApp, ctx.LocalAdminManager, ctx.Server = initServer(t, testDir, serverConfig, dbModels, newDb...)
 	ctx.ClientApp, ctx.RestApiClient = initClient(t, test_utils.BBGinEngine(t, ctx.Server), testDir, clientConfig)
 
 	ctx.ClientOp = test_utils.SimpleOpContext(ctx.ClientApp, t.Name())
@@ -102,9 +103,11 @@ func InitTest(t *testing.T, packageName string, testDir string, dbModels []inter
 	// add superadmin for remote admin manager login
 	superadmin := "superadmin"
 	superpassword := "superpassword"
-	user1, err := ctx.LocalAdminManager.Add(ctx.AdminOp, superadmin, superpassword)
-	require.NoErrorf(t, err, "failed to add superadmin")
-	require.NotNil(t, user1)
+	if utils.OptionalArg(true, newDb...) {
+		user1, err := ctx.LocalAdminManager.Add(ctx.AdminOp, superadmin, superpassword)
+		require.NoErrorf(t, err, "failed to add superadmin")
+		require.NotNil(t, user1)
+	}
 
 	// login with client
 	restApiClient, ok := ctx.RestApiClient.Transport().(rest_api_client.RestApiClient)

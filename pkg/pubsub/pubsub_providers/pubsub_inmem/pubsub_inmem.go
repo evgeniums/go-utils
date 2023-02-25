@@ -9,6 +9,8 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_subscriber"
 )
 
+const Provider string = "inmem"
+
 type PubsubInmem struct {
 	pubsub_subscriber.SubscriberBase
 	pubsub.PublisherBase

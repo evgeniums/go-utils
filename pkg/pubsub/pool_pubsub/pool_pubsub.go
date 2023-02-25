@@ -52,38 +52,60 @@ func NewPubsub(factory ...pubsub_factory.PubsubFactory) *PoolPubsubBase {
 func (p *PoolPubsubBase) Init(app app_context.Context, pools pool.PoolStore) error {
 
 	makePublisher := func(poo pool.Pool) (pubsub.Publisher, *pubsub_factory.PubsubConfig, error) {
+
+		fields := db.Fields{"pool_id": poo.GetID(), "pool_name": poo.Name()}
+
 		service, err := poo.Service(pool.TypePubsub)
 		if err != nil {
-			return nil, nil, app.Logger().PushFatalStack("failed to find pubsub service in self pool", err)
+			return nil, nil, app.Logger().PushFatalStack("failed to find pubsub service in pool", err, fields)
+		}
+		if !service.IsActive() {
+			fields["service_name"] = service.ServiceName
+			app.Logger().Warn("Pubsub skipped for inactive service", fields)
+			return nil, nil, nil
 		}
 		cfg := &pubsub_factory.PubsubConfig{PoolService: service}
 		publisher, err := p.factory.MakePublisher(app, cfg)
 		if err != nil {
-			return nil, nil, app.Logger().PushFatalStack("failed to make pubsub publisher for pool", err, db.Fields{"pool_id": poo.GetID(), "pool_name": poo.Name()})
+			return nil, nil, app.Logger().PushFatalStack("failed to make pubsub publisher for pool", err, fields)
 		}
 		p.publishers[poo.GetID()] = publisher
+		app.Logger().Info("Pubsub publisher connected", fields)
 		return publisher, cfg, nil
 	}
 
 	makeSubscriber := func(poo pool.Pool, cfg *pubsub_factory.PubsubConfig) (pubsub_subscriber.Subscriber, error) {
+
+		fields := db.Fields{"pool_id": poo.GetID(), "pool_name": poo.Name()}
+
 		subscriber, err := p.factory.MakeSubscriber(app, cfg)
 		if err != nil {
-			return nil, app.Logger().PushFatalStack("failed to make pubsub subscriber for pool", err, db.Fields{"pool_id": poo.GetID(), "pool_name": poo.Name()})
+			return nil, app.Logger().PushFatalStack("failed to make pubsub subscriber for pool", err, fields)
 		}
 		p.subscribers[poo.GetID()] = subscriber
+		app.Logger().Info("Pubsub subscriber connected", fields)
 		return subscriber, nil
 	}
 
 	selfPool, err := pools.SelfPool()
-	if err == nil && selfPool.IsActive() {
+	if err == nil {
+
+		if !selfPool.IsActive() {
+			fields := db.Fields{"pool_id": selfPool.GetID(), "pool_name": selfPool.Name()}
+			app.Logger().Warn("Pubsub skipped for inactive pool", fields)
+			return nil
+		}
+
 		var cfg *pubsub_factory.PubsubConfig
 		p.selfPoolPublisher, cfg, err = makePublisher(selfPool)
 		if err != nil {
 			return app.Logger().PushFatalStack("failed to make pubsub publisher in self pool", err)
 		}
-		p.selfPoolSubscriber, err = makeSubscriber(selfPool, cfg)
-		if err != nil {
-			return app.Logger().PushFatalStack("failed to make pubsub subscriber in self pool", err)
+		if cfg != nil {
+			p.selfPoolSubscriber, err = makeSubscriber(selfPool, cfg)
+			if err != nil {
+				return app.Logger().PushFatalStack("failed to make pubsub subscriber in self pool", err)
+			}
 		}
 		return nil
 	}
@@ -94,10 +116,15 @@ func (p *PoolPubsubBase) Init(app app_context.Context, pools pool.PoolStore) err
 			if err != nil {
 				return err
 			}
-			_, err = makeSubscriber(pool, cfg)
-			if err != nil {
-				return err
+			if cfg != nil {
+				_, err = makeSubscriber(pool, cfg)
+				if err != nil {
+					return err
+				}
 			}
+		} else {
+			fields := db.Fields{"pool_id": pool.GetID(), "pool_name": pool.Name()}
+			app.Logger().Warn("Pubsub skipped for inactive pool", fields)
 		}
 	}
 
