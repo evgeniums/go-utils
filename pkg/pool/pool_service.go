@@ -66,6 +66,7 @@ type ServiceConfigBase struct {
 	PRIVATE_PORT    uint16 `gorm:"index" json:"private_port" long:"private-port" description:"Private port of the service (optional)"`
 	PRIVATE_URL     string `gorm:"index" json:"private_url" long:"private-url" description:"Private URL of the service (optional)"`
 	USER            string `gorm:"index" json:"user" long:"user" description:"User for login to the service (optional)"`
+	DB_NAME         string `gorm:"index;column:db_name" json:"db_name" long:"db_name" description:"Name of database (optional)"`
 	PARAMETER1      string `gorm:"index;column:parameter1" json:"parameter1" long:"parameter1" description:"Generic parameter1 of the service (optional)"`
 	PARAMETER2      string `gorm:"index;column:parameter2" json:"parameter2" long:"parameter2" description:"Generic parameter2 of the service (optional)"`
 	PARAMETER3      string `gorm:"index;column:parameter3" json:"parameter3" long:"parameter3" description:"Generic parameter3 of the service (optional)"`
@@ -76,6 +77,10 @@ type ServiceConfigBase struct {
 
 func (s *ServiceConfigBase) User() string {
 	return s.USER
+}
+
+func (s *ServiceConfigBase) DbName() string {
+	return s.DB_NAME
 }
 
 func (s *ServiceConfigBase) PublicHost() string {

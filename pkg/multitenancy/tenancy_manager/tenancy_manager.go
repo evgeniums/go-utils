@@ -61,9 +61,12 @@ type TenancyManager struct {
 	Pools                      pool.PoolStore
 	Customers                  customer.CustomerController
 	DbModels                   []interface{}
-	PubsubTopic                multitenancy.PubsubTopic
+	PubsubTopic                *multitenancy.PubsubTopic
 	PoolPubsub                 pool_pubsub.PoolPubsub
 	tenancyNotificationHandler *TenancyNotificationHandler
+
+	selfTopicSubscription   string
+	poolTopicsSubscriptions map[string]string
 }
 
 func NewTenancyManager(pools pool.PoolStore, poolPubsub pool_pubsub.PoolPubsub, dbModels []interface{}) *TenancyManager {
@@ -73,6 +76,7 @@ func NewTenancyManager(pools pool.PoolStore, poolPubsub pool_pubsub.PoolPubsub, 
 	m.tenanciesByPath = make(map[string]multitenancy.Tenancy)
 	m.DbModels = append(dbModels, multitenancy.DbInternalModels()...)
 	m.PoolPubsub = poolPubsub
+	m.PubsubTopic = &multitenancy.PubsubTopic{}
 
 	m.tenancyNotificationHandler = &TenancyNotificationHandler{manager: m}
 	m.tenancyNotificationHandler.Init("tenancy_manager")
@@ -112,7 +116,7 @@ func (t *TenancyManager) Init(ctx op_context.Context, configPath ...string) erro
 	if selfPoolErr == nil && selfPool != nil {
 		// subscribe to notifications only from self pool
 		if selfPool.IsActive() {
-			err = t.PoolPubsub.SubscribeSelfPool(&t.PubsubTopic)
+			t.selfTopicSubscription, err = t.PoolPubsub.SubscribeSelfPool(ctx, t.PubsubTopic)
 			if err != nil {
 				c.SetError(err)
 				return ctx.Logger().PushFatalStack("failed to subscribe to pubsub notifications in self pool", err)
@@ -120,7 +124,7 @@ func (t *TenancyManager) Init(ctx op_context.Context, configPath ...string) erro
 		}
 	} else {
 		// subscribe to notifications from all pools
-		err = t.PoolPubsub.SubscribePools(&t.PubsubTopic)
+		t.poolTopicsSubscriptions, err = t.PoolPubsub.SubscribePools(ctx, t.PubsubTopic)
 		if err != nil {
 			c.SetError(err)
 			return ctx.Logger().PushFatalStack("failed to subscribe to pubsub notifications in all pools", err)

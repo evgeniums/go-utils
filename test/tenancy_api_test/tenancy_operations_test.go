@@ -16,7 +16,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api/pool_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api/pool_service"
-	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_providers/pubsub_inmem"
+	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_providers/pubsub_factory"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/test/api_test"
@@ -32,7 +32,7 @@ func dbModels() []interface{} {
 	return utils.ConcatSlices(admin.DbModels(), pool.DbModels(), customer.DbModels(), multitenancy.DbModels())
 }
 
-type testContext struct {
+type TenancyTestContext struct {
 	*pool_test_utils.PoolTestContext
 
 	LocalCustomerManager *customer.Manager
@@ -43,7 +43,7 @@ type testContext struct {
 	AppWithTenancy *app_with_multitenancy.AppWithMultitenancyBase
 }
 
-func initContext(t *testing.T, newDb bool, configPrefix ...string) *testContext {
+func initContext(t *testing.T, newDb bool, configPrefix ...string) *TenancyTestContext {
 
 	var appWithTenancy *app_with_multitenancy.AppWithMultitenancyBase
 
@@ -62,7 +62,7 @@ func initContext(t *testing.T, newDb bool, configPrefix ...string) *testContext 
 	}
 	test_utils.SetAppHandlers(buildApp, initApp)
 
-	ctx := &testContext{}
+	ctx := &TenancyTestContext{}
 	ctx.PoolTestContext = &pool_test_utils.PoolTestContext{}
 	ctx.TestContext = api_test.InitTest(t, utils.OptionalArg("tenancy", configPrefix...), testDir, dbModels(), newDb)
 	require.NotNil(t, appWithTenancy)
@@ -82,7 +82,7 @@ func initContext(t *testing.T, newDb bool, configPrefix ...string) *testContext 
 	return ctx
 }
 
-func preparePools(t *testing.T, ctx *testContext, names ...string) []pool.Pool {
+func preparePools(t *testing.T, ctx *TenancyTestContext, names ...string) []pool.Pool {
 
 	pools := make([]pool.Pool, len(names))
 	for i, name := range names {
@@ -97,9 +97,10 @@ type TenancyServiceConfig struct {
 	Name     string
 	Type     string
 	Provider string
+	DbName   string
 }
 
-func prepareServices(t *testing.T, ctx *testContext, configs ...*TenancyServiceConfig) []pool.PoolService {
+func prepareServices(t *testing.T, ctx *TenancyTestContext, configs ...*TenancyServiceConfig) []pool.PoolService {
 
 	services := make([]pool.PoolService, len(configs))
 	for i, config := range configs {
@@ -107,6 +108,7 @@ func prepareServices(t *testing.T, ctx *testContext, configs ...*TenancyServiceC
 		cfg := pool_test_utils.DefaultServiceConfig(config.Name)
 		cfg.PROVIDER = config.Provider
 		cfg.TYPE_NAME = config.Type
+		cfg.DB_NAME = config.DbName
 
 		service := pool_test_utils.AddService(t, ctx.PoolTestContext, cfg)
 		services[i] = service
@@ -121,7 +123,7 @@ type TenancyPoolConfig struct {
 	PubsubService TenancyServiceConfig
 }
 
-func preparePoolServices(t *testing.T, ctx *testContext, config TenancyPoolConfig) pool.Pool {
+func preparePoolServices(t *testing.T, ctx *TenancyTestContext, config *TenancyPoolConfig) pool.Pool {
 
 	pools := preparePools(t, ctx, config.PoolName)
 	p := pools[0]
@@ -134,7 +136,7 @@ func preparePoolServices(t *testing.T, ctx *testContext, config TenancyPoolConfi
 	return p
 }
 
-func TestInit(t *testing.T) {
+func preparePoolAndServices(t *testing.T, activatePools bool) (p1 pool.Pool, poolConfig1 *TenancyPoolConfig, p2 pool.Pool, poolConfig2 *TenancyPoolConfig) {
 
 	prepareCtx := initContext(t, true)
 
@@ -145,21 +147,45 @@ func TestInit(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, selfPool1)
 
-	poolConfig1 := TenancyPoolConfig{
+	poolConfig1 = &TenancyPoolConfig{
 		PoolName: "pool1",
 	}
 	poolConfig1.DbService = TenancyServiceConfig{Name: "database_service1", Type: pool.TypeDatabase, Provider: "sqlite"}
-	poolConfig1.PubsubService = TenancyServiceConfig{Name: "pubsub_service1", Type: pool.TypePubsub, Provider: pubsub_inmem.Provider}
-	p1 := preparePoolServices(t, prepareCtx, poolConfig1)
+	poolConfig1.PubsubService = TenancyServiceConfig{Name: "pubsub_service1", Type: pool.TypePubsub, Provider: pubsub_factory.SingletonInmemProvider, DbName: "0"}
+	p1 = preparePoolServices(t, prepareCtx, poolConfig1)
 
-	poolConfig2 := TenancyPoolConfig{
+	poolConfig2 = &TenancyPoolConfig{
 		PoolName: "pool2",
 	}
 	poolConfig2.DbService = TenancyServiceConfig{Name: "database_service2", Type: pool.TypeDatabase, Provider: "sqlite"}
-	poolConfig2.PubsubService = TenancyServiceConfig{Name: "pubsub_service2", Type: pool.TypePubsub, Provider: pubsub_inmem.Provider}
-	p2 := preparePoolServices(t, prepareCtx, poolConfig2)
+	poolConfig2.PubsubService = TenancyServiceConfig{Name: "pubsub_service2", Type: pool.TypePubsub, Provider: pubsub_factory.SingletonInmemProvider, DbName: "1"}
+	p2 = preparePoolServices(t, prepareCtx, poolConfig2)
+
+	if activatePools {
+		_, err = pool.ActivatePool(prepareCtx.RemotePoolController, prepareCtx.ClientOp, p1.GetID())
+		require.NoError(t, err)
+		_, err = pool.ActivatePool(prepareCtx.RemotePoolController, prepareCtx.ClientOp, p2.GetID())
+		require.NoError(t, err)
+	}
 
 	prepareCtx.Close()
+
+	return
+}
+
+func PrepareAppWithTenancies(t *testing.T) (multiPoolCtx *TenancyTestContext, singlePoolCtx *TenancyTestContext) {
+
+	preparePoolAndServices(t, true)
+
+	multiPoolCtx = initContext(t, false)
+	singlePoolCtx = initContext(t, false, "tenancy_single")
+
+	return
+}
+
+func TestInit(t *testing.T) {
+
+	p1, poolConfig1, p2, poolConfig2 := preparePoolAndServices(t, false)
 
 	allPoolsCtx := initContext(t, false)
 
@@ -217,5 +243,11 @@ func TestInit(t *testing.T) {
 	require.NotNil(t, selfPool)
 	assert.Equal(t, pool2, selfPool)
 
+	singlePoolCtx.Close()
+}
+
+func TestPrepareAppWithTenancies(t *testing.T) {
+	multiPoolCtx, singlePoolCtx := PrepareAppWithTenancies(t)
+	multiPoolCtx.Close()
 	singlePoolCtx.Close()
 }

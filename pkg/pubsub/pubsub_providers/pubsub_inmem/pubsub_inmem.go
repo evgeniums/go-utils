@@ -27,12 +27,12 @@ func (p *PubsubInmem) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (p *PubsubInmem) Subscribe(topic pubsub_subscriber.Topic) error {
+func (p *PubsubInmem) Subscribe(topic pubsub_subscriber.Topic) (string, error) {
 	return p.AddTopic(topic)
 }
 
-func (p *PubsubInmem) Unsubscribe(topicName string) {
-	p.DeleteTopic(topicName)
+func (p *PubsubInmem) Unsubscribe(topicName string, subscriptionId ...string) {
+	p.DeleteTopic(topicName, subscriptionId...)
 }
 
 func (p *PubsubInmem) Publish(topicName string, obj interface{}) error {

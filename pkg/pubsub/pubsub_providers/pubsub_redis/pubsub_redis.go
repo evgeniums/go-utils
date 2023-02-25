@@ -109,22 +109,28 @@ func NewSubscriber(app app_context.Context, serializer ...message.Serializer) *S
 	return s
 }
 
-func (s *Subscriber) Subscribe(topic pubsub_subscriber.Topic) error {
+func (s *Subscriber) Subscribe(topic pubsub_subscriber.Topic) (string, error) {
 
-	err := s.AddTopic(topic)
+	subscriptionId, err := s.AddTopic(topic)
 	if err != nil {
-		return err
+		return "", err
+	}
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	_, exists := s.channels[topic.Name()]
+	if exists {
+		return subscriptionId, nil
 	}
 
 	channel := s.redisClient.Subscribe(s.context, topic.Name())
 	_, err = channel.Receive(s.context)
 	if err != nil {
-		return fmt.Errorf("failed to receive from redis pubsub channel: %s", err)
+		return "", fmt.Errorf("failed to receive from redis pubsub channel: %s", err)
 	}
 
-	s.mutex.Lock()
 	s.channels[topic.Name()] = channel
-	s.mutex.Unlock()
 
 	ch := channel.Channel()
 	readMessages := func() {
@@ -136,23 +142,24 @@ func (s *Subscriber) Subscribe(topic pubsub_subscriber.Topic) error {
 	}
 	go readMessages()
 
-	return nil
+	return subscriptionId, nil
 }
 
-func (s *Subscriber) Unsubscribe(topicName string) {
+func (s *Subscriber) Unsubscribe(topicName string, subscriptionId ...string) {
+
+	unsubscribe := s.DeleteTopic(topicName, subscriptionId...)
+	if !unsubscribe {
+		return
+	}
 
 	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	channel, ok := s.channels[topicName]
-	s.mutex.Unlock()
 	if !ok {
 		return
 	}
 
 	channel.Unsubscribe(s.context)
-
-	s.mutex.Lock()
 	delete(s.channels, topicName)
-	s.mutex.Unlock()
-
-	s.DeleteTopic(topicName)
 }

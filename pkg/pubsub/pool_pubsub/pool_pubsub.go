@@ -7,6 +7,8 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
+	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub"
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_providers/pubsub_factory"
@@ -19,13 +21,11 @@ type PoolPubsub interface {
 	PublishSelfPool(topicName string, msg interface{}) error
 	PublishPools(topicName string, msg interface{}, poolIds ...string) error
 
-	SubscribeSelfPool(topic pubsub_subscriber.Topic) error
+	SubscribeSelfPool(ctx op_context.Context, topic pubsub_subscriber.Topic) (string, error)
 	UnsubscribeSelfPool(topicName string)
-	SubscriberTopicInSelfPool(topicName string) (pubsub_subscriber.Topic, error)
 
-	SubscribePools(topic pubsub_subscriber.Topic, poolIds ...string) error
+	SubscribePools(ctx op_context.Context, topic pubsub_subscriber.Topic, poolIds ...string) (map[string]string, error)
 	UnsubscribePools(topicName string, poolIds ...string)
-	SubscriberTopicInPool(topicName string, poolId string) (pubsub_subscriber.Topic, error)
 }
 
 type PoolPubsubBase struct {
@@ -185,11 +185,21 @@ func (p *PoolPubsubBase) PublishPools(topicName string, msg interface{}, poolIds
 	return nil
 }
 
-func (p *PoolPubsubBase) SubscribeSelfPool(topic pubsub_subscriber.Topic) error {
+func (p *PoolPubsubBase) SubscribeSelfPool(ctx op_context.Context, topic pubsub_subscriber.Topic) (string, error) {
+
+	c := ctx.TraceInMethod("PoolPubsub.SubscribeSelfPool", logger.Fields{"topic": topic.Name(), "app": ctx.App().AppInstance()})
+	defer ctx.TraceOutMethod()
+
 	if p.selfPoolSubscriber == nil {
-		return errors.New("self pool subscriber not set")
+		return "", c.SetErrorStr("self pool subscriber not set")
 	}
-	return p.selfPoolSubscriber.Subscribe(topic)
+	subscriptionId, err := p.selfPoolSubscriber.Subscribe(topic)
+	if err != nil {
+		return "", c.SetError(err)
+	}
+	c.SetLoggerField("subscription_id", subscriptionId)
+	c.Logger().Debug("topic was subscribed to self pool")
+	return subscriptionId, nil
 }
 
 func (p *PoolPubsubBase) UnsubscribeSelfPool(topicName string) {
@@ -198,35 +208,46 @@ func (p *PoolPubsubBase) UnsubscribeSelfPool(topicName string) {
 	}
 }
 
-func (p *PoolPubsubBase) SubscriberTopicInSelfPool(topicName string) (pubsub_subscriber.Topic, error) {
-	if p.selfPoolSubscriber == nil {
-		return nil, errors.New("self pool subscriber not set")
-	}
-	return p.selfPoolSubscriber.Topic(topicName)
-}
+func (p *PoolPubsubBase) SubscribePools(ctx op_context.Context, topic pubsub_subscriber.Topic, poolIds ...string) (map[string]string, error) {
 
-func (p *PoolPubsubBase) SubscribePools(topic pubsub_subscriber.Topic, poolIds ...string) error {
+	c := ctx.TraceInMethod("PoolPubsub.SubscribePools", logger.Fields{"topic": topic.Name(), "app": ctx.App().AppInstance()})
+	defer ctx.TraceOutMethod()
+
+	poolSubscriptions := make(map[string]string)
+
 	if len(poolIds) == 0 {
 		// subscribe to all pools
 		for poolId, subscriber := range p.subscribers {
-			err := subscriber.Subscribe(topic)
+			c.SetLoggerField("pool_id", poolId)
+			subscriptionId, err := subscriber.Subscribe(topic)
 			if err != nil {
-				return fmt.Errorf("failed to subscribe to %s pool", poolId)
+				c.SetMessage("failed to subscribe topic to pool")
+				return nil, c.SetError(err)
 			}
+			c.SetLoggerField("subscription_id", subscriptionId)
+			poolSubscriptions[poolId] = subscriptionId
+			c.Logger().Debug("topic was subscribed to pool")
 		}
 	} else {
 		// subscribe to specific pools
 		for _, poolId := range poolIds {
+			c.SetLoggerField("pool_id", poolId)
 			subscriber, ok := p.subscribers[poolId]
 			if ok {
-				err := subscriber.Subscribe(topic)
+				subscriptionId, err := subscriber.Subscribe(topic)
 				if err != nil {
-					return fmt.Errorf("failed to subscribe to %s pool", poolId)
+					c.SetMessage("failed to subscribe topic to pool")
+					return nil, c.SetError(err)
 				}
+				c.SetLoggerField("subscription_id", subscriptionId)
+				poolSubscriptions[poolId] = subscriptionId
+				c.Logger().Debug("topic was subscribed to pool")
+			} else {
+				c.Logger().Warn("pubsub subscriber not found in pool")
 			}
 		}
 	}
-	return nil
+	return poolSubscriptions, nil
 }
 
 func (p *PoolPubsubBase) UnsubscribePools(topicName string, poolIds ...string) {
@@ -244,12 +265,4 @@ func (p *PoolPubsubBase) UnsubscribePools(topicName string, poolIds ...string) {
 			}
 		}
 	}
-}
-
-func (p *PoolPubsubBase) SubscriberTopicInPool(topicName string, poolId string) (pubsub_subscriber.Topic, error) {
-	subscriber, ok := p.subscribers[poolId]
-	if !ok {
-		return nil, errors.New("no subscriber for that pool")
-	}
-	return subscriber.Topic(topicName)
 }

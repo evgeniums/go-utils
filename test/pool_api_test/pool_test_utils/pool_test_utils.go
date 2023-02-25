@@ -90,6 +90,7 @@ func DefaultServiceConfig(serviceName ...string) *pool.PoolServiceBaseEssentials
 	p1Sample.ServiceConfigBase.PARAMETER1 = "param1"
 	p1Sample.ServiceConfigBase.PARAMETER2 = "param2"
 	p1Sample.ServiceConfigBase.PARAMETER3 = "param3"
+	p1Sample.ServiceConfigBase.DB_NAME = "dbname1"
 
 	return p1Sample
 }

@@ -15,7 +15,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
-const SingletonInmem string = "singleton_inmem"
+const SingletonInmemProvider string = "singleton_inmem"
 
 type PubsubConfigI interface {
 	GetPoolService() *pool.PoolServiceBinding
@@ -40,11 +40,11 @@ type PubsubFactory interface {
 	MakeSubscriber(app app_context.Context, config ...PubsubConfigI) (pubsub_subscriber.Subscriber, error)
 }
 
-var singletonInmem *pubsub_inmem.PubsubInmem
+var singletonInmem map[string]*pubsub_inmem.PubsubInmem
 
 type PubsubFactoryBase struct {
 	serializer message.Serializer
-	inmem      *pubsub_inmem.PubsubInmem
+	inmems     map[string]*pubsub_inmem.PubsubInmem
 }
 
 func splitConfig(app app_context.Context, config ...PubsubConfigI) (*pool.PoolServiceBinding, string) {
@@ -68,24 +68,34 @@ func provider(app app_context.Context, poolService *pool.PoolServiceBinding, con
 	return provider
 }
 
-func (p *PubsubFactoryBase) MakeInmemPubsub(app app_context.Context) (*pubsub_inmem.PubsubInmem, error) {
+func (p *PubsubFactoryBase) MakeInmemPubsub(app app_context.Context, poolService *pool.PoolServiceBinding) (*pubsub_inmem.PubsubInmem, error) {
 
-	if p.inmem != nil {
-		return p.inmem, nil
+	inmem, found := p.inmems[poolService.DbName()]
+	if found {
+		return inmem, nil
 	}
 
-	p.inmem = pubsub_inmem.New(app, p.serializer)
-	return p.inmem, nil
+	inmem = pubsub_inmem.New(app, p.serializer)
+	p.inmems[poolService.DbName()] = inmem
+
+	return inmem, nil
 }
 
-func MakeSingletonInmemPubsub(serializer message.Serializer, app app_context.Context) (*pubsub_inmem.PubsubInmem, error) {
+func MakeSingletonInmemPubsub(serializer message.Serializer, app app_context.Context, poolService *pool.PoolServiceBinding) (*pubsub_inmem.PubsubInmem, error) {
 
-	if singletonInmem != nil {
-		return singletonInmem, nil
+	if singletonInmem == nil {
+		singletonInmem = make(map[string]*pubsub_inmem.PubsubInmem)
 	}
 
-	singletonInmem = pubsub_inmem.New(app, serializer)
-	return singletonInmem, nil
+	inmem, found := singletonInmem[poolService.DbName()]
+	if found {
+		return inmem, nil
+	}
+
+	inmem = pubsub_inmem.New(app, serializer)
+	singletonInmem[poolService.DbName()] = inmem
+
+	return inmem, nil
 }
 
 func (p *PubsubFactoryBase) MakePublisher(app app_context.Context, config ...PubsubConfigI) (pubsub.Publisher, error) {
@@ -94,14 +104,40 @@ func (p *PubsubFactoryBase) MakePublisher(app app_context.Context, config ...Pub
 	provider := provider(app, poolService, configPath)
 	if provider == pubsub_redis.Provider {
 		publisher := pubsub_redis.NewPublisher(p.serializer)
+		err := initRedis(app, &publisher.RedisClient, poolService, configPath)
+		if err != nil {
+			return nil, err
+		}
 		return publisher, nil
 	} else if provider == pubsub_inmem.Provider {
-		return p.MakeInmemPubsub(app)
-	} else if provider == SingletonInmem {
-		return MakeSingletonInmemPubsub(p.serializer, app)
+		return p.MakeInmemPubsub(app, poolService)
+	} else if provider == SingletonInmemProvider {
+		return MakeSingletonInmemPubsub(p.serializer, app, poolService)
 	}
 
 	return nil, errors.New("unknown provider")
+}
+
+func initRedis(app app_context.Context, r *pubsub_redis.RedisClient, poolService *pool.PoolServiceBinding, configPath string) error {
+
+	if poolService == nil {
+		return r.Init(app.Cfg(), app.Logger(), app.Validator(), configPath)
+	}
+
+	cfg := &pubsub_redis.RedisConfig{}
+	cfg.Host = poolService.PrivateHost()
+	cfg.Port = poolService.PrivatePort()
+	cfg.Password = poolService.Secret1()
+	db := 0
+	if poolService.DbName() != "" {
+		dbU, err := utils.StrToUint32(poolService.DbName())
+		if err != nil {
+			return errors.New("invalid number of redis database")
+		}
+		db = int(dbU)
+	}
+	cfg.Db = db
+	return r.InitWithConfig(app.Logger(), cfg)
 }
 
 func (p *PubsubFactoryBase) MakeSubscriber(app app_context.Context, config ...PubsubConfigI) (pubsub_subscriber.Subscriber, error) {
@@ -111,34 +147,14 @@ func (p *PubsubFactoryBase) MakeSubscriber(app app_context.Context, config ...Pu
 
 	if provider == pubsub_redis.Provider {
 		subsciber := pubsub_redis.NewSubscriber(app, p.serializer)
-		var err error
-
-		if poolService == nil {
-			err = subsciber.Init(app.Cfg(), app.Logger(), app.Validator(), configPath)
-		} else {
-			cfg := &pubsub_redis.RedisConfig{}
-			cfg.Host = poolService.PrivateHost()
-			cfg.Port = poolService.PrivatePort()
-			cfg.Password = poolService.Secret1()
-			db := 0
-			if poolService.Parameter1() != "" {
-				dbU, err := utils.StrToUint32(poolService.Parameter1())
-				if err != nil {
-					return nil, errors.New("invalid number of redis database")
-				}
-				db = int(dbU)
-			}
-			cfg.Db = db
-			err = subsciber.InitWithConfig(app.Logger(), cfg)
-		}
-
+		err := initRedis(app, &subsciber.RedisClient, poolService, configPath)
 		if err != nil {
 			return nil, err
 		}
 	} else if provider == pubsub_inmem.Provider {
-		return p.MakeInmemPubsub(app)
-	} else if provider == SingletonInmem {
-		return MakeSingletonInmemPubsub(p.serializer, app)
+		return p.MakeInmemPubsub(app, poolService)
+	} else if provider == SingletonInmemProvider {
+		return MakeSingletonInmemPubsub(p.serializer, app, poolService)
 	}
 
 	return nil, errors.New("unknown provider")
@@ -147,5 +163,6 @@ func (p *PubsubFactoryBase) MakeSubscriber(app app_context.Context, config ...Pu
 func DefaultPubsubFactory(serializer ...message.Serializer) PubsubFactory {
 	f := &PubsubFactoryBase{}
 	f.serializer = utils.OptionalArg(message.Serializer(message_json.Serializer), serializer...)
+	f.inmems = make(map[string]*pubsub_inmem.PubsubInmem)
 	return f
 }
