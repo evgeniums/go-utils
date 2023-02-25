@@ -81,6 +81,7 @@ type Context interface {
 	SetOrigin(o Origin)
 	Origin() Origin
 
+	ClearError()
 	Reset()
 	Close(successMessage ...string)
 }

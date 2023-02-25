@@ -1,6 +1,7 @@
 package pool_api_test
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -13,6 +14,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/app_with_multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_api/tenancy_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_api/tenancy_service"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api/pool_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api/pool_service"
@@ -69,7 +71,9 @@ func initContext(t *testing.T, newDb bool, configPrefix ...string) *TenancyTestC
 	ctx.LocalPoolController = appWithTenancy.Pools().PoolController()
 	ctx.RemotePoolController = pool_client.NewPoolClient(ctx.RestApiClient)
 	ctx.LocalCustomerManager = customer.NewManager()
+	ctx.LocalCustomerManager.Init(appWithTenancy.Validator())
 	ctx.LocalTenancyController = appWithTenancy.Multitenancy().TenancyController()
+	ctx.RemoteTenancyController = tenancy_client.NewTenancyClient(ctx.RestApiClient)
 
 	poolService := pool_service.NewPoolService(appWithTenancy.Pools().PoolController())
 	api_server.AddServiceToServer(ctx.Server.ApiServer(), poolService)
@@ -109,6 +113,7 @@ func prepareServices(t *testing.T, ctx *TenancyTestContext, configs ...*TenancyS
 		cfg.PROVIDER = config.Provider
 		cfg.TYPE_NAME = config.Type
 		cfg.DB_NAME = config.DbName
+		cfg.PRIVATE_URL = ""
 
 		service := pool_test_utils.AddService(t, ctx.PoolTestContext, cfg)
 		services[i] = service
@@ -130,7 +135,7 @@ func preparePoolServices(t *testing.T, ctx *TenancyTestContext, config *TenancyP
 
 	services := prepareServices(t, ctx, &config.DbService, &config.PubsubService)
 
-	require.NoError(t, ctx.RemotePoolController.AddServiceToPool(ctx.ClientOp, p.GetID(), services[0].GetID(), pool.TypeDatabase))
+	require.NoError(t, ctx.RemotePoolController.AddServiceToPool(ctx.ClientOp, p.GetID(), services[0].GetID(), multitenancy.TENANCY_DATABASE_ROLE))
 	require.NoError(t, ctx.RemotePoolController.AddServiceToPool(ctx.ClientOp, p.GetID(), services[1].GetID(), pool.TypePubsub))
 
 	return p
@@ -180,6 +185,13 @@ func PrepareAppWithTenancies(t *testing.T) (multiPoolCtx *TenancyTestContext, si
 	multiPoolCtx = initContext(t, false)
 	singlePoolCtx = initContext(t, false, "tenancy_single")
 
+	customer1, err := multiPoolCtx.LocalCustomerManager.Add(multiPoolCtx.AdminOp, "customer1", "12345678")
+	require.NoError(t, err)
+	require.NotNil(t, customer1)
+	customer2, err := multiPoolCtx.LocalCustomerManager.Add(multiPoolCtx.AdminOp, "customer2", "12345678")
+	require.NoError(t, err)
+	require.NotNil(t, customer2)
+
 	return
 }
 
@@ -206,7 +218,7 @@ func TestInit(t *testing.T) {
 	nopool, err := pools.PoolByName("unknown_name")
 	assert.Error(t, err)
 	assert.Empty(t, nopool)
-	dbService1, err := pool1.Service(pool.TypeDatabase)
+	dbService1, err := pool1.Service(multitenancy.TENANCY_DATABASE_ROLE)
 	require.NoError(t, err)
 	require.NotEmpty(t, dbService1)
 	assert.Equal(t, "database_service1", dbService1.ServiceName)
@@ -221,7 +233,7 @@ func TestInit(t *testing.T) {
 	pool2, err = pools.Pool(p2.GetID())
 	require.NoError(t, err)
 	require.NotEmpty(t, pool2)
-	dbService2, err := pool2.Service(pool.TypeDatabase)
+	dbService2, err := pool2.Service(multitenancy.TENANCY_DATABASE_ROLE)
 	require.NoError(t, err)
 	require.NotEmpty(t, dbService2)
 	assert.Equal(t, "database_service2", dbService2.ServiceName)
@@ -244,10 +256,100 @@ func TestInit(t *testing.T) {
 	assert.Equal(t, pool2, selfPool)
 
 	singlePoolCtx.Close()
+	pubsub_factory.ResetSingletonInmemPubsub()
 }
 
 func TestPrepareAppWithTenancies(t *testing.T) {
 	multiPoolCtx, singlePoolCtx := PrepareAppWithTenancies(t)
 	multiPoolCtx.Close()
 	singlePoolCtx.Close()
+	pubsub_factory.ResetSingletonInmemPubsub()
+}
+
+func TestAddTenancy(t *testing.T) {
+
+	// prepare app with multiple pools and single pool
+	multiPoolCtx, singlePoolCtx := PrepareAppWithTenancies(t)
+
+	// add first tenancy to the same pool as single pool app, add via mutipool app
+	tenancyData1 := &multitenancy.TenancyData{}
+	tenancyData1.POOL_ID = "pool2"
+	tenancyData1.ROLE = "dev"
+	tenancyData1.DESCRIPTION = "tenancy for development"
+	tenancyData1.CUSTOMER_ID = "customer1"
+	addedTenancy1, err := multiPoolCtx.RemoteTenancyController.Add(multiPoolCtx.ClientOp, tenancyData1)
+	require.NoError(t, err)
+	require.NotNil(t, addedTenancy1)
+	b1, _ := json.MarshalIndent(addedTenancy1, "", "  ")
+	t.Logf("Added tenancy: \n\n%s\n\n", string(b1))
+
+	// check if tenancy was loaded by single app
+	loadedTenancy1, err := singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, loadedTenancy1)
+	loadedT1, ok := loadedTenancy1.(*tenancy_manager.TenancyBase)
+	require.True(t, ok)
+	b2, _ := json.MarshalIndent(loadedT1.TenancyDb, "", "  ")
+	t.Logf("Loaded tenancy: \n\n%s\n\n", string(b2))
+	assert.Equal(t, addedTenancy1.TenancyDb, loadedT1.TenancyDb)
+
+	// add second tenancy to pool different from single pool app, add via mutipool app
+	tenancyData2 := &multitenancy.TenancyData{}
+	tenancyData2.POOL_ID = "pool1"
+	tenancyData2.ROLE = "stage"
+	tenancyData2.DESCRIPTION = "tenancy for stage"
+	tenancyData2.CUSTOMER_ID = "customer1"
+	addedTenancy2, err := multiPoolCtx.RemoteTenancyController.Add(multiPoolCtx.ClientOp, tenancyData2)
+	require.NoError(t, err)
+	require.NotNil(t, addedTenancy2)
+
+	// check if the second tenancy was not loaded by single pool app
+	loadedTenancy2, err := singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy2.GetID())
+	require.Error(t, err)
+	assert.Nil(t, loadedTenancy2)
+
+	// close apps
+	multiPoolCtx.Close()
+	singlePoolCtx.Close()
+	pubsub_factory.ResetSingletonInmemPubsub()
+
+	// re-init single pool app
+	singlePoolCtx = initContext(t, false, "tenancy_single")
+
+	// check if the first tenancy was loaded by single app on initialization
+	loadedTenancy1, err = singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, loadedTenancy1)
+	loadedT1, ok = loadedTenancy1.(*tenancy_manager.TenancyBase)
+	require.True(t, ok)
+	assert.Equal(t, addedTenancy1.TenancyDb, loadedT1.TenancyDb)
+	// check if the second tenancy was not loaded by single app on initialization
+	loadedTenancy2, err = singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy2.GetID())
+	require.Error(t, err)
+	assert.Nil(t, loadedTenancy2)
+
+	// re-init multiple pool app
+
+	// check if the first tenancy was loaded by multipool app on initialization
+	multiPoolCtx = initContext(t, false)
+	loadedTenancy1, err = multiPoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, loadedTenancy1)
+	loadedT1, ok = loadedTenancy1.(*tenancy_manager.TenancyBase)
+	require.True(t, ok)
+	assert.Equal(t, addedTenancy1.TenancyDb, loadedT1.TenancyDb)
+
+	// check if the second tenancy was loaded by multipool app on initialization
+	multiPoolCtx = initContext(t, false)
+	loadedTenancy2, err = multiPoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy2.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, loadedTenancy2)
+	loadedT2, ok := loadedTenancy2.(*tenancy_manager.TenancyBase)
+	require.True(t, ok)
+	assert.Equal(t, addedTenancy2.TenancyDb, loadedT2.TenancyDb)
+
+	// close apps
+	multiPoolCtx.Close()
+	singlePoolCtx.Close()
+	pubsub_factory.ResetSingletonInmemPubsub()
 }

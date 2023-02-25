@@ -118,10 +118,10 @@ func (t *TenancyBase) ConnectDatabase(ctx op_context.Context) error {
 	defer onExit()
 
 	// find service for database role
-	dbService, err := t.Pool().Service(TENANCY_DATABASE_ROLE)
+	dbService, err := t.Pool().Service(multitenancy.TENANCY_DATABASE_ROLE)
 	if err != nil {
 		genErr := generic_error.New(pool.ErrorCodeServiceNotActive, "Pool does not include service for tenancy database")
-		genErr.SetDetails(TENANCY_DATABASE_ROLE)
+		genErr.SetDetails(multitenancy.TENANCY_DATABASE_ROLE)
 		ctx.SetGenericError(genErr)
 		err = genErr
 		return err

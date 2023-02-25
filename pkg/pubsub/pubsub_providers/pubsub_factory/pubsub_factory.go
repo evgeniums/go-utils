@@ -81,6 +81,10 @@ func (p *PubsubFactoryBase) MakeInmemPubsub(app app_context.Context, poolService
 	return inmem, nil
 }
 
+func ResetSingletonInmemPubsub() {
+	singletonInmem = nil
+}
+
 func MakeSingletonInmemPubsub(serializer message.Serializer, app app_context.Context, poolService *pool.PoolServiceBinding) (*pubsub_inmem.PubsubInmem, error) {
 
 	if singletonInmem == nil {

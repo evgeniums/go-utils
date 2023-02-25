@@ -206,7 +206,7 @@ func (m *PoolControllerBase) DeletePool(ctx op_context.Context, id string, idIsN
 		return err
 	}
 	if poolId == "" {
-		ctx.SetGenericError(nil)
+		ctx.ClearError()
 		return nil
 	}
 
@@ -359,7 +359,7 @@ func (m *PoolControllerBase) DeleteService(ctx op_context.Context, id string, id
 		return err
 	}
 	if serviceId == "" {
-		ctx.SetGenericError(nil)
+		ctx.ClearError()
 		return nil
 	}
 
@@ -528,7 +528,7 @@ func (m *PoolControllerBase) RemoveServiceFromPool(ctx op_context.Context, id st
 		return err
 	}
 	if poolId == "" {
-		ctx.SetGenericError(nil)
+		ctx.ClearError()
 		return nil
 	}
 
@@ -574,7 +574,7 @@ func (m *PoolControllerBase) RemoveAllServicesFromPool(ctx op_context.Context, i
 		return err
 	}
 	if poolId == "" {
-		ctx.SetGenericError(nil)
+		ctx.ClearError()
 		return nil
 	}
 
@@ -609,7 +609,7 @@ func (m *PoolControllerBase) RemoveServiceFromAllPools(ctx op_context.Context, i
 		return err
 	}
 	if serviceId == "" {
-		ctx.SetGenericError(nil)
+		ctx.ClearError()
 		return nil
 	}
 
@@ -647,7 +647,7 @@ func (p *PoolControllerBase) GetPoolBindings(ctx op_context.Context, id string, 
 		return nil, err
 	}
 	if poolId == "" {
-		ctx.SetGenericError(nil)
+		ctx.ClearError()
 		return nil, nil
 	}
 
@@ -691,7 +691,7 @@ func (p *PoolControllerBase) GetServiceBindings(ctx op_context.Context, id strin
 		return nil, err
 	}
 	if serviceId == "" {
-		ctx.SetGenericError(nil)
+		ctx.ClearError()
 		return nil, nil
 	}
 

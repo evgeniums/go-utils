@@ -20,11 +20,16 @@ const (
 )
 
 const (
+	TENANCY_DATABASE_ROLE string = "tenancy_db"
+)
+
+const (
 	ErrorCodeTenancyConflictRole           = "tenancy_conflict_role"
 	ErrorCodeTenancyConflictPath           = "tenancy_conflict_path"
 	ErrorCodeTenancyNotFound               = "tenancy_not_found"
 	ErrorCodeTenancyDbInitializationFailed = "tenancy_db_initialization_failed"
 	ErrorCodeForeignDatabase               = "foreign_tenancy_database"
+	ErrorCodeNoDbserviceInPool             = "no_db_service_in_pool"
 )
 
 var ErrorDescriptions = map[string]string{
@@ -33,10 +38,14 @@ var ErrorDescriptions = map[string]string{
 	ErrorCodeTenancyConflictPath:           "Tenancy with such path already exists in that pool.",
 	ErrorCodeTenancyDbInitializationFailed: "Failed to initialize tenancy database.",
 	ErrorCodeForeignDatabase:               "Database does not belong to this tenancy.",
+	ErrorCodeNoDbserviceInPool:             "Pool does not contain service for tenancy database.",
 }
 
 var ErrorHttpCodes = map[string]int{
-	ErrorCodeTenancyNotFound: http.StatusNotFound,
+	ErrorCodeTenancyNotFound:               http.StatusNotFound,
+	ErrorCodeNoDbserviceInPool:             http.StatusInternalServerError,
+	ErrorCodeTenancyDbInitializationFailed: http.StatusInternalServerError,
+	ErrorCodeForeignDatabase:               http.StatusInternalServerError,
 }
 
 type Multitenancy interface {

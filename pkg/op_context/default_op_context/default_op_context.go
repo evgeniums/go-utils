@@ -223,7 +223,7 @@ func (c *ContextBase) TraceOutMethod() {
 }
 
 func (c *ContextBase) SetGenericError(err generic_error.Error, override ...bool) {
-	if c.genericError == nil || utils.OptionalArg(false, override...) {
+	if c.genericError == nil || err == nil || utils.OptionalArg(false, override...) {
 		c.genericError = err
 	}
 }
@@ -331,6 +331,11 @@ func (c *ContextBase) Reset() {
 	c.errorStack = nil
 	c.genericError = nil
 	c.oplogs = make([]oplog.Oplog, 0)
+}
+
+func (c *ContextBase) ClearError() {
+	c.errorStack = nil
+	c.genericError = nil
 }
 
 func (c *ContextBase) Oplog(o oplog.Oplog) {

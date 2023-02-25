@@ -97,5 +97,7 @@ func (cu *CustomersControllerBase) SetDescription(ctx op_context.Context, id str
 func LocalCustomerController() *CustomersControllerBase {
 	c := &CustomersControllerBase{}
 	c.UserControllerBase = user.LocalUserController[*Customer]()
+	c.SetUserBuilder(NewCustomer)
+	c.SetOplogBuilder(NewOplog)
 	return c
 }

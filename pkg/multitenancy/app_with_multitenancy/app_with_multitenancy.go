@@ -2,6 +2,7 @@ package app_with_multitenancy
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/customer"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
@@ -64,8 +65,12 @@ func NewApp(buildConfig *app_context.BuildConfig, tenancyDbModels []interface{},
 	}
 
 	if a.tenancyManagerBuilder == nil {
+
 		tenancyManager := tenancy_manager.NewTenancyManager(a.Pools(), a.Pubsub(), tenancyDbModels)
+
 		tenancyManager.SetController(tenancy_manager.DefaultTenancyController(tenancyManager))
+		tenancyManager.SetCustomerController(customer.LocalCustomerController())
+
 		a.tenancyManagerBuilder = func(app pool_pubsub.AppWithPubsub, opCtx op_context.Context) (multitenancy.Multitenancy, error) {
 			c := opCtx.TraceInMethod("AppWithMultitenancy.Init")
 			defer opCtx.TraceOutMethod()

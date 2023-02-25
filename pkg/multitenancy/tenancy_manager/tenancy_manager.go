@@ -8,6 +8,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/customer"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
@@ -15,10 +16,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pool_pubsub"
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_subscriber"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
-)
-
-const (
-	TENANCY_DATABASE_ROLE string = "tenancy_db"
 )
 
 type TenancyNotificationHandler struct {
@@ -90,6 +87,10 @@ func (t *TenancyManager) Config() interface{} {
 
 func (t *TenancyManager) SetController(controller multitenancy.TenancyController) {
 	t.Controller = controller
+}
+
+func (t *TenancyManager) SetCustomerController(controller customer.CustomerController) {
+	t.Customers = controller
 }
 
 func (t *TenancyManager) Init(ctx op_context.Context, configPath ...string) error {
@@ -245,16 +246,15 @@ func (t *TenancyManager) LoadTenancy(ctx op_context.Context, id string) (multite
 func (t *TenancyManager) FindCustomer(ctx op_context.Context, c op_context.CallContext, id string) (*customer.Customer, error) {
 	owner, err := t.Customers.Find(ctx, id)
 	if err != nil {
+		if ctx.GenericError() != nil && ctx.GenericError().Code() == generic_error.ErrorCodeNotFound {
+			ctx.ClearError()
+			// try to find by login
+			owner, err = t.Customers.FindByLogin(ctx, id)
+		}
+	}
+	if err != nil {
 		c.SetMessage("failed to find customer")
 		return nil, err
-	}
-	if owner == nil {
-		// try to find by login
-		owner, err = t.Customers.FindByLogin(ctx, id)
-		if err != nil {
-			c.SetMessage("failed to find customer")
-			return nil, err
-		}
 	}
 	if owner == nil {
 		err = errors.New("customer not found")
@@ -331,8 +331,13 @@ func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenanc
 	}
 
 	// check if pool exists
-	pool, err := t.FindPool(ctx, c, data.POOL_ID)
+	p, err := t.FindPool(ctx, c, data.POOL_ID)
 	if err != nil {
+		return nil, err
+	}
+	if !p.IsActive() {
+		ctx.SetGenericErrorCode(pool.ErrorCodePoolNotActive)
+		err := errors.New("pool not active")
 		return nil, err
 	}
 
@@ -347,7 +352,8 @@ func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenanc
 	tenancy.InitObject()
 	tenancy.TenancyData = *data
 	tenancy.CUSTOMER_ID = customer.GetID()
-	tenancy.POOL_ID = pool.GetID()
+	tenancy.POOL_ID = p.GetID()
+	tenancy.TenancyBaseData.Pool = p
 	if tenancy.PATH == "" {
 		tenancy.PATH = crypt_utils.GenerateString()
 	}
@@ -388,6 +394,7 @@ func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenanc
 	item := &multitenancy.TenancyItem{}
 	item.TenancyDb = tenancy.TenancyDb
 	item.CustomerLogin = customer.Login()
+	item.PoolName = p.Name()
 
 	// done
 	return item, nil

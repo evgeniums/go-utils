@@ -19,7 +19,7 @@ func ParseDbService(service *PoolServiceBaseData) (*db.DBConfig, error) {
 	d.DB_PROVIDER = service.Provider()
 	d.DB_USER = service.User()
 	d.DB_PASSWORD = service.Secret1()
-	d.DB_NAME = service.Parameter1()
-	d.DB_EXTRA_CONFIG = service.Parameter2()
+	d.DB_NAME = service.DbName()
+	d.DB_EXTRA_CONFIG = service.Parameter1()
 	return d, nil
 }

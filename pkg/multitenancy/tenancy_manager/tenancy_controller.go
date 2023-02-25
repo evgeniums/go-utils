@@ -133,7 +133,7 @@ func (t *TenancyController) Add(ctx op_context.Context, data *multitenancy.Tenan
 	}
 
 	// save tenancy in database
-	err = t.CRUD.Create(ctx, tenancy)
+	err = t.CRUD.Create(ctx, &tenancy.TenancyDb)
 	if err != nil {
 		c.SetMessage("failed to save tenancy in database")
 		return nil, c.SetError(err)
