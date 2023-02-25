@@ -40,16 +40,10 @@ func (a *DisableServiceHandler) Execute(args []string) error {
 	fields := db.Fields{}
 	fields["active"] = false
 
-	_, err = controller.UpdateService(ctx, a.Service, fields, true)
+	s, err := controller.UpdateService(ctx, a.Service, fields, true)
 	if err == nil {
-		pool, err := controller.FindPool(ctx, a.Service, true)
-		if err == nil {
-			if pool != nil {
-				fmt.Printf("Updated service:\n\n%s\n\n", utils.DumpPrettyJson(pool))
-			} else {
-				fmt.Println("Pool not found")
-			}
-		}
+		fmt.Printf("Updated service:\n\n%s\n\n", utils.DumpPrettyJson(s))
 	}
+
 	return err
 }

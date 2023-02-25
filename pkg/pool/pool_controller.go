@@ -173,7 +173,15 @@ func (m *PoolControllerBase) UpdatePool(ctx op_context.Context, id string, field
 		ctx.SetGenericErrorCode(ErrorCodePoolNotFound)
 		return nil, c.SetError(errors.New("pool not found"))
 	}
-	m.OpLog(ctx, "update_pool", &OpLogPool{PoolId: obj.GetID(), PoolName: obj.Name()})
+
+	// write oplog
+	hasActivate, activateOp, hasOtherFields := CheckIfActivate(fields)
+	if hasActivate {
+		m.OpLog(ctx, utils.ConcatStrings(activateOp, "_pool"), &OpLogPool{ServiceId: obj.GetID(), ServiceName: obj.Name()})
+	}
+	if hasOtherFields {
+		m.OpLog(ctx, "update_pool", &OpLogPool{ServiceId: obj.GetID(), ServiceName: obj.Name()})
+	}
 
 	// find updated pool
 	p, err := m.FindPool(ctx, obj.GetID())
@@ -280,6 +288,20 @@ func (m *PoolControllerBase) CheckServiceNameUnique(ctx op_context.Context, name
 	return nil
 }
 
+func CheckIfActivate(fields db.Fields) (bool, string, bool) {
+	if db.IsFieldSet(fields, "active") {
+		activate, ok := fields["active"].(bool)
+		if ok {
+			op := "activate"
+			if !activate {
+				op = "deactivate"
+			}
+			return true, op, len(fields) > 1
+		}
+	}
+	return false, "", true
+}
+
 func (m *PoolControllerBase) UpdateService(ctx op_context.Context, id string, fields db.Fields, idIsName ...bool) (PoolService, error) {
 
 	c := ctx.TraceInMethod("PoolController.UpdateService", logger.Fields{"service": id, "use_name": utils.OptionalArg(false, idIsName...)})
@@ -294,8 +316,8 @@ func (m *PoolControllerBase) UpdateService(ctx op_context.Context, id string, fi
 	}
 
 	// update
-	field := fieldName(idIsName...)
-	obj, err := crud.FindUpdate(m.CRUD, ctx, "PoolController.FindUpdateService", field, id, fields, &PoolServiceBase{}, logger.Fields{field: id})
+	idField := fieldName(idIsName...)
+	obj, err := crud.FindUpdate(m.CRUD, ctx, "PoolController.FindUpdateService", idField, id, fields, &PoolServiceBase{}, logger.Fields{idField: id})
 	if err != nil {
 		return nil, c.SetError(err)
 	}
@@ -303,7 +325,15 @@ func (m *PoolControllerBase) UpdateService(ctx op_context.Context, id string, fi
 		ctx.SetGenericErrorCode(ErrorCodeServiceNotFound)
 		return nil, c.SetError(errors.New("service not found"))
 	}
-	m.OpLog(ctx, "update_service", &OpLogPool{ServiceId: obj.GetID(), ServiceName: obj.Name()})
+
+	// write oplog
+	hasActivate, activateOp, hasOtherFields := CheckIfActivate(fields)
+	if hasActivate {
+		m.OpLog(ctx, utils.ConcatStrings(activateOp, "_service"), &OpLogPool{ServiceId: obj.GetID(), ServiceName: obj.Name()})
+	}
+	if hasOtherFields {
+		m.OpLog(ctx, "update_service", &OpLogPool{ServiceId: obj.GetID(), ServiceName: obj.Name()})
+	}
 
 	// find updated service
 	s, err := m.FindService(ctx, obj.GetID())
