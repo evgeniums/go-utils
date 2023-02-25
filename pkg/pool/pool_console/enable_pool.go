@@ -3,7 +3,7 @@ package pool_console
 import (
 	"fmt"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/db"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
@@ -37,10 +37,7 @@ func (a *EnablePoolHandler) Execute(args []string) error {
 	}
 	defer ctx.Close()
 
-	fields := db.Fields{}
-	fields["active"] = true
-
-	p, err := controller.UpdatePool(ctx, a.Pool, fields, true)
+	p, err := pool.ActivatePool(controller, ctx, a.Pool, true)
 	if err == nil {
 		fmt.Printf("Updated pool:\n\n%s\n\n", utils.DumpPrettyJson(p))
 	}

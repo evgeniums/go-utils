@@ -3,7 +3,7 @@ package pool_console
 import (
 	"fmt"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/db"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
@@ -37,10 +37,7 @@ func (a *DisableServiceHandler) Execute(args []string) error {
 	}
 	defer ctx.Close()
 
-	fields := db.Fields{}
-	fields["active"] = false
-
-	s, err := controller.UpdateService(ctx, a.Service, fields, true)
+	s, err := pool.DeactivateService(controller, ctx, a.Service, true)
 	if err == nil {
 		fmt.Printf("Updated service:\n\n%s\n\n", utils.DumpPrettyJson(s))
 	}

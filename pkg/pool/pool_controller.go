@@ -743,3 +743,23 @@ func LoadPool(ctrl PoolController, ctx op_context.Context, id string, idIsName .
 	pool.SetServices(services)
 	return pool, nil
 }
+
+func ActivatePool(ctrl PoolController, ctx op_context.Context, id string, idIsName ...bool) (Pool, error) {
+	fields := db.Fields{"active": true}
+	return ctrl.UpdatePool(ctx, id, fields, idIsName...)
+}
+
+func DeactivatePool(ctrl PoolController, ctx op_context.Context, id string, idIsName ...bool) (Pool, error) {
+	fields := db.Fields{"active": false}
+	return ctrl.UpdatePool(ctx, id, fields, idIsName...)
+}
+
+func ActivateService(ctrl PoolController, ctx op_context.Context, id string, idIsName ...bool) (PoolService, error) {
+	fields := db.Fields{"active": true}
+	return ctrl.UpdateService(ctx, id, fields, idIsName...)
+}
+
+func DeactivateService(ctrl PoolController, ctx op_context.Context, id string, idIsName ...bool) (PoolService, error) {
+	fields := db.Fields{"active": false}
+	return ctrl.UpdateService(ctx, id, fields, idIsName...)
+}
