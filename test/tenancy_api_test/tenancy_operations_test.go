@@ -287,6 +287,12 @@ func AddTenancies(t *testing.T, ctx *TenancyTestContext) (*multitenancy.TenancyI
 	require.NoError(t, err)
 	require.NotNil(t, addedTenancy2)
 
+	b1, _ := json.MarshalIndent(addedTenancy1, "", "  ")
+	t.Logf("Added tenancy 1: \n\n%s\n\n", string(b1))
+
+	b2, _ := json.MarshalIndent(addedTenancy2, "", "  ")
+	t.Logf("Added tenancy 2: \n\n%s\n\n", string(b2))
+
 	return addedTenancy1, addedTenancy2
 }
 
@@ -326,11 +332,18 @@ func TestAddTenancy(t *testing.T) {
 	addedTenancy2, err := multiPoolCtx.RemoteTenancyController.Add(multiPoolCtx.ClientOp, tenancyData2)
 	require.NoError(t, err)
 	require.NotNil(t, addedTenancy2)
+	b1, _ = json.MarshalIndent(addedTenancy2, "", "  ")
+	t.Logf("Added tenancy: \n\n%s\n\n", string(b1))
 
 	// check if the second tenancy was not loaded by single pool app
 	loadedTenancy2, err := singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy2.GetID())
 	require.Error(t, err)
 	assert.Nil(t, loadedTenancy2)
+	loadedT2, ok := loadedTenancy1.(*tenancy_manager.TenancyBase)
+	require.True(t, ok)
+	b2, _ = json.MarshalIndent(loadedT2.TenancyDb, "", "  ")
+	t.Logf("Loaded tenancy: \n\n%s\n\n", string(b2))
+	assert.Equal(t, addedTenancy1.TenancyDb, loadedT2.TenancyDb)
 
 	// close apps
 	multiPoolCtx.Close()
@@ -368,7 +381,7 @@ func TestAddTenancy(t *testing.T) {
 	loadedTenancy2, err = multiPoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy2.GetID())
 	require.NoError(t, err)
 	require.NotNil(t, loadedTenancy2)
-	loadedT2, ok := loadedTenancy2.(*tenancy_manager.TenancyBase)
+	loadedT2, ok = loadedTenancy2.(*tenancy_manager.TenancyBase)
 	require.True(t, ok)
 	assert.Equal(t, addedTenancy2.TenancyDb, loadedT2.TenancyDb)
 
@@ -378,7 +391,7 @@ func TestAddTenancy(t *testing.T) {
 	pubsub_factory.ResetSingletonInmemPubsub()
 }
 
-func TestTenancyOperations(t *testing.T) {
+func TestListTenancies(t *testing.T) {
 
 	// prepare app with multiple pools and single pool
 	multiPoolCtx, singlePoolCtx := PrepareAppWithTenancies(t)
@@ -396,6 +409,90 @@ func TestTenancyOperations(t *testing.T) {
 	t.Logf("Tenancies: \n\n%s\n\n", string(b))
 	assert.Equal(t, tenancy1, tenancies[0])
 	assert.Equal(t, tenancy2, tenancies[1])
+
+	// close apps
+	multiPoolCtx.Close()
+	singlePoolCtx.Close()
+	pubsub_factory.ResetSingletonInmemPubsub()
+}
+
+func TestTenancySetters(t *testing.T) {
+
+	// prepare app with multiple pools and single pool
+	multiPoolCtx, singlePoolCtx := PrepareAppWithTenancies(t)
+
+	// add tenancies
+	tenancy1, tenancy2 := AddTenancies(t, multiPoolCtx)
+
+	singleAppTenancy, err := singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, singleAppTenancy)
+	assert.False(t, singleAppTenancy.IsActive())
+	assert.Equal(t, tenancy1.Path(), singleAppTenancy.Path())
+	assert.Equal(t, tenancy1.Role(), singleAppTenancy.Role())
+	assert.Equal(t, "customer1", singleAppTenancy.CustomerDisplay())
+	assert.Equal(t, tenancy1.PoolId(), singleAppTenancy.PoolId())
+
+	// activate tenancy
+	err = multiPoolCtx.RemoteTenancyController.SetActive(multiPoolCtx.ClientOp, tenancy1.GetID(), true)
+	require.NoError(t, err)
+	singleAppTenancy, err = singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, singleAppTenancy)
+	assert.True(t, singleAppTenancy.IsActive())
+
+	// change path
+	newPath := "tenancy1path"
+	err = multiPoolCtx.RemoteTenancyController.SetPath(multiPoolCtx.ClientOp, tenancy1.GetID(), newPath)
+	require.NoError(t, err)
+	singleAppTenancy, err = singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, singleAppTenancy)
+	assert.Equal(t, newPath, singleAppTenancy.Path())
+	// try duplicate path
+	err = multiPoolCtx.RemoteTenancyController.SetPath(multiPoolCtx.ClientOp, tenancy1.GetID(), newPath)
+	test_utils.CheckGenericError(t, err, multitenancy.ErrorCodeTenancyConflictPath)
+
+	// change role
+	newRole := "prod"
+	err = multiPoolCtx.RemoteTenancyController.SetRole(multiPoolCtx.ClientOp, tenancy1.GetID(), newRole)
+	require.NoError(t, err)
+	singleAppTenancy, err = singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, singleAppTenancy)
+	assert.Equal(t, newRole, singleAppTenancy.Role())
+	// try duplicate role
+	err = multiPoolCtx.RemoteTenancyController.SetRole(multiPoolCtx.ClientOp, tenancy1.GetID(), newRole)
+	test_utils.CheckGenericError(t, err, multitenancy.ErrorCodeTenancyConflictRole)
+
+	// change customer
+	newCustomer := "customer2"
+	err = multiPoolCtx.RemoteTenancyController.SetCustomer(multiPoolCtx.ClientOp, tenancy1.GetID(), newCustomer)
+	require.NoError(t, err)
+	singleAppTenancy, err = singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, singleAppTenancy)
+	assert.Equal(t, newCustomer, singleAppTenancy.CustomerDisplay())
+	// try customer with duplicate role/path
+	err = multiPoolCtx.RemoteTenancyController.SetCustomer(multiPoolCtx.ClientOp, tenancy1.GetID(), newCustomer)
+	test_utils.CheckGenericError(t, err, multitenancy.ErrorCodeTenancyConflictRole)
+
+	// change pool or db
+	newDb := tenancy1.DbName()
+	err = multiPoolCtx.RemoteTenancyController.ChangePoolOrDb(multiPoolCtx.ClientOp, tenancy1.GetID(), tenancy2.PoolId(), newDb)
+	require.NoError(t, err)
+	singleAppTenancy, err = singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
+	require.Error(t, err)
+	require.Nil(t, singleAppTenancy)
+	multiAppTenancy, err := multiPoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, multiAppTenancy)
+	assert.Equal(t, tenancy2.PoolId(), multiAppTenancy.PoolId())
+	// try set db of foreign tenancy
+	newDb = tenancy2.DbName()
+	err = multiPoolCtx.RemoteTenancyController.ChangePoolOrDb(multiPoolCtx.ClientOp, tenancy1.GetID(), "pool2", newDb)
+	test_utils.CheckGenericError(t, err, multitenancy.ErrorCodeForeignDatabase)
+	assert.Equal(t, tenancy2.PoolId(), multiAppTenancy.PoolId())
 
 	// close apps
 	multiPoolCtx.Close()

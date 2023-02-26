@@ -113,10 +113,16 @@ func FindTenancy(ctrl multitenancy.TenancyController, ctx op_context.Context, id
 	return tenancy, nil
 }
 
-func (t *TenancyController) PublishOp(tenancy *multitenancy.TenancyItem, op string) {
-	t.Manager.PoolPubsub.PublishPools(multitenancy.PubsubTopicName,
-		&multitenancy.PubsubNotification{Tenancy: tenancy.GetID(), Operation: op},
-		tenancy.PoolId())
+func (t *TenancyController) PublishOp(tenancy *multitenancy.TenancyItem, op string, poolIds ...string) {
+	if len(poolIds) != 0 {
+		t.Manager.PoolPubsub.PublishPools(multitenancy.PubsubTopicName,
+			&multitenancy.PubsubNotification{Tenancy: tenancy.GetID(), Operation: op},
+			poolIds...)
+	} else {
+		t.Manager.PoolPubsub.PublishPools(multitenancy.PubsubTopicName,
+			&multitenancy.PubsubNotification{Tenancy: tenancy.GetID(), Operation: op},
+			tenancy.PoolId())
+	}
 }
 
 func (t *TenancyController) Add(ctx op_context.Context, data *multitenancy.TenancyData) (*multitenancy.TenancyItem, error) {
@@ -371,6 +377,7 @@ func (t *TenancyController) ChangePoolOrDb(ctx op_context.Context, id string, po
 	if err != nil {
 		return c.SetError(err)
 	}
+	oldPoolId := tenancy.PoolId()
 
 	// find pool
 	pId := poolId
@@ -421,6 +428,9 @@ func (t *TenancyController) ChangePoolOrDb(ctx op_context.Context, id string, po
 		Role: tenancy.Role(), Customer: tenancy.CustomerDisplay(), Pool: p.Name(), DbName: dbN})
 
 	// publish notification
+	if oldPoolId != pId {
+		t.PublishOp(tenancy, multitenancy.OpDelete, oldPoolId)
+	}
 	t.PublishOp(tenancy, multitenancy.OpChangePoolOrDb)
 
 	// done

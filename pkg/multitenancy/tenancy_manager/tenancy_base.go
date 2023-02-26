@@ -17,7 +17,7 @@ type TenancyBaseData struct {
 	db.WithDBBase
 	Cache          cache.Cache
 	Pool           pool.Pool
-	Customer       customer.Customer
+	Customer       *customer.Customer
 	TenancyManager *TenancyManager
 }
 
@@ -32,7 +32,6 @@ func NewTenancy(manager *TenancyManager) *TenancyBase {
 }
 
 func (d *TenancyBase) IsActive() bool {
-
 	return d.TenancyDb.IsActive() && !d.Customer.IsBlocked() && d.TenancyBaseData.Pool.IsActive()
 }
 
@@ -65,12 +64,12 @@ func (t *TenancyBase) Init(ctx op_context.Context, data *multitenancy.TenancyDb)
 	t.SetCache(ctx.Cache())
 
 	// find customer
-	customer, err := t.TenancyManager.Customers.Find(ctx, data.CUSTOMER_ID)
+	t.Customer, err = t.TenancyManager.Customers.Find(ctx, data.CUSTOMER_ID)
 	if err != nil {
 		c.SetMessage("failed to find customer")
 		return false, err
 	}
-	if customer == nil {
+	if t.Customer == nil {
 		c.SetMessage("failed to find customer")
 		return false, err
 	}
