@@ -40,6 +40,6 @@ type ResponseCount struct {
 }
 
 type ResponseExists struct {
-	Response
-	Exists bool `json:"exists"`
+	Response `json:"-"`
+	Exists   bool `json:"exists"`
 }

@@ -37,14 +37,19 @@ func (t *TenancyClient) Find(ctx op_context.Context, id string, idIsDisplay ...b
 	defer onExit()
 
 	// adjust ID
-	tenancyId, _, err := tenancy_manager.TenancyId(t, ctx, id, idIsDisplay...)
+	tenancyId, tenancy, err := tenancy_manager.TenancyId(t, ctx, id, idIsDisplay...)
 	if err != nil {
 		c.SetMessage("failed to get tenancy ID")
 		return nil, err
 	}
+	if tenancy != nil {
+		return tenancy, nil
+	}
 
 	// prepare and exec handler
-	handler := &Find{}
+	handler := &Find{
+		result: &multitenancy.TenancyItem{},
+	}
 	op := api.NamedResourceOperation(t.TenancyResource,
 		tenancyId,
 		tenancy_api.Find())

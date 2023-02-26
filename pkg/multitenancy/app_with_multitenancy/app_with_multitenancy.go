@@ -108,3 +108,10 @@ func (a *AppWithMultitenancyBase) InitWithArgs(configFile string, args []string,
 func (a *AppWithMultitenancyBase) Init(configFile string, configType ...string) (op_context.Context, error) {
 	return a.InitWithArgs(configFile, nil, configType...)
 }
+
+func (a *AppWithMultitenancyBase) Close() {
+	if a.tenancyManager != nil {
+		a.tenancyManager.Close()
+	}
+	a.AppWithPoolsBase.Close()
+}

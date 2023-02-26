@@ -96,6 +96,7 @@ func (t *TenancyBase) Init(ctx op_context.Context, data *multitenancy.TenancyDb)
 	// check tenancy database
 	err = multitenancy.CheckTenancyDatabase(ctx, t.Db(), t.GetID())
 	if err != nil {
+		t.Db().Close()
 		return false, err
 	}
 

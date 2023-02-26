@@ -28,9 +28,8 @@ func (t *TenancyNotificationHandler) Handle(ctx op_context.Context, msg *multite
 	c := ctx.TraceInMethod("TenancyNotificationHandler.Handle")
 	defer ctx.TraceOutMethod()
 
-	if msg.Operation == multitenancy.OpDelete {
-		t.manager.UnloadTenancy(msg.Tenancy)
-	} else {
+	t.manager.UnloadTenancy(msg.Tenancy)
+	if msg.Operation != multitenancy.OpDelete {
 		_, err := t.manager.LoadTenancy(ctx, msg.Tenancy)
 		if err != nil {
 			return c.SetError(err)
@@ -144,6 +143,24 @@ func (t *TenancyManager) Init(ctx op_context.Context, configPath ...string) erro
 	return nil
 }
 
+func (t *TenancyManager) Close() {
+
+	t.mutex.Lock()
+
+	for _, tenancy := range t.tenanciesById {
+		tenancy.Db().Close()
+	}
+	t.tenanciesById = make(map[string]multitenancy.Tenancy)
+	t.tenanciesByPath = make(map[string]multitenancy.Tenancy)
+
+	t.mutex.Unlock()
+
+	if t.PubsubTopic != nil {
+		t.PoolPubsub.UnsubscribePools(t.PubsubTopic.Name())
+		t.PoolPubsub.UnsubscribeSelfPool(t.PubsubTopic.Name())
+	}
+}
+
 func (t *TenancyManager) Tenancy(id string) (multitenancy.Tenancy, error) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
@@ -169,6 +186,7 @@ func (t *TenancyManager) UnloadTenancy(id string) {
 	defer t.mutex.Unlock()
 	tenancy, ok := t.tenanciesById[id]
 	if ok {
+		tenancy.Db().Close()
 		delete(t.tenanciesById, id)
 		delete(t.tenanciesByPath, tenancy.Path())
 	}
@@ -389,6 +407,7 @@ func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenanc
 		c.SetMessage("failed to save tenancy meta in created database")
 		return nil, err
 	}
+	tenancy.Db().Close()
 
 	// create item
 	item := &multitenancy.TenancyItem{}

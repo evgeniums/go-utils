@@ -26,7 +26,6 @@ func (e *DeleteEndpoint) HandleRequest(request api_server.Request) error {
 	// delete
 	err = e.service.Tenancies.Delete(request, request.GetResourceId(tenancy_api.TenancyResource), cmd.WithDatabase)
 	if err != nil {
-		c.SetMessage("failed to delete tenancy")
 		return c.SetError(err)
 	}
 

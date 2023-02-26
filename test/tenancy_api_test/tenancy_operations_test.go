@@ -375,6 +375,7 @@ func TestAddTenancy(t *testing.T) {
 	loadedT1, ok = loadedTenancy1.(*tenancy_manager.TenancyBase)
 	require.True(t, ok)
 	assert.Equal(t, addedTenancy1.TenancyDb, loadedT1.TenancyDb)
+	multiPoolCtx.Close()
 
 	// check if the second tenancy was loaded by multipool app on initialization
 	multiPoolCtx = initContext(t, false)
@@ -493,6 +494,95 @@ func TestTenancySetters(t *testing.T) {
 	err = multiPoolCtx.RemoteTenancyController.ChangePoolOrDb(multiPoolCtx.ClientOp, tenancy1.GetID(), "pool2", newDb)
 	test_utils.CheckGenericError(t, err, multitenancy.ErrorCodeForeignDatabase)
 	assert.Equal(t, tenancy2.PoolId(), multiAppTenancy.PoolId())
+
+	// close apps
+	multiPoolCtx.Close()
+	singlePoolCtx.Close()
+	pubsub_factory.ResetSingletonInmemPubsub()
+}
+
+func TestFindDelete(t *testing.T) {
+
+	// prepare app with multiple pools and single pool
+	multiPoolCtx, singlePoolCtx := PrepareAppWithTenancies(t)
+
+	// add tenancies
+	tenancy1, tenancy2 := AddTenancies(t, multiPoolCtx)
+	singleAppTenancy, err := singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, singleAppTenancy)
+	assert.Equal(t, tenancy1.DbName(), singleAppTenancy.DbName())
+	multiAppTenancy1, err := multiPoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, multiAppTenancy1)
+	assert.Equal(t, tenancy1.DbName(), multiAppTenancy1.DbName())
+	multiAppTenancy2, err := multiPoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy2.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, multiAppTenancy2)
+	assert.Equal(t, tenancy2.DbName(), multiAppTenancy2.DbName())
+
+	// find tenancy
+	tenancy, err := multiPoolCtx.RemoteTenancyController.Find(multiPoolCtx.ClientOp, tenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, tenancy)
+	assert.Equal(t, tenancy1, tenancy)
+
+	// try to find tenancy with unknown ID
+	_, err = multiPoolCtx.RemoteTenancyController.Find(multiPoolCtx.ClientOp, "unknown_id")
+	test_utils.CheckGenericError(t, err, multitenancy.ErrorCodeTenancyNotFound)
+
+	// find tenancy by customer/role
+	// dev role
+	id := "customer1/dev"
+	tenancy, err = multiPoolCtx.RemoteTenancyController.Find(multiPoolCtx.ClientOp, id, true)
+	require.NoError(t, err)
+	require.NotNil(t, tenancy)
+	assert.Equal(t, tenancy1, tenancy)
+	// stage role
+	id = "customer1/stage"
+	tenancy, err = multiPoolCtx.RemoteTenancyController.Find(multiPoolCtx.ClientOp, id, true)
+	require.NoError(t, err)
+	require.NotNil(t, tenancy)
+	assert.Equal(t, tenancy2, tenancy)
+
+	// try to find tenancy with unknown role
+	id = "customer1/prod"
+	_, err = multiPoolCtx.RemoteTenancyController.Find(multiPoolCtx.ClientOp, id, true)
+	test_utils.CheckGenericError(t, err, multitenancy.ErrorCodeTenancyNotFound)
+
+	// check if tenancy exists
+	multiPoolCtx.ClientOp.Reset()
+	fields := db.Fields{}
+	fields["customer_id"] = tenancy.CustomerId()
+	fields["role"] = "dev"
+	exists, err := multiPoolCtx.RemoteTenancyController.Exists(multiPoolCtx.ClientOp, fields)
+	require.NoError(t, err)
+	assert.True(t, exists)
+	fields["role"] = "prod"
+	exists, err = multiPoolCtx.RemoteTenancyController.Exists(multiPoolCtx.ClientOp, fields)
+	require.NoError(t, err)
+	assert.False(t, exists)
+
+	// delete tenancy
+	id = "customer1/dev"
+	err = multiPoolCtx.RemoteTenancyController.Delete(multiPoolCtx.ClientOp, id, false, true)
+	require.NoError(t, err)
+
+	// check if tenancy was deleted from applications
+	singleAppTenancy, err = singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
+	require.Error(t, err)
+	require.Nil(t, singleAppTenancy)
+	multiAppTenancy1, err = multiPoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
+	require.Error(t, err)
+	require.Nil(t, multiAppTenancy1)
+	multiAppTenancy2, err = multiPoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy2.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, multiAppTenancy2)
+	assert.Equal(t, tenancy2.DbName(), multiAppTenancy2.DbName())
+
+	// try to find deleted tenancy
+	_, err = multiPoolCtx.RemoteTenancyController.Find(multiPoolCtx.ClientOp, id, true)
+	test_utils.CheckGenericError(t, err, multitenancy.ErrorCodeTenancyNotFound)
 
 	// close apps
 	multiPoolCtx.Close()

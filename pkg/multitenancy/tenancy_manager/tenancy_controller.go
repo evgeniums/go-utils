@@ -54,7 +54,8 @@ func TenancyId(ctrl multitenancy.TenancyController, ctx op_context.Context, id s
 	if vErr != nil {
 		c.SetMessage("failed to parse display")
 		ctx.SetGenericError(vErr.GenericError())
-		return "", nil, c.SetError(vErr)
+		c.SetError(vErr)
+		return "", nil, vErr.GenericError()
 	}
 
 	// find tenancy by login and role
@@ -69,7 +70,7 @@ func TenancyId(ctrl multitenancy.TenancyController, ctx op_context.Context, id s
 	}
 	if len(tenancies) == 0 {
 		ctx.SetGenericErrorCode(multitenancy.ErrorCodeTenancyNotFound)
-		return "", nil, c.SetError(errors.New("tenancy not found"))
+		return "", nil, c.SetError(ctx.GenericError())
 	}
 	tenancy := tenancies[0]
 
@@ -105,7 +106,7 @@ func FindTenancy(ctrl multitenancy.TenancyController, ctx op_context.Context, id
 	}
 	if len(tenancies) == 0 {
 		ctx.SetGenericErrorCode(multitenancy.ErrorCodeTenancyNotFound)
-		return nil, c.SetError(errors.New("tenancy not found"))
+		return nil, c.SetError(ctx.GenericError())
 	}
 	tenancy = tenancies[0]
 
@@ -406,6 +407,9 @@ func (t *TenancyController) ChangePoolOrDb(ctx op_context.Context, id string, po
 	tenancy.POOL_ID = p.GetID()
 	checkTenancy := NewTenancy(t.Manager)
 	skip, err := checkTenancy.Init(ctx, &tenancy.TenancyDb)
+	if checkTenancy.Db() != nil {
+		checkTenancy.Db().Close()
+	}
 	if err != nil {
 		c.SetMessage("failed to init tenancy with new parameters")
 		return c.SetError(err)
@@ -455,7 +459,7 @@ func (t *TenancyController) Delete(ctx op_context.Context, id string, withDataba
 	}
 
 	// delete tenancy
-	err = t.CRUD.Delete(ctx, tenancy)
+	err = t.CRUD.Delete(ctx, &tenancy.TenancyDb)
 	if err != nil {
 		c.SetMessage("failed to delete tenancy")
 		return c.SetError(err)

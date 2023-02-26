@@ -28,7 +28,6 @@ func (e *ExistsEndpoint) HandleRequest(request api_server.Request) error {
 	resp := &api.ResponseExists{}
 	resp.Exists, err = e.service.Tenancies.Exists(request, filter.Fields)
 	if err != nil {
-		c.SetMessage("failed to delete tenancy")
 		return c.SetError(err)
 	}
 
