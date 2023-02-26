@@ -31,6 +31,20 @@ import (
 var _, testBasePath, _, _ = runtime.Caller(0)
 var testDir = filepath.Dir(testBasePath)
 
+type InTenancySample struct {
+	Field1 string
+	Field2 int
+}
+
+type InTenancyItem struct {
+	Field4 string
+	Field5 bool
+}
+
+func tenancyDbModels() []interface{} {
+	return []interface{}{&InTenancySample{}, &InTenancyItem{}}
+}
+
 func dbModels() []interface{} {
 	return utils.ConcatSlices(admin.DbModels(), pool.DbModels(), customer.DbModels(), multitenancy.DbModels())
 }
@@ -51,7 +65,7 @@ func initContext(t *testing.T, newDb bool, configPrefix ...string) *TenancyTestC
 	var appWithTenancy *app_with_multitenancy.AppWithMultitenancyBase
 
 	buildApp := func(t *testing.T, buildConfig *app_context.BuildConfig) app_context.Context {
-		appWithTenancy = app_with_multitenancy.NewApp(buildConfig, nil)
+		appWithTenancy = app_with_multitenancy.NewApp(buildConfig, tenancyDbModels())
 		return appWithTenancy
 	}
 	initApp := func(t *testing.T, app app_context.Context, configFile string, args []string, configType ...string) error {
@@ -322,6 +336,16 @@ func TestAddTenancy(t *testing.T) {
 	b2, _ := json.MarshalIndent(loadedT1.TenancyDb, "", "  ")
 	t.Logf("Loaded tenancy: \n\n%s\n\n", string(b2))
 	assert.Equal(t, addedTenancy1.TenancyDb, loadedT1.TenancyDb)
+
+	// check if database tables was created
+	sample1 := &InTenancySample{Field1: "hello world", Field2: 10}
+	err = loadedTenancy1.Db().Create(multiPoolCtx.AdminOp, sample1)
+	require.NoError(t, err)
+	readSample1 := &InTenancySample{}
+	found, err := loadedTenancy1.Db().FindByField(multiPoolCtx.AdminOp, "field2", 10, readSample1)
+	require.NoError(t, err)
+	assert.True(t, found)
+	assert.Equal(t, sample1, readSample1)
 
 	// add second tenancy to pool different from single pool app, add via mutipool app
 	tenancyData2 := &multitenancy.TenancyData{}
