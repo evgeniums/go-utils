@@ -62,7 +62,7 @@ func ParseDbQuery(request Request, model interface{}, queryName string) (*db.Fil
 
 	q := &api.DbQuery{}
 
-	c := request.TraceInMethod("ParseDbQuery", logger.Fields{"query_name": queryName, "query": q.Query()})
+	c := request.TraceInMethod("ParseDbQuery", logger.Fields{"query_name": queryName})
 	defer request.TraceOutMethod()
 
 	err := request.ParseValidate(q)
