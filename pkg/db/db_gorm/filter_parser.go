@@ -68,12 +68,12 @@ func (f *FilterParser) ParseValidateField(name string, value string, onlyName ..
 
 	// allow only indexed fields
 	if !field.Index {
-		return "", nil, &validator.ValidationError{Message: "Field can not be used in queries", Field: name}
+		return "", nil, &validator.ValidationError{Message: "Non-index field can not be used in queries", Field: name}
 	}
 
 	// break if only field name validation required
 	if utils.OptionalArg(false, onlyName...) {
-		return "", value, nil
+		return field.FullDbName, value, nil
 	}
 
 	// convert string value to desired type
@@ -113,10 +113,7 @@ func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 		return nil, nil
 	}
 	filter := &db.Filter{}
-	filter.SortDirection = query.SortDirection
-	filter.Limit = query.Limit
-	filter.Offset = query.Offset
-	filter.Count = query.Count
+	filter.FilterConfig = query.FilterConfig
 
 	// sort field
 	if query.SortField != "" {

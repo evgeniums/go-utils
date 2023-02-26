@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
@@ -125,7 +126,12 @@ func SetFilter(g *gorm.DB, filter *Filter, docs interface{}, paginate ...bool) *
 	h = prepareFilter(h, filter)
 
 	if filter.SortField != "" && (filter.SortDirection == db.SORT_ASC || filter.SortDirection == db.SORT_DESC) {
-		h = h.Order(fmt.Sprintf("\"%v\" %v", filter.SortField, filter.SortDirection))
+		parts := strings.Split(filter.SortField, ".")
+		if len(parts) == 2 {
+			h = h.Order(fmt.Sprintf("\"%s\".\"%s\" %s", parts[0], parts[1], filter.SortDirection))
+		} else {
+			h = h.Order(fmt.Sprintf("\"%s\" %s", filter.SortField, filter.SortDirection))
+		}
 	}
 
 	h = Paginate(h, filter, paginate...)
@@ -168,6 +174,11 @@ func find(g *gorm.DB, filter *Filter, dest interface{}) (int64, error) {
 	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return 0, result.Error
 	}
+
+	/*
+		b, _ := json.MarshalIndent(dest, "", "  ")
+		fmt.Printf("Result:\n\n%s\n\n", string(b))
+	*/
 
 	return count, nil
 }

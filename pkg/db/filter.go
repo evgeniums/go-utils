@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 	"github.com/markphelps/optional"
 )
@@ -27,23 +28,30 @@ func (i *Interval) IsNull() bool {
 	return i.From == nil && i.To == nil
 }
 
+type FilterConfig struct {
+	SortField     string `json:"sort_field,omitempty"`
+	SortDirection string `json:"sort_direction,omitempty" validate:"omitempty,oneof=asc desc"`
+	Offset        int    `json:"offset,omitempty" validate:"gte=0"`
+	Limit         int    `json:"limit,omitempty" validate:"gte=0"`
+	Count         bool   `json:"count,omitempty"`
+}
+
 type Filter struct {
+	FilterConfig
 	Fields        Fields
 	FieldsIn      map[string][]interface{}
 	FieldsNotIn   map[string][]interface{}
 	Intervals     map[string]*Interval
 	BetweenFields []*BetweenFields
-
-	SortField     string
-	SortDirection string
-	Offset        int
-	Limit         int
-
-	Count bool
 }
 
 func NewFilter() *Filter {
 	return &Filter{}
+}
+
+func (f *Filter) SetSorting(field string, direction ...string) {
+	f.SortField = field
+	f.SortDirection = utils.OptionalArg(SORT_ASC, direction...)
 }
 
 func (f *Filter) AddFields(fields Fields) {
@@ -94,11 +102,7 @@ func filterValueToString(value interface{}) string {
 func (f *Filter) ToQuery() *Query {
 	q := &Query{}
 
-	q.SortField = f.SortField
-	q.SortDirection = f.SortDirection
-	q.Limit = f.Limit
-	q.Offset = f.Offset
-	q.Count = f.Count
+	q.FilterConfig = f.FilterConfig
 
 	// fill fields
 	if len(f.Fields) > 0 {
@@ -182,17 +186,13 @@ type QueryBetweenFields struct {
 }
 
 type Query struct {
+	FilterConfig
+
 	Fields        map[string]string        `json:"fields,omitempty"`
 	FieldsIn      map[string][]string      `json:"fields_in,omitempty"`
 	FieldsNotIn   map[string][]string      `json:"fields_not_in,omitempty"`
 	Intervals     map[string]QueryInterval `json:"intervals,omitempty"`
 	BetweenFields []QueryBetweenFields     `json:"betwees_fields,omitempty"`
-
-	SortField     string `json:"sort_field,omitempty"`
-	SortDirection string `json:"sort_direction,omitempty" validate:"omitempty,oneof=asc desc"`
-	Offset        int    `json:"offset,omitempty" validate:"gte=0"`
-	Limit         int    `json:"limit,omitempty" validate:"gte=0"`
-	Count         bool   `json:"count,omitempty"`
 }
 
 type WithFilterParser interface {

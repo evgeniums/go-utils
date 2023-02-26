@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	SORT_ASC  string = "asc"
-	SORT_DESC string = "desc"
+	SORT_ASC  string = "ASC"
+	SORT_DESC string = "DESC"
 )
 
 type Fields = map[string]interface{}

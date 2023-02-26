@@ -46,7 +46,7 @@ func constructJoins(g *gorm.DB, f *FilterManager, q *JoinQueryConstructor) (*gor
 		if err != nil {
 			return nil, err
 		}
-		join := fmt.Sprintf("JOIN %s ON %s.%s=%s.%s", rightSchema.Table, leftSchema.Table, pair.LeftField(), rightSchema.Table, pair.RightField())
+		join := fmt.Sprintf("JOIN \"%s\" ON \"%s\".\"%s\"=\"%s\".\"%s\"", rightSchema.Table, leftSchema.Table, pair.LeftField(), rightSchema.Table, pair.RightField())
 		db = db.Joins(join)
 	}
 
@@ -93,11 +93,15 @@ func PrepareJoin(f *FilterManager, g *gorm.DB, constructor *JoinQueryConstructor
 }
 
 type JoinQuery struct {
+	db              *GormDB
 	preparedSession *gorm.DB
 }
 
 func (j *JoinQuery) Join(ctx logger.WithLogger, filter *Filter, dest interface{}) (int64, error) {
 	session := j.preparedSession.Session(&gorm.Session{})
+	if j.db != nil && j.db.ENABLE_DEBUG {
+		session = session.Debug()
+	}
 	return find(session, filter, dest)
 }
 
@@ -133,7 +137,7 @@ func (j *Joiner) Destination(destination interface{}) (db.JoinQuery, error) {
 		return nil, err
 	}
 
-	q := &JoinQuery{preparedSession: preparedSession}
+	q := &JoinQuery{preparedSession: preparedSession, db: j.db}
 	models := make(map[string]interface{})
 	for _, pair := range j.constructor.pairs {
 		models[pair.left.schema.Table] = pair.left.Model
