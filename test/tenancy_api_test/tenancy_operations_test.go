@@ -10,6 +10,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/customer"
+	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/app_with_multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_api/tenancy_client"
@@ -266,6 +267,29 @@ func TestPrepareAppWithTenancies(t *testing.T) {
 	pubsub_factory.ResetSingletonInmemPubsub()
 }
 
+func AddTenancies(t *testing.T, ctx *TenancyTestContext) (*multitenancy.TenancyItem, *multitenancy.TenancyItem) {
+
+	tenancyData1 := &multitenancy.TenancyData{}
+	tenancyData1.POOL_ID = "pool2"
+	tenancyData1.ROLE = "dev"
+	tenancyData1.DESCRIPTION = "tenancy for development"
+	tenancyData1.CUSTOMER_ID = "customer1"
+	addedTenancy1, err := ctx.RemoteTenancyController.Add(ctx.ClientOp, tenancyData1)
+	require.NoError(t, err)
+	require.NotNil(t, addedTenancy1)
+
+	tenancyData2 := &multitenancy.TenancyData{}
+	tenancyData2.POOL_ID = "pool1"
+	tenancyData2.ROLE = "stage"
+	tenancyData2.DESCRIPTION = "tenancy for stage"
+	tenancyData2.CUSTOMER_ID = "customer1"
+	addedTenancy2, err := ctx.RemoteTenancyController.Add(ctx.ClientOp, tenancyData2)
+	require.NoError(t, err)
+	require.NotNil(t, addedTenancy2)
+
+	return addedTenancy1, addedTenancy2
+}
+
 func TestAddTenancy(t *testing.T) {
 
 	// prepare app with multiple pools and single pool
@@ -347,6 +371,31 @@ func TestAddTenancy(t *testing.T) {
 	loadedT2, ok := loadedTenancy2.(*tenancy_manager.TenancyBase)
 	require.True(t, ok)
 	assert.Equal(t, addedTenancy2.TenancyDb, loadedT2.TenancyDb)
+
+	// close apps
+	multiPoolCtx.Close()
+	singlePoolCtx.Close()
+	pubsub_factory.ResetSingletonInmemPubsub()
+}
+
+func TestTenancyOperations(t *testing.T) {
+
+	// prepare app with multiple pools and single pool
+	multiPoolCtx, singlePoolCtx := PrepareAppWithTenancies(t)
+
+	// add tenancies
+	tenancy1, tenancy2 := AddTenancies(t, multiPoolCtx)
+
+	// list tenancies
+	filter := db.NewFilter()
+	filter.SetSorting("pool_name", db.SORT_DESC)
+	tenancies, _, err := multiPoolCtx.RemoteTenancyController.List(multiPoolCtx.ClientOp, filter)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(tenancies))
+	b, _ := json.MarshalIndent(tenancies, "", "  ")
+	t.Logf("Tenancies: \n\n%s\n\n", string(b))
+	assert.Equal(t, tenancy1, tenancies[0])
+	assert.Equal(t, tenancy2, tenancies[1])
 
 	// close apps
 	multiPoolCtx.Close()

@@ -18,7 +18,7 @@ func (e *ListEndpoint) HandleRequest(request api_server.Request) error {
 
 	// parse query
 	queryName := request.Endpoint().Resource().ServicePathPrototype()
-	filter, err := api_server.ParseDbQuery(request, &multitenancy.TenancyDb{}, queryName)
+	filter, err := api_server.ParseDbQuery(request, &multitenancy.TenancyItem{}, queryName)
 	if err != nil {
 		return c.SetError(err)
 	}

@@ -109,8 +109,12 @@ func (TenancyDb) TableName() string {
 
 type TenancyItem struct {
 	TenancyDb     `source:"tenancies"`
-	CustomerLogin string `json:"customer_login" source:"customers.login"`
-	PoolName      string `json:"pool_name" source:"pools.name"`
+	CustomerLogin string `json:"customer_login" source:"customers.login" gorm:"index"`
+	PoolName      string `json:"pool_name" source:"pools.name" gorm:"index"`
+}
+
+func (TenancyItem) TableName() string {
+	return "tenancy_items"
 }
 
 func (t *TenancyItem) CustomerDisplay() string {
