@@ -183,7 +183,9 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, tenancyManager mu
 	s.tenancies = tenancyManager
 
 	if s.tenancies.IsMultiTenancy() {
+		parent := api.NewResource(TenancyParameter)
 		s.tenancyResource = api.NewResource(TenancyParameter, api.ResourceConfig{HasId: true, Tenancy: true})
+		parent.AddChild(s.tenancyResource)
 	}
 
 	defaultPath := "rest_api_server"
@@ -335,7 +337,7 @@ func (s *Server) AddEndpoint(ep api_server.Endpoint, multitenancy ...bool) {
 	}
 
 	if s.tenancies.IsMultiTenancy() && utils.OptionalArg(false, multitenancy...) {
-		s.tenancyResource.AddChild(ep.Resource())
+		s.tenancyResource.AddChild(ep.Resource().Service())
 	}
 
 	path := fmt.Sprintf("%s/%s%s", s.PATH_PREFIX, s.ApiVersion(), ep.Resource().FullPathPrototype())

@@ -7,7 +7,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
@@ -27,9 +26,8 @@ type Request interface {
 }
 
 type RequestBase struct {
-	default_op_context.ContextBase
-	auth.SessionBase
 	auth.UserContextBase
+	auth.SessionBase
 	endpoint Endpoint
 }
 

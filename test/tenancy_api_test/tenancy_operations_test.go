@@ -1,4 +1,4 @@
-package pool_api_test
+package tenancy_api_test
 
 import (
 	"encoding/json"
