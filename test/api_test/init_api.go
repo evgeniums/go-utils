@@ -58,6 +58,7 @@ func initClient(t *testing.T, g *gin.Engine, testDir string, config string) (app
 }
 
 func initServer(t *testing.T, testDir string, config string, dbModels []interface{}, newDb ...bool) (app_context.Context, *admin.Manager, bare_bones_server.Server) {
+
 	app := test_utils.InitAppContext(t, testDir, dbModels, config, newDb...)
 
 	adminManager := admin.NewManager()

@@ -52,6 +52,8 @@ type DBHandlers interface {
 	Join(ctx logger.WithLogger, joinConfig *JoinQueryConfig, filter *Filter, dest interface{}) (int64, error)
 
 	Joiner() Joiner
+
+	CreateDatabase(ctx logger.WithLogger, dbName string) error
 }
 
 type Transaction interface {

@@ -24,6 +24,7 @@ type gormDBConfig struct {
 type DbConnector struct {
 	DialectorOpener func(provider string, dsn string) (gorm.Dialector, error)
 	DsnBuilder      func(config *db.DBConfig) (string, error)
+	DbCreator       func(provider string, db *gorm.DB, dbName string) error
 }
 
 type GormDB struct {
@@ -58,6 +59,29 @@ func PostgresOpener(provider string, dsn string) (gorm.Dialector, error) {
 func PostgresDsnBuilder(config *db.DBConfig) (string, error) {
 	dsn := fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable", config.DB_HOST, config.DB_PORT, config.DB_USER, config.DB_NAME, config.DB_PASSWORD)
 	return dsn, nil
+}
+
+func PostgresDbCreator(provider string, db *gorm.DB, dbName string) error {
+
+	// check if db exists
+	rs := db.Raw("SELECT * FROM pg_database WHERE datname = ?;", dbName)
+	if rs.Error != nil {
+		return fmt.Errorf("failed to select from pg_database: %s", rs.Error)
+	}
+	var rec = make(map[string]interface{})
+	rs.Find(rec)
+
+	// if not create it
+	if len(rec) == 0 {
+		// create database
+		rs := db.Exec(fmt.Sprintf("CREATE DATABASE %s;", dbName))
+		if rs.Error != nil {
+			return fmt.Errorf("failed to create postgres database: %s", rs.Error)
+		}
+	}
+
+	// done
+	return nil
 }
 
 func postgresDbConnector() *DbConnector {
@@ -339,4 +363,13 @@ func (g *GormDB) Exists(ctx logger.WithLogger, filter *Filter, obj interface{}) 
 		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
 	}
 	return exists, err
+}
+
+func (g *GormDB) CreateDatabase(ctx logger.WithLogger, dbName string) error {
+	err := g.dbConnector.DbCreator(g.DB_PROVIDER, g.db_(), dbName)
+	if err != nil && g.VERBOSE_ERRORS {
+		e := fmt.Errorf("failed to CreateDatabase %v", dbName)
+		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+	}
+	return err
 }

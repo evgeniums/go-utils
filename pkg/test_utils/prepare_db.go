@@ -66,6 +66,18 @@ func DbDsnBuilder(t *testing.T, config *db.DBConfig) (string, error) {
 	return "", errors.New("unknown database provider")
 }
 
+func DbCreator(provider string, db *gorm.DB, dbName string) error {
+
+	switch provider {
+	case "postgres":
+		return db_gorm.PostgresDbCreator(provider, db, dbName)
+	case "sqlite":
+		return nil
+	}
+
+	return errors.New("unknown database provider")
+}
+
 func SetupGormDB(t *testing.T) {
 	db_gorm.NewModelStore(true)
 	db_gorm.DefaultDbConnector = func() *db_gorm.DbConnector {
@@ -74,6 +86,7 @@ func SetupGormDB(t *testing.T) {
 		c.DsnBuilder = func(config *db.DBConfig) (string, error) {
 			return DbDsnBuilder(t, config)
 		}
+		c.DbCreator = DbCreator
 		return c
 	}
 }
