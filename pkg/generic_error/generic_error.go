@@ -1,6 +1,10 @@
 package generic_error
 
-import "github.com/evgeniums/go-backend-helpers/pkg/utils"
+import (
+	"fmt"
+
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+)
 
 // Generic error that can be forwarded from place of arising to place of user reporting.
 type Error interface {
@@ -50,6 +54,9 @@ func NewFromMessage(message string) *ErrorBase {
 
 // Convert error to string for error interface.
 func (e *ErrorBase) Error() string {
+	if e.original != nil {
+		return fmt.Sprintf("%s: %s", e.message, e.original)
+	}
 	return e.message
 }
 
