@@ -6,15 +6,15 @@ import (
 
 type ESigner interface {
 	utils.WithStringCoder
-	Sign(data []byte) ([]byte, error)
+	Sign(data []byte, extraData ...string) ([]byte, error)
 }
 
 type EVerifier interface {
 	utils.WithStringCoder
-	Verify(data []byte, signature []byte) error
+	Verify(data []byte, signature []byte, extraData ...string) error
 }
 
-func Sign(signer ESigner, data []byte) (string, error) {
+func Sign(signer ESigner, data []byte, extraData ...string) (string, error) {
 	signature, err := signer.Sign(data)
 	if err != nil {
 		return "", err
@@ -22,10 +22,10 @@ func Sign(signer ESigner, data []byte) (string, error) {
 	return signer.Coder().Encode(signature), nil
 }
 
-func Verify(verifier EVerifier, data []byte, signature string) error {
+func VerifySignature(verifier EVerifier, data []byte, signature string, extraData ...string) error {
 	sig, err := verifier.Coder().Decode(signature)
 	if err != nil {
 		return err
 	}
-	return verifier.Verify(data, sig)
+	return verifier.Verify(data, sig, extraData...)
 }

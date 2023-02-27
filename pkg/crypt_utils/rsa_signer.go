@@ -4,7 +4,6 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -65,9 +64,9 @@ func (r *RsaSigner) LoadKey(data []byte, password string) (err error) {
 	return nil
 }
 
-func (r *RsaSigner) Sign(data []byte) ([]byte, error) {
+func (r *RsaSigner) Sign(data []byte, extraData ...string) ([]byte, error) {
 
-	hashed := sha256.Sum256(data)
+	hashed := H256(data, extraData...)
 
 	signature, err := rsa.SignPKCS1v15(rand.Reader, r.key, crypto.SHA256, hashed[:])
 	if err != nil {

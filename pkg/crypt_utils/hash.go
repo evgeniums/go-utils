@@ -74,3 +74,12 @@ func NewHash(digestBuilder ...DigestBuilder) *Hash {
 func HashEqual(hash1 string, hash2 string) bool {
 	return hmac.Equal([]byte(hash1), []byte(hash2))
 }
+
+func H256(data []byte, extras ...string) []byte {
+	h := NewHash()
+	h.Add(data)
+	for _, extra := range extras {
+		h.Add([]byte(extra))
+	}
+	return h.Sum()
+}

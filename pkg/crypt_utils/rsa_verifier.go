@@ -3,7 +3,6 @@ package crypt_utils
 import (
 	"crypto"
 	"crypto/rsa"
-	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -12,6 +11,8 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
+
+const RSA_H256_SIGNATURE = "rsa_h256_signature"
 
 type RsaVerifier struct {
 	utils.WithStringCoderBase
@@ -55,9 +56,9 @@ func (r *RsaVerifier) LoadKey(data []byte) (err error) {
 	return nil
 }
 
-func (r *RsaVerifier) Verify(data []byte, signature []byte) error {
+func (r *RsaVerifier) Verify(data []byte, signature []byte, extraData ...string) error {
 
-	hashed := sha256.Sum256(data)
+	hashed := H256(data, extraData...)
 
 	err := rsa.VerifyPKCS1v15(r.key, crypto.SHA256, hashed[:], signature)
 	if err != nil {
