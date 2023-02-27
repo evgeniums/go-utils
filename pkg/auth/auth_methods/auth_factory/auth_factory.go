@@ -6,6 +6,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_hmac"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_signature"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_token"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/noauth"
@@ -35,6 +36,8 @@ func (f *DefaultAuthFactory) Create(protocol string) (auth.AuthHandler, error) {
 		return &auth_hmac.AuthHmac{}, nil
 	case auth_sms.SmsProtocol:
 		return auth_sms.New(f.SmsManager), nil
+	case auth_signature.SignatureProtocol:
+		return &auth_signature.AuthSignature{}, nil
 	case noauth.NoAuthProtocol:
 		return &noauth.NoAuth{}, nil
 

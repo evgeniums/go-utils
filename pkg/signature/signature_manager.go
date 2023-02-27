@@ -3,6 +3,7 @@ package signature
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
@@ -15,10 +16,15 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
+type UserWithPubkey interface {
+	PubKey() []byte
+	PubKeyHash() string
+}
+
 type SignatureManager interface {
 	generic_error.ErrorDefinitions
 
-	Verify(ctx auth.AuthContext, message string, signature string, extraData string) error
+	Verify(ctx auth.AuthContext, signature string, message []byte, extraData ...string) error
 	Find(ctx op_context.Context, context string) (*MessageSignature, error)
 }
 
@@ -81,7 +87,7 @@ func (s *SignatureManagerBase) Init(cfg config.Config, log logger.Logger, vld va
 	return nil
 }
 
-func (s *SignatureManagerBase) Verify(ctx auth.AuthContext, message string, signature string, extraData string) error {
+func (s *SignatureManagerBase) Verify(ctx auth.UserContext, signature string, message []byte, extraData ...string) error {
 
 	// setup
 	c := ctx.TraceInMethod("SignatureManagerBase.Verify", logger.Fields{"user": ctx.AuthUser().Display(), "extra_data": extraData})
@@ -101,9 +107,14 @@ func (s *SignatureManagerBase) Verify(ctx auth.AuthContext, message string, sign
 	}
 
 	// verify
-	key := ctx.GetAuthParameter(s.ALGORITHM, "pubkey")
+	user, ok := ctx.AuthUser().(UserWithPubkey)
+	if !ok {
+		c.SetMessage("user must be of UserWithPubkey interface")
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
+		return err
+	}
 	verifier := crypt_utils.NewRsaVerifier()
-	err = verifier.LoadKey([]byte(key))
+	err = verifier.LoadKey(user.PubKey())
 	if err != nil {
 		c.SetMessage("failed to load public key")
 		return err
@@ -123,8 +134,8 @@ func (s *SignatureManagerBase) Verify(ctx auth.AuthContext, message string, sign
 	obj.Operation = ctx.Name()
 	obj.Algorithm = s.ALGORITHM
 	obj.Signature = signature
-	obj.ExtraData = extraData
-	obj.PubKeyHash = ctx.GetAuthParameter(s.ALGORITHM, "pubkey_hash")
+	obj.ExtraData = strings.Join(extraData, "+")
+	obj.PubKeyHash = user.PubKeyHash()
 	if s.ENCRYPT_MESSAGE_STORE {
 		ciphertext, err := s.cipher.Encrypt([]byte(message))
 		if err != nil {
@@ -135,7 +146,7 @@ func (s *SignatureManagerBase) Verify(ctx auth.AuthContext, message string, sign
 		enc := utils.Base64StringCoding{}
 		obj.Message = enc.Encode(ciphertext)
 	} else {
-		obj.Message = message
+		obj.Message = string(message)
 	}
 	err = op_context.DB(ctx).Create(ctx, obj)
 	if err != nil {
