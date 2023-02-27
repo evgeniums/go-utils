@@ -17,3 +17,23 @@ func (b *Base64StringCoding) Encode(data []byte) string {
 func (b *Base64StringCoding) Decode(data string) ([]byte, error) {
 	return base64.RawStdEncoding.WithPadding(base64.StdPadding).DecodeString(data)
 }
+
+type WithStringCoder interface {
+	Coder() StringCoding
+}
+
+type WithStringCoderBase struct {
+	StringCoding StringCoding
+}
+
+func (w *WithStringCoderBase) Construct(encoder ...StringCoding) {
+	if len(encoder) == 0 {
+		w.StringCoding = &Base64StringCoding{}
+	} else {
+		w.StringCoding = encoder[0]
+	}
+}
+
+func (w *WithStringCoderBase) Coder() StringCoding {
+	return w.StringCoding
+}
