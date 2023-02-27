@@ -6,10 +6,14 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_token"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_providers/pubsub_factory"
+	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/go-playground/assert.v1"
 )
 
 type SampleService struct {
@@ -140,8 +144,6 @@ func (s *SampleClient) List(ctx op_context.Context) ([]*InTenancySample, error) 
 
 func TestTenancyAwareService(t *testing.T) {
 
-	t.Skip("fix sessions with tenancies")
-
 	// prepare app with multiple pools and single pool
 	multiPoolCtx, singlePoolCtx := PrepareAppWithTenancies(t)
 
@@ -156,34 +158,88 @@ func TestTenancyAwareService(t *testing.T) {
 	require.NotNil(t, addedTenancy1)
 	err = multiPoolCtx.RemoteTenancyController.Activate(multiPoolCtx.ClientOp, addedTenancy1.GetID())
 	require.NoError(t, err)
+	loadedTenancy1, err := multiPoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, loadedTenancy1)
 
-	// check if tenancy was loaded by single app
-	loadedTenancy1, err := singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy1.GetID())
+	// add second tenancy to the same pool as single pool app, add via mutipool app
+	tenancyData2 := tenancyData1
+	tenancyData2.CUSTOMER_ID = "customer2"
+	addedTenancy2, err := multiPoolCtx.RemoteTenancyController.Add(multiPoolCtx.ClientOp, tenancyData2)
+	require.NoError(t, err)
+	require.NotNil(t, addedTenancy2)
+	loadedTenancy2, err := multiPoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy2.GetID())
 	require.NoError(t, err)
 	require.NotNil(t, loadedTenancy1)
 
 	// add document to tenancy database
 	sample1 := &InTenancySample{Field1: "hello world", Field2: 10}
-	err = loadedTenancy1.Db().Create(singlePoolCtx.AdminOp, sample1)
+	err = loadedTenancy1.Db().Create(multiPoolCtx.AdminOp, sample1)
 	require.NoError(t, err)
 
 	// add sample service
 	sampleService := NewSampleService()
-	api_server.AddServiceToServer(singlePoolCtx.Server.ApiServer(), sampleService, true)
+	api_server.AddServiceToServer(multiPoolCtx.Server.ApiServer(), sampleService, true)
 
 	// create sample client
-	sampleClient := NewSampleClient(singlePoolCtx.RestApiClient)
+	sampleClient := NewSampleClient(multiPoolCtx.RestApiClient)
 	tenancyResource := api.NamedResource("tenancy")
 	tenancyResource.AddChild(sampleClient)
 
-	// invoke operation
+	// invoke operation on tenancy 1
 	tenancyResource.SetId(loadedTenancy1.Path())
-	samples, err := sampleClient.List(singlePoolCtx.ClientOp)
+	samples, err := sampleClient.List(multiPoolCtx.ClientOp)
 	require.NoError(t, err)
 	require.NotNil(t, samples)
+	require.Equal(t, 1, len(samples))
+	assert.Equal(t, sample1, samples[0])
+
+	// invoke operation on tenancy 2
+	tenancyResource.SetId(loadedTenancy2.Path())
+	samples, err = sampleClient.List(multiPoolCtx.ClientOp)
+	require.NoError(t, err)
+	require.NotNil(t, samples)
+	assert.Equal(t, 0, len(samples))
+
+	// try to invoke operation on unknown tenancy
+	tenancyResource.SetId("unknowntenancypath")
+	_, err = sampleClient.List(multiPoolCtx.ClientOp)
+	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeNotFound)
+
+	// init service for singlepool app
+	singlePoolSampleService := NewSampleService()
+	api_server.AddServiceToServer(singlePoolCtx.Server.ApiServer(), singlePoolSampleService, true)
+	singlePoolSampleClient := NewSampleClient(singlePoolCtx.RestApiClient)
+	singlePoolTenancyResource := api.NamedResource("tenancy")
+	singlePoolTenancyResource.AddChild(singlePoolSampleClient)
+
+	// try to invoke operation in single pool app where auth is from tenancies database
+	singlePoolTenancyResource.SetId(loadedTenancy1.Path())
+	_, err = singlePoolSampleClient.List(multiPoolCtx.ClientOp)
+	test_utils.CheckGenericError(t, err, auth_token.ErrorCodeSessionExpired)
 
 	// close apps
 	multiPoolCtx.Close()
 	singlePoolCtx.Close()
+
+	// check disallowed not active tenancy
+	multiPoolCtx = initContext(t, false, "tenancy_notactive")
+	sampleService1 := NewSampleService()
+	api_server.AddServiceToServer(multiPoolCtx.Server.ApiServer(), sampleService1, true)
+	sampleClient1 := NewSampleClient(multiPoolCtx.RestApiClient)
+	tenancyResource1 := api.NamedResource("tenancy")
+	tenancyResource1.AddChild(sampleClient1)
+	tenancyResource1.SetId(loadedTenancy1.Path())
+	samples, err = sampleClient1.List(multiPoolCtx.ClientOp)
+	require.NoError(t, err)
+	require.NotNil(t, samples)
+	require.Equal(t, 1, len(samples))
+	assert.Equal(t, sample1, samples[0])
+	tenancyResource1.SetId(loadedTenancy2.Path())
+	_, err = sampleClient1.List(multiPoolCtx.ClientOp)
+	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeNotFound)
+
+	// close apps
+	multiPoolCtx.Close()
 	pubsub_factory.ResetSingletonInmemPubsub()
 }

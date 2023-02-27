@@ -36,7 +36,7 @@ func (r *RequestBase) Init(app app_context.Context, log logger.Logger, db db.DB,
 	r.endpoint = endpoint
 }
 
-func (r *RequestBase) DB() db.DB {
+func (r *RequestBase) Db() db.DB {
 	t := r.GetTenancy()
 	if t != nil {
 		return t.Db()

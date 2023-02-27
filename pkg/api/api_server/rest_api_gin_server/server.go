@@ -37,6 +37,7 @@ type ServerConfig struct {
 	VERBOSE                  bool
 	VERBOSE_BODY_MAX_LENGTH  int `default:"2048"`
 	ALLOW_NOT_ACTIVE_TENANCY bool
+	AUTH_FROM_TENANCY_DB     bool `default:"true"`
 }
 
 type AuthParameterGetter = func(r *Request, key string) string
@@ -261,10 +262,10 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		}
 
 		// extract tenancy if applicable
+		var tenancy multitenancy.Tenancy
 		if s.tenancies.IsMultiTenancy() && ep.Resource().IsInTenancy() {
 			tenancyInPath := request.GetResourceId(TenancyParameter)
 			request.SetLoggerField("tenancy", tenancyInPath)
-			var tenancy multitenancy.Tenancy
 			tenancy, err = s.tenancies.TenancyByPath(tenancyInPath)
 			if err != nil {
 				request.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
@@ -274,7 +275,9 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 					request.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
 					err = errors.New("tenancy is not active")
 				} else {
-					request.SetTenancy(tenancy)
+					if s.AUTH_FROM_TENANCY_DB {
+						request.SetTenancy(tenancy)
+					}
 				}
 			}
 		}
@@ -304,6 +307,11 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 
 		// TODO process access control
 		if err == nil {
+		}
+
+		// set tenancy
+		if tenancy != nil && !s.AUTH_FROM_TENANCY_DB {
+			request.SetTenancy(tenancy)
 		}
 
 		// call endpoint's request handler

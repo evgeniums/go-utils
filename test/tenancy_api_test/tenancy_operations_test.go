@@ -193,11 +193,11 @@ func preparePoolAndServices(t *testing.T, activatePools bool) (p1 pool.Pool, poo
 	return
 }
 
-func PrepareAppWithTenancies(t *testing.T) (multiPoolCtx *TenancyTestContext, singlePoolCtx *TenancyTestContext) {
+func PrepareAppWithTenancies(t *testing.T, multiPoolConfig ...string) (multiPoolCtx *TenancyTestContext, singlePoolCtx *TenancyTestContext) {
 
 	preparePoolAndServices(t, true)
 
-	multiPoolCtx = initContext(t, false)
+	multiPoolCtx = initContext(t, false, multiPoolConfig...)
 	singlePoolCtx = initContext(t, false, "tenancy_single")
 
 	customer1, err := multiPoolCtx.LocalCustomerManager.Add(multiPoolCtx.AdminOp, "customer1", "12345678")
