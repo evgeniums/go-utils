@@ -386,10 +386,11 @@ func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenanc
 	}
 
 	// connect to database server
-	err = tenancy.ConnectDatabase(ctx)
+	err = tenancy.ConnectDatabase(ctx, true)
 	if err != nil {
 		return nil, err
 	}
+	defer tenancy.Db().Close()
 
 	// create database
 	err = tenancy.Db().AutoMigrate(ctx, t.DbModels)
@@ -399,17 +400,32 @@ func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenanc
 		return nil, err
 	}
 
-	// set tenancy meta in the database
-	meta := &multitenancy.TenancyMeta{}
-	meta.ObjectBase = tenancy.ObjectBase
-	err = tenancy.Db().Create(ctx, meta)
+	// check if there are any tenancy metas in database
+	var metas []multitenancy.TenancyMeta
+	_, err = tenancy.Db().FindWithFilter(ctx, nil, &metas)
 	if err != nil {
-		c.SetMessage("failed to save tenancy meta in created database")
+		c.SetMessage("failed to check tenancy metas in created database")
 		return nil, err
 	}
-	tenancy.Db().Close()
+	if len(metas) != 0 {
+		// database already belongs to some tenancy
+		if metas[0].GetID() != tenancy.GetID() {
+			ctx.SetGenericErrorCode(multitenancy.ErrorCodeForeignDatabase)
+			err = errors.New("created database already belongs to other tenancy")
+			return nil, err
+		}
+	} else {
+		// set tenancy meta in the database
+		meta := &multitenancy.TenancyMeta{}
+		meta.ObjectBase = tenancy.ObjectBase
+		err = tenancy.Db().Create(ctx, meta)
+		if err != nil {
+			c.SetMessage("failed to save tenancy meta in created database")
+			return nil, err
+		}
+	}
 
-	// create item
+	// create tenancy item
 	item := &multitenancy.TenancyItem{}
 	item.TenancyDb = tenancy.TenancyDb
 	item.CustomerLogin = customer.Login()

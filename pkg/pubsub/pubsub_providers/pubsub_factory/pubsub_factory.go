@@ -119,7 +119,7 @@ func (p *PubsubFactoryBase) MakePublisher(app app_context.Context, config ...Pub
 		return MakeSingletonInmemPubsub(p.serializer, app, poolService)
 	}
 
-	return nil, errors.New("unknown provider")
+	return nil, errors.New("unknown pubsub publisher provider")
 }
 
 func initRedis(app app_context.Context, r *pubsub_redis.RedisClient, poolService *pool.PoolServiceBinding, configPath string) error {
@@ -155,13 +155,14 @@ func (p *PubsubFactoryBase) MakeSubscriber(app app_context.Context, config ...Pu
 		if err != nil {
 			return nil, err
 		}
+		return subsciber, nil
 	} else if provider == pubsub_inmem.Provider {
 		return p.MakeInmemPubsub(app, poolService)
 	} else if provider == SingletonInmemProvider {
 		return MakeSingletonInmemPubsub(p.serializer, app, poolService)
 	}
 
-	return nil, errors.New("unknown provider")
+	return nil, errors.New("unknown pubsub subscriber provider")
 }
 
 func DefaultPubsubFactory(serializer ...message.Serializer) PubsubFactory {

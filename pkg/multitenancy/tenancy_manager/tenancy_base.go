@@ -9,6 +9,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type TenancyBaseData struct {
@@ -104,7 +105,7 @@ func (t *TenancyBase) Init(ctx op_context.Context, data *multitenancy.TenancyDb)
 	return false, nil
 }
 
-func (t *TenancyBase) ConnectDatabase(ctx op_context.Context) error {
+func (t *TenancyBase) ConnectDatabase(ctx op_context.Context, newDb ...bool) error {
 
 	// setup
 	var err error
@@ -120,7 +121,7 @@ func (t *TenancyBase) ConnectDatabase(ctx op_context.Context) error {
 	// find service for database role
 	dbService, err := t.Pool().Service(multitenancy.TENANCY_DATABASE_ROLE)
 	if err != nil {
-		genErr := generic_error.New(pool.ErrorCodeServiceNotActive, "Pool does not include service for tenancy database")
+		genErr := generic_error.NewFromOriginal(pool.ErrorCodeNoServiceWithRole, "Pool does not include service for tenancy database", err)
 		genErr.SetDetails(multitenancy.TENANCY_DATABASE_ROLE)
 		ctx.SetGenericError(genErr)
 		err = genErr
@@ -136,19 +137,46 @@ func (t *TenancyBase) ConnectDatabase(ctx op_context.Context) error {
 	// parse db config
 	dbConfig, err := pool.ParseDbService(&dbService.PoolServiceBaseData)
 	if err != nil {
-		genErr := generic_error.New(pool.ErrorCodeInvalidServiceConfiguration, "Invalid configuration of service for tenancy database")
+		genErr := generic_error.NewFromOriginal(pool.ErrorCodeInvalidServiceConfiguration, "Invalid configuration of service for tenancy database", err)
 		genErr.SetDetails(dbService.ServiceName)
 		ctx.SetGenericError(genErr)
 		err = genErr
 		return err
 	}
-	dbConfig.DB_NAME = t.DBNAME
+
+	// create database
+	createDb := utils.OptionalArg(false, newDb...) && dbConfig.DB_NAME != ""
+	if createDb {
+
+		// connect to master database
+		database := ctx.App().Db().NewDB()
+		err = database.InitWithConfig(ctx, ctx.App().Validator(), dbConfig)
+		if err != nil {
+			genErr := generic_error.NewFromOriginal(pool.ErrorCodeServiceInitializationFailed, "Failed to connect to master database", err)
+			genErr.SetDetails(dbService.ServiceName)
+			ctx.SetGenericError(genErr)
+			err = genErr
+			return err
+		}
+
+		// create new database
+		err = database.CreateDatabase(ctx, t.DBNAME)
+		database.Close()
+		if err != nil {
+			genErr := generic_error.NewFromOriginal(multitenancy.ErrorCodeCreateTenancyDatabaseFailed, "Failed to create tenancy database", err)
+			genErr.SetDetails(t.DBNAME)
+			ctx.SetGenericError(genErr)
+			err = genErr
+			return err
+		}
+	}
 
 	// create and init database connection
+	dbConfig.DB_NAME = t.DBNAME
 	database := ctx.App().Db().NewDB()
 	err = database.InitWithConfig(ctx, ctx.App().Validator(), dbConfig)
 	if err != nil {
-		genErr := generic_error.New(pool.ErrorCodeServiceInitializationFailed, "Failed to connect to tenancy database")
+		genErr := generic_error.NewFromOriginal(pool.ErrorCodeServiceInitializationFailed, "Failed to connect to tenancy database", err)
 		genErr.SetDetails(dbService.ServiceName)
 		ctx.SetGenericError(genErr)
 		err = genErr

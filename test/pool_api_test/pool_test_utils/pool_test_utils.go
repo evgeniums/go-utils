@@ -108,7 +108,10 @@ func AddService(t *testing.T, ctx *PoolTestContext, serviceConfig *pool.PoolServ
 	p1.SetTypeName(p1Sample.TypeName())
 	p1.SetRefId(p1Sample.RefId())
 	p1.PoolServiceBaseEssentials.ServiceConfigBase = p1Sample.ServiceConfigBase
-	p1.SECRET1 = "secret1"
+	p1.SECRET1 = serviceConfig.SECRET1
+	if p1.SECRET1 == "" && p1.Provider() != "redis" {
+		p1.SECRET1 = "secret1"
+	}
 	p1.SECRET2 = "secret2"
 	p1.SetActive(true)
 

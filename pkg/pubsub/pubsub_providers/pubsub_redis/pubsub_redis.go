@@ -51,6 +51,9 @@ func (r *RedisClient) Init(cfg config.Config, log logger.Logger, vld validator.V
 }
 
 func (r *RedisClient) InitWithConfig(log logger.Logger, cfg *RedisConfig) error {
+
+	r.RedisConfig = *cfg
+
 	address := fmt.Sprintf("%s:%d", r.Host, r.Port)
 	r.context = context.Background()
 	r.redisClient = redis.NewClient(&redis.Options{

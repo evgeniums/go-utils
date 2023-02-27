@@ -112,11 +112,19 @@ func preparePools(t *testing.T, ctx *TenancyTestContext, names ...string) []pool
 	return pools
 }
 
+type DbConfig struct {
+	DbHost     string
+	DbPort     uint16
+	DbUser     string
+	DbPassword string
+}
+
 type TenancyServiceConfig struct {
 	Name     string
 	Type     string
 	Provider string
 	DbName   string
+	DbConfig
 }
 
 func prepareServices(t *testing.T, ctx *TenancyTestContext, configs ...*TenancyServiceConfig) []pool.PoolService {
@@ -129,6 +137,10 @@ func prepareServices(t *testing.T, ctx *TenancyTestContext, configs ...*TenancyS
 		cfg.TYPE_NAME = config.Type
 		cfg.DB_NAME = config.DbName
 		cfg.PRIVATE_URL = ""
+		cfg.PRIVATE_PORT = config.DbPort
+		cfg.PRIVATE_HOST = config.DbHost
+		cfg.USER = config.DbUser
+		cfg.SECRET1 = config.DbPassword
 
 		service := pool_test_utils.AddService(t, ctx.PoolTestContext, cfg)
 		services[i] = service
@@ -337,7 +349,7 @@ func TestAddTenancy(t *testing.T) {
 	t.Logf("Loaded tenancy: \n\n%s\n\n", string(b2))
 	assert.Equal(t, addedTenancy1.TenancyDb, loadedT1.TenancyDb)
 
-	// check if database tables was created
+	// check if database tables were created
 	sample1 := &InTenancySample{Field1: "hello world", Field2: 10}
 	err = loadedTenancy1.Db().Create(multiPoolCtx.AdminOp, sample1)
 	require.NoError(t, err)
