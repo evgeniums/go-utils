@@ -83,3 +83,9 @@ func H256(data []byte, extras ...string) []byte {
 	}
 	return h.Sum()
 }
+
+func H256B64(data []byte, extras ...string) string {
+	h := H256(data, extras...)
+	c := utils.Base64StringCoding{}
+	return c.Encode(h)
+}
