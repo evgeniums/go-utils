@@ -14,6 +14,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -49,6 +50,7 @@ type AppBuilder interface {
 	InitSetupApp(app app_context.Context, configFile string, args []string, configType ...string) error
 	HasSetupApp() bool
 	Tenancy(ctx op_context.Context, id string) (multitenancy.Tenancy, error)
+	PoolController() pool.PoolController
 }
 
 func New(buildConfig *app_context.BuildConfig, appBuilder ...AppBuilder) *ConsoleUtility {

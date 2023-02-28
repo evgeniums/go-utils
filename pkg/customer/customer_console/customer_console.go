@@ -42,7 +42,7 @@ type CustomerCommands = Commands[*customer.Customer]
 func NewCustomerCommands(managerBuilder ...func(app app_context.Context) user.Users[*customer.Customer]) *CustomerCommands {
 
 	config := Config[*customer.Customer]{
-		Name:           "Customer",
+		Name:           "customer",
 		Description:    "Manage customers",
 		ManagerBuilder: utils.OptionalArg(DefaultCustomerManager, managerBuilder...),
 	}

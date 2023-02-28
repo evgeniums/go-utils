@@ -1,16 +1,18 @@
 package console_tool
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/jessevdk/go-flags"
 )
 
 type CommandGroup interface {
 	Name() string
 	Description() string
+	InvokeInTenancy() bool
 }
 
 type CommandGroupBase struct {
@@ -33,12 +35,17 @@ func (c *CommandGroupBase) Description() string {
 	return c.GroupDescription
 }
 
+func (c *CommandGroupBase) InvokeInTenancy() bool {
+	return false
+}
+
 type HandlerBuilder[T CommandGroup] func() Handler[T]
 
 type Commands[T CommandGroup] struct {
 	*CommandGroupBase
 	Self          T
 	ExtraHandlers []HandlerBuilder[T]
+	InTenancy     bool
 }
 
 func (c *Commands[T]) AddHandlers(handlers ...HandlerBuilder[T]) {
@@ -70,6 +77,10 @@ func (c *Commands[T]) Description() string {
 
 func (c *Commands[T]) Name() string {
 	return c.CommandGroupBase.Name()
+}
+
+func (c *Commands[T]) InvokeInTenancy() bool {
+	return c.InTenancy
 }
 
 func (c *Commands[T]) Construct(self T, name string, description string) {
@@ -134,8 +145,11 @@ func (h *HandlerBase[T]) HandlerDescription() string {
 	return h.HandlerBaseHolder.Description
 }
 
-func (h *HandlerBase[T]) Context(opData interface{}) (op_context.Context, error) {
+func (h *HandlerBase[T]) Context(opData interface{}) (multitenancy.TenancyContext, error) {
 	ctx := h.HandlerBaseHolder.CtxBuilder(h.Group.Name(), h.HandlerBaseHolder.Name)
+	if h.Group.InvokeInTenancy() && ctx.GetTenancy() == nil {
+		return ctx, errors.New("this command must be invoked in tenancy")
+	}
 	err := ctx.App().Validator().Validate(opData)
 	return ctx, err
 }

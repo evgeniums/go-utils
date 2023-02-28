@@ -21,7 +21,7 @@ type MultitenancyAppBuilder struct {
 	SetupApp *app_with_pools.AppWithPoolsBase
 }
 
-func (m *MultitenancyAppBuilder) GetPoolController() pool.PoolController {
+func (m *MultitenancyAppBuilder) PoolController() pool.PoolController {
 	if m.SetupApp != nil {
 		return m.SetupApp.Pools().PoolController()
 	}
