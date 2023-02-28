@@ -34,12 +34,16 @@ type MainFieldSetters interface {
 	SetBlocked(ctx op_context.Context, id string, blocked bool, idIsLogin ...bool) error
 }
 
+type UserFinder[U User] interface {
+	Find(ctx op_context.Context, id string) (U, error)
+	FindByLogin(ctx op_context.Context, login string) (U, error)
+}
+
 type UserController[UserType User] interface {
 	MainFieldSetters
+	UserFinder[UserType]
 
 	Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error)
-	Find(ctx op_context.Context, id string) (UserType, error)
-	FindByLogin(ctx op_context.Context, login string) (UserType, error)
 	FindAuthUser(ctx op_context.Context, login string, user auth.User, dest ...interface{}) (bool, error)
 	FindUsers(ctx op_context.Context, filter *db.Filter, users *[]UserType) (int64, error)
 
@@ -231,6 +235,7 @@ func (u *UserControllerBase[UserType]) FindByLogin(ctx op_context.Context, login
 		return nilUser, err
 	}
 	if !found {
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
 		err = errors.New("user with such login does not exist")
 		return nilUser, err
 	}
@@ -239,7 +244,7 @@ func (u *UserControllerBase[UserType]) FindByLogin(ctx op_context.Context, login
 	return user, nil
 }
 
-func FindUser[UserType User](u *UserControllerBase[UserType], ctx op_context.Context, id string, idIsLogin ...bool) (user UserType, err error) {
+func FindUser[UserType User](u UserFinder[UserType], ctx op_context.Context, id string, idIsLogin ...bool) (user UserType, err error) {
 
 	useLogin := utils.OptionalArg(false, idIsLogin...)
 
@@ -277,7 +282,7 @@ func (u *UserControllerBase[UserType]) SetPassword(ctx op_context.Context, id st
 	}
 
 	// find user
-	user, err := FindUser(u, ctx, id, idIsLogin...)
+	user, err := FindUser[UserType](u, ctx, id, idIsLogin...)
 	if err != nil {
 		return err
 	}
@@ -309,7 +314,7 @@ func (u *UserControllerBase[UserType]) SetPhone(ctx op_context.Context, id strin
 	defer onExit()
 
 	// find user
-	user, err := FindUser(u, ctx, id, idIsLogin...)
+	user, err := FindUser[UserType](u, ctx, id, idIsLogin...)
 	if err != nil {
 		return err
 	}
@@ -340,7 +345,7 @@ func (u *UserControllerBase[UserType]) SetEmail(ctx op_context.Context, id strin
 	defer onExit()
 
 	// find user
-	user, err := FindUser(u, ctx, id, idIsLogin...)
+	user, err := FindUser[UserType](u, ctx, id, idIsLogin...)
 	if err != nil {
 		return err
 	}
@@ -375,7 +380,7 @@ func (u *UserControllerBase[UserType]) SetBlocked(ctx op_context.Context, id str
 	defer onExit()
 
 	// find user
-	user, err := FindUser(u, ctx, id, idIsLogin...)
+	user, err := FindUser[UserType](u, ctx, id, idIsLogin...)
 	if err != nil {
 		return err
 	}

@@ -49,7 +49,7 @@ func (cu *UserNameAndDescriptionControllerB[T]) SetName(ctx op_context.Context, 
 	defer onExit()
 
 	// find user
-	user, err := user.FindUser(cu.UserControllerBase, ctx, id, idIsLogin...)
+	user, err := user.FindUser[T](cu.UserControllerBase, ctx, id, idIsLogin...)
 	if err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func (cu *UserNameAndDescriptionControllerB[T]) SetDescription(ctx op_context.Co
 	defer onExit()
 
 	// find user
-	user, err := user.FindUser(cu.UserControllerBase, ctx, id, idIsLogin...)
+	user, err := user.FindUser[T](cu.UserControllerBase, ctx, id, idIsLogin...)
 	if err != nil {
 		return err
 	}
