@@ -44,7 +44,7 @@ type UserController[UserType User] interface {
 	UserFinder[UserType]
 
 	Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error)
-	FindAuthUser(ctx op_context.Context, login string, user auth.User, dest ...interface{}) (bool, error)
+	FindAuthUser(ctx op_context.Context, login string) (auth.User, error)
 	FindUsers(ctx op_context.Context, filter *db.Filter, users *[]UserType) (int64, error)
 
 	SetUserBuilder(builder func() UserType)
@@ -92,7 +92,6 @@ func (u *UserControllerBase[UserType]) MakeUser() UserType {
 func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error) {
 
 	// setup
-	var nilUser UserType
 	ctx.SetLoggerField("login", login)
 	c := ctx.TraceInMethod("Users.Add")
 	var err error
@@ -109,12 +108,12 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 		err = u.userValidators.ValidateLogin(login)
 		if err != nil {
 			c.SetMessage("failed to validate login")
-			return nilUser, err
+			return *new(UserType), err
 		}
 		err = u.userValidators.ValidatePassword(password)
 		if err != nil {
 			c.SetMessage("failed to validate password")
-			return nilUser, err
+			return *new(UserType), err
 		}
 	}
 
@@ -126,12 +125,12 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 	_, err = u.FindUsers(ctx, filter, &users)
 	if err != nil {
 		c.SetMessage("failed to check login duplicates")
-		return nilUser, err
+		return *new(UserType), err
 	}
 	if len(users) > 0 {
 		err = errors.New("duplicate login")
 		ctx.SetGenericErrorCode(ErrorCodeDuplicateLogin)
-		return nilUser, err
+		return *new(UserType), err
 	}
 
 	// create user
@@ -144,7 +143,7 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 		err = err1
 		if err != nil {
 			c.SetMessage("failed to set extra fields")
-			return nilUser, err
+			return *new(UserType), err
 		}
 		for _, checkDup := range checkDuplicateFields {
 			var users []UserType
@@ -156,14 +155,14 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 			if err != nil {
 				c.SetLoggerField("unique_field", checkDup.Name)
 				c.SetMessage("failed to check unique field")
-				return nilUser, err
+				return *new(UserType), err
 			}
 			if len(users) > 0 {
 				c.SetLoggerField("unique_field", checkDup.Name)
 				c.SetLoggerField("unique_value", checkDup.Value)
 				err = fmt.Errorf("duplicate %s", checkDup.Name)
 				ctx.SetGenericErrorCode(checkDup.ErrorCode)
-				return nilUser, err
+				return *new(UserType), err
 			}
 		}
 	}
@@ -172,7 +171,7 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 	err = u.crudController.Create(ctx, user)
 	if err != nil {
 		c.SetMessage("failed to create user")
-		return nilUser, err
+		return *new(UserType), err
 	}
 	u.OpLog(ctx, "add", user.GetID(), login)
 
@@ -181,8 +180,6 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 }
 
 func (u *UserControllerBase[UserType]) Find(ctx op_context.Context, id string) (UserType, error) {
-
-	var nilUser UserType
 
 	// setup
 	c := ctx.TraceInMethod("Users.Find", logger.Fields{"id": id})
@@ -200,12 +197,12 @@ func (u *UserControllerBase[UserType]) Find(ctx op_context.Context, id string) (
 	found, err := u.crudController.Read(ctx, db.Fields{"id": id}, user)
 	if err != nil {
 		c.SetMessage("failed to find user in database")
-		return nilUser, err
+		return *new(UserType), err
 	}
 	if !found {
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
 		err = errors.New("user with such ID does not exist")
-		return nilUser, err
+		return *new(UserType), err
 	}
 
 	// done
@@ -213,8 +210,6 @@ func (u *UserControllerBase[UserType]) Find(ctx op_context.Context, id string) (
 }
 
 func (u *UserControllerBase[UserType]) FindByLogin(ctx op_context.Context, login string) (UserType, error) {
-
-	var nilUser UserType
 
 	// setup
 	c := ctx.TraceInMethod("Users.FindByLogin", logger.Fields{"login": login})
@@ -232,12 +227,12 @@ func (u *UserControllerBase[UserType]) FindByLogin(ctx op_context.Context, login
 	found, err := FindByLogin(u.crudController, ctx, login, user)
 	if err != nil {
 		c.SetMessage("failed to find user in database")
-		return nilUser, err
+		return *new(UserType), err
 	}
 	if !found {
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
 		err = errors.New("user with such login does not exist")
-		return nilUser, err
+		return *new(UserType), err
 	}
 
 	// done
@@ -361,8 +356,16 @@ func (u *UserControllerBase[UserType]) SetEmail(ctx op_context.Context, id strin
 	return nil
 }
 
-func (u *UserControllerBase[UserType]) FindAuthUser(ctx op_context.Context, login string, user auth.User, dest ...interface{}) (bool, error) {
-	return FindByLogin(u.crudController, ctx, login, user)
+func (u *UserControllerBase[UserType]) FindAuthUser(ctx op_context.Context, login string) (auth.User, error) {
+	user := u.MakeUser()
+	found, err := FindByLogin(u.crudController, ctx, login, user)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, nil
+	}
+	return user, nil
 }
 
 func (u *UserControllerBase[UserType]) SetBlocked(ctx op_context.Context, id string, blocked bool, idIsLogin ...bool) error {
@@ -440,10 +443,6 @@ type UsersBase[UserType User] struct {
 
 func (u *UsersBase[UserType]) Construct(userController UserController[UserType]) {
 	u.UserController = userController
-}
-
-func (u *UsersBase[UserType]) MakeAuthUser() auth.User {
-	return u.MakeUser()
 }
 
 func (m *UsersBase[UserType]) AuthUserManager() auth_session.AuthUserManager {

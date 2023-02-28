@@ -178,14 +178,13 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	}
 
 	// load user
-	user := a.users.AuthUserManager().MakeAuthUser()
-	found, err := a.users.AuthUserManager().FindAuthUser(ctx, session.GetUserLogin(), user)
+	user, err := a.users.AuthUserManager().FindAuthUser(ctx, session.GetUserLogin())
 	if err != nil {
 		c.SetMessage("failed to load user")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return true, err
 	}
-	if !found {
+	if user == nil {
 		c.SetMessage("user not found")
 		ctx.SetGenericErrorCode(ErrorCodeUnknownUser)
 		return true, err

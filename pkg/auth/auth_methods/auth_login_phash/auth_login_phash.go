@@ -121,14 +121,13 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	}
 
 	// load user
-	dbUser := l.users.AuthUserManager().MakeAuthUser()
-	found, err := l.users.AuthUserManager().FindAuthUser(ctx, login, dbUser)
+	dbUser, err := l.users.AuthUserManager().FindAuthUser(ctx, login)
 	if err != nil {
 		c.SetMessage("failed to load user")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return true, err
 	}
-	if !found {
+	if dbUser == nil {
 		c.SetMessage("user not found")
 		if phash == "" {
 			// forward client to second step anyway with fake salt

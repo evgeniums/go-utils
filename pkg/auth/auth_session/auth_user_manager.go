@@ -12,8 +12,7 @@ type UserValidators interface {
 
 type AuthUserManager interface {
 	UserValidators
-	FindAuthUser(ctx op_context.Context, login string, user auth.User, dest ...interface{}) (bool, error)
-	MakeAuthUser() auth.User
+	FindAuthUser(ctx op_context.Context, login string) (auth.User, error)
 }
 
 type WithAuthUserManager interface {

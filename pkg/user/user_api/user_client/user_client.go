@@ -74,6 +74,6 @@ func (u *UserClient[U]) UserOperation(userId string, resourceName string, op api
 	return op
 }
 
-func (u *UserClient[U]) FindAuthUser(ctx op_context.Context, login string, user auth.User, dest ...interface{}) (bool, error) {
-	return false, errors.New("unsupported method")
+func (u *UserClient[U]) FindAuthUser(ctx op_context.Context, login string) (auth.User, error) {
+	return nil, errors.New("unsupported method")
 }

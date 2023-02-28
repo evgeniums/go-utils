@@ -8,6 +8,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 )
 
+// TODO add to errors
 const (
 	ErrorCodeCustomerNotFound string = "customer_not_found"
 )

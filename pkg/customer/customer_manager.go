@@ -1,7 +1,6 @@
 package customer
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 )
@@ -18,10 +17,6 @@ type CustomersBase struct {
 
 func (c *CustomersBase) Construct(customerController CustomerController) {
 	c.CustomerController = customerController
-}
-
-func (c *CustomersBase) MakeAuthUser() auth.User {
-	return c.MakeUser()
 }
 
 func (m *CustomersBase) AuthUserManager() auth_session.AuthUserManager {
