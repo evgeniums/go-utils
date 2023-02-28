@@ -11,6 +11,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger/logger_logrus"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
 	"github.com/jessevdk/go-flags"
@@ -23,10 +24,11 @@ type MainOptions struct {
 	Setup        bool   `short:"s" long:"setup" description:"Use minimal application features for initial setup"`
 	DbSection    string `short:"d" long:"database-section" description:"Database section in configuration file" default:"db"`
 	InkokerName  string `short:"i" long:"invoker-name" description:"Name of the user who invoked this utility" default:"local_admin"`
+	Tenancy      string `short:"t" long:"tenancy" description:"Tenancy to invoke the command in. Can be either tenancy's ID or in the form of customer_name/role."`
 }
 
 type Dummy struct{}
-type ContextBulder = func(group string, command string) op_context.Context
+type ContextBulder = func(group string, command string) multitenancy.TenancyContext
 
 type ConsoleUtility struct {
 	Parser *flags.Parser
@@ -46,6 +48,7 @@ type AppBuilder interface {
 	NewSetupApp(buildConfig *app_context.BuildConfig) app_context.Context
 	InitSetupApp(app app_context.Context, configFile string, args []string, configType ...string) error
 	HasSetupApp() bool
+	Tenancy(ctx op_context.Context, id string) (multitenancy.Tenancy, error)
 }
 
 func New(buildConfig *app_context.BuildConfig, appBuilder ...AppBuilder) *ConsoleUtility {
@@ -65,7 +68,7 @@ func (c *ConsoleUtility) Close() {
 	}
 }
 
-func (c *ConsoleUtility) InitCommandContext(group string, command string) op_context.Context {
+func (c *ConsoleUtility) InitCommandContext(group string, command string) multitenancy.TenancyContext {
 
 	if c.AppBuilder == nil || c.Opts.Setup && !c.AppBuilder.HasSetupApp() {
 
@@ -122,7 +125,7 @@ func (c *ConsoleUtility) InitCommandContext(group string, command string) op_con
 		}
 	}
 
-	opCtx := default_op_context.NewContext()
+	opCtx := multitenancy.NewContext()
 	opCtx.Init(c.App, c.App.Logger(), c.App.Db())
 	opCtx.SetName(fmt.Sprintf("%s.%s", group, command))
 	errManager := &generic_error.ErrorManagerBase{}
@@ -133,6 +136,14 @@ func (c *ConsoleUtility) InitCommandContext(group string, command string) op_con
 	origin.SetUser(c.Opts.InkokerName)
 	origin.SetUserType("console")
 	opCtx.SetOrigin(origin)
+
+	if c.Opts.Tenancy != "" {
+		tenancy, err := c.AppBuilder.Tenancy(opCtx, c.Opts.Tenancy)
+		if err != nil {
+			app_context.AbortFatal(c.App, "failed to find tenancy", err)
+		}
+		opCtx.SetTenancy(tenancy)
+	}
 
 	return opCtx
 }

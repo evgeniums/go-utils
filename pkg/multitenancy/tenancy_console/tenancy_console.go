@@ -3,6 +3,7 @@ package tenancy_console
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/console_tool"
@@ -87,6 +88,24 @@ func (m *MultitenancyAppBuilder) InitSetupApp(app app_context.Context, configFil
 
 func (m *MultitenancyAppBuilder) HasSetupApp() bool {
 	return true
+}
+
+func (m *MultitenancyAppBuilder) Tenancy(ctx op_context.Context, id string) (multitenancy.Tenancy, error) {
+
+	idIsDisplay := strings.Contains(id, "/")
+	if !idIsDisplay {
+		return m.App.Multitenancy().Tenancy(id)
+	}
+
+	tenancy, err := m.App.Multitenancy().TenancyController().Find(ctx, id, idIsDisplay)
+	if err != nil {
+		return nil, err
+	}
+	if tenancy == nil {
+		return nil, errors.New("unknown tenancy")
+	}
+
+	return m.App.Multitenancy().Tenancy(tenancy.GetID())
 }
 
 type TenancyCommands struct {
