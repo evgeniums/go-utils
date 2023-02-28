@@ -36,6 +36,11 @@ type FilterConfig struct {
 	Count         bool   `json:"count,omitempty"`
 }
 
+type OrFields struct {
+	Value  interface{}
+	Fields []string
+}
+
 type Filter struct {
 	FilterConfig
 	Fields        Fields
@@ -43,6 +48,7 @@ type Filter struct {
 	FieldsNotIn   map[string][]interface{}
 	Intervals     map[string]*Interval
 	BetweenFields []*BetweenFields
+	OrFields      []*OrFields
 }
 
 func NewFilter() *Filter {
@@ -93,6 +99,16 @@ func (f *Filter) AddBetweenField(fromField string, toField string, value interfa
 		f.BetweenFields = make([]*BetweenFields, 0, 1)
 	}
 	f.BetweenFields = append(f.BetweenFields, &BetweenFields{Value: value, FromField: fromField, ToField: toField})
+}
+
+func (f *Filter) AddOrFields(value interface{}, names ...string) {
+	if f.OrFields == nil {
+		f.OrFields = make([]*OrFields, 0)
+	}
+	item := &OrFields{}
+	item.Value = value
+	item.Fields = append([]string{}, names...)
+	f.OrFields = append(f.OrFields, item)
 }
 
 func filterValueToString(value interface{}) string {
@@ -161,6 +177,16 @@ func (f *Filter) ToQuery() *Query {
 		q.BetweenFields[i] = QueryBetweenFields{FromField: betweenQ.FromField, ToField: betweenQ.ToField, Value: filterValueToString(betweenQ.Value), FromOpen: betweenQ.FromOpen, ToOpen: betweenQ.ToOpen}
 	}
 
+	// fill or_fields
+	if len(f.OrFields) > 0 {
+		q.OrFields = make([]QueryOrFields, len(f.OrFields))
+	}
+	for i := 0; i < len(f.OrFields); i++ {
+		orFields := f.OrFields[i]
+		value := filterValueToString(orFields.Value)
+		q.OrFields[i] = QueryOrFields{Value: value, Fields: orFields.Fields}
+	}
+
 	return q
 }
 
@@ -185,6 +211,11 @@ type QueryBetweenFields struct {
 	ToOpen    bool   `json:"to_open,omitempty"`
 }
 
+type QueryOrFields struct {
+	Value  string   `json:"value"`
+	Fields []string `json:"fields"`
+}
+
 type Query struct {
 	FilterConfig
 
@@ -193,6 +224,7 @@ type Query struct {
 	FieldsNotIn   map[string][]string      `json:"fields_not_in,omitempty"`
 	Intervals     map[string]QueryInterval `json:"intervals,omitempty"`
 	BetweenFields []QueryBetweenFields     `json:"betwees_fields,omitempty"`
+	OrFields      []QueryOrFields          `json:"or_fields,omitempty"`
 }
 
 type WithFilterParser interface {

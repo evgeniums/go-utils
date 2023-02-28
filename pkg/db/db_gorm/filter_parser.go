@@ -236,6 +236,27 @@ func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 		filter.BetweenFields[i] = &db.BetweenFields{FromField: fromField, ToField: toField, Value: val, FromOpen: betweenQ.FromOpen, ToOpen: betweenQ.ToOpen}
 	}
 
+	// fill or_fields
+	if len(query.OrFields) > 0 {
+		filter.OrFields = make([]*db.OrFields, len(query.OrFields))
+	}
+	for i := 0; i < len(query.OrFields); i++ {
+		orFieldsQ := query.OrFields[i]
+
+		var value interface{}
+		fields := make([]string, len(orFieldsQ.Fields))
+		for j := 0; j < len(orFieldsQ.Fields); j++ {
+			field, val, err := f.ParseValidateField(orFieldsQ.Fields[j], orFieldsQ.Value)
+			if err != nil {
+				return nil, err
+			}
+			fields[j] = field
+			value = val
+		}
+
+		filter.OrFields[i] = &db.OrFields{Value: value, Fields: fields}
+	}
+
 	// done
 	return filter, nil
 }

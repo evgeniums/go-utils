@@ -106,7 +106,17 @@ func prepareFilter(db *gorm.DB, filter *Filter) *gorm.DB {
 	}
 
 	for _, between := range filter.BetweenFields {
-		h = h.Where(fmt.Sprintf(`? %s "%v" AND ? %s "%v"`, compareOp(between.FromOpen, ">"), between.FromField, compareOp(between.ToOpen, ">"), between.ToField), between.Value, between.Value)
+		h = h.Where(fmt.Sprintf("? %s \"%v\" AND ? %s \"%v\"", compareOp(between.FromOpen, ">"), between.FromField, compareOp(between.ToOpen, ">"), between.ToField), between.Value, between.Value)
+	}
+
+	for _, orFields := range filter.OrFields {
+		for i, field := range orFields.Fields {
+			if i == 0 {
+				h = h.Where(fmt.Sprintf("\"%s\" = ?", field), orFields.Value)
+			} else {
+				h = h.Or(fmt.Sprintf("\"%s\" = ?", field), orFields.Value)
+			}
+		}
 	}
 
 	return h
