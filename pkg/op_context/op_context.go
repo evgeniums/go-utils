@@ -50,7 +50,9 @@ type Context interface {
 	MainDB() db.DB
 	MainLogger() logger.Logger
 
-	DbTransaction() db.DBHandlers
+	DbTransaction() db.Transaction
+	SetDbTransaction(tx db.Transaction)
+	ClearDbTransaction()
 
 	Cache() cache.Cache
 

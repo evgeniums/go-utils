@@ -318,8 +318,16 @@ func (c *ContextBase) Cache() cache.Cache {
 	return c.cache
 }
 
-func (c *ContextBase) DbTransaction() db.DBHandlers {
+func (c *ContextBase) DbTransaction() db.Transaction {
 	return c.dbTransaction
+}
+
+func (c *ContextBase) SetDbTransaction(tx db.Transaction) {
+	c.dbTransaction = tx
+}
+
+func (c *ContextBase) ClearDbTransaction() {
+	c.dbTransaction = nil
 }
 
 func (c *ContextBase) SetErrorAsWarn(enable bool) {
