@@ -65,7 +65,7 @@ func TenancyId(ctrl multitenancy.TenancyController, ctx op_context.Context, id s
 	filter.Limit = 1
 	tenancies, _, err := ctrl.List(ctx, filter)
 	if err != nil {
-		c.SetMessage("failed to find tenancy")
+		c.SetMessage("failed to list tenancies")
 		return "", nil, c.SetError(err)
 	}
 	if len(tenancies) == 0 {
@@ -101,7 +101,6 @@ func FindTenancy(ctrl multitenancy.TenancyController, ctx op_context.Context, id
 	filter.Limit = 1
 	tenancies, _, err := ctrl.List(ctx, filter)
 	if err != nil {
-		c.SetMessage("failed to find tenancy")
 		return nil, c.SetError(err)
 	}
 	if len(tenancies) == 0 {
