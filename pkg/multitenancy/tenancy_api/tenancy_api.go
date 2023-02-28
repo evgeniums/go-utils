@@ -13,6 +13,7 @@ type TenancyResponse struct {
 	*multitenancy.TenancyItem
 }
 
+// TODO use Items
 type ListTenanciesResponse struct {
 	api.ResponseCount
 	api.ResponseHateous
