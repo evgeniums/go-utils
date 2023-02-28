@@ -10,10 +10,10 @@ import (
 
 type SetName = user_client.SetterHandler[common.WithNameBase]
 
-func (u *CustomerClient) SetName(ctx op_context.Context, id string, name string, idIsLogin ...bool) error {
+func (u *Client[T]) SetName(ctx op_context.Context, id string, name string, idIsLogin ...bool) error {
 
 	// setup
-	c := ctx.TraceInMethod("CustomerClient.SetName")
+	c := ctx.TraceInMethod("Client.SetName")
 	defer ctx.TraceOutMethod()
 
 	// if idIsLogin then first find user

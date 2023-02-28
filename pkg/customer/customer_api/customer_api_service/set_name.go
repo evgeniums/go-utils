@@ -3,16 +3,17 @@ package customer_api_service
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-backend-helpers/pkg/customer"
 	"github.com/evgeniums/go-backend-helpers/pkg/customer/customer_api"
 )
 
-type SetNameEndpoint struct {
-	CustomerEndpoint
+type SetNameEndpoint[T customer.User] struct {
+	Endpoint[T]
 }
 
-func (s *SetNameEndpoint) HandleRequest(request api_server.Request) error {
+func (s *SetNameEndpoint[T]) HandleRequest(request api_server.Request) error {
 
-	c := request.TraceInMethod("customer.SetName")
+	c := request.TraceInMethod("SetName")
 	defer request.TraceOutMethod()
 
 	cmd := &common.WithNameBase{}
@@ -21,7 +22,7 @@ func (s *SetNameEndpoint) HandleRequest(request api_server.Request) error {
 		return err
 	}
 
-	err = Setter(s.service.Customers, request).SetName(request, request.GetResourceId("customer"), cmd.Name())
+	err = Setter(s.service.Controller, request).SetName(request, request.GetResourceId(s.service.UserTypeName), cmd.Name())
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -29,7 +30,7 @@ func (s *SetNameEndpoint) HandleRequest(request api_server.Request) error {
 	return nil
 }
 
-func SetName(service *CustomerService) api_server.ResourceEndpointI {
-	e := &SetNameEndpoint{}
+func SetName[T customer.User](service *Service[T]) api_server.ResourceEndpointI {
+	e := &SetNameEndpoint[T]{}
 	return e.Init(e, "name", service, customer_api.SetName())
 }

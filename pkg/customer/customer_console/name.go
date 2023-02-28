@@ -7,16 +7,16 @@ import (
 )
 
 const NameCmd string = "name"
-const NameDescription string = "Set customer name"
+const NameDescription string = "Set name"
 
-func Name() console_tool.Handler[*user_console.UserCommands[*customer.Customer]] {
-	a := &NameHandler{}
+func Name[T customer.User]() console_tool.Handler[*user_console.UserCommands[T]] {
+	a := &NameHandler[T]{}
 	a.Init(NameCmd, NameDescription)
 	return a
 }
 
 type NameData struct {
-	Name string `long:"name" description:"Name of the customer"`
+	Name string `long:"name" description:"Name of the subject"`
 }
 
 type WithNameData struct {
@@ -24,16 +24,16 @@ type WithNameData struct {
 	NameData
 }
 
-type NameHandler struct {
-	user_console.HandlerBase[*customer.Customer]
+type NameHandler[T customer.User] struct {
+	user_console.HandlerBase[T]
 	WithNameData
 }
 
-func (a *NameHandler) Data() interface{} {
+func (a *NameHandler[T]) Data() interface{} {
 	return &a.WithNameData
 }
 
-func (a *NameHandler) Execute(args []string) error {
+func (a *NameHandler[T]) Execute(args []string) error {
 
 	ctx, ctrl, err := a.Context(a.Data(), a.Login)
 	if err != nil {
@@ -41,10 +41,10 @@ func (a *NameHandler) Execute(args []string) error {
 	}
 	defer ctx.Close()
 
-	customerManager, ok := ctrl.(*customer.Manager)
+	setter, ok := ctrl.(customer.NameAndDescriptionSetter)
 	if !ok {
 		panic("Invalid type of user controller")
 	}
 
-	return customerManager.SetName(ctx, a.Login, a.Name, true)
+	return setter.SetName(ctx, a.Login, a.Name, true)
 }

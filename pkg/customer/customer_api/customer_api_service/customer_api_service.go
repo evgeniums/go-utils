@@ -5,43 +5,54 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/customer"
 	"github.com/evgeniums/go-backend-helpers/pkg/customer/customer_api"
+	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api/user_service"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
-type CustomerService struct {
-	*user_service.UserService[*customer.Customer]
-	Customers customer.CustomerController
+type Service[T customer.User] struct {
+	*user_service.UserService[T]
+	Controller customer.UserNameAndDescriptionController[T]
 }
 
-func NewCustomerService(customers *customer.Manager) *CustomerService {
-	c := &CustomerService{Customers: customers}
-	c.UserService = user_service.NewUserService[*customer.Customer](customers, customer_api.NewCustomerFieldsSetter, "customer")
+func NewService[T customer.User](users user.Users[T], userTypeName ...string) *Service[T] {
+	c := &Service[T]{}
+	c.Users = users
+	c.UserService = user_service.NewUserService(users,
+		customer_api.NewFieldsSetter[T],
+		utils.OptionalArg("customer", userTypeName...))
 
 	c.UserService.UserResource().AddChildren(SetName(c), SetDescription(c))
 
 	return c
 }
 
-type CustomerEndpoint struct {
+type Endpoint[T customer.User] struct {
 	api_server.ResourceEndpoint
-	service *CustomerService
+	service *Service[T]
 }
 
-func (e *CustomerEndpoint) Init(ep api_server.ResourceEndpointI, fieldName string, s *CustomerService, op api.Operation) api_server.ResourceEndpointI {
+func (e *Endpoint[T]) Init(ep api_server.ResourceEndpointI, fieldName string, s *Service[T], op api.Operation) api_server.ResourceEndpointI {
 	api_server.ConstructResourceEndpoint(ep, fieldName, op)
 	e.service = s
 	return ep
 }
 
-type TenancyWithCustomer interface {
-	CustomerFieldSetter() customer.CustomerFieldSetter
+type CustomerService = Service[*customer.Customer]
+
+func NewCustomerService(customers *customer.Manager) *CustomerService {
+	return NewService[*customer.Customer](customers)
 }
 
-func Setter(setter customer.CustomerFieldSetter, request api_server.Request) customer.CustomerFieldSetter {
+type TenancyWithSetters interface {
+	CustomerFieldSetter() customer.NameAndDescriptionSetter
+}
+
+func Setter(setter customer.NameAndDescriptionSetter, request api_server.Request) customer.NameAndDescriptionSetter {
 
 	t := request.GetTenancy()
 	if t != nil {
-		ts, ok := t.(TenancyWithCustomer)
+		ts, ok := t.(TenancyWithSetters)
 		if ok {
 			return ts.CustomerFieldSetter()
 		}

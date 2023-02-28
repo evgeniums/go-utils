@@ -9,20 +9,20 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 )
 
-type CustomerFieldsSetter struct {
-	user.UserFieldsSetterBase[*customer.Customer]
+type FieldsSetter[T customer.User] struct {
+	user.UserFieldsSetterBase[T]
 	common.WithNameBase
 	common.WithDescriptionBase
 }
 
-func (c *CustomerFieldsSetter) SetUserFields(ctx op_context.Context, customer *customer.Customer) ([]user.CheckDuplicateField, error) {
-	customer.SetName(c.Name())
-	customer.SetDescription(c.Description())
-	return c.UserFieldsSetterBase.SetUserFields(ctx, customer)
+func (c *FieldsSetter[T]) SetUserFields(ctx op_context.Context, user T) ([]user.CheckDuplicateField, error) {
+	user.SetName(c.Name())
+	user.SetDescription(c.Description())
+	return c.UserFieldsSetterBase.SetUserFields(ctx, user)
 }
 
-func NewCustomerFieldsSetter() user.UserFieldsSetter[*customer.Customer] {
-	s := &CustomerFieldsSetter{}
+func NewFieldsSetter[T customer.User]() user.UserFieldsSetter[T] {
+	s := &FieldsSetter[T]{}
 	return s
 }
 

@@ -20,21 +20,21 @@ var ErrorHttpCodes = map[string]int{
 	ErrorCodeCustomerNotFound: http.StatusNotFound,
 }
 
-type CustomerFieldSetter interface {
+type NameAndDescriptionSetter interface {
 	SetName(ctx op_context.Context, id string, name string, idIsLogin ...bool) error
 	SetDescription(ctx op_context.Context, id string, description string, idIsLogin ...bool) error
 }
 
-type CustomerController interface {
-	user.UserController[*Customer]
-	CustomerFieldSetter
+type UserNameAndDescriptionController[T user.User] interface {
+	user.UserController[T]
+	NameAndDescriptionSetter
 }
 
-type CustomersControllerBase struct {
-	*user.UserControllerBase[*Customer]
+type UserNameAndDescriptionControllerB[T user.User] struct {
+	*user.UserControllerBase[T]
 }
 
-func (cu *CustomersControllerBase) SetName(ctx op_context.Context, id string, name string, idIsLogin ...bool) error {
+func (cu *UserNameAndDescriptionControllerB[T]) SetName(ctx op_context.Context, id string, name string, idIsLogin ...bool) error {
 
 	// setup
 	ctx.SetLoggerField("name", name)
@@ -65,7 +65,7 @@ func (cu *CustomersControllerBase) SetName(ctx op_context.Context, id string, na
 	return nil
 }
 
-func (cu *CustomersControllerBase) SetDescription(ctx op_context.Context, id string, description string, idIsLogin ...bool) error {
+func (cu *UserNameAndDescriptionControllerB[T]) SetDescription(ctx op_context.Context, id string, description string, idIsLogin ...bool) error {
 	// setup
 	c := ctx.TraceInMethod("Users.SetDescription")
 	var err error
@@ -100,4 +100,12 @@ func LocalCustomerController() *CustomersControllerBase {
 	c.SetUserBuilder(NewCustomer)
 	c.SetOplogBuilder(NewOplog)
 	return c
+}
+
+type CustomerController interface {
+	UserNameAndDescriptionController[*Customer]
+}
+
+type CustomersControllerBase struct {
+	UserNameAndDescriptionControllerB[*Customer]
 }

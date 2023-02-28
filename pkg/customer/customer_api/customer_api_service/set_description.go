@@ -3,14 +3,15 @@ package customer_api_service
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-backend-helpers/pkg/customer"
 	"github.com/evgeniums/go-backend-helpers/pkg/customer/customer_api"
 )
 
-type SetDescriptionEndpoint struct {
-	CustomerEndpoint
+type SetDescriptionEndpoint[T customer.User] struct {
+	Endpoint[T]
 }
 
-func (s *SetDescriptionEndpoint) HandleRequest(request api_server.Request) error {
+func (s *SetDescriptionEndpoint[T]) HandleRequest(request api_server.Request) error {
 
 	c := request.TraceInMethod("customer.SetDescription")
 	defer request.TraceOutMethod()
@@ -21,7 +22,7 @@ func (s *SetDescriptionEndpoint) HandleRequest(request api_server.Request) error
 		return err
 	}
 
-	err = Setter(s.service.Customers, request).SetName(request, request.GetResourceId("customer"), cmd.Description())
+	err = Setter(s.service.Controller, request).SetName(request, request.GetResourceId(s.service.UserTypeName), cmd.Description())
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -29,7 +30,7 @@ func (s *SetDescriptionEndpoint) HandleRequest(request api_server.Request) error
 	return nil
 }
 
-func SetDescription(service *CustomerService) api_server.ResourceEndpointI {
-	e := &SetDescriptionEndpoint{}
+func SetDescription[T customer.User](service *Service[T]) api_server.ResourceEndpointI {
+	e := &SetDescriptionEndpoint[T]{}
 	return e.Init(e, "description", service, customer_api.SetDescription())
 }

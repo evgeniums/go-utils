@@ -7,16 +7,16 @@ import (
 )
 
 const DescriptionCmd string = "description"
-const DescriptionDescription string = "Set customer description"
+const DescriptionDescription string = "Set description"
 
-func Description() console_tool.Handler[*user_console.UserCommands[*customer.Customer]] {
-	a := &DescriptionHandler{}
+func Description[T customer.User]() console_tool.Handler[*user_console.UserCommands[T]] {
+	a := &DescriptionHandler[T]{}
 	a.Init(DescriptionCmd, DescriptionDescription)
 	return a
 }
 
 type DescriptionData struct {
-	Description string `long:"description" description:"Description of the customer"`
+	Description string `long:"description" description:"Additional description"`
 }
 
 type WithDescriptionData struct {
@@ -24,16 +24,16 @@ type WithDescriptionData struct {
 	DescriptionData
 }
 
-type DescriptionHandler struct {
-	user_console.HandlerBase[*customer.Customer]
+type DescriptionHandler[T customer.User] struct {
+	user_console.HandlerBase[T]
 	WithDescriptionData
 }
 
-func (a *DescriptionHandler) Data() interface{} {
+func (a *DescriptionHandler[T]) Data() interface{} {
 	return &a.WithDescriptionData
 }
 
-func (a *DescriptionHandler) Execute(args []string) error {
+func (a *DescriptionHandler[T]) Execute(args []string) error {
 
 	ctx, ctrl, err := a.Context(a.Data(), a.Login)
 	if err != nil {
@@ -41,10 +41,10 @@ func (a *DescriptionHandler) Execute(args []string) error {
 	}
 	defer ctx.Close()
 
-	customerManager, ok := ctrl.(*customer.Manager)
+	setter, ok := ctrl.(customer.NameAndDescriptionSetter)
 	if !ok {
 		panic("Invalid type of user controller")
 	}
 
-	return customerManager.SetDescription(ctx, a.Login, a.Description, true)
+	return setter.SetDescription(ctx, a.Login, a.Description, true)
 }

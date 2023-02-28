@@ -8,29 +8,46 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
-type CustomerCommands struct {
-	*user_console.UserCommands[*customer.Customer]
+type Commands[T customer.User] struct {
+	*user_console.UserCommands[T]
 }
 
-func NewCustomerCommands(managerBuilder ...func(app app_context.Context) user.Users[*customer.Customer]) *CustomerCommands {
+type Config[T customer.User] struct {
+	ManagerBuilder func(app app_context.Context) user.Users[T]
+	Name           string
+	Description    string
+}
 
-	controllerBuilder := utils.OptionalArg(DefaultCustomerManager, managerBuilder...)
+func NewCommands[T customer.User](config Config[T]) *Commands[T] {
 
-	a := &CustomerCommands{}
-	a.UserCommands = user_console.NewUserCommands("customer", "Manage customers", controllerBuilder, false)
+	a := &Commands[T]{}
+	a.UserCommands = user_console.NewUserCommands(config.Name, config.Description, config.ManagerBuilder, false)
 
-	a.AddHandlers(user_console.AddNoPassword[*customer.Customer],
-		user_console.Password[*customer.Customer],
-		user_console.Phone[*customer.Customer],
-		user_console.Email[*customer.Customer],
-		user_console.Block[*customer.Customer],
-		user_console.Unblock[*customer.Customer],
-		user_console.List[*customer.Customer],
-		Name,
-		Description,
+	a.AddHandlers(user_console.AddNoPassword[T],
+		user_console.Password[T],
+		user_console.Phone[T],
+		user_console.Email[T],
+		user_console.Block[T],
+		user_console.Unblock[T],
+		user_console.List[T],
+		Name[T],
+		Description[T],
 	)
 
 	return a
+}
+
+type CustomerCommands = Commands[*customer.Customer]
+
+func NewCustomerCommands(managerBuilder ...func(app app_context.Context) user.Users[*customer.Customer]) *CustomerCommands {
+
+	config := Config[*customer.Customer]{
+		Name:           "Customer",
+		Description:    "Manage customers",
+		ManagerBuilder: utils.OptionalArg(DefaultCustomerManager, managerBuilder...),
+	}
+
+	return NewCommands(config)
 }
 
 func DefaultCustomerManager(app app_context.Context) user.Users[*customer.Customer] {

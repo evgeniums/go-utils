@@ -4,14 +4,21 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/customer"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api/user_client"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
-type CustomerClient struct {
-	*user_client.UserClient[*customer.Customer]
+type Client[T customer.User] struct {
+	*user_client.UserClient[T]
 }
 
-func NewCustomerClient(client api_client.Client) *CustomerClient {
-	c := &CustomerClient{}
-	c.UserClient = user_client.NewUserClient(client, customer.NewCustomer, "customer")
+func NewClient[T customer.User](client api_client.Client, userBuilder user_client.UserBuilder[T], userTypeName ...string) *Client[T] {
+	c := &Client[T]{}
+	c.UserClient = user_client.NewUserClient(client, userBuilder, utils.OptionalArg("customer", userTypeName...))
 	return c
+}
+
+type CustomerClient = Client[*customer.Customer]
+
+func NewCustomerClient(client api_client.Client) *CustomerClient {
+	return NewClient(client, customer.NewCustomer)
 }

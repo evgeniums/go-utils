@@ -10,10 +10,10 @@ import (
 
 type SetDescription = user_client.SetterHandler[common.WithDescriptionBase]
 
-func (u *CustomerClient) SetDescription(ctx op_context.Context, id string, description string, idIsLogin ...bool) error {
+func (u *Client[T]) SetDescription(ctx op_context.Context, id string, description string, idIsLogin ...bool) error {
 
 	// setup
-	c := ctx.TraceInMethod("CustomerClient.SetDescription")
+	c := ctx.TraceInMethod("Client.SetDescription")
 	defer ctx.TraceOutMethod()
 
 	// if idIsLogin then first find user

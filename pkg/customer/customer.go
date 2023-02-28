@@ -8,10 +8,20 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_session_default"
 )
 
-type Customer struct {
+type User interface {
+	user.User
+	common.WithName
+	common.WithDescription
+}
+
+type UserBase struct {
 	user_session_default.User
 	common.WithNameBase
 	common.WithDescriptionBase
+}
+
+type Customer struct {
+	UserBase
 }
 
 func NewCustomer() *Customer {
@@ -35,16 +45,16 @@ func NewCustomerSessionClient() *CustomerSessionClient {
 	return &CustomerSessionClient{}
 }
 
-func Name(name string, sample ...*Customer) user.SetUserFields[*Customer] {
-	return func(ctx op_context.Context, customer *Customer) ([]user.CheckDuplicateField, error) {
-		customer.SetName(name)
+func Name(name string, sample ...User) user.SetUserFields[User] {
+	return func(ctx op_context.Context, user User) ([]user.CheckDuplicateField, error) {
+		user.SetName(name)
 		return nil, nil
 	}
 }
 
-func Description(description string, sample ...*Customer) user.SetUserFields[*Customer] {
-	return func(ctx op_context.Context, customer *Customer) ([]user.CheckDuplicateField, error) {
-		customer.SetDescription(description)
+func Description(description string, sample ...User) user.SetUserFields[User] {
+	return func(ctx op_context.Context, user User) ([]user.CheckDuplicateField, error) {
+		user.SetDescription(description)
 		return nil, nil
 	}
 }
