@@ -42,6 +42,10 @@ type PubkeyControllerBase[T UserPubkeyI, U user.User] struct {
 	signatureManager signature.SignatureManager
 }
 
+func (p *PubkeyControllerBase[T, U]) SetUserFinder(userFinder user.UserFinder[U]) {
+	p.userFinder = userFinder
+}
+
 func (p *PubkeyControllerBase[T, U]) OpLog(ctx op_context.Context, op string, userId string, login string, keyId string, keyHash string) {
 	oplog := NewOplog()
 	oplog.SetOperation(op)
@@ -257,12 +261,11 @@ func (p *PubkeyControllerBase[T, U]) AttachToErrorManager(errManager generic_err
 	errManager.AddErrorProtocolCodes(ErrorHttpCodes)
 }
 
-func NewPubkeyControllerBase[T UserPubkeyI, U user.User](objectBuilder func() T,
-	userFinder user.UserFinder[U],
+func NewPubkeyController[T UserPubkeyI, U user.User](objectBuilder func() T,
 	signatureManager signature.SignatureManager,
 	cruds ...crud.CRUD) *PubkeyControllerBase[T, U] {
 
-	p := &PubkeyControllerBase[T, U]{objectBuilder: objectBuilder, userFinder: userFinder, signatureManager: signatureManager}
+	p := &PubkeyControllerBase[T, U]{objectBuilder: objectBuilder, signatureManager: signatureManager}
 
 	if len(cruds) == 0 {
 		p.crud = &crud.DbCRUD{}

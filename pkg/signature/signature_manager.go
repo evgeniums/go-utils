@@ -25,7 +25,6 @@ type SignatureManager interface {
 	generic_error.ErrorDefinitions
 
 	Verify(ctx auth.AuthContext, signature string, message []byte, extraData ...string) error
-	Find(ctx op_context.Context, context string) (*MessageSignature, error)
 	CheckPubKey(ctx op_context.Context, key string) error
 }
 
