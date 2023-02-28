@@ -17,7 +17,7 @@ import (
 )
 
 type UserWithPubkey interface {
-	PubKey() []byte
+	PubKey() string
 	PubKeyHash() string
 }
 
@@ -26,14 +26,17 @@ type SignatureManager interface {
 
 	Verify(ctx auth.AuthContext, signature string, message []byte, extraData ...string) error
 	Find(ctx op_context.Context, context string) (*MessageSignature, error)
+	CheckPubKey(ctx op_context.Context, key string) error
 }
 
 const (
+	ErrorCodeInvalidKey       string = "invalid_key"
 	ErrorCodeInvalidSignature string = "invalid_signature"
 )
 
 var ErrorDescriptions = map[string]string{
 	ErrorCodeInvalidSignature: "Invalid signature.",
+	ErrorCodeInvalidKey:       "Invalid key.",
 }
 
 var ErrorHttpCodes = map[string]int{
@@ -87,6 +90,63 @@ func (s *SignatureManagerBase) Init(cfg config.Config, log logger.Logger, vld va
 	return nil
 }
 
+func (s *SignatureManagerBase) CheckPubKey(ctx op_context.Context, key string) error {
+
+	// setup
+	c := ctx.TraceInMethod("SignatureManagerBase.CheckPubKey")
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
+
+	// try tp make verifier
+	_, err = s.MakeVerifier(ctx, key)
+	if err != nil {
+		return err
+	}
+
+	// done
+	return nil
+}
+
+func (s *SignatureManagerBase) MakeVerifier(ctx op_context.Context, key string) (crypt_utils.EVerifier, error) {
+
+	// setup
+	c := ctx.TraceInMethod("SignatureManagerBase.MakeVerfier")
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
+
+	// TODO support other algorithms
+	if s.ALGORITHM != crypt_utils.RSA_H256_SIGNATURE {
+		err = errors.New("unsupported algorithm")
+		return nil, err
+	}
+
+	// create verifier
+	verifier := crypt_utils.NewRsaVerifier()
+
+	// load public key
+	err = verifier.LoadKey([]byte(key))
+	if err != nil {
+		ctx.SetGenericErrorCode(ErrorCodeInvalidKey)
+		c.SetMessage("failed to load public key")
+		return nil, err
+	}
+
+	// done
+	return verifier, nil
+}
+
 func (s *SignatureManagerBase) Verify(ctx auth.UserContext, signature string, message []byte, extraData ...string) error {
 
 	// setup
@@ -100,25 +160,21 @@ func (s *SignatureManagerBase) Verify(ctx auth.UserContext, signature string, me
 	}
 	defer onExit()
 
-	// TODO support other algorithms
-	if s.ALGORITHM != crypt_utils.RSA_H256_SIGNATURE {
-		err = errors.New("unsupported algorithm")
-		return err
-	}
-
-	// verify
+	// extract auth user from context
 	user, ok := ctx.AuthUser().(UserWithPubkey)
 	if !ok {
 		c.SetMessage("user must be of UserWithPubkey interface")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return err
 	}
-	verifier := crypt_utils.NewRsaVerifier()
-	err = verifier.LoadKey(user.PubKey())
+
+	// make verifier
+	verifier, err := s.MakeVerifier(ctx, user.PubKey())
 	if err != nil {
-		c.SetMessage("failed to load public key")
 		return err
 	}
+
+	// verify
 	err = crypt_utils.VerifySignature(verifier, []byte(message), signature)
 	if err != nil {
 		c.SetMessage("invalid signature")

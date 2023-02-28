@@ -3,6 +3,7 @@ package signature
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-backend-helpers/pkg/user"
 )
 
 type MessageSignature struct {
@@ -17,6 +18,12 @@ type MessageSignature struct {
 	PubKeyHash string `gorm:"index"`
 }
 
+type OpLogPubKey struct {
+	user.OpLogUser
+	KeyId   string `gorm:"index" json:"key_id"`
+	KeyHash string `gorm:"index" json:"key_hash"`
+}
+
 func DbModels() []interface{} {
-	return []interface{}{&MessageSignature{}}
+	return []interface{}{&MessageSignature{}, &OpLogPubKey{}}
 }

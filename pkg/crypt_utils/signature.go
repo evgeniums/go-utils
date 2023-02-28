@@ -12,6 +12,8 @@ type ESigner interface {
 type EVerifier interface {
 	utils.WithStringCoder
 	Verify(data []byte, signature []byte, extraData ...string) error
+	LoadKey(data []byte) (err error)
+	LoadKeyFromFile(filePath string) error
 }
 
 func Sign(signer ESigner, data []byte, extraData ...string) (string, error) {
