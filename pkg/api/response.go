@@ -43,3 +43,9 @@ type ResponseExists struct {
 	Response `json:"-"`
 	Exists   bool `json:"exists"`
 }
+
+type ResponseList[T any] struct {
+	ResponseCount
+	ResponseHateous
+	Items []T `json:"items"`
+}
