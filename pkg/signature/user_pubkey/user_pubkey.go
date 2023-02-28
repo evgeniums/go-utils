@@ -21,7 +21,7 @@ type UserPubkeyI interface {
 }
 
 type PubkeyData struct {
-	PublicKey string `json:"public_key"`
+	PublicKey string `json:"public_key" validate:"required" vmessage:"Public key must be set in request."`
 }
 
 type PubkeyEssentials struct {

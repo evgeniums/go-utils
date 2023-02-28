@@ -29,7 +29,7 @@ var ErrorHttpCodes = map[string]int{
 }
 
 type PubkeyController[T UserPubkeyI] interface {
-	AddPubKey(ctx op_context.Context, userId string, key string, idIsLogin ...bool) error
+	AddPubKey(ctx op_context.Context, userId string, key string, idIsLogin ...bool) (string, error)
 	DeactivatePubKey(ctx op_context.Context, userId string, keyId string, idIsLogin ...bool) error
 	FindActivePubKey(ctx op_context.Context, userId string, idIsLogin ...bool) (T, error)
 	ListPubKeys(ctx op_context.Context, filter *db.Filter) ([]T, int64, error)
@@ -46,6 +46,10 @@ func (p *PubkeyControllerBase[T, U]) SetUserFinder(userFinder user.UserFinder[U]
 	p.userFinder = userFinder
 }
 
+func (p *PubkeyControllerBase[T, U]) CRUD() crud.CRUD {
+	return p.crud
+}
+
 func (p *PubkeyControllerBase[T, U]) OpLog(ctx op_context.Context, op string, userId string, login string, keyId string, keyHash string) {
 	oplog := NewOplog()
 	oplog.SetOperation(op)
@@ -56,7 +60,7 @@ func (p *PubkeyControllerBase[T, U]) OpLog(ctx op_context.Context, op string, us
 	ctx.Oplog(oplog)
 }
 
-func (p *PubkeyControllerBase[T, U]) AddPubKey(ctx op_context.Context, userId string, key string, idIsLogin ...bool) error {
+func (p *PubkeyControllerBase[T, U]) AddPubKey(ctx op_context.Context, userId string, key string, idIsLogin ...bool) (string, error) {
 
 	// setup
 	c := ctx.TraceInMethod("PubkeyController.AddPubKey")
@@ -73,13 +77,13 @@ func (p *PubkeyControllerBase[T, U]) AddPubKey(ctx op_context.Context, userId st
 	err = p.signatureManager.CheckPubKey(ctx, key)
 	if err != nil {
 		c.SetMessage("invalid key format")
-		return err
+		return "", err
 	}
 
 	// find user
 	user, err := user.FindUser(p.userFinder, ctx, userId, idIsLogin...)
 	if err != nil {
-		return err
+		return "", err
 	}
 	c.SetLoggerField("user", user.Display())
 
@@ -88,6 +92,7 @@ func (p *PubkeyControllerBase[T, U]) AddPubKey(ctx op_context.Context, userId st
 	c.SetLoggerField("key_hash", hash)
 
 	// run transaction
+	doc := p.objectBuilder()
 	err = ctx.Db().Transaction(func(tx db.Transaction) error {
 
 		ctx.SetDbTransaction(tx)
@@ -115,7 +120,6 @@ func (p *PubkeyControllerBase[T, U]) AddPubKey(ctx op_context.Context, userId st
 		}
 
 		// create new key document
-		doc := p.objectBuilder()
 		doc.InitObject()
 		doc.SetActive(true)
 		doc.SetPubKey(key)
@@ -132,18 +136,18 @@ func (p *PubkeyControllerBase[T, U]) AddPubKey(ctx op_context.Context, userId st
 		return nil
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// done
-	return nil
+	return doc.GetID(), nil
 }
 
 func (p *PubkeyControllerBase[T, U]) deactivateKey(ctx op_context.Context, c op_context.CallContext, user U, keyId ...string) error {
 
 	doc := p.objectBuilder()
 	fields := db.Fields{"public_key_owner": user.GetID(), "active": true}
-	if len(keyId) != 0 {
+	if len(keyId) != 0 && keyId[0] != "" {
 		fields["id"] = keyId
 	}
 	found, err := p.crud.Read(ctx, fields, doc)
@@ -274,4 +278,29 @@ func NewPubkeyController[T UserPubkeyI, U user.User](objectBuilder func() T,
 	}
 
 	return p
+}
+
+func ListPubkeys[T UserPubkeyI](crud crud.CRUD, ctx op_context.Context, filter *db.Filter, keyModel UserPubkeyI, userModel user.User, destModel T, queryName string) ([]T, int64, error) {
+
+	// setup
+	c := ctx.TraceInMethod(queryName)
+	defer ctx.TraceOutMethod()
+
+	// construct join query
+	queryBuilder := func() (db.JoinQuery, error) {
+		return ctx.Db().Joiner().
+			Join(keyModel, "public_key_owner").On(userModel, "id").
+			Destination(destModel)
+	}
+
+	// invoke join
+	var pubkeys []T
+	count, err := crud.Join(ctx, db.NewJoin(queryBuilder, queryName), filter, &pubkeys)
+	if err != nil {
+		c.SetMessage("failed to list public keys")
+		return nil, 0, c.SetError(err)
+	}
+
+	// done
+	return pubkeys, count, nil
 }
