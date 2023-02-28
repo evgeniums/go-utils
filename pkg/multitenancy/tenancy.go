@@ -9,6 +9,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
@@ -29,10 +30,6 @@ type Tenancy interface {
 	Db() db.DB
 	Pool() pool.Pool
 	Cache() cache.Cache
-}
-
-type WithTenancy interface {
-	GetTenancy() Tenancy
 }
 
 type WithPath struct {
@@ -137,4 +134,42 @@ func CheckTenancyDatabase(ctx op_context.Context, database db.DB, tenancyId stri
 		return c.SetError(errors.New("database does not belong to this tenancy"))
 	}
 	return nil
+}
+
+type WithTenancy interface {
+	GetTenancy() Tenancy
+}
+
+type TenancyContext interface {
+	op_context.Context
+	WithTenancy
+}
+
+func ContextTenancy(ctx TenancyContext) string {
+	if ctx.GetTenancy() == nil {
+		return ""
+	}
+	return ctx.GetTenancy().GetID()
+}
+
+type TenancyContextBase struct {
+	default_op_context.ContextBase
+	Tenancy Tenancy
+}
+
+func (u *TenancyContextBase) GetTenancy() Tenancy {
+	return u.Tenancy
+}
+
+func (u *TenancyContextBase) SetTenancy(tenancy Tenancy) {
+	u.Tenancy = tenancy
+	u.SetLoggerField("tenancy", TenancyDisplay(tenancy))
+	if tenancy.Cache() != nil {
+		u.SetCache(tenancy.Cache())
+	}
+}
+
+func NewContext() *TenancyContextBase {
+	ctx := &TenancyContextBase{}
+	return ctx
 }
