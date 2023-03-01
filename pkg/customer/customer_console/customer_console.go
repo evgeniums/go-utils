@@ -2,6 +2,7 @@ package customer_console
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/console_tool"
 	"github.com/evgeniums/go-backend-helpers/pkg/customer"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_console"
@@ -18,21 +19,12 @@ type Config[T customer.User] struct {
 	Description    string
 }
 
-func NewCommands[T customer.User](config Config[T]) *Commands[T] {
+func NewCommands[T customer.User](config Config[T], handlers ...console_tool.HandlerBuilder[*user_console.UserCommands[T]]) *Commands[T] {
 
 	a := &Commands[T]{}
 	a.UserCommands = user_console.NewUserCommands(config.Name, config.Description, config.ManagerBuilder, false)
 
-	a.AddHandlers(user_console.AddNoPassword[T],
-		user_console.Password[T],
-		user_console.Phone[T],
-		user_console.Email[T],
-		user_console.Block[T],
-		user_console.Unblock[T],
-		user_console.List[T],
-		Name[T],
-		Description[T],
-	)
+	a.AddHandlers(handlers...)
 
 	return a
 }
@@ -47,7 +39,16 @@ func NewCustomerCommands(managerBuilder ...func(app app_context.Context) user.Us
 		ManagerBuilder: utils.OptionalArg(DefaultCustomerManager, managerBuilder...),
 	}
 
-	return NewCommands(config)
+	return NewCommands(config, user_console.AddNoPassword[*customer.Customer],
+		user_console.Password[*customer.Customer],
+		user_console.Phone[*customer.Customer],
+		user_console.Email[*customer.Customer],
+		user_console.Block[*customer.Customer],
+		user_console.Unblock[*customer.Customer],
+		user_console.List[*customer.Customer],
+		user_console.Show[*customer.Customer],
+		Name[*customer.Customer],
+		Description[*customer.Customer])
 }
 
 func DefaultCustomerManager(app app_context.Context) user.Users[*customer.Customer] {
