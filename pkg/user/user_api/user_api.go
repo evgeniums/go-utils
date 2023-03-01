@@ -33,11 +33,7 @@ type UserResponse[T user.User] struct {
 	User T `json:"user"`
 }
 
-type ListResponse[T any] struct {
-	api.ResponseCount
-	api.ResponseHateous
-	Users *[]T `json:"users"`
-}
+type ListResponse[T any] api.ResponseList[T]
 
 func List() api.Operation {
 	return api.NewOperation("list", access_control.Read)

@@ -44,8 +44,7 @@ func (a *ListHandler[T]) Execute(args []string) error {
 		return fmt.Errorf("failed to parse query: %s", err)
 	}
 
-	var users []T
-	_, err = ctrl.FindUsers(ctx, filter, &users)
+	users, count, err := ctrl.FindUsers(ctx, filter)
 	if err != nil {
 		return err
 	}
@@ -53,6 +52,6 @@ func (a *ListHandler[T]) Execute(args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to serialize result: %s", err)
 	}
-	fmt.Printf("********************\n\n%s\n\n********************\n\n", string(b))
+	fmt.Printf("********************\n\n%s\n\nCount %d\n\n********************\n\n", string(b), count)
 	return nil
 }

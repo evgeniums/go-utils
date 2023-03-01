@@ -45,7 +45,7 @@ type UserController[UserType User] interface {
 
 	Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error)
 	FindAuthUser(ctx op_context.Context, login string) (auth.User, error)
-	FindUsers(ctx op_context.Context, filter *db.Filter, users *[]UserType) (int64, error)
+	FindUsers(ctx op_context.Context, filter *db.Filter) ([]UserType, int64, error)
 
 	SetUserBuilder(builder func() UserType)
 	MakeUser() UserType
@@ -118,11 +118,10 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 	}
 
 	// check if user with such login already exists
-	var users []UserType
 	filter := db.NewFilter()
 	filter.AddField("login", login)
 	filter.Limit = 1
-	_, err = u.FindUsers(ctx, filter, &users)
+	users, _, err := u.FindUsers(ctx, filter)
 	if err != nil {
 		c.SetMessage("failed to check login duplicates")
 		return *new(UserType), err
@@ -146,11 +145,10 @@ func (u *UserControllerBase[UserType]) Add(ctx op_context.Context, login string,
 			return *new(UserType), err
 		}
 		for _, checkDup := range checkDuplicateFields {
-			var users []UserType
 			filter := db.NewFilter()
 			filter.AddField(checkDup.Name, checkDup.Value)
 			filter.Limit = 1
-			_, err1 := u.FindUsers(ctx, filter, &users)
+			users, _, err1 := u.FindUsers(ctx, filter)
 			err = err1
 			if err != nil {
 				c.SetLoggerField("unique_field", checkDup.Name)
@@ -399,8 +397,10 @@ func (u *UserControllerBase[UserType]) SetBlocked(ctx op_context.Context, id str
 	return nil
 }
 
-func (u *UserControllerBase[UserType]) FindUsers(ctx op_context.Context, filter *db.Filter, users *[]UserType) (int64, error) {
-	return u.crudController.List(ctx, filter, users)
+func (u *UserControllerBase[UserType]) FindUsers(ctx op_context.Context, filter *db.Filter) ([]UserType, int64, error) {
+	var users []UserType
+	count, err := u.crudController.List(ctx, filter, &users)
+	return users, count, err
 }
 
 func (u *UserControllerBase[UserType]) OpLog(ctx op_context.Context, op string, userId string, login string) {

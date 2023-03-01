@@ -205,8 +205,7 @@ func TestFindUsers(t *testing.T) {
 	ctx := initTest(t)
 	defer ctx.Close()
 
-	var admins []*Admin
-	count, err := ctx.RemoteAdminManager.FindUsers(ctx.ClientOp, nil, &admins)
+	admins, count, err := ctx.RemoteAdminManager.FindUsers(ctx.ClientOp, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(admins))
 	assert.Equal(t, int64(0), count)
@@ -214,7 +213,7 @@ func TestFindUsers(t *testing.T) {
 	filter := db.NewFilter()
 	filter.AddField("login", targetAdminLogin)
 	filter.Count = true
-	count, err = ctx.RemoteAdminManager.FindUsers(ctx.ClientOp, filter, &admins)
+	admins, count, err = ctx.RemoteAdminManager.FindUsers(ctx.ClientOp, filter)
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(admins))
 	assert.Equal(t, targetAdminEmail, admins[0].Email())
