@@ -208,7 +208,7 @@ func TestFindUsers(t *testing.T) {
 	admins, count, err := ctx.RemoteAdminManager.FindUsers(ctx.ClientOp, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(admins))
-	assert.Equal(t, int64(0), count)
+	assert.Equal(t, int64(2), count)
 
 	filter := db.NewFilter()
 	filter.AddField("login", targetAdminLogin)

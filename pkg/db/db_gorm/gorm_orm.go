@@ -192,6 +192,9 @@ func find(g *gorm.DB, filter *Filter, paginator *Paginator, dest interface{}) (i
 	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return 0, result.Error
 	}
+	if result.RowsAffected > count {
+		count = result.RowsAffected
+	}
 
 	/*
 		b, _ := json.MarshalIndent(dest, "", "  ")
