@@ -1,6 +1,7 @@
 package user_console
 
 import (
+	"encoding/json"
 	"fmt"
 	"syscall"
 
@@ -74,8 +75,11 @@ func (a *AddHandler[T]) Execute(args []string) error {
 
 	password := ReadPassword()
 
-	_, err = ctrl.Add(ctx, a.Login, password)
-	return err
+	user, err := ctrl.Add(ctx, a.Login, password)
+	if err != nil {
+		return err
+	}
+	return dumpUser(user)
 }
 
 //----------------------------------------
@@ -103,8 +107,11 @@ func (a *AddNoPasswordHandler[T]) Execute(args []string) error {
 	}
 	defer ctx.Close()
 
-	_, err = ctrl.Add(ctx, a.Login, "")
-	return err
+	user, err := ctrl.Add(ctx, a.Login, "")
+	if err != nil {
+		return err
+	}
+	return dumpUser(user)
 }
 
 //----------------------------------------
@@ -134,8 +141,11 @@ func (a *AddWithPhoneHandler[T]) Execute(args []string) error {
 
 	password := ReadPassword()
 
-	_, err = ctrl.Add(ctx, a.Login, string(password), user.Phone[T](a.Phone))
-	return err
+	user, err := ctrl.Add(ctx, a.Login, string(password), user.Phone[T](a.Phone))
+	if err != nil {
+		return err
+	}
+	return dumpUser(user)
 }
 
 //----------------------------------------
@@ -165,6 +175,18 @@ func (a *AddWithEmailHandler[T]) Execute(args []string) error {
 
 	password := ReadPassword()
 
-	_, err = ctrl.Add(ctx, a.Login, string(password), user.Email[T](a.Email))
-	return err
+	user, err := ctrl.Add(ctx, a.Login, string(password), user.Email[T](a.Email))
+	if err != nil {
+		return err
+	}
+	return dumpUser(user)
+}
+
+func dumpUser[T user.User](user T) error {
+	b, err := json.MarshalIndent(user, "", "   ")
+	if err != nil {
+		return fmt.Errorf("failed to serialize result: %s", err)
+	}
+	fmt.Printf("Created object:\n\n%s\n\n", string(b))
+	return nil
 }
