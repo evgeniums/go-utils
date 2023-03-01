@@ -34,6 +34,7 @@ func (p *UserCommands[T]) LoadDefaultHandlers() {
 		Block[T],
 		Unblock[T],
 		List[T],
+		Show[T],
 	)
 }
 
