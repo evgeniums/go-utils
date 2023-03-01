@@ -165,6 +165,10 @@ func (c *ConsoleUtility) Parse() {
 	}
 }
 
-func (c *ConsoleUtility) AddCommand(handler func(ctxBuilder ContextBulder, parser *flags.Parser)) {
-	handler(c.InitCommandContext, c.Parser)
+func (c *ConsoleUtility) AddCommandGroup(handler func(ctxBuilder ContextBulder, parser *flags.Parser) *flags.Command) *flags.Command {
+	return handler(c.InitCommandContext, c.Parser)
+}
+
+func (c *ConsoleUtility) AddCommandSubgroup(parent *flags.Command, handler func(ctxBuilder ContextBulder, parent *flags.Command) *flags.Command) *flags.Command {
+	return handler(c.InitCommandContext, parent)
 }

@@ -58,17 +58,34 @@ func (c Commands[T]) AddCommand(parent *flags.Command, ctxBuilder ContextBulder,
 	}
 }
 
-func (c *Commands[T]) Handlers(ctxBuilder ContextBulder, parser *flags.Parser) {
+func (c *Commands[T]) Handlers(ctxBuilder ContextBulder, parser *flags.Parser) *flags.Command {
 
-	parent, err := parser.AddCommand(c.Name(), c.Description(), "", &Dummy{})
+	commandGroup, err := parser.AddCommand(c.Name(), c.Description(), "", &Dummy{})
 	if err != nil {
 		fmt.Printf("failed to add %s group: %s", c.Name(), err)
 		os.Exit(1)
 	}
 
 	for _, handler := range c.ExtraHandlers {
-		AddCommand(parent, ctxBuilder, c.Self, handler)
+		AddCommand(commandGroup, ctxBuilder, c.Self, handler)
 	}
+
+	return commandGroup
+}
+
+func (c *Commands[T]) SubHandlers(ctxBuilder ContextBulder, parent *flags.Command) *flags.Command {
+
+	commandGroup, err := parent.AddCommand(c.Name(), c.Description(), "", &Dummy{})
+	if err != nil {
+		fmt.Printf("failed to add %s group: %s", c.Name(), err)
+		os.Exit(1)
+	}
+
+	for _, handler := range c.ExtraHandlers {
+		AddCommand(commandGroup, ctxBuilder, c.Self, handler)
+	}
+
+	return commandGroup
 }
 
 func (c *Commands[T]) Description() string {
