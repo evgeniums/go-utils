@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
@@ -34,6 +35,9 @@ type Resource interface {
 	Operations() []Operation
 	Getter() Operation
 	EachOperation(handler func(operation Operation) error, recursive ...bool) error
+	RemoveOperations(accessType access_control.AccessType)
+	RemoveOperation(name string)
+	ReplaceOperation(op Operation)
 
 	PathPrototype() string
 	ActualPath() string
@@ -254,6 +258,41 @@ func (r *ResourceBase) AddChildren(resources ...Resource) {
 
 func (r *ResourceBase) Children() []Resource {
 	return r.children
+}
+
+func (r *ResourceBase) RemoveOperations(accessType access_control.AccessType) {
+
+	i := 0
+	for _, op := range r.operations {
+		if op.AccessType() != accessType {
+			r.operations[i] = op
+			i++
+		}
+	}
+	for j := i; j < len(r.operations); j++ {
+		r.operations[j] = nil
+	}
+	r.operations = r.operations[:i]
+}
+
+func (r *ResourceBase) RemoveOperation(name string) {
+
+	i := 0
+	for _, op := range r.operations {
+		if op.Name() != name {
+			r.operations[i] = op
+			i++
+		}
+	}
+	for j := i; j < len(r.operations); j++ {
+		r.operations[j] = nil
+	}
+	r.operations = r.operations[:i]
+}
+
+func (r *ResourceBase) ReplaceOperation(op Operation) {
+	r.RemoveOperations(op.AccessType())
+	r.AddOperation(op)
 }
 
 func (r *ResourceBase) AddOperation(operation Operation, getter ...bool) {
