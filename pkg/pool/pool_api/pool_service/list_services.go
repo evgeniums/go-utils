@@ -25,7 +25,7 @@ func (e *ListServicesEndpoint) HandleRequest(request api_server.Request) error {
 
 	// get services
 	resp := &pool_api.ListServicesResponse{}
-	resp.Services, resp.Count, err = e.service.Pools.GetServices(request, filter)
+	resp.Items, resp.Count, err = e.service.Pools.GetServices(request, filter)
 	if err != nil {
 		return c.SetError(err)
 	}

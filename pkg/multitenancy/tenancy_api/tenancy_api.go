@@ -14,11 +14,7 @@ type TenancyResponse struct {
 }
 
 // TODO use Items
-type ListTenanciesResponse struct {
-	api.ResponseCount
-	api.ResponseHateous
-	Tenancies []*multitenancy.TenancyItem `json:"tenancies"`
-}
+type ListTenanciesResponse = api.ResponseList[*multitenancy.TenancyItem]
 
 type DeleteTenancyCmd struct {
 	WithDatabase bool `schema:"with_database" url:"with_database"`

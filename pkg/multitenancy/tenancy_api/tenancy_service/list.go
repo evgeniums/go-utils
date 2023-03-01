@@ -25,7 +25,7 @@ func (e *ListEndpoint) HandleRequest(request api_server.Request) error {
 
 	// get
 	resp := &tenancy_api.ListTenanciesResponse{}
-	resp.Tenancies, resp.Count, err = e.service.Tenancies.List(request, filter)
+	resp.Items, resp.Count, err = e.service.Tenancies.List(request, filter)
 	if err != nil {
 		return c.SetError(err)
 	}

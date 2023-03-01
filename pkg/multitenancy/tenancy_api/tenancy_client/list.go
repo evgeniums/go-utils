@@ -52,5 +52,5 @@ func (t *TenancyClient) List(ctx op_context.Context, filter *db.Filter) ([]*mult
 	}
 
 	// done
-	return handler.result.Tenancies, handler.result.Count, nil
+	return handler.result.Items, handler.result.Count, nil
 }

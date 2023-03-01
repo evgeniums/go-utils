@@ -55,5 +55,5 @@ func (p *PoolClient) GetServiceBindings(ctx op_context.Context, id string, idIsN
 	}
 
 	// done
-	return handler.result.PoolServices, nil
+	return handler.result.Items, nil
 }

@@ -52,5 +52,5 @@ func (p *PoolClient) GetPools(ctx op_context.Context, filter *db.Filter) ([]*poo
 	}
 
 	// done
-	return handler.result.Pools, handler.result.Count, nil
+	return handler.result.Items, handler.result.Count, nil
 }

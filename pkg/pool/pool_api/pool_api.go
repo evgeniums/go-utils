@@ -15,22 +15,11 @@ type ServiceResponse struct {
 	*pool.PoolServiceBase
 }
 
-type ListServicesResponse struct {
-	api.ResponseCount
-	api.ResponseHateous
-	Services []*pool.PoolServiceBase `json:"services"`
-}
+type ListServicesResponse = api.ResponseList[*pool.PoolServiceBase]
 
-type ListPoolsResponse struct {
-	api.ResponseCount
-	api.ResponseHateous
-	Pools []*pool.PoolBase `json:"pools"`
-}
+type ListPoolsResponse = api.ResponseList[*pool.PoolBase]
 
-type ListServicePoolsResponse struct {
-	api.ResponseHateous
-	PoolServices []*pool.PoolServiceBinding `json:"pool_services"`
-}
+type ListServicePoolsResponse = api.ResponseList[*pool.PoolServiceBinding]
 
 var (
 	UpdateService             = func() api.Operation { return api.UpdatePartial("update_service") }

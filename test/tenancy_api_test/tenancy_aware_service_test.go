@@ -47,11 +47,7 @@ type ListEndpoint struct {
 	SampleEndpoint
 }
 
-type ListResponse struct {
-	api.ResponseCount
-	api.ResponseHateous
-	Items []*InTenancySample `json:"items"`
-}
+type ListResponse = api.ResponseList[*InTenancySample]
 
 func (e *ListEndpoint) HandleRequest(request api_server.Request) error {
 
