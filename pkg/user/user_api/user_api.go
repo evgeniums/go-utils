@@ -29,7 +29,7 @@ func UserResource(resourceType ...string) api.Resource {
 }
 
 type UserResponse[T user.User] struct {
-	api.ResponseHateoas
+	api.ResponseBase
 	User T `json:"user"`
 }
 

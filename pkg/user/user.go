@@ -27,8 +27,6 @@ type User interface {
 	DbUser() interface{}
 
 	ToCmd(password string) interface{}
-
-	api.WithHateoasLinks
 }
 
 // TODO Configure somewhere unique indexes for phone and login if required
@@ -130,7 +128,7 @@ type UserBaseDB struct {
 	common.ObjectBase
 	UserBaseFields
 	auth_login_phash.UserBase
-	api.ResponseHateoas
+	api.ResponseBase
 }
 
 func (u *UserBaseDB) ToCmd(password string) interface{} {

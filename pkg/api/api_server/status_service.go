@@ -16,7 +16,7 @@ func NewCheckStatusEndpoint() *CheckStatusEndpoint {
 }
 
 type StatusResponse struct {
-	api.ResponseNoHateoas
+	api.ResponseStub
 	Status string `json:"status"`
 }
 

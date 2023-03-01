@@ -6,12 +6,12 @@ import (
 )
 
 type PoolResponse struct {
-	api.ResponseHateoas
+	api.ResponseBase
 	*pool.PoolBase
 }
 
 type ServiceResponse struct {
-	api.ResponseHateoas
+	api.ResponseBase
 	*pool.PoolServiceBase
 }
 

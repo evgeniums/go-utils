@@ -30,11 +30,11 @@ type Response interface {
 	WithHateoasLinks
 }
 
-type ResponseNoHateoas struct {
+type ResponseStub struct {
 	HateoasLinksStub
 }
 
-type ResponseHateoas struct {
+type ResponseBase struct {
 	HateoasLinksContainer
 }
 
@@ -43,15 +43,15 @@ type ResponseCount struct {
 }
 
 type ResponseExists struct {
-	Response `json:"-"`
-	Exists   bool `json:"exists"`
+	ResponseStub
+	Exists bool `json:"exists"`
 }
 
 type ResponseList[T common.WithID] struct {
 	ResponseCount
 	Items []T `json:"items"`
 
-	ResponseHateoas
+	ResponseBase
 	ItemLinks []*HateoasLinksItem `json:"_item_links,omitempty"`
 }
 
