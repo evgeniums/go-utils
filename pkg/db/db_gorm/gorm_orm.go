@@ -122,7 +122,7 @@ func prepareFilter(db *gorm.DB, filter *Filter) *gorm.DB {
 	return h
 }
 
-func SetFilter(g *gorm.DB, filter *Filter, docs interface{}, paginate ...bool) *gorm.DB {
+func SetFilter(g *gorm.DB, filter *Filter, paginator *Paginator, docs interface{}, paginate ...bool) *gorm.DB {
 
 	if filter == nil {
 		return g
@@ -144,12 +144,16 @@ func SetFilter(g *gorm.DB, filter *Filter, docs interface{}, paginate ...bool) *
 		}
 	}
 
-	h = Paginate(h, filter, paginate...)
+	h = paginator.Paginate(h, filter, paginate...)
 
 	return h
 }
 
-func Paginate(g *gorm.DB, filter *Filter, paginate ...bool) *gorm.DB {
+type Paginator struct {
+	MaxLimit int
+}
+
+func (p *Paginator) Paginate(g *gorm.DB, filter *Filter, paginate ...bool) *gorm.DB {
 	h := g
 	if utils.OptionalArg(true, paginate...) {
 		if filter.Offset > 0 {
@@ -157,26 +161,30 @@ func Paginate(g *gorm.DB, filter *Filter, paginate ...bool) *gorm.DB {
 		}
 
 		if filter.Limit > 0 {
-			h = h.Limit(filter.Limit)
+			limit := filter.Limit
+			if limit > p.MaxLimit && p.MaxLimit > 0 {
+				limit = p.MaxLimit
+			}
+			h = h.Limit(limit)
 		}
 	}
 	return h
 }
 
-func find(g *gorm.DB, filter *Filter, dest interface{}) (int64, error) {
+func find(g *gorm.DB, filter *Filter, paginator *Paginator, dest interface{}) (int64, error) {
 
 	var count int64
 
 	h := g
 	if filter != nil {
-		h = SetFilter(g, filter, nil, !filter.Count)
+		h = SetFilter(g, filter, paginator, nil, !filter.Count)
 		if filter.Count {
 			counter := g.Session(&gorm.Session{})
 			result := counter.Count(&count)
 			if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				return 0, result.Error
 			}
-			h = Paginate(g, filter)
+			h = paginator.Paginate(g, filter)
 		}
 	}
 
@@ -193,16 +201,16 @@ func find(g *gorm.DB, filter *Filter, dest interface{}) (int64, error) {
 	return count, nil
 }
 
-func FindWithFilter(db *gorm.DB, filter *Filter, docs interface{}, dest ...interface{}) (int64, error) {
+func FindWithFilter(db *gorm.DB, filter *Filter, paginator *Paginator, docs interface{}, dest ...interface{}) (int64, error) {
 	g := db.Model(docs)
 	dst := utils.OptionalArg(docs, dest...)
-	return find(g, filter, dst)
+	return find(g, filter, paginator, dst)
 }
 
-func RowsWithFilter(db *gorm.DB, filter *Filter, docs interface{}) (*sql.Rows, error) {
+func RowsWithFilter(db *gorm.DB, filter *Filter, paginator *Paginator, docs interface{}) (*sql.Rows, error) {
 
 	h := db.Model(docs)
-	h = SetFilter(h, filter, docs)
+	h = SetFilter(h, filter, paginator, docs)
 
 	rows, err := h.Rows()
 	if err != nil {

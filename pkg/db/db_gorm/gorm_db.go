@@ -14,11 +14,15 @@ import (
 	"gorm.io/gorm"
 )
 
+type baseDBConfig struct {
+	ENABLE_DEBUG     bool
+	VERBOSE_ERRORS   bool
+	MAX_FILTER_LIMIT int `validate:"gte=0" vmessage:"Invalid max filter limit" default:"100"`
+}
+
 type gormDBConfig struct {
 	db.DBConfig
-
-	ENABLE_DEBUG   bool
-	VERBOSE_ERRORS bool
+	baseDBConfig
 }
 
 type DbConnector struct {
@@ -34,6 +38,7 @@ type GormDB struct {
 
 	joinQueries   *db.JoinQueries
 	filterManager *FilterManager
+	paginator     *Paginator
 }
 
 func (g *GormDB) Config() interface{} {
@@ -100,6 +105,7 @@ func New(dbConnector ...*DbConnector) *GormDB {
 	g.joinQueries = db.NewJoinQueries()
 
 	g.dbConnector = DefaultDbConnector()
+	g.paginator = &Paginator{}
 
 	if len(dbConnector) != 0 {
 		g.dbConnector = dbConnector[0]
@@ -124,8 +130,11 @@ func (g *GormDB) NativeHandler() interface{} {
 	return g.db
 }
 
-func (g *GormDB) NewDB() db.DB {
-	return New(g.dbConnector)
+func (g *GormDB) Clone() db.DB {
+	d := New(g.dbConnector)
+	d.baseDBConfig = g.baseDBConfig
+	d.paginator.MaxLimit = g.MAX_FILTER_LIMIT
+	return d
 }
 
 func (g *GormDB) EnableDebug(value bool) {
@@ -152,6 +161,7 @@ func (g *GormDB) Init(ctx logger.WithLogger, cfg config.Config, vld validator.Va
 	if err != nil {
 		return ctx.Logger().PushFatalStack("failed to load GormDB configuration", err)
 	}
+	g.paginator.MaxLimit = g.MAX_FILTER_LIMIT
 
 	// connect database
 	return g.Connect(ctx)
@@ -318,7 +328,7 @@ func (g *GormDB) Transaction(handler db.TransactionHandler) error {
 func (g *GormDB) RowsWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}) (db.Cursor, error) {
 	var err error
 	cursor := &GormCursor{gormDB: g}
-	rows, err := RowsWithFilter(g.db_(), filter, obj)
+	rows, err := RowsWithFilter(g.db_(), filter, g.paginator, obj)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to RowsWithFilter %v", ObjectTypeName(obj))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
@@ -330,7 +340,7 @@ func (g *GormDB) RowsWithFilter(ctx logger.WithLogger, filter *Filter, obj inter
 }
 
 func (g *GormDB) FindWithFilter(ctx logger.WithLogger, filter *Filter, obj interface{}, dest ...interface{}) (int64, error) {
-	count, err := FindWithFilter(g.db_(), filter, obj, dest...)
+	count, err := FindWithFilter(g.db_(), filter, g.paginator, obj, dest...)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to FindWithFilter %v", ObjectTypeName(obj))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})

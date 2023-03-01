@@ -102,7 +102,7 @@ func (j *JoinQuery) Join(ctx logger.WithLogger, filter *Filter, dest interface{}
 	if j.db != nil && j.db.ENABLE_DEBUG {
 		session = session.Debug()
 	}
-	return find(session, filter, dest)
+	return find(session, filter, j.db.paginator, dest)
 }
 
 type Joiner struct {

@@ -149,7 +149,7 @@ func (t *TenancyBase) ConnectDatabase(ctx op_context.Context, newDb ...bool) err
 	if createDb {
 
 		// connect to master database
-		database := ctx.App().Db().NewDB()
+		database := ctx.App().Db().Clone()
 		err = database.InitWithConfig(ctx, ctx.App().Validator(), dbConfig)
 		if err != nil {
 			genErr := generic_error.NewFromOriginal(pool.ErrorCodeServiceInitializationFailed, "Failed to connect to master database", err)
@@ -173,7 +173,7 @@ func (t *TenancyBase) ConnectDatabase(ctx op_context.Context, newDb ...bool) err
 
 	// create and init database connection
 	dbConfig.DB_NAME = t.DBNAME
-	database := ctx.App().Db().NewDB()
+	database := ctx.App().Db().Clone()
 	err = database.InitWithConfig(ctx, ctx.App().Validator(), dbConfig)
 	if err != nil {
 		genErr := generic_error.NewFromOriginal(pool.ErrorCodeServiceInitializationFailed, "Failed to connect to tenancy database", err)

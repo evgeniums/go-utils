@@ -71,7 +71,7 @@ type Cursor interface {
 type DB interface {
 	WithFilterParser
 
-	NewDB() DB
+	Clone() DB
 
 	InitWithConfig(ctx logger.WithLogger, vld validator.Validator, cfg *DBConfig) error
 
