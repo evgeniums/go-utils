@@ -28,6 +28,10 @@ type SignatureManager interface {
 	CheckPubKey(ctx op_context.Context, key string) error
 }
 
+type WithSignatureManager interface {
+	SignatureManager() SignatureManager
+}
+
 const (
 	ErrorCodeInvalidKey       string = "invalid_key"
 	ErrorCodeInvalidSignature string = "invalid_signature"
