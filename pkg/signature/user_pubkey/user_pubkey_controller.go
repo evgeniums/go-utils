@@ -32,7 +32,6 @@ type PubkeyController[T UserPubkeyI] interface {
 	AddPubKey(ctx op_context.Context, userId string, key string, idIsLogin ...bool) (string, error)
 	DeactivatePubKey(ctx op_context.Context, userId string, keyId string, idIsLogin ...bool) error
 	FindActivePubKey(ctx op_context.Context, userId string, idIsLogin ...bool) (T, error)
-	ListPubKeys(ctx op_context.Context, filter *db.Filter) ([]T, int64, error)
 }
 
 type PubkeyControllerBase[T UserPubkeyI, U user.User] struct {
