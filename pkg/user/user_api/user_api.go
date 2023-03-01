@@ -29,11 +29,9 @@ func UserResource(resourceType ...string) api.Resource {
 }
 
 type UserResponse[T user.User] struct {
-	api.ResponseHateous
+	api.ResponseHateoas
 	User T `json:"user"`
 }
-
-type ListResponse[T any] api.ResponseList[T]
 
 func List() api.Operation {
 	return api.NewOperation("list", access_control.Read)

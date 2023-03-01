@@ -1,6 +1,9 @@
 package api
 
-import "github.com/evgeniums/go-backend-helpers/pkg/generic_error"
+import (
+	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
+)
 
 const (
 	TargetSelf   = "self"
@@ -27,11 +30,11 @@ type Response interface {
 	WithHateoasLinks
 }
 
-type ResponseNoHateous struct {
+type ResponseNoHateoas struct {
 	HateoasLinksStub
 }
 
-type ResponseHateous struct {
+type ResponseHateoas struct {
 	HateoasLinksContainer
 }
 
@@ -44,8 +47,18 @@ type ResponseExists struct {
 	Exists   bool `json:"exists"`
 }
 
-type ResponseList[T any] struct {
+type ResponseList[T common.WithID] struct {
 	ResponseCount
-	ResponseHateous
 	Items []T `json:"items"`
+
+	ResponseHateoas
+	ItemLinks []*HateoasLinksItem `json:"_item_links,omitempty"`
+}
+
+func (r *ResponseList[T]) ItemCount() int {
+	return len(r.Items)
+}
+
+func (r *ResponseList[T]) ItemId(index int) string {
+	return r.Items[index].GetID()
 }

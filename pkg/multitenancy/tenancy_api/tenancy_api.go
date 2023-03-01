@@ -9,7 +9,7 @@ const ServiceName string = "tenancies"
 const TenancyResource string = "tenancy"
 
 type TenancyResponse struct {
-	api.ResponseHateous
+	api.ResponseHateoas
 	*multitenancy.TenancyItem
 }
 

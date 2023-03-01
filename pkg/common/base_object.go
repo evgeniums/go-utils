@@ -6,8 +6,12 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
-type ID interface {
+type WithID interface {
 	GetID() string
+}
+
+type ID interface {
+	WithID
 	SetID(id string)
 	GenerateID()
 }

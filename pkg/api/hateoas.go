@@ -19,8 +19,8 @@ type WithHateoasLinks interface {
 }
 
 type ObjectWithHateoasLinks interface {
-	common.ID
-	SetHateoasLinks([]*HateoasLink)
+	common.WithID
+	WithHateoasLinks
 }
 
 type HateoasLinksStub struct {
@@ -35,6 +35,11 @@ type HateoasLinksContainer struct {
 
 func (h *HateoasLinksContainer) SetHateoasLinks(links []*HateoasLink) {
 	h.HateoasLinks = links
+}
+
+type HateoasLinksItem struct {
+	common.IDBase
+	HateoasLinksContainer
 }
 
 func MakeHateoasLinks(resource Resource, withTestOps ...bool) []*HateoasLink {
@@ -89,18 +94,27 @@ func InjectHateoasLinksToObject(resource Resource, withLinks WithHateoasLinks) {
 	withLinks.SetHateoasLinks(MakeHateoasLinks(resource))
 }
 
-func InjectHateoasLinksToList[T ObjectWithHateoasLinks](sampleResource Resource, objects []T) {
-	for i := 0; i < len(objects); i++ {
-		obj := objects[i]
-		sampleResource.SetId(obj.GetID())
-		InjectHateoasLinksToObject(sampleResource, obj)
-	}
-}
+func HateoasList[T common.WithID](response *ResponseList[T], parentResource Resource, resourceType string) {
 
-func ProcessListResourceHateousLinks[T ObjectWithHateoasLinks](parentResource Resource, resourceType string, objects []T) {
-	epResource := parentResource.CloneChain(true)
+	count := response.ItemCount()
+	if count == 0 {
+		return
+	}
+
 	sampleResource := NamedResource(resourceType)
+	epResource := parentResource.CloneChain(true)
 	epResource.AddChild(sampleResource)
 
-	InjectHateoasLinksToList(sampleResource, objects)
+	response.ItemLinks = make([]*HateoasLinksItem, count)
+
+	for i := 0; i < count; i++ {
+
+		obj := &HateoasLinksItem{}
+		obj.SetID(response.ItemId(i))
+
+		sampleResource.SetId(obj.GetID())
+		InjectHateoasLinksToObject(sampleResource, obj)
+
+		response.ItemLinks[i] = obj
+	}
 }

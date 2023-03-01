@@ -7,12 +7,11 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
-	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
 )
 
 type List[U user.User] struct {
 	cmd    api.Query
-	result *user_api.ListResponse[U]
+	result *api.ResponseList[U]
 }
 
 func (a *List[U]) Exec(client api_client.Client, ctx op_context.Context, operation api.Operation) error {
@@ -47,7 +46,7 @@ func (u *UserClient[U]) FindUsers(ctx op_context.Context, filter *db.Filter) ([]
 	// prepare and exec handler
 	handler := &List[U]{
 		cmd:    cmd,
-		result: &user_api.ListResponse[U]{},
+		result: &api.ResponseList[U]{},
 	}
 	err = u.list.Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
 	if err != nil {

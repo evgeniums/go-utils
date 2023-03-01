@@ -1,6 +1,10 @@
 package api_server
 
-import "github.com/evgeniums/go-backend-helpers/pkg/api"
+import (
+	"github.com/evgeniums/go-backend-helpers/pkg/api"
+	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+)
 
 // Interface of response of server API.
 type Response interface {
@@ -28,6 +32,17 @@ func (r *ResponseBase) SetMessage(message api.Response) {
 		api.InjectHateoasLinksToObject(r.request.Endpoint().Resource(), message)
 	}
 	r.message = message
+}
+
+func SetResponseList[T common.WithID](r Request, response *api.ResponseList[T], resourceType ...string) {
+
+	if r.Server().IsHateoas() {
+		resource := r.Endpoint().Resource()
+		rType := utils.OptionalArg(resource.Type(), resourceType...)
+		api.HateoasList(response, resource, rType)
+	}
+
+	r.Response().SetMessage(response)
 }
 
 func (r *ResponseBase) SetRequest(request Request) {

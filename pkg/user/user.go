@@ -130,7 +130,7 @@ type UserBaseDB struct {
 	common.ObjectBase
 	UserBaseFields
 	auth_login_phash.UserBase
-	api.ResponseHateous
+	api.ResponseHateoas
 }
 
 func (u *UserBaseDB) ToCmd(password string) interface{} {

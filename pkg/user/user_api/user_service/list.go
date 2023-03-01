@@ -1,6 +1,7 @@
 package user_service
 
 import (
+	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api"
@@ -24,20 +25,13 @@ func (e *ListEndpoint[U]) HandleRequest(request api_server.Request) error {
 		return c.SetError(err)
 	}
 
-	resp := &user_api.ListResponse[U]{}
+	resp := &api.ResponseList[U]{}
 	resp.Items, resp.Count, err = u.FindUsers(request, filter)
 	if err != nil {
 		return c.SetError(err)
 	}
 
-	/*
-		// TODO process hateous links
-		if request.Server().IsHateoas() {
-			api.ProcessListResourceHateousLinks(request.Endpoint().Resource(), e.service.UserTypeName, resp.Items)
-		}
-	*/
-	request.Response().SetMessage(resp)
-
+	api_server.SetResponseList(request, resp, e.service.UserTypeName)
 	return nil
 }
 

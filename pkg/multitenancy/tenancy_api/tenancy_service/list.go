@@ -30,12 +30,8 @@ func (e *ListEndpoint) HandleRequest(request api_server.Request) error {
 		return c.SetError(err)
 	}
 
-	// TODO make support hateoas
-	// if request.Server().IsHateoas() {
-	// }
-
 	// set response message
-	request.Response().SetMessage(resp)
+	api_server.SetResponseList(request, resp)
 
 	// done
 	return nil
