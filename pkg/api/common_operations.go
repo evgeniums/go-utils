@@ -18,6 +18,23 @@ func NamedResourceOperation(sampleResource Resource, resourceId string, op Opera
 	return op
 }
 
+func NamedSubresource(sampleResource Resource, resourceId string, subResourceName string, subResourceId string) Resource {
+	subResource := NewResource(subResourceName)
+	subResource.SetId(subResourceId)
+	namedResource := sampleResource.CloneChain(false)
+	namedResource.SetId(resourceId)
+	namedResource.AddChild(subResource)
+	return subResource
+}
+
+func Subresource(sampleResource Resource, resourceId string, subResourceName string) Resource {
+	subResource := NewResource(subResourceName)
+	namedResource := sampleResource.CloneChain(false)
+	namedResource.SetId(resourceId)
+	namedResource.AddChild(subResource)
+	return subResource
+}
+
 func Add(name string) Operation {
 	return NewOperation(name, access_control.Create)
 }
