@@ -33,3 +33,7 @@ func (s *ServiceClient) Init(client Client, serviceName string) {
 func (s *ServiceClient) Client() Client {
 	return s.client
 }
+
+func (s *ServiceClient) ApiClient() Client {
+	return s.client
+}

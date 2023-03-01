@@ -39,10 +39,7 @@ func (u *UserClient[U]) Find(ctx op_context.Context, id string) (U, error) {
 	handler.result = &user_api.UserResponse[U]{}
 
 	// prepare and exec handler
-	userResource := u.userResource.CloneChain(false)
-	userResource.SetId(id)
-	op := user_api.Find(u.userTypeName)
-	userResource.AddOperation(op)
+	op := api.NamedResourceOperation(u.UserResource, id, user_api.Find(u.userTypeName))
 	err := op.Exec(ctx, api_client.MakeOperationHandler(u.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")

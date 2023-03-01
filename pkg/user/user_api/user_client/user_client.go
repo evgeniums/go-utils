@@ -26,8 +26,8 @@ type UserClient[U user.User] struct {
 	userTypeName string
 	userBuilder  UserBuilder[U]
 
-	collectionResource api.Resource
-	userResource       api.Resource
+	CollectionResource api.Resource
+	UserResource       api.Resource
 
 	add  api.Operation
 	list api.Operation
@@ -39,13 +39,13 @@ func NewUserClient[U user.User](client api_client.Client,
 
 	var serviceName string
 	c := &UserClient[U]{}
-	c.userTypeName, serviceName, c.collectionResource, c.userResource = user_api.PrepareResources(userTypeName...)
+	c.userTypeName, serviceName, c.CollectionResource, c.UserResource = user_api.PrepareResources(userTypeName...)
 	c.ServiceClient.Init(client, serviceName)
 
-	c.AddChild(c.collectionResource)
+	c.AddChild(c.CollectionResource)
 	c.add = user_api.Add(c.userTypeName)
 	c.list = user_api.List()
-	c.collectionResource.AddOperations(c.add, c.list)
+	c.CollectionResource.AddOperations(c.add, c.list)
 
 	return c
 }
@@ -68,7 +68,7 @@ func (c *UserClient[U]) MakeUser() U {
 func (u *UserClient[U]) UserOperation(userId string, resourceName string, op api.Operation) api.Operation {
 	opResource := api.NewResource(resourceName)
 	opResource.AddOperation(op)
-	userResource := u.userResource.CloneChain(false)
+	userResource := u.UserResource.CloneChain(false)
 	userResource.SetId(userId)
 	userResource.AddChild(opResource)
 	return op
