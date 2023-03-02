@@ -13,7 +13,6 @@ type TenancyResponse struct {
 	*multitenancy.TenancyItem
 }
 
-// TODO use Items
 type ListTenanciesResponse = api.ResponseList[*multitenancy.TenancyItem]
 
 type DeleteTenancyCmd struct {
