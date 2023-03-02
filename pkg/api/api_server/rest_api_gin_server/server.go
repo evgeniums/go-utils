@@ -60,6 +60,8 @@ type Server struct {
 
 	csrf            *auth_csrf.AuthCsrf
 	tenancyResource api.Resource
+
+	dynamicTables api_server.DynamicTables
 }
 
 func getHttpHeader(g *gin.Context, name string) string {
@@ -93,6 +95,10 @@ func (s *Server) Config() interface{} {
 
 func (s *Server) Testing() bool {
 	return s.App().Testing()
+}
+
+func (s *Server) DynamicTables() api_server.DynamicTables {
+	return s.dynamicTables
 }
 
 func (s *Server) TenancyManager() multitenancy.Multitenancy {

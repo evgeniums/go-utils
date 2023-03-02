@@ -94,6 +94,7 @@ func (s *BareBonesServerBase) Init(app app_context.Context, tenancyManager multi
 
 	// add services
 	api_server.AddServiceToServer(s.pimpl.server, api_server.NewStatusService())
+	api_server.AddServiceToServer(s.pimpl.server, api_server.NewDynamicTablesService())
 	api_server.AddServiceToServer(s.pimpl.server, auth_service.NewAuthService())
 
 	// done

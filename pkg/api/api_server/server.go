@@ -32,6 +32,9 @@ type Server interface {
 
 	// Check for testing mode.
 	Testing() bool
+
+	// Get dynamic tables store
+	DynamicTables() DynamicTables
 }
 
 func AddServiceToServer(s Server, service Service, multitenancy ...bool) {

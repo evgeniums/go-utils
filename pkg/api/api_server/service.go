@@ -15,25 +15,47 @@ type Service interface {
 
 	Server() Server
 	AttachToServer(server Server, multitenancy ...bool) error
+
+	AddDynamicTables(tables ...*DynamicTableConfig)
+	DynamicTables() []*DynamicTableConfig
 }
 
 type ServiceBase struct {
 	api.ResourceBase
 	generic_error.ErrorsExtenderBase
-	server Server
+	server        Server
+	dynamicTables []*DynamicTableConfig
 }
 
 func (s *ServiceBase) Init(pathName string) {
 	s.ResourceBase.Init(pathName, api.ResourceConfig{Service: true})
+	s.dynamicTables = make([]*DynamicTableConfig, 0)
 }
 
 func (s *ServiceBase) Server() Server {
 	return s.server
 }
 
+func (s *ServiceBase) DynamicTables() []*DynamicTableConfig {
+	return s.dynamicTables
+}
+
+func (s *ServiceBase) AddDynamicTables(tables ...*DynamicTableConfig) {
+	s.dynamicTables = append(s.dynamicTables, tables...)
+}
+
 func (s *ServiceBase) AttachToServer(server Server, multitenancy ...bool) error {
+
 	s.server = server
 	s.AttachToErrorManager(server)
+
+	dynamicTables := server.DynamicTables()
+	if dynamicTables != nil {
+		for _, dynamicTable := range s.DynamicTables() {
+			server.DynamicTables().AddTable(dynamicTable)
+		}
+	}
+
 	return s.EachOperation(func(op api.Operation) error {
 		ep, ok := op.(Endpoint)
 		if !ok {
