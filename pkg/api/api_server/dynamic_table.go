@@ -7,21 +7,22 @@ type EnumEntry struct {
 	Display string `json:"display"`
 }
 
-type EnumGetter = func(request Request) ([]*EnumEntry, error)
+type EnumGetter func(request Request) ([]*EnumEntry, error)
 
 type DynamicTableField struct {
-	Field   string       `json:"field"`
-	Type    string       `json:"type"`
-	Index   bool         `json:"index"`
-	Display string       `json:"display"`
-	Enum    []*EnumEntry `json:"enum,omitempty"`
+	Field      string       `json:"field"`
+	Type       string       `json:"type"`
+	Index      bool         `json:"index"`
+	Display    string       `json:"display"`
+	Enum       []*EnumEntry `json:"enum,omitempty"`
+	EnumGetter EnumGetter   `json:"-"`
 }
 
 type DynamicTable struct {
 	api.ResponseStub
-	Fields               []*DynamicTableField
-	DefaultSortField     string `json:"default_sort_field"`
-	DefaultSortDirection string `json:"default_sort_direction"`
+	Fields               []*DynamicTableField `json:"fields"`
+	DefaultSortField     string               `json:"default_sort_field"`
+	DefaultSortDirection string               `json:"default_sort_direction"`
 }
 
 type DynamicTableQuery struct {
@@ -35,15 +36,15 @@ type DynamicTableConfig struct {
 	ColumnsOrder         []string
 	DefaultSortField     string
 	DefaultSortDirection string
-	EnumGetter           EnumGetter
+	EnumGetters          map[string]EnumGetter
 }
 
 type DynamicFieldTranslator interface {
-	Tr(field *DynamicTableField, tableName ...string)
+	Tr(field *DynamicTableField, tableName ...string) (string, bool)
 }
 
 type DynamicTables interface {
-	AddTable(table *DynamicTableConfig)
-	GetTable(path string) (*DynamicTable, error)
+	AddTable(table *DynamicTableConfig) error
+	Table(request Request, path string) (*DynamicTable, error)
 	SetTranslator(translator DynamicFieldTranslator)
 }

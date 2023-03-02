@@ -31,7 +31,7 @@ func (e *DynamicTableEndpoint) HandleRequest(request Request) error {
 	}
 
 	// get table
-	table, err := e.service.Server().DynamicTables().GetTable(cmd.Path)
+	table, err := e.service.Server().DynamicTables().Table(request, cmd.Path)
 	if err != nil {
 		c.SetMessage("failed to find table for path")
 		request.SetGenericErrorCode(generic_error.ErrorCodeNotFound)

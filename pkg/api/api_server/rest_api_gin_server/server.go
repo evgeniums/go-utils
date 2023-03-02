@@ -11,6 +11,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server/dynamic_table_gorm"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_csrf"
@@ -69,7 +70,10 @@ func getHttpHeader(g *gin.Context, name string) string {
 }
 
 func NewServer() *Server {
+
 	s := &Server{}
+
+	s.dynamicTables = dynamic_table_gorm.New()
 
 	csrfKey := func(key string) string {
 		return utils.ConcatStrings("x-", key)

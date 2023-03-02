@@ -38,6 +38,11 @@ func (d *ModelDescriptor) FieldsReady() bool {
 	return d.FieldsJson != nil
 }
 
+func IsIndexField(field *schema.Field) bool {
+	// NOTE If field is additional part of composite index only then searching with that index can be slow
+	return field.PrimaryKey || field.TagSettings["INDEX"] != "" || field.TagSettings["UNIQUEINDEX"] != ""
+}
+
 func (d *ModelDescriptor) ParseFields() error {
 	d.FieldsJson = make(map[string]*FieldDescriptor)
 
@@ -61,11 +66,7 @@ func (d *ModelDescriptor) ParseFields() error {
 			fd.DbField = field.DBName
 			fd.FullDbName = fmt.Sprintf("%s.%s", fd.DbTable, fd.DbField)
 		}
-
-		// NOTE If field is additional part of composite index only then searching with that index can be slow
-		if field.PrimaryKey || field.TagSettings["INDEX"] != "" || field.TagSettings["UNIQUEINDEX"] != "" {
-			fd.Index = true
-		}
+		fd.Index = IsIndexField(field)
 
 		d.FieldsJson[fd.Json] = fd
 	}
