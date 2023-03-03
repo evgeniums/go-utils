@@ -46,7 +46,13 @@ func (e *Endpoint[T]) Init(ep api_server.ResourceEndpointI, fieldName string, s 
 type CustomerService = Service[*customer.Customer]
 
 func NewCustomerService(customers *customer.Manager) *CustomerService {
-	return NewService[*customer.Customer](customers)
+
+	s := NewService[*customer.Customer](customers)
+
+	customerTableConfig := &api_server.DynamicTableConfig{Model: &customer.Customer{}, Operation: s.ListOperation()}
+	s.AddDynamicTables(customerTableConfig)
+
+	return s
 }
 
 type TenancyWithSetters interface {

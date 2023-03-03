@@ -18,6 +18,8 @@ type UserService[U user.User] struct {
 
 	collectionResource api.Resource
 	userResource       api.Resource
+
+	listOperation api.Operation
 }
 
 func NewUserService[U user.User](userController user.Users[U],
@@ -38,7 +40,10 @@ func NewUserService[U user.User](userController user.Users[U],
 	s.Users = userController
 	s.AddChild(s.collectionResource)
 
-	s.collectionResource.AddOperation(List(s))
+	listOp := List(s)
+	s.listOperation = listOp
+
+	s.collectionResource.AddOperation(listOp)
 	s.collectionResource.AddOperation(Add(s, setterBuilder))
 
 	s.userResource.AddOperation(Find(s), true)
@@ -56,6 +61,10 @@ func (s *UserService[U]) CollectionResource() api.Resource {
 
 func (s *UserService[U]) UserResource() api.Resource {
 	return s.userResource
+}
+
+func (s *UserService[U]) ListOperation() api.Operation {
+	return s.listOperation
 }
 
 type SetUserFieldEndpoint struct {

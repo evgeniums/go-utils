@@ -41,12 +41,12 @@ type WithRole struct {
 }
 
 type WithCustomerId struct {
-	CUSTOMER_ID string `json:"customer_id" gorm:"index;index:,unique,composite:u" validate:"required,alphanum_|email" vmessage:"Invalid customer ID" long:"customer" description:"ID or name of a customer that will own the tenancy" required:"true"`
+	CUSTOMER_ID string `json:"customer_id" gorm:"index;index:,unique,composite:u" validate:"required,alphanum_|email" vmessage:"Invalid customer ID" long:"customer" description:"ID or name of a customer that will own the tenancy" required:"true" display:"Customer ID"`
 }
 
 type WithPoolAndDb struct {
-	POOL_ID string `json:"pool_id" gorm:"index" validate:"omitempty,alphanum" vmessage:"Pool ID must be alhanumeric" long:"pool" description:"Name or ID of a pool this tenancy belongs to"`
-	DBNAME  string `json:"dbname" gorm:"index;column:dbname" validate:"omitempty,alphanum_" vmessage:"Database name must be alhanumeric" long:"dbname" description:"Name of tenancy's database, if empty then will be generated automatically"`
+	POOL_ID string `json:"pool_id" gorm:"index" validate:"omitempty,alphanum" vmessage:"Pool ID must be alhanumeric" long:"pool" description:"Name or ID of a pool this tenancy belongs to" display:"Pool ID"`
+	DBNAME  string `json:"dbname" gorm:"index;column:dbname" validate:"omitempty,alphanum_" vmessage:"Database name must be alhanumeric" long:"dbname" description:"Name of tenancy's database, if empty then will be generated automatically" display:"Database"`
 }
 
 type TenancyData struct {
@@ -106,8 +106,8 @@ func (TenancyDb) TableName() string {
 
 type TenancyItem struct {
 	TenancyDb     `source:"tenancies"`
-	CustomerLogin string `json:"customer_login" source:"customers.login" gorm:"index"`
-	PoolName      string `json:"pool_name" source:"pools.name" gorm:"index"`
+	CustomerLogin string `json:"customer_login" source:"customers.login" gorm:"index" display:"Customer"`
+	PoolName      string `json:"pool_name" source:"pools.name" gorm:"index" display:"Pool"`
 }
 
 func (TenancyItem) TableName() string {

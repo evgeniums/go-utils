@@ -64,8 +64,8 @@ type PoolServiceBinding struct {
 	common.ObjectBase   `source:"pool_service_associations"`
 	WithRole            `source:"pool_service_associations"`
 	PoolServiceBaseData `source:"pool_services"`
-	PoolId              string `json:"pool_id" source:"pools.id"`
-	PoolName            string `json:"pool_name" source:"pools.name"`
-	ServiceId           string `json:"service_id" source:"pool_services.id"`
-	ServiceName         string `json:"service_name" source:"pool_services.name"`
+	PoolId              string `json:"pool_id" source:"pools.id" display:"Pool ID"`
+	PoolName            string `json:"pool_name" source:"pools.name" display:"Pool"`
+	ServiceId           string `json:"service_id" source:"pool_services.id" display:"Service ID"`
+	ServiceName         string `json:"service_name" source:"pool_services.name" display:"Service"`
 }

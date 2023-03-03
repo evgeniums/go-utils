@@ -2,12 +2,15 @@ package dynamic_table_gorm
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"gorm.io/gorm/schema"
 )
 
@@ -85,6 +88,42 @@ func (d *DynamicTablesGorm) Table(request api_server.Request, path string) (*api
 	return result, nil
 }
 
+func FieldDisplay(field *schema.Field, explicits map[string]string) string {
+
+	// extract field name
+	name := field.Tag.Get("json")
+	if name == "" {
+		name = field.DBName
+	}
+
+	// check if there is a tag for display
+	display := field.Tag.Get("display")
+
+	// check if display is explicitly set for field name
+	if display == "" {
+		var ok bool
+		display, ok = explicits[name]
+		if ok {
+			return display
+		}
+	}
+
+	// construct display from field name by replacing _ with spaces and transforming first letter to upper case
+	if display == "" {
+		display = cases.Title(language.Und, cases.NoLower).String(name)
+		display = strings.Replace(display, "_", " ", -1)
+	}
+
+	// check if there is override in map of explicits
+	override, ok := explicits[display]
+	if ok {
+		return override
+	}
+
+	// done
+	return display
+}
+
 func (d *DynamicTablesGorm) AddTable(table *api_server.DynamicTableConfig) error {
 
 	// create table and set default fields
@@ -119,14 +158,7 @@ func (d *DynamicTablesGorm) AddTable(table *api_server.DynamicTableConfig) error
 		}
 
 		// set field display
-		tableField.Display = field.Tag.Get("display")
-		display, ok := table.Displays[tableField.Field]
-		if ok {
-			tableField.Display = display
-		}
-		if tableField.Display == "" {
-			tableField.Display = tableField.Field
-		}
+		tableField.Display = FieldDisplay(field, table.Displays)
 
 		// set index flag
 		tableField.Index = db_gorm.IsIndexField(field)

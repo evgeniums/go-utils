@@ -17,7 +17,7 @@ type ID interface {
 }
 
 type IDBase struct {
-	ID string `gorm:"primary_key" json:"id"`
+	ID string `gorm:"primary_key" json:"id" display:"ID"`
 }
 
 func (o *IDBase) GetID() string {
@@ -39,7 +39,7 @@ type CreatedAt interface {
 }
 
 type CreatedAtBase struct {
-	CREATED_AT time.Time `gorm:"index" json:"created_at"`
+	CREATED_AT time.Time `gorm:"index" json:"created_at" display:"Created"`
 }
 
 func (w *CreatedAtBase) InitCreatedAt() {
@@ -59,7 +59,7 @@ type UpdatedAt interface {
 }
 
 type UpdatedAtBase struct {
-	UPDATED_AT time.Time `gorm:"index" json:"updated_at"`
+	UPDATED_AT time.Time `gorm:"index" json:"updated_at" display:"Updated"`
 }
 
 func (w *UpdatedAtBase) GetUpdatedAt() time.Time {

@@ -40,25 +40,35 @@ func NewPoolService(poolController pool.PoolController) *PoolService {
 	_, s.ServicesResource, s.ServiceResource = api.PrepareCollectionAndNameResource("service")
 	s.AddChild(s.ServicesResource)
 
-	s.PoolsResource.AddOperations(AddPool(s), ListPools(s))
+	listPools := ListPools(s)
+	s.PoolsResource.AddOperations(AddPool(s), listPools)
 	s.PoolResource.AddOperation(FindPool(s), true)
 	s.PoolResource.AddOperations(UpdatePool(s), DeletePool(s))
 
 	poolServiceAssociations := api.NewResource("service")
-	poolServiceAssociations.AddOperations(ListPoolServices(s), AddServiceToPool(s), RemoveAllServicesFromPool(s))
+	listPoolServices := ListPoolServices(s)
+	poolServiceAssociations.AddOperations(listPoolServices, AddServiceToPool(s), RemoveAllServicesFromPool(s))
 	s.PoolResource.AddChild(poolServiceAssociations)
 
 	poolServiceAssociation := api.NamedResource("role")
 	poolServiceAssociation.AddOperation(RemoveServiceFromPool(s))
 	poolServiceAssociations.AddChild(poolServiceAssociation)
 
-	s.ServicesResource.AddOperations(AddService(s), ListServices(s))
+	listServices := ListServices(s)
+	s.ServicesResource.AddOperations(AddService(s), listServices)
 	s.ServiceResource.AddOperation(FindService(s), true)
 	s.ServiceResource.AddOperations(UpdateService(s), DeleteService(s))
 
 	servicePoolAssociations := api.NewResource("pool")
-	servicePoolAssociations.AddOperations(ListServicePools(s), RemoveServiceFromAllPools(s))
+	listServicePools := ListServicePools(s)
+	servicePoolAssociations.AddOperations(listServicePools, RemoveServiceFromAllPools(s))
 	s.ServiceResource.AddChild(servicePoolAssociations)
+
+	poolTableConfig := &api_server.DynamicTableConfig{Model: &pool.PoolBase{}, Operation: listPools}
+	serviceTableConfig := &api_server.DynamicTableConfig{Model: &pool.PoolServiceBase{}, Operation: listServices}
+	poolServicesTableConfig := &api_server.DynamicTableConfig{Model: &pool.PoolServiceBinding{}, Operation: listPoolServices}
+	servicePoolsTableConfig := &api_server.DynamicTableConfig{Model: &pool.PoolServiceBinding{}, Operation: listServicePools}
+	s.AddDynamicTables(poolTableConfig, serviceTableConfig, poolServicesTableConfig, servicePoolsTableConfig)
 
 	return s
 }

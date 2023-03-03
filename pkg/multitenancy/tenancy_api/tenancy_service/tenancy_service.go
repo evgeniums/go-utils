@@ -48,7 +48,8 @@ func NewTenancyService(tenancyController multitenancy.TenancyController) *Tenanc
 	s.TenanciesResource = s.TenancyResource.Parent()
 	s.AddChild(s.TenanciesResource)
 
-	s.TenanciesResource.AddOperations(Add(s), List(s))
+	listOp := List(s)
+	s.TenanciesResource.AddOperations(Add(s), listOp)
 	existsResource := api.NewResource("exists")
 	existsResource.AddOperation(Exists(s))
 	s.TenanciesResource.AddChild(existsResource)
@@ -61,6 +62,9 @@ func NewTenancyService(tenancyController multitenancy.TenancyController) *Tenanc
 		SetCustomer(s),
 		ChangePoolOrDb(s),
 	)
+
+	tenancyTableConfig := &api_server.DynamicTableConfig{Model: &multitenancy.TenancyItem{}, Operation: listOp}
+	s.AddDynamicTables(tenancyTableConfig)
 
 	return s
 }

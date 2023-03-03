@@ -61,12 +61,12 @@ type ServiceConfigBase struct {
 	PROVIDER        string `gorm:"index;column:provider" json:"provider" long:"provider" description:"Service provider" required:"true"`
 	PUBLIC_HOST     string `gorm:"index" json:"public_host" long:"public-host" description:"Public host of the service (optional)"`
 	PUBLIC_PORT     uint16 `gorm:"index" json:"public_port" long:"public-port" description:"Public port of the service (optional)"`
-	PUBLIC_URL      string `gorm:"index" json:"public_url" long:"public-url" description:"Public url of the service (optional)"`
+	PUBLIC_URL      string `gorm:"index" json:"public_url" long:"public-url" description:"Public url of the service (optional)" display:"Public URL"`
 	PRIVATE_HOST    string `gorm:"index" json:"private_host" long:"private-host" description:"Private host of the service (optional)"`
 	PRIVATE_PORT    uint16 `gorm:"index" json:"private_port" long:"private-port" description:"Private port of the service (optional)"`
-	PRIVATE_URL     string `gorm:"index" json:"private_url" long:"private-url" description:"Private URL of the service (optional)"`
+	PRIVATE_URL     string `gorm:"index" json:"private_url" long:"private-url" description:"Private URL of the service (optional)" display:"Private URL"`
 	USER            string `gorm:"index" json:"user" long:"user" description:"User for login to the service (optional)"`
-	DB_NAME         string `gorm:"index;column:db_name" json:"db_name" long:"db_name" description:"Name of database (optional)"`
+	DB_NAME         string `gorm:"index;column:db_name" json:"db_name" long:"db_name" description:"Name of database (optional)" display:"Database"`
 	PARAMETER1      string `gorm:"index;column:parameter1" json:"parameter1" long:"parameter1" description:"Generic parameter1 of the service (optional)"`
 	PARAMETER2      string `gorm:"index;column:parameter2" json:"parameter2" long:"parameter2" description:"Generic parameter2 of the service (optional)"`
 	PARAMETER3      string `gorm:"index;column:parameter3" json:"parameter3" long:"parameter3" description:"Generic parameter3 of the service (optional)"`
