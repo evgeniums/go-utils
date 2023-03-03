@@ -28,13 +28,14 @@ type WithCRUD interface {
 }
 
 type DbCRUD struct {
+	ForceMainDb bool
 }
 
-func (crud *DbCRUD) Create(ctx op_context.Context, object common.Object) error {
+func (d *DbCRUD) Create(ctx op_context.Context, object common.Object) error {
 	c := ctx.TraceInMethod("CRUD.Create")
 	defer ctx.TraceOutMethod()
 
-	err := op_context.DB(ctx).Create(ctx, object)
+	err := op_context.DB(ctx, d.ForceMainDb).Create(ctx, object)
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -47,7 +48,7 @@ func (d *DbCRUD) Read(ctx op_context.Context, fields db.Fields, object interface
 	c := ctx.TraceInMethod("CRUD.Read")
 	defer ctx.TraceOutMethod()
 
-	found, err := op_context.DB(ctx).FindByFields(ctx, fields, object, dest...)
+	found, err := op_context.DB(ctx, d.ForceMainDb).FindByFields(ctx, fields, object, dest...)
 	if err != nil {
 		return found, c.SetError(err)
 	}
@@ -60,7 +61,7 @@ func (d *DbCRUD) ReadByField(ctx op_context.Context, fieldName string, fieldValu
 	c := ctx.TraceInMethod("CRUD.Read", logger.Fields{fieldName: fieldValue})
 	defer ctx.TraceOutMethod()
 
-	found, err := op_context.DB(ctx).FindByField(ctx, fieldName, fieldValue, object, dest...)
+	found, err := op_context.DB(ctx, d.ForceMainDb).FindByField(ctx, fieldName, fieldValue, object, dest...)
 	if err != nil {
 		return found, c.SetError(err)
 	}
@@ -72,7 +73,7 @@ func (d *DbCRUD) Update(ctx op_context.Context, obj common.Object, fields db.Fie
 	c := ctx.TraceInMethod("CRUD.Update")
 	defer ctx.TraceOutMethod()
 
-	err := db.Update(op_context.DB(ctx), ctx, obj, fields)
+	err := db.Update(op_context.DB(ctx, d.ForceMainDb), ctx, obj, fields)
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -86,9 +87,9 @@ func (d *DbCRUD) UpdateMulti(ctx op_context.Context, model interface{}, filter d
 
 	var err error
 	if filter == nil {
-		err = db.UpdateAll(op_context.DB(ctx), ctx, model, fields)
+		err = db.UpdateAll(op_context.DB(ctx, d.ForceMainDb), ctx, model, fields)
 	} else {
-		err = db.UpdateMulti(op_context.DB(ctx), ctx, model, filter, fields)
+		err = db.UpdateMulti(op_context.DB(ctx, d.ForceMainDb), ctx, model, filter, fields)
 	}
 	if err != nil {
 		return c.SetError(err)
@@ -97,11 +98,11 @@ func (d *DbCRUD) UpdateMulti(ctx op_context.Context, model interface{}, filter d
 	return nil
 }
 
-func (crud *DbCRUD) Delete(ctx op_context.Context, object common.Object) error {
+func (d *DbCRUD) Delete(ctx op_context.Context, object common.Object) error {
 	c := ctx.TraceInMethod("CRUD.Delete")
 	defer ctx.TraceOutMethod()
 
-	err := op_context.DB(ctx).Delete(ctx, object)
+	err := op_context.DB(ctx, d.ForceMainDb).Delete(ctx, object)
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -109,11 +110,11 @@ func (crud *DbCRUD) Delete(ctx op_context.Context, object common.Object) error {
 	return nil
 }
 
-func (crud *DbCRUD) DeleteByFields(ctx op_context.Context, fields db.Fields, object common.Object) error {
+func (d *DbCRUD) DeleteByFields(ctx op_context.Context, fields db.Fields, object common.Object) error {
 	c := ctx.TraceInMethod("CRUD.DeleteByFields")
 	defer ctx.TraceOutMethod()
 
-	err := op_context.DB(ctx).DeleteByFields(ctx, fields, object)
+	err := op_context.DB(ctx, d.ForceMainDb).DeleteByFields(ctx, fields, object)
 	if err != nil {
 		return c.SetError(err)
 	}
@@ -124,7 +125,7 @@ func (crud *DbCRUD) DeleteByFields(ctx op_context.Context, fields db.Fields, obj
 func (d *DbCRUD) List(ctx op_context.Context, filter *db.Filter, objects interface{}, dest ...interface{}) (int64, error) {
 	c := ctx.TraceInMethod("CRUD.List")
 	defer ctx.TraceOutMethod()
-	count, err := op_context.DB(ctx).FindWithFilter(ctx, filter, objects, dest...)
+	count, err := op_context.DB(ctx, d.ForceMainDb).FindWithFilter(ctx, filter, objects, dest...)
 	if err != nil {
 		return 0, c.SetError(err)
 	}
@@ -134,7 +135,7 @@ func (d *DbCRUD) List(ctx op_context.Context, filter *db.Filter, objects interfa
 func (d *DbCRUD) Exists(ctx op_context.Context, filter *db.Filter, object interface{}) (bool, error) {
 	c := ctx.TraceInMethod("CRUD.Exists")
 	defer ctx.TraceOutMethod()
-	exists, err := op_context.DB(ctx).Exists(ctx, filter, object)
+	exists, err := op_context.DB(ctx, d.ForceMainDb).Exists(ctx, filter, object)
 	if err != nil {
 		return false, c.SetError(err)
 	}
@@ -144,7 +145,7 @@ func (d *DbCRUD) Exists(ctx op_context.Context, filter *db.Filter, object interf
 func (d *DbCRUD) Join(ctx op_context.Context, joinConfig *db.JoinQueryConfig, filter *db.Filter, dest interface{}) (int64, error) {
 	c := ctx.TraceInMethod("CRUD.Join")
 	defer ctx.TraceOutMethod()
-	count, err := op_context.DB(ctx).Join(ctx, joinConfig, filter, dest)
+	count, err := op_context.DB(ctx, d.ForceMainDb).Join(ctx, joinConfig, filter, dest)
 	if err != nil {
 		return 0, c.SetError(err)
 	}

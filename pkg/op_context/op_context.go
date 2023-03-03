@@ -8,6 +8,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/oplog"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type CallContext interface {
@@ -96,9 +97,12 @@ type CallContextBuilder = func(methodName string, parentLogger logger.Logger, fi
 
 type OplogHandler = func(ctx Context) oplog.OplogController
 
-func DB(c Context) db.DBHandlers {
+func DB(c Context, forceMainDb ...bool) db.DBHandlers {
 	if c.DbTransaction() != nil {
 		return c.DbTransaction()
+	}
+	if utils.OptionalArg(false, forceMainDb...) {
+		return c.MainDB()
 	}
 	return c.Db()
 }
