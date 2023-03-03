@@ -21,13 +21,13 @@ type UserPubkeyI interface {
 }
 
 type PubkeyData struct {
-	PublicKey string `json:"public_key" validate:"required" vmessage:"Public key must be set in request."`
+	PublicKey string `json:"public_key" validate:"required" vmessage:"Public key must be set in request." display:"Key"`
 }
 
 type PubkeyEssentials struct {
 	PubkeyData
-	PublicKeyHash  string `json:"public_key_hash" gorm:"index;index:,unique,composite:u"`
-	PublicKeyOwner string `json:"public_key_owner" gorm:"index;index:,unique,composite:u"`
+	PublicKeyHash  string `json:"public_key_hash" gorm:"index;index:,unique,composite:u" display:"Hash"`
+	PublicKeyOwner string `json:"public_key_owner" gorm:"index;index:,unique,composite:u" display:"Owner ID"`
 }
 
 type UserPubkey struct {
