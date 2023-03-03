@@ -63,7 +63,7 @@ func (d *DynamicTablesGorm) Table(request api_server.Request, path string) (*api
 	*result = *t.DynamicTable
 
 	// process fields
-	for _, field := range result.Fields {
+	for _, field := range result.Columns {
 
 		// translate field's display
 		if d.translator != nil {
@@ -90,14 +90,14 @@ func (d *DynamicTablesGorm) AddTable(table *api_server.DynamicTableConfig) error
 	// create table and set default fields
 	t := &Table{}
 	t.DynamicTable = &api_server.DynamicTable{}
-	t.Fields = make([]*api_server.DynamicTableField, 0)
+	t.Columns = make([]*api_server.DynamicTableField, 0)
 	t.DefaultSortDirection = table.DefaultSortDirection
 	if t.DefaultSortDirection == "" {
 		t.DefaultSortDirection = db.SORT_DESC
 	}
-	t.DefaultSortField = table.DefaultSortField
-	if t.DefaultSortField == "" {
-		t.DefaultSortField = "created_at"
+	t.DefaultSortColumn = table.DefaultSortField
+	if t.DefaultSortColumn == "" {
+		t.DefaultSortColumn = "created_at"
 	}
 
 	// parse model's schema
@@ -149,7 +149,7 @@ func (d *DynamicTablesGorm) AddTable(table *api_server.DynamicTableConfig) error
 		if !ok {
 			return fmt.Errorf("unknown field %s in column order", fieldName)
 		}
-		t.Fields = append(t.Fields, field)
+		t.Columns = append(t.Columns, field)
 		delete(fields, fieldName)
 	}
 
@@ -160,7 +160,7 @@ func (d *DynamicTablesGorm) AddTable(table *api_server.DynamicTableConfig) error
 		if !ok {
 			continue
 		}
-		t.Fields = append(t.Fields, field)
+		t.Columns = append(t.Columns, field)
 		delete(fields, fieldName)
 	}
 

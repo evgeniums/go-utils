@@ -20,8 +20,8 @@ type DynamicTableField struct {
 
 type DynamicTable struct {
 	api.ResponseStub
-	Fields               []*DynamicTableField `json:"fields"`
-	DefaultSortField     string               `json:"default_sort_field"`
+	Columns              []*DynamicTableField `json:"columns"`
+	DefaultSortColumn    string               `json:"default_sort_column"`
 	DefaultSortDirection string               `json:"default_sort_direction"`
 }
 
