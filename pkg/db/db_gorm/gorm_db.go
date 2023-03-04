@@ -372,3 +372,12 @@ func (g *GormDB) CreateDatabase(ctx logger.WithLogger, dbName string) error {
 func (g *GormDB) MakeExpression(expr string, args ...interface{}) interface{} {
 	return gorm.Expr(expr, args...)
 }
+
+func (g *GormDB) Sum(ctx logger.WithLogger, groupFields []string, sumFields []string, filter *Filter, model interface{}, dest ...interface{}) (int64, error) {
+	count, err := Sum(g.db_(), g.paginator, groupFields, sumFields, filter, model, dest...)
+	if err != nil && g.VERBOSE_ERRORS {
+		e := fmt.Errorf("failed to Sum %v", ObjectTypeName(model))
+		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+	}
+	return count, err
+}

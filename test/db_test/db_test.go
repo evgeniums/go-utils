@@ -34,7 +34,7 @@ type SampleModel2 struct {
 }
 
 func dbModels() []interface{} {
-	return append([]interface{}{}, &SampleModel1{}, &SampleModel2{})
+	return append([]interface{}{}, &SampleModel1{}, &SampleModel2{}, &WithAmounts{})
 }
 
 func TestCreateDatabase(t *testing.T) {
@@ -175,6 +175,108 @@ func TestDottedJsonFields(t *testing.T) {
 	b, err := json.MarshalIndent(obj, "", "  ")
 	assert.NoError(t, err)
 	t.Logf("Object: \n %s", string(b))
+}
+
+type WithAmounts struct {
+	Field1  string  `gorm:"index"`
+	Field2  string  `gorm:"index"`
+	Field3  string  `gorm:"index"`
+	Amount1 int     `gorm:"index"`
+	Amount2 int     `gorm:"index"`
+	Amount3 float64 `gorm:"index"`
+}
+
+func TestSum(t *testing.T) {
+
+	app := test_utils.InitAppContext(t, testDir, dbModels(), "maindb.json")
+	defer app.Close()
+
+	add := func(doc *WithAmounts) {
+		require.NoError(t, app.Db().Create(app, doc), "failed to create doc in database")
+	}
+
+	doc := &WithAmounts{}
+	doc.Field1 = "value1"
+	doc.Field2 = "value2.1"
+	doc.Field3 = "value3.1"
+	doc.Amount1 = 1
+	doc.Amount2 = 10
+	doc.Amount3 = 100
+	add(doc)
+
+	doc.Field3 = "value3.2"
+	add(doc)
+
+	doc.Field3 = "value3.3"
+	add(doc)
+
+	doc.Field2 = "value2.2"
+	add(doc)
+
+	doc.Field3 = "value3.4"
+	add(doc)
+
+	var dest1 []WithAmounts
+	count, err := app.Db().Sum(app, []string{"field1", "field2"}, []string{"amount1", "amount2", "amount3"}, nil, &dest1)
+	b, err1 := json.MarshalIndent(dest1, "", "  ")
+	assert.NoError(t, err1)
+	t.Logf("Result: \n %s", string(b))
+	require.NoError(t, err)
+	require.Equal(t, int64(2), count)
+	require.Equal(t, 2, len(dest1))
+	assert.Equal(t, "value1", dest1[0].Field1)
+	assert.Equal(t, "value2.1", dest1[0].Field2)
+	assert.Equal(t, 3, dest1[0].Amount1)
+	assert.Equal(t, 30, dest1[0].Amount2)
+	assert.InEpsilon(t, 300.00, dest1[0].Amount3, 0.001)
+	assert.Equal(t, "value1", dest1[1].Field1)
+	assert.Equal(t, "value2.2", dest1[1].Field2)
+	assert.Equal(t, 2, dest1[1].Amount1)
+	assert.Equal(t, 20, dest1[1].Amount2)
+	assert.InEpsilon(t, 200.00, dest1[1].Amount3, 0.001)
+
+	var dest2 []WithAmounts
+	count, err = app.Db().Sum(app, []string{"field1"}, []string{"amount1", "amount2", "amount3"}, nil, &dest2)
+	b, err1 = json.MarshalIndent(dest2, "", "  ")
+	assert.NoError(t, err1)
+	t.Logf("Result: \n %s", string(b))
+	require.NoError(t, err)
+	require.Equal(t, int64(1), count)
+	require.Equal(t, 1, len(dest2))
+	assert.Equal(t, "value1", dest2[0].Field1)
+	assert.Equal(t, 5, dest2[0].Amount1)
+	assert.Equal(t, 50, dest2[0].Amount2)
+	assert.InEpsilon(t, 500.00, dest2[0].Amount3, 0.001)
+
+	var dest3 []WithAmounts
+	filter := db.NewFilter()
+	filter.AddFieldNotIn("field3", "value3.2", "value3.4")
+	count, err = app.Db().Sum(app, []string{"field1"}, []string{"amount1", "amount2", "amount3"}, filter, &dest3)
+	b, err1 = json.MarshalIndent(dest3, "", "  ")
+	assert.NoError(t, err1)
+	t.Logf("Result: \n %s", string(b))
+	require.NoError(t, err)
+	require.Equal(t, int64(1), count)
+	require.Equal(t, 1, len(dest3))
+	assert.Equal(t, "value1", dest3[0].Field1)
+	assert.Equal(t, 3, dest3[0].Amount1)
+	assert.Equal(t, 30, dest3[0].Amount2)
+	assert.InEpsilon(t, 300.00, dest3[0].Amount3, 0.001)
+
+	var dest4 []WithAmounts
+	count, err = app.Db().Sum(app, []string{}, []string{"amount1", "amount2", "amount3"}, nil, &dest4)
+	b, err1 = json.MarshalIndent(dest4, "", "  ")
+	assert.NoError(t, err1)
+	t.Logf("Result: \n %s", string(b))
+	require.NoError(t, err)
+	require.Equal(t, int64(1), count)
+	require.Equal(t, 1, len(dest2))
+	assert.Equal(t, "", dest4[0].Field1)
+	assert.Equal(t, "", dest4[0].Field2)
+	assert.Equal(t, "", dest4[0].Field3)
+	assert.Equal(t, 5, dest4[0].Amount1)
+	assert.Equal(t, 50, dest4[0].Amount2)
+	assert.InEpsilon(t, 500.00, dest4[0].Amount3, 0.001)
 }
 
 /*

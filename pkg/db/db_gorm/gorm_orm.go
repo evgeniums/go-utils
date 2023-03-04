@@ -217,6 +217,10 @@ func find(g *gorm.DB, filter *Filter, paginator *Paginator, dest interface{}) (i
 		}
 	}
 
+	// stmt := h.Session(&gorm.Session{DryRun: true}).Find(dest).Statement
+	// fmt.Printf("Query: %s\n", stmt.SQL.String())
+	// return 0, nil
+
 	result := h.Find(dest)
 	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return 0, result.Error
@@ -399,4 +403,35 @@ func DeleteAll(db *gorm.DB, docs interface{}) error {
 		return result.Error
 	}
 	return nil
+}
+
+func Sum(g *gorm.DB, paginator *Paginator, groupFields []string, sumFields []string, filter *Filter, model interface{}, dest ...interface{}) (int64, error) {
+
+	h := g.Model(model)
+
+	// construct select fields
+	var selectFieldsB strings.Builder
+	for _, sumField := range sumFields {
+		if selectFieldsB.Len() != 0 {
+			utils.BuildString(&selectFieldsB, ",")
+		}
+		utils.BuildString(&selectFieldsB, `sum("`, sumField, `") AS "`, sumField, `"`)
+	}
+	for _, groupField := range groupFields {
+		if selectFieldsB.Len() != 0 {
+			utils.BuildString(&selectFieldsB, ",")
+		}
+		utils.BuildString(&selectFieldsB, `"`, groupField, `"`)
+	}
+	selectFields := selectFieldsB.String()
+	h = h.Select(selectFields)
+
+	// construct group by
+	for _, groupField := range groupFields {
+		h = h.Group(groupField)
+	}
+
+	// find
+	dst := utils.OptionalArg(model, dest...)
+	return find(h, filter, paginator, dst)
 }

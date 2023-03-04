@@ -17,3 +17,9 @@ func ConcatSlices[T any](start []T, slices ...[]T) []T {
 	}
 	return r
 }
+
+func BuildString(sb *strings.Builder, parts ...string) {
+	for _, part := range parts {
+		sb.WriteString(part)
+	}
+}

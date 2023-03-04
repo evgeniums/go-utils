@@ -60,6 +60,8 @@ type DBHandlers interface {
 
 	CreateDatabase(ctx logger.WithLogger, dbName string) error
 	MakeExpression(expr string, args ...interface{}) interface{}
+
+	Sum(ctx logger.WithLogger, groupFields []string, sumFields []string, filter *Filter, model interface{}, dest ...interface{}) (int64, error)
 }
 
 type Transaction interface {
