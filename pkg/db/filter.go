@@ -49,10 +49,24 @@ type Filter struct {
 	Intervals     map[string]*Interval
 	BetweenFields []*BetweenFields
 	OrFields      []*OrFields
+
+	PresetFields []Fields
 }
 
 func NewFilter() *Filter {
-	return &Filter{}
+	f := &Filter{}
+	f.PresetFields = make([]Fields, 0)
+	return f
+}
+
+func (f *Filter) PushPresetFields(fields Fields) {
+	f.PresetFields = append(f.PresetFields, fields)
+}
+
+func (f *Filter) PopPresetFields() {
+	if len(f.PresetFields) > 0 {
+		f.PresetFields = f.PresetFields[:len(f.PresetFields)-1]
+	}
 }
 
 func (f *Filter) SetSorting(field string, direction ...string) {

@@ -113,7 +113,11 @@ func prepareFilter(db *gorm.DB, filter *Filter) *gorm.DB {
 	h := db
 
 	if filter.Fields != nil {
-		h = db.Where(filter.Fields)
+		h = h.Where(filter.Fields)
+	}
+
+	for _, f := range filter.PresetFields {
+		h = h.Where(f)
 	}
 
 	for field, values := range filter.FieldsIn {
