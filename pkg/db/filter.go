@@ -91,7 +91,7 @@ func (f *Filter) AddFieldIn(name string, values ...interface{}) {
 	if f.FieldsIn == nil {
 		f.FieldsIn = make(map[string][]interface{})
 	}
-	f.Fields[name] = append([]interface{}{}, values...)
+	f.FieldsIn[name] = append([]interface{}{}, values...)
 }
 
 func (f *Filter) AddFieldNotIn(name string, values ...interface{}) {
