@@ -31,7 +31,9 @@ type JoinPair struct {
 
 type JoinQueryConstructor struct {
 	db.JoinQueryBase
-	pairs []*JoinPair
+	pairs       []*JoinPair
+	sumFields   map[string]bool
+	groupFields map[string]bool
 }
 
 func constructJoins(g *gorm.DB, f *FilterManager, q *JoinQueryConstructor) (*gorm.DB, error) {
@@ -78,15 +80,40 @@ func PrepareJoin(f *FilterManager, g *gorm.DB, constructor *JoinQueryConstructor
 			return nil, fmt.Errorf("failed to parse destination model fields: %s", err)
 		}
 	}
+
+	sums := len(constructor.sumFields) > 0
+	groups := len(constructor.groupFields) > 0 || sums
+
 	for _, field := range destinationDescriptor.FieldsJson {
-		fieldSelect := fmt.Sprintf("\"%s\".\"%s\" AS \"%s\"", field.DbTable, field.DbField, field.Schema.DBName)
-		selects = append(selects, fieldSelect)
+		if !groups {
+			fieldSelect := fmt.Sprintf("\"%s\".\"%s\" AS \"%s\"", field.DbTable, field.DbField, field.Schema.DBName)
+			selects = append(selects, fieldSelect)
+		} else {
+			if sums {
+				_, isSum := constructor.sumFields[field.Schema.DBName]
+				if isSum {
+					fieldSelect := fmt.Sprintf("sum(\"%s\".\"%s\") AS \"%s\"", field.DbTable, field.DbField, field.Schema.DBName)
+					selects = append(selects, fieldSelect)
+				}
+			}
+			if groups {
+				_, isGroup := constructor.groupFields[field.Schema.DBName]
+				if isGroup {
+					fieldSelect := fmt.Sprintf("\"%s\".\"%s\" AS \"%s\"", field.DbTable, field.DbField, field.Schema.DBName)
+					selects = append(selects, fieldSelect)
+				}
+			}
+		}
 	}
 
 	db = db.Select(selects)
 	db, err = constructJoins(db, f, q)
 	if err != nil {
 		return nil, fmt.Errorf("failed to construct joins: %s", err)
+	}
+
+	for groupField := range constructor.groupFields {
+		db = db.Group(groupField)
 	}
 
 	return db, nil
@@ -123,7 +150,26 @@ func newJoiner(db *GormDB) *Joiner {
 func newJoinQueryConstuctor() *JoinQueryConstructor {
 	q := &JoinQueryConstructor{}
 	q.pairs = make([]*JoinPair, 0)
+	q.groupFields = make(map[string]bool)
+	q.sumFields = make(map[string]bool)
 	return q
+}
+
+func (j *Joiner) Sum(groupFields []string, sumFields []string) db.JoinEnd {
+
+	if j.constructor == nil {
+		j.constructor = newJoinQueryConstuctor()
+	}
+
+	for _, field := range sumFields {
+		j.constructor.sumFields[field] = true
+	}
+
+	for _, field := range groupFields {
+		j.constructor.groupFields[field] = true
+	}
+
+	return j
 }
 
 func (j *Joiner) Destination(destination interface{}) (db.JoinQuery, error) {

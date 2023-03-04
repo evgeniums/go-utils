@@ -21,6 +21,7 @@ type JoinBegin interface {
 
 type JoinEnd interface {
 	Joiner
+	Sum(groupFields []string, sumFields []string) JoinEnd
 	Destination(dst interface{}) (JoinQuery, error)
 }
 

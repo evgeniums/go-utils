@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-backend-helpers/pkg/crud"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 	"github.com/stretchr/testify/assert"
@@ -34,7 +35,7 @@ type SampleModel2 struct {
 }
 
 func dbModels() []interface{} {
-	return append([]interface{}{}, &SampleModel1{}, &SampleModel2{}, &WithAmounts{})
+	return append([]interface{}{}, &SampleModel1{}, &SampleModel2{}, &WithAmount{}, &Terminal{})
 }
 
 func TestCreateDatabase(t *testing.T) {
@@ -177,13 +178,24 @@ func TestDottedJsonFields(t *testing.T) {
 	t.Logf("Object: \n %s", string(b))
 }
 
-type WithAmounts struct {
-	Field1  string  `gorm:"index"`
-	Field2  string  `gorm:"index"`
-	Field3  string  `gorm:"index"`
-	Amount1 int     `gorm:"index"`
-	Amount2 int     `gorm:"index"`
-	Amount3 float64 `gorm:"index"`
+type Terminal struct {
+	common.ObjectBase
+	common.WithNameBase
+}
+
+type WithAmount struct {
+	Field1     string  `gorm:"index" json:"field1"`
+	Field2     string  `gorm:"index" json:"field2"`
+	Field3     string  `gorm:"index" json:"field3"`
+	Amount1    int     `gorm:"index" json:"amount1"`
+	Amount2    int     `gorm:"index" json:"amount2"`
+	Amount3    float64 `gorm:"index" json:"amount3"`
+	TerminalId string  `gorm:"index" json:"terminal_id"`
+}
+
+type WithAmountItem struct {
+	WithAmount   `source:"with_amounts"`
+	TerminalName string `source:"terminals.name" json:"terminal_name"`
 }
 
 func TestSum(t *testing.T) {
@@ -191,11 +203,11 @@ func TestSum(t *testing.T) {
 	app := test_utils.InitAppContext(t, testDir, dbModels(), "maindb.json")
 	defer app.Close()
 
-	add := func(doc *WithAmounts) {
+	add := func(doc *WithAmount) {
 		require.NoError(t, app.Db().Create(app, doc), "failed to create doc in database")
 	}
 
-	doc := &WithAmounts{}
+	doc := &WithAmount{}
 	doc.Field1 = "value1"
 	doc.Field2 = "value2.1"
 	doc.Field3 = "value3.1"
@@ -216,7 +228,7 @@ func TestSum(t *testing.T) {
 	doc.Field3 = "value3.4"
 	add(doc)
 
-	var dest1 []WithAmounts
+	var dest1 []WithAmount
 	count, err := app.Db().Sum(app, []string{"field1", "field2"}, []string{"amount1", "amount2", "amount3"}, nil, &dest1)
 	b, err1 := json.MarshalIndent(dest1, "", "  ")
 	assert.NoError(t, err1)
@@ -235,7 +247,7 @@ func TestSum(t *testing.T) {
 	assert.Equal(t, 20, dest1[1].Amount2)
 	assert.InEpsilon(t, 200.00, dest1[1].Amount3, 0.001)
 
-	var dest2 []WithAmounts
+	var dest2 []WithAmount
 	count, err = app.Db().Sum(app, []string{"field1"}, []string{"amount1", "amount2", "amount3"}, nil, &dest2)
 	b, err1 = json.MarshalIndent(dest2, "", "  ")
 	assert.NoError(t, err1)
@@ -248,7 +260,7 @@ func TestSum(t *testing.T) {
 	assert.Equal(t, 50, dest2[0].Amount2)
 	assert.InEpsilon(t, 500.00, dest2[0].Amount3, 0.001)
 
-	var dest3 []WithAmounts
+	var dest3 []WithAmount
 	filter := db.NewFilter()
 	filter.AddFieldNotIn("field3", "value3.2", "value3.4")
 	count, err = app.Db().Sum(app, []string{"field1"}, []string{"amount1", "amount2", "amount3"}, filter, &dest3)
@@ -263,7 +275,7 @@ func TestSum(t *testing.T) {
 	assert.Equal(t, 30, dest3[0].Amount2)
 	assert.InEpsilon(t, 300.00, dest3[0].Amount3, 0.001)
 
-	var dest4 []WithAmounts
+	var dest4 []WithAmount
 	count, err = app.Db().Sum(app, []string{}, []string{"amount1", "amount2", "amount3"}, nil, &dest4)
 	b, err1 = json.MarshalIndent(dest4, "", "  ")
 	assert.NoError(t, err1)
@@ -279,247 +291,164 @@ func TestSum(t *testing.T) {
 	assert.InEpsilon(t, 500.00, dest4[0].Amount3, 0.001)
 }
 
-/*
-type JoinTable struct {
-	Model       interface{}
-	FieldsModel interface{}
+func TestJoinSum(t *testing.T) {
 
-	schema *schema.Schema
-}
+	app := test_utils.InitAppContext(t, testDir, dbModels(), "maindb.json")
+	defer app.Close()
+	crud := &crud.DbCRUD{}
 
-func (jt *JoinTable) Schema(f *db_gorm.FilterManager) (*schema.Schema, error) {
-	if jt.schema == nil {
-		var err error
-		jt.schema, err = schema.Parse(jt.Model, f.SchemaCache, f.SchemaNamer)
-		return jt.schema, err
-	}
-	return jt.schema, nil
-}
+	// create terminals
+	terminal1 := &Terminal{}
+	terminal1.InitObject()
+	terminal1.SetName("terminal1")
+	require.NoError(t, app.Db().Create(app, terminal1))
 
-type JoinPair struct {
-	Left       *JoinTable
-	LeftField  string
-	Right      *JoinTable
-	RightField string
-}
+	terminal2 := &Terminal{}
+	terminal2.InitObject()
+	terminal2.SetName("terminal2")
+	require.NoError(t, app.Db().Create(app, terminal2))
 
-type JoinQuery struct {
-	Pairs       []*JoinPair
-	Destination interface{}
-}
+	terminal3 := &Terminal{}
+	terminal3.InitObject()
+	terminal3.SetName("terminal3")
+	require.NoError(t, app.Db().Create(app, terminal3))
 
-func constructTableSelect(f *db_gorm.FilterManager, table *JoinTable, destinationFields map[string]map[string]string) ([]string, error) {
-	var err error
-	fields := make([]string, 0)
+	// add docs
 
-	tableModel, err := table.Schema(f)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse table model: %s", err)
-	}
-	var fieldsModel *schema.Schema
-	if table.FieldsModel != nil {
-		fieldsModel, err = schema.Parse(table.FieldsModel, f.SchemaCache, f.SchemaNamer)
-	} else {
-		fieldsModel = tableModel
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse table model: %s", err)
+	add := func(doc *WithAmount) {
+		require.NoError(t, app.Db().Create(app, doc), "failed to create doc in database")
 	}
 
-	tableDestinationFields := destinationFields[tableModel.Table]
-	for _, field := range fieldsModel.DBNames {
-		substituted := false
-		if tableDestinationFields != nil {
-			substitution, ok := tableDestinationFields[field]
-			if ok {
-				substituted = true
-				fields = append(fields, fmt.Sprintf("%s.%s AS %s", tableModel.Table, field, substitution))
-			}
-		}
-		if !substituted {
-			fields = append(fields, utils.ConcatStrings(tableModel.Table, ".", field))
-		}
+	doc := &WithAmount{}
+	doc.TerminalId = terminal1.GetID()
+	doc.Field1 = "value1"
+	doc.Field2 = "value2.1"
+	doc.Field3 = "value3.1"
+	doc.Amount1 = 1
+	doc.Amount2 = 10
+	doc.Amount3 = 100
+	add(doc)
+	doc.Field2 = "value2.2"
+	add(doc)
+	doc.Field3 = "value3.2"
+	add(doc)
+	doc.Field3 = "value3.3"
+	add(doc)
+	doc.Field3 = "value3.4"
+	add(doc)
+
+	// construct join query 1
+	queryBuilder1 := func() (db.JoinQuery, error) {
+		return app.Db().Joiner().
+			Join(&WithAmount{}, "terminal_id").On(&Terminal{}, "id").
+			Sum([]string{"field1", "field2"}, []string{"amount1", "amount2", "amount3"}).
+			Destination(&WithAmountItem{})
 	}
 
-	return fields, nil
-}
-
-func constructJoins(g *gorm.DB, f *db_gorm.FilterManager, q *JoinQuery) (*gorm.DB, error) {
-	db := g
-
-	for _, pair := range q.Pairs {
-		leftSchema, err := pair.Left.Schema(f)
-		if err != nil {
-			return nil, err
-		}
-		rightSchema, err := pair.Right.Schema(f)
-		if err != nil {
-			return nil, err
-		}
-		join := fmt.Sprintf("JOIN %s ON %s.%s=%s.%s", rightSchema.Table, leftSchema.Table, pair.LeftField, rightSchema.Table, pair.RightField)
-		db = db.Joins(join)
-	}
-
-	return db, nil
-}
-
-func ConstructJoin(f *db_gorm.FilterManager, g *gorm.DB, q *JoinQuery) (*gorm.DB, error) {
-
-	mainModel := q.Pairs[0].Left.Model
-	db := g.Model(mainModel)
-
-	tables := make(map[string]*JoinTable)
-	for _, pair := range q.Pairs {
-		left, err := pair.Left.Schema(f)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse table model: %s", err)
-		}
-		tables[left.Table] = pair.Left
-		right, err := pair.Right.Schema(f)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse table model: %s", err)
-		}
-		tables[right.Table] = pair.Right
-	}
-
-	destinationFields := make(map[string]map[string]string)
-	fillDestinationFields := func(jsonTag string) error {
-
-		parts := strings.Split(jsonTag, ".")
-		if len(parts) == 2 {
-			tableFields, ok := destinationFields[parts[0]]
-			if !ok {
-				tableFields = make(map[string]string)
-			}
-			tableFields[parts[1]] = strings.Join(parts, "_")
-			destinationFields[parts[0]] = tableFields
-		}
-
-		return nil
-	}
-	err := utils.EachStructTag(fillDestinationFields, "json", q.Destination)
-	if err != nil {
-		return nil, fmt.Errorf("failed to extract tags from: %s", err)
-	}
-
-	selects := make([]string, 0)
-	for tableName, table := range tables {
-		tableSelects, err := constructTableSelect(f, table, destinationFields)
-		if err != nil {
-			return nil, fmt.Errorf("failed to make selects for %s: %s", tableName, err)
-		}
-		selects = append(selects, tableSelects...)
-	}
-
-	db = db.Select(selects)
-	db, err = constructJoins(db, f, q)
-	if err != nil {
-		return nil, fmt.Errorf("failed to construct joins: %s", err)
-	}
-
-	return db, nil
-}
-
-func initOneToMany(t *testing.T) (app_context.Context, *gorm.DB) {
-	app := test_utils.InitAppContext(t, testDir, "maindb.json")
-	test_utils.CreateDbModel(t, app, &Parent{}, &Child{})
-
-	g, ok := app.Db().NativeHandler().(*gorm.DB)
-	require.True(t, ok)
-
-	return app, g.Debug()
-}
-
-func TestJoin(t *testing.T) {
-
-	app := test_utils.InitAppContext(t, testDir, "maindb.json")
-	test_utils.CreateDbModel(t, app, &Parent{}, &Child{})
-
-}
-
-func createDocs(t *testing.T, g *gorm.DB) (*Parent, *Child) {
-	parent := &Parent{}
-	parent.InitObject()
-	parent.NAME = "parent name"
-	parent.ParentField1 = "parent field1"
-	parent.ParentField2 = "parent field2"
-	parent.ParentField3 = "parent field3"
-	res := g.Create(parent)
-	require.NoError(t, res.Error)
-
-	child := &Child{}
-	child.InitObject()
-	child.NAME = "child name"
-	child.ChildField1 = "child field1"
-	child.ChildField2 = "child field2"
-	child.ChildField3 = "child field3"
-	child.ParentId = parent.GetID()
-	res = g.Create(child)
-	require.NoError(t, res.Error)
-
-	return parent, child
-}
-
-func TestRawOneToMany(t *testing.T) {
-	_, g := initOneToMany(t)
-
-	parent, child := createDocs(t, g)
-
-	dst1 := make(map[string]interface{})
-	res := g.Model(&Child{}).Joins("JOIN parents on children.parent=parents.id").Find(&dst1)
-	require.NoError(t, res.Error)
-	t.Logf("Map result: %+v", dst1)
-
-	dst2 := make(map[string]interface{})
-	res = g.Model(&Child{}).Select("children.*", "parents.*", "parents.id as parent_id").Joins("JOIN parents on children.parent=parents.id").Find(&dst2)
-	require.NoError(t, res.Error)
-	t.Logf("Map result: %+v", dst2)
-
-	childWithParent := &ChildWithParent{}
-	res = g.Model(&Child{}).Select("children.*", "parents.*", "parents.id as parent_id", "parents.name as parent_name",
-		"children.id as child_id", "children.name as child_name").Joins("JOIN parents on children.parent=parents.id").Find(childWithParent)
-	require.NoError(t, res.Error)
-	b1, err := json.MarshalIndent(childWithParent, "", "  ")
-	assert.NoError(t, err)
-	t.Logf("Destination object 1: \n %s", string(b1))
-
-	b2, err := json.Marshal(childWithParent.ChildWithParentEssentials)
-	assert.NoError(t, err)
-	assert.Equal(t, `{"child_field1":"child field1","child_field2":"child field2","child_field3":"child field3","parent_field1":"parent field1","parent_field2":"parent field2","parent_field3":"parent field3"}`,
-		string(b2))
-	assert.Equal(t, parent.GetID(), childWithParent.ParentId)
-	assert.Equal(t, parent.Name(), childWithParent.ParentName)
-	assert.Equal(t, child.GetID(), childWithParent.ChildId)
-	assert.Equal(t, child.Name(), childWithParent.ChildName)
-}
-
-func TestOneToMany(t *testing.T) {
-	_, g := initOneToMany(t)
-	f := &db_gorm.FilterManager{}
-	f.Construct()
-
-	createDocs(t, g)
-
-	q := &JoinQuery{}
-	q.Destination = &ChildWithParent{}
-	q.Pairs = make([]*JoinPair, 1)
-	left := &JoinTable{Model: &Child{}}
-	right := &JoinTable{Model: &Parent{}, FieldsModel: &ParentDest{}}
-	q.Pairs[0] = &JoinPair{Left: left, LeftField: "parent_id", Right: right, RightField: "id"}
-
-	db, err := ConstructJoin(f, g, q)
+	// invoke join 1
+	opCtx1 := test_utils.SimpleOpContext(app, "query1")
+	var items1 []WithAmountItem
+	count, err := crud.Join(opCtx1, db.NewJoin(queryBuilder1, "Query1"), nil, &items1)
+	b, err1 := json.MarshalIndent(items1, "", "  ")
+	assert.NoError(t, err1)
+	t.Logf("Result:\n%s", string(b))
 	require.NoError(t, err)
+	require.Equal(t, int64(2), count)
+	require.Equal(t, 2, len(items1))
+	assert.Equal(t, "value1", items1[0].Field1)
+	assert.Equal(t, "value2.1", items1[0].Field2)
+	assert.Equal(t, 1, items1[0].Amount1)
+	assert.Equal(t, 10, items1[0].Amount2)
+	assert.InEpsilon(t, 100.00, items1[0].Amount3, 0.001)
+	assert.Equal(t, "value1", items1[1].Field1)
+	assert.Equal(t, "value2.2", items1[1].Field2)
+	assert.Equal(t, 4, items1[1].Amount1)
+	assert.Equal(t, 40, items1[1].Amount2)
+	assert.InEpsilon(t, 400.00, items1[1].Amount3, 0.001)
 
-	childWithParent := &ChildWithParent{}
+	// construct join query 12
+	queryBuilder2 := func() (db.JoinQuery, error) {
+		return app.Db().Joiner().
+			Join(&WithAmount{}, "terminal_id").On(&Terminal{}, "id").
+			Sum([]string{"terminal_id", "terminal_name"}, []string{"amount1", "amount2", "amount3"}).
+			Destination(&WithAmountItem{})
+	}
 
-	// db = db.Session(&gorm.Session{DryRun: true})
-	// stmt := db.Find(childWithParent).Statement
-	// t.Logf("Query: \n, %s", stmt.SQL.String())
+	// invoke join with single terminal
+	opCtx2 := test_utils.SimpleOpContext(app, "query2")
+	var items2 []WithAmountItem
+	count, err = crud.Join(opCtx2, db.NewJoin(queryBuilder2, "Query2"), nil, &items2)
+	b, err1 = json.MarshalIndent(items2, "", "  ")
+	assert.NoError(t, err1)
+	t.Logf("Result:\n%s", string(b))
+	require.NoError(t, err)
+	require.Equal(t, int64(1), count)
+	require.Equal(t, 1, len(items2))
+	assert.Equal(t, terminal1.GetID(), items2[0].TerminalId)
+	assert.Equal(t, terminal1.Name(), items2[0].TerminalName)
+	assert.Equal(t, 5, items2[0].Amount1)
+	assert.Equal(t, 50, items2[0].Amount2)
+	assert.InEpsilon(t, 500.00, items2[0].Amount3, 0.001)
 
-	res := db.Find(childWithParent)
-	require.NoError(t, res.Error)
-	b1, err := json.MarshalIndent(childWithParent, "", "  ")
-	assert.NoError(t, err)
-	t.Logf("Destination object 1: \n %s", string(b1))
+	// multiple terminals
+	doc.TerminalId = terminal2.GetID()
+	doc.Field3 = "value3.5"
+	add(doc)
+	doc.TerminalId = terminal2.GetID()
+	doc.Field3 = "value3.6"
+	add(doc)
+	doc.TerminalId = terminal2.GetID()
+	doc.Field3 = "value3.7"
+	add(doc)
+	doc.TerminalId = terminal3.GetID()
+	doc.Field1 = "value1.8"
+	add(doc)
+
+	opCtx3 := test_utils.SimpleOpContext(app, "query3")
+	var items3 []WithAmountItem
+	count, err = crud.Join(opCtx3, db.NewJoin(queryBuilder2, "Query2"), nil, &items3)
+	b, err1 = json.MarshalIndent(items3, "", "  ")
+	assert.NoError(t, err1)
+	t.Logf("Result:\n%s", string(b))
+	require.NoError(t, err)
+	require.Equal(t, int64(3), count)
+	require.Equal(t, 3, len(items3))
+	assert.Equal(t, terminal1.GetID(), items3[0].TerminalId)
+	assert.Equal(t, terminal1.Name(), items3[0].TerminalName)
+	assert.Equal(t, 5, items3[0].Amount1)
+	assert.Equal(t, 50, items3[0].Amount2)
+	assert.InEpsilon(t, 500.00, items3[0].Amount3, 0.001)
+	assert.Equal(t, terminal2.GetID(), items3[1].TerminalId)
+	assert.Equal(t, terminal2.Name(), items3[1].TerminalName)
+	assert.Equal(t, 3, items3[1].Amount1)
+	assert.Equal(t, 30, items3[1].Amount2)
+	assert.InEpsilon(t, 300.00, items3[1].Amount3, 0.001)
+	assert.Equal(t, terminal3.GetID(), items3[2].TerminalId)
+	assert.Equal(t, terminal3.Name(), items3[2].TerminalName)
+	assert.Equal(t, 1, items3[2].Amount1)
+	assert.Equal(t, 10, items3[2].Amount2)
+	assert.InEpsilon(t, 100.00, items3[2].Amount3, 0.001)
+
+	// run with filter
+	opCtx4 := test_utils.SimpleOpContext(app, "query4")
+	var items4 []WithAmountItem
+	filter := db.NewFilter()
+	filter.AddFieldIn("terminal_name", "terminal1", "terminal3")
+	count, err = crud.Join(opCtx4, db.NewJoin(queryBuilder2, "Query2"), filter, &items4)
+	b, err1 = json.MarshalIndent(items4, "", "  ")
+	assert.NoError(t, err1)
+	t.Logf("Result:\n%s", string(b))
+	require.NoError(t, err)
+	require.Equal(t, int64(2), count)
+	require.Equal(t, 2, len(items4))
+	assert.Equal(t, terminal1.GetID(), items4[0].TerminalId)
+	assert.Equal(t, terminal1.Name(), items4[0].TerminalName)
+	assert.Equal(t, 5, items4[0].Amount1)
+	assert.Equal(t, 50, items4[0].Amount2)
+	assert.InEpsilon(t, 500.00, items4[0].Amount3, 0.001)
+	assert.Equal(t, terminal3.GetID(), items4[1].TerminalId)
+	assert.Equal(t, terminal3.Name(), items4[1].TerminalName)
+	assert.Equal(t, 1, items4[1].Amount1)
+	assert.Equal(t, 10, items4[1].Amount2)
+	assert.InEpsilon(t, 100.00, items4[1].Amount3, 0.001)
 }
-*/
