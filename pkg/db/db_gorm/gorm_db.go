@@ -196,6 +196,24 @@ func (g *GormDB) FindByFields(ctx logger.WithLogger, fields db.Fields, obj inter
 	return notFound, err
 }
 
+func (g *GormDB) FindForUpdate(ctx logger.WithLogger, fields db.Fields, obj interface{}) (bool, error) {
+	notFound, err := FindForUpdate(g.db_(), fields, obj)
+	if err != nil && g.VERBOSE_ERRORS && !notFound {
+		e := fmt.Errorf("failed to FindForUpdate %v", ObjectTypeName(obj))
+		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
+	}
+	return notFound, err
+}
+
+func (g *GormDB) FindForShare(ctx logger.WithLogger, fields db.Fields, obj interface{}) (bool, error) {
+	notFound, err := FindForUpdate(g.db_(), fields, obj)
+	if err != nil && g.VERBOSE_ERRORS && !notFound {
+		e := fmt.Errorf("failed to FindForShare %v", ObjectTypeName(obj))
+		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
+	}
+	return notFound, err
+}
+
 func (g *GormDB) RowsByFields(ctx logger.WithLogger, fields db.Fields, obj interface{}) (db.Cursor, error) {
 
 	var err error

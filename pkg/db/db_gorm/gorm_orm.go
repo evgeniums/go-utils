@@ -9,6 +9,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
 )
 
@@ -42,6 +43,28 @@ func FindByFields(db *gorm.DB, fields db.Fields, doc interface{}, dest ...interf
 		return false, result.Error
 	}
 
+	return true, nil
+}
+
+func FindForUpdate(db *gorm.DB, fields db.Fields, doc interface{}) (bool, error) {
+	result := db.Model(doc).Clauses(clause.Locking{Strength: "UPDATE"}).Where(fields).First(doc)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, result.Error
+	}
+	return true, nil
+}
+
+func FindForShare(db *gorm.DB, fields db.Fields, doc interface{}) (bool, error) {
+	result := db.Model(doc).Clauses(clause.Locking{Strength: "SHARE"}).Where(fields).First(doc)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, result.Error
+	}
 	return true, nil
 }
 

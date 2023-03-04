@@ -14,6 +14,8 @@ type CRUD interface {
 
 	Read(ctx op_context.Context, fields db.Fields, object interface{}, dest ...interface{}) (bool, error)
 	ReadByField(ctx op_context.Context, fieldName string, fieldValue interface{}, object interface{}, dest ...interface{}) (bool, error)
+	ReadForUpdate(ctx logger.WithLogger, fields db.Fields, obj interface{}) (bool, error)
+	ReadForShare(ctx op_context.Context, fields db.Fields, object interface{}) (bool, error)
 	Update(ctx op_context.Context, object common.Object, fields db.Fields) error
 	UpdateMulti(ctx op_context.Context, model interface{}, filter db.Fields, fields db.Fields) error
 	Delete(ctx op_context.Context, object common.Object) error
@@ -63,6 +65,32 @@ func (d *DbCRUD) Read(ctx op_context.Context, fields db.Fields, object interface
 	defer ctx.TraceOutMethod()
 
 	found, err := op_context.DB(ctx, d.ForceMainDb).FindByFields(ctx, fields, object, dest...)
+	if err != nil {
+		return found, c.SetError(err)
+	}
+
+	return found, nil
+}
+
+func (d *DbCRUD) ReadForUpdate(ctx op_context.Context, fields db.Fields, object interface{}) (bool, error) {
+
+	c := ctx.TraceInMethod("CRUD.ReadForUpdate")
+	defer ctx.TraceOutMethod()
+
+	found, err := op_context.DB(ctx, d.ForceMainDb).FindForUpdate(ctx, fields, object)
+	if err != nil {
+		return found, c.SetError(err)
+	}
+
+	return found, nil
+}
+
+func (d *DbCRUD) ReadForShare(ctx op_context.Context, fields db.Fields, object interface{}) (bool, error) {
+
+	c := ctx.TraceInMethod("CRUD.ReadForShare")
+	defer ctx.TraceOutMethod()
+
+	found, err := op_context.DB(ctx, d.ForceMainDb).FindForShare(ctx, fields, object)
 	if err != nil {
 		return found, c.SetError(err)
 	}
