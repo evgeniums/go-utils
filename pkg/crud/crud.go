@@ -10,6 +10,8 @@ import (
 
 type CRUD interface {
 	Create(ctx op_context.Context, object common.Object) error
+	CreateDup(ctx op_context.Context, object common.Object) (bool, error)
+
 	Read(ctx op_context.Context, fields db.Fields, object interface{}, dest ...interface{}) (bool, error)
 	ReadByField(ctx op_context.Context, fieldName string, fieldValue interface{}, object interface{}, dest ...interface{}) (bool, error)
 	Update(ctx op_context.Context, object common.Object, fields db.Fields) error
@@ -41,6 +43,18 @@ func (d *DbCRUD) Create(ctx op_context.Context, object common.Object) error {
 	}
 
 	return nil
+}
+
+func (d *DbCRUD) CreateDup(ctx op_context.Context, object common.Object) (bool, error) {
+	c := ctx.TraceInMethod("CRUD.Create")
+	defer ctx.TraceOutMethod()
+
+	duplicate, err := op_context.DB(ctx, d.ForceMainDb).CreateDup(ctx, object)
+	if err != nil {
+		return duplicate, c.SetError(err)
+	}
+
+	return false, nil
 }
 
 func (d *DbCRUD) Read(ctx op_context.Context, fields db.Fields, object interface{}, dest ...interface{}) (bool, error) {

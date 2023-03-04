@@ -1,7 +1,6 @@
 package db_gorm
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
@@ -10,7 +9,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -26,9 +24,10 @@ type gormDBConfig struct {
 }
 
 type DbConnector struct {
-	DialectorOpener func(provider string, dsn string) (gorm.Dialector, error)
-	DsnBuilder      func(config *db.DBConfig) (string, error)
-	DbCreator       func(provider string, db *gorm.DB, dbName string) error
+	DialectorOpener        func(provider string, dsn string) (gorm.Dialector, error)
+	DsnBuilder             func(config *db.DBConfig) (string, error)
+	DbCreator              func(provider string, db *gorm.DB, dbName string) error
+	CheckDuplicateKeyError func(provider string, result *gorm.DB) (bool, error)
 }
 
 type GormDB struct {
@@ -45,58 +44,7 @@ func (g *GormDB) Config() interface{} {
 	return &g.gormDBConfig
 }
 
-func PostgresOpener(provider string, dsn string) (gorm.Dialector, error) {
-
-	switch provider {
-	case "postgres":
-		return postgres.Open(dsn), nil
-		// case "mysql":
-		// 	return mysql.Open(dsn), nil
-		// case "sqlite":
-		// 	return sqlite.Open(dsn), nil
-		// case "sqlserver":
-		// 	return sqlserver.Open(dsn), nil
-	}
-
-	return nil, errors.New("unknown database provider")
-}
-
-func PostgresDsnBuilder(config *db.DBConfig) (string, error) {
-	dsn := fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable", config.DB_HOST, config.DB_PORT, config.DB_USER, config.DB_NAME, config.DB_PASSWORD)
-	return dsn, nil
-}
-
-func PostgresDbCreator(provider string, db *gorm.DB, dbName string) error {
-
-	// check if db exists
-	rs := db.Raw("SELECT * FROM pg_database WHERE datname = ?;", dbName)
-	if rs.Error != nil {
-		return fmt.Errorf("failed to select from pg_database: %s", rs.Error)
-	}
-	var rec = make(map[string]interface{})
-	rs.Find(rec)
-
-	// if not create it
-	if len(rec) == 0 {
-		// create database
-		rs := db.Exec(fmt.Sprintf("CREATE DATABASE %s;", dbName))
-		if rs.Error != nil {
-			return fmt.Errorf("failed to create postgres database: %s", rs.Error)
-		}
-	}
-
-	// done
-	return nil
-}
-
-func postgresDbConnector() *DbConnector {
-	c := &DbConnector{}
-	c.DialectorOpener = PostgresOpener
-	c.DsnBuilder = PostgresDsnBuilder
-	return c
-}
-
-var DefaultDbConnector = postgresDbConnector
+var DefaultDbConnector = PostgresDbConnector
 
 func New(dbConnector ...*DbConnector) *GormDB {
 	g := &GormDB{}
@@ -279,12 +227,22 @@ func (g *GormDB) AllRows(ctx logger.WithLogger, obj interface{}) (db.Cursor, err
 }
 
 func (g *GormDB) Create(ctx logger.WithLogger, obj interface{}) error {
-	err := Create(g.db_(), obj)
+	result := Create(g.db_(), obj)
+	if result.Error != nil && g.VERBOSE_ERRORS {
+		e := fmt.Errorf("failed to Create %v", ObjectTypeName(obj))
+		ctx.Logger().Error("GormDB", e, logger.Fields{"error": result.Error})
+	}
+	return result.Error
+}
+
+func (g *GormDB) CreateDup(ctx logger.WithLogger, obj interface{}) (bool, error) {
+	result := Create(g.db_(), obj)
+	duplicate, err := g.dbConnector.CheckDuplicateKeyError(g.DB_PROVIDER, result)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to Create %v", ObjectTypeName(obj))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
 	}
-	return err
+	return duplicate, err
 }
 
 func (g *GormDB) DeleteByField(ctx logger.WithLogger, field string, value interface{}, model interface{}) error {

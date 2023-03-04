@@ -288,9 +288,8 @@ func DeleteByField(db *gorm.DB, field string, value interface{}, doc interface{}
 	return result.Error
 }
 
-func Create(db *gorm.DB, doc interface{}) error {
-	result := db.Create(doc)
-	return result.Error
+func Create(db *gorm.DB, doc interface{}) *gorm.DB {
+	return db.Create(doc)
 }
 
 func UpdateFields(db *gorm.DB, fields db.Fields, doc interface{}) error {

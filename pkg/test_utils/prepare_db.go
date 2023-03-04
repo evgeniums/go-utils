@@ -11,6 +11,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -76,6 +77,23 @@ func DbCreator(provider string, db *gorm.DB, dbName string) error {
 	}
 
 	return errors.New("unknown database provider")
+}
+
+func CheckDuplicateKeyError(provider string, result *gorm.DB) (bool, error) {
+
+	switch provider {
+	case "postgres":
+		return db_gorm.PostgresCheckDuplicateKeyError(provider, result)
+	case "sqlite":
+		if err, ok := result.Error.(sqlite3.Error); ok {
+			if err.ExtendedCode == sqlite3.ErrConstraintUnique {
+				return true, errors.New("record already exists")
+
+			}
+		}
+	}
+
+	return false, result.Error
 }
 
 func SetupGormDB(t *testing.T) {
