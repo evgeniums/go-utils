@@ -14,7 +14,7 @@ type CRUD interface {
 
 	Read(ctx op_context.Context, fields db.Fields, object interface{}, dest ...interface{}) (bool, error)
 	ReadByField(ctx op_context.Context, fieldName string, fieldValue interface{}, object interface{}, dest ...interface{}) (bool, error)
-	ReadForUpdate(ctx logger.WithLogger, fields db.Fields, obj interface{}) (bool, error)
+	ReadForUpdate(ctx op_context.Context, fields db.Fields, object interface{}) (bool, error)
 	ReadForShare(ctx op_context.Context, fields db.Fields, object interface{}) (bool, error)
 	Update(ctx op_context.Context, object common.Object, fields db.Fields) error
 	UpdateMulti(ctx op_context.Context, model interface{}, filter db.Fields, fields db.Fields) error
