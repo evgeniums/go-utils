@@ -167,7 +167,9 @@ func SetFilter(g *gorm.DB, filter *Filter, paginator *Paginator, docs interface{
 		}
 	}
 
-	h = paginator.Paginate(h, filter, paginate...)
+	if paginator != nil {
+		h = paginator.Paginate(h, filter, paginate...)
+	}
 
 	return h
 }
@@ -317,6 +319,12 @@ func Create(db *gorm.DB, doc interface{}) *gorm.DB {
 
 func UpdateFields(db *gorm.DB, fields db.Fields, doc interface{}) error {
 	result := db.Model(doc).Updates(fields)
+	return result.Error
+}
+
+func UpdateWithFilter(db *gorm.DB, filter *db.Filter, doc interface{}, fields db.Fields) error {
+	h := SetFilter(db, filter, nil, doc)
+	result := h.Updates(fields)
 	return result.Error
 }
 

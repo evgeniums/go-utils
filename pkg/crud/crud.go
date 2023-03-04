@@ -18,6 +18,7 @@ type CRUD interface {
 	ReadForShare(ctx op_context.Context, fields db.Fields, object interface{}) (bool, error)
 	Update(ctx op_context.Context, object common.Object, fields db.Fields) error
 	UpdateMulti(ctx op_context.Context, model interface{}, filter db.Fields, fields db.Fields) error
+	UpdateWithFilter(ctx op_context.Context, model interface{}, filter *db.Filter, fields db.Fields) error
 	Delete(ctx op_context.Context, object common.Object) error
 	DeleteByFields(ctx op_context.Context, field db.Fields, object common.Object) error
 
@@ -133,6 +134,18 @@ func (d *DbCRUD) UpdateMulti(ctx op_context.Context, model interface{}, filter d
 	} else {
 		err = db.UpdateMulti(op_context.DB(ctx, d.ForceMainDb), ctx, model, filter, fields)
 	}
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	return nil
+}
+
+func (d *DbCRUD) UpdateWithFilter(ctx op_context.Context, model interface{}, filter *db.Filter, fields db.Fields) error {
+	c := ctx.TraceInMethod("CRUD.UpdateWithFilter")
+	defer ctx.TraceOutMethod()
+
+	err := db.UpdateWithFilter(op_context.DB(ctx, d.ForceMainDb), ctx, model, filter, fields)
 	if err != nil {
 		return c.SetError(err)
 	}

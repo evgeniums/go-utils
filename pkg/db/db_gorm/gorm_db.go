@@ -333,6 +333,15 @@ func (g *GormDB) Update(ctx logger.WithLogger, obj interface{}, filter db.Fields
 	return err
 }
 
+func (g *GormDB) UpdateWithFilter(ctx logger.WithLogger, obj interface{}, filter *db.Filter, newFields db.Fields) error {
+	err := UpdateWithFilter(g.db_(), filter, obj, newFields)
+	if err != nil && g.VERBOSE_ERRORS {
+		e := fmt.Errorf("failed to UpdateWithFilter %v", ObjectTypeName(obj))
+		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+	}
+	return err
+}
+
 func (g *GormDB) UpdateAll(ctx logger.WithLogger, obj interface{}, newFields db.Fields) error {
 	err := UpdateFieldsAll(g.db_(), obj, newFields)
 	if err != nil && g.VERBOSE_ERRORS {
@@ -358,4 +367,8 @@ func (g *GormDB) CreateDatabase(ctx logger.WithLogger, dbName string) error {
 		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
 	}
 	return err
+}
+
+func (g *GormDB) MakeExpression(expr string, args ...interface{}) interface{} {
+	return gorm.Expr(expr, args...)
 }

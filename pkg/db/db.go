@@ -52,12 +52,14 @@ type DBHandlers interface {
 
 	Update(ctx logger.WithLogger, obj interface{}, filter Fields, fields Fields) error
 	UpdateAll(ctx logger.WithLogger, obj interface{}, newFields Fields) error
+	UpdateWithFilter(ctx logger.WithLogger, obj interface{}, filter *Filter, newFields Fields) error
 
 	Join(ctx logger.WithLogger, joinConfig *JoinQueryConfig, filter *Filter, dest interface{}) (int64, error)
 
 	Joiner() Joiner
 
 	CreateDatabase(ctx logger.WithLogger, dbName string) error
+	MakeExpression(expr string, args ...interface{}) interface{}
 }
 
 type Transaction interface {
@@ -125,4 +127,10 @@ func UpdateAll(db DBHandlers, ctx logger.WithLogger, obj interface{}, fields Fie
 	f := utils.CopyMap(fields)
 	f["updated_at"] = time.Now()
 	return db.UpdateAll(ctx, obj, f)
+}
+
+func UpdateWithFilter(db DBHandlers, ctx logger.WithLogger, obj interface{}, filter *Filter, fields Fields) error {
+	f := utils.CopyMap(fields)
+	f["updated_at"] = time.Now()
+	return db.UpdateWithFilter(ctx, obj, filter, f)
 }
