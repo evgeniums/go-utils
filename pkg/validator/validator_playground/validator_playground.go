@@ -18,6 +18,7 @@ func New() *PlaygroundValdator {
 	p := &PlaygroundValdator{validator: playground.New()}
 	p.validator.RegisterValidation("alphanum_", ValidateAlphanumUnderscore)
 	p.validator.RegisterValidation("phone", ValidatePhone)
+	p.validator.RegisterValidation("id", ValidateId)
 	return p
 }
 
@@ -132,4 +133,12 @@ var phoneRegex = regexp.MustCompile(phoneRegexString)
 
 func ValidatePhone(fl playground.FieldLevel) bool {
 	return phoneRegex.MatchString(fl.Field().String())
+}
+
+const idRegexString = "^[a-f0-9]{16}$"
+
+var idRegex = regexp.MustCompile(idRegexString)
+
+func ValidateId(fl playground.FieldLevel) bool {
+	return idRegex.MatchString(fl.Field().String())
 }
