@@ -36,6 +36,22 @@ type DbCRUD struct {
 	ForceMainDb bool
 }
 
+type WithCRUDBase struct {
+	crud CRUD
+}
+
+func (w *WithCRUDBase) Construct(cruds ...CRUD) {
+	if len(cruds) == 0 {
+		w.crud = &DbCRUD{}
+	} else {
+		w.crud = cruds[0]
+	}
+}
+
+func (w *WithCRUDBase) CRUD() CRUD {
+	return w.crud
+}
+
 func (d *DbCRUD) Create(ctx op_context.Context, object common.Object) error {
 	c := ctx.TraceInMethod("CRUD.Create")
 	defer ctx.TraceOutMethod()
