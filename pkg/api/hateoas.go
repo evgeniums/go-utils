@@ -94,7 +94,7 @@ func InjectHateoasLinksToObject(resource Resource, withLinks WithHateoasLinks) {
 	withLinks.SetHateoasLinks(MakeHateoasLinks(resource))
 }
 
-func HateoasList[T common.WithID](response *ResponseList[T], parentResource Resource, resourceType string) {
+func HateoasList(response ResponseListI, parentResource Resource, resourceType string) {
 
 	count := response.ItemCount()
 	if count == 0 {
@@ -105,7 +105,7 @@ func HateoasList[T common.WithID](response *ResponseList[T], parentResource Reso
 	epResource := parentResource.CloneChain(true)
 	epResource.AddChild(sampleResource)
 
-	response.ItemLinks = make([]*HateoasLinksItem, count)
+	response.MakeItemLinks()
 
 	for i := 0; i < count; i++ {
 
@@ -115,6 +115,6 @@ func HateoasList[T common.WithID](response *ResponseList[T], parentResource Reso
 		sampleResource.SetId(obj.GetID())
 		InjectHateoasLinksToObject(sampleResource, obj)
 
-		response.ItemLinks[i] = obj
+		response.SetItemLink(i, obj)
 	}
 }

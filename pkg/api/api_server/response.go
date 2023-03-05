@@ -2,7 +2,6 @@ package api_server
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
@@ -34,7 +33,7 @@ func (r *ResponseBase) SetMessage(message api.Response) {
 	r.message = message
 }
 
-func SetResponseList[T common.WithID](r Request, response *api.ResponseList[T], resourceType ...string) {
+func SetResponseList(r Request, response api.ResponseListI, resourceType ...string) {
 
 	if r.Server().IsHateoas() {
 		resource := r.Endpoint().Resource()

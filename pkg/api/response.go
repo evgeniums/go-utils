@@ -47,6 +47,14 @@ type ResponseExists struct {
 	Exists bool `json:"exists"`
 }
 
+type ResponseListI interface {
+	Response
+	ItemCount() int
+	ItemId(index int) string
+	MakeItemLinks()
+	SetItemLink(index int, link *HateoasLinksItem)
+}
+
 type ResponseList[T common.WithID] struct {
 	ResponseCount
 	Items []T `json:"items"`
@@ -61,4 +69,12 @@ func (r *ResponseList[T]) ItemCount() int {
 
 func (r *ResponseList[T]) ItemId(index int) string {
 	return r.Items[index].GetID()
+}
+
+func (r *ResponseList[T]) MakeItemLinks() {
+	r.ItemLinks = make([]*HateoasLinksItem, r.ItemCount())
+}
+
+func (r *ResponseList[T]) SetItemLink(index int, link *HateoasLinksItem) {
+	r.ItemLinks[index] = link
 }
