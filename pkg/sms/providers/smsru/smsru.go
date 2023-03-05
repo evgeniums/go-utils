@@ -46,11 +46,11 @@ func (s *Smsru) Config() interface{} {
 }
 
 type request struct {
-	ApiId   string `url:"api_id"`
-	To      string `url:"to"`
-	Message string `url:"msg"`
-	Json    int    `url:"json"`
-	Test    int    `url:"test"`
+	ApiId   string `json:"api_id"`
+	To      string `json:"to"`
+	Message string `json:"msg"`
+	Json    int    `json:"json"`
+	Test    int    `json:"test"`
 }
 
 type responseItem struct {

@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/message"
 	"github.com/evgeniums/go-backend-helpers/pkg/message/message_json"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
-	"github.com/google/go-querystring/query"
+	"github.com/gorilla/schema"
 )
 
 type Request struct {
@@ -53,23 +54,26 @@ func NewPost(ctx op_context.Context, url string, msg interface{}, serializer ...
 	return r, nil
 }
 
-func NewGet(ctx op_context.Context, url string, msg interface{}) (*Request, error) {
+func NewGet(ctx op_context.Context, uRL string, msg interface{}) (*Request, error) {
 
 	r := &Request{}
 
-	c := ctx.TraceInMethod("http_request.NewGet", logger.Fields{"url": url})
+	c := ctx.TraceInMethod("http_request.NewGet", logger.Fields{"url": uRL})
 	defer ctx.TraceOutMethod()
 
 	var err error
 
-	r.NativeRequest, err = http.NewRequest(http.MethodGet, url, nil)
+	r.NativeRequest, err = http.NewRequest(http.MethodGet, uRL, nil)
 	if err != nil {
 		c.SetMessage("failed to create request")
 		return nil, c.SetError(err)
 	}
 
 	if msg != nil {
-		v, err := query.Values(msg)
+		encoder := schema.NewEncoder()
+		encoder.SetAliasTag("json")
+		v := url.Values{}
+		err := encoder.Encode(msg, v)
 		if err != nil {
 			c.SetMessage("failed to build query")
 			return nil, c.SetError(err)

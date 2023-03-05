@@ -16,7 +16,7 @@ type TenancyResponse struct {
 type ListTenanciesResponse = api.ResponseList[*multitenancy.TenancyItem]
 
 type DeleteTenancyCmd struct {
-	WithDatabase bool `schema:"with_database" url:"with_database"`
+	WithDatabase bool `json:"with_database"`
 }
 
 var (

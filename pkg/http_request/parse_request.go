@@ -29,6 +29,7 @@ func ParseQuery(ctx op_context.Context, request *http.Request, cmd interface{}) 
 	}
 
 	decoder := schema.NewDecoder()
+	decoder.SetAliasTag("json")
 	decoder.IgnoreUnknownKeys(true)
 	err = decoder.Decode(cmd, vals)
 	if err != nil {

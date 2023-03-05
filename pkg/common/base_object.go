@@ -10,6 +10,13 @@ type WithID interface {
 	GetID() string
 }
 
+type WithIDStub struct {
+}
+
+func (w *WithIDStub) GetID() string {
+	return ""
+}
+
 type ID interface {
 	WithID
 	SetID(id string)

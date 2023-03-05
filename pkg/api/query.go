@@ -8,7 +8,7 @@ type Query interface {
 }
 
 type WithDbQuery struct {
-	Query string `json:"query" schema:"query" url:"query"`
+	Query string `json:"query"`
 }
 
 type DbQuery struct {
@@ -29,4 +29,13 @@ func NewDbQuery(filter *db.Filter) *DbQuery {
 		cmd.SetQuery(filter.ToQueryString())
 	}
 	return cmd
+}
+
+type WithGroupBy struct {
+	GroupBy []string `json:"group_by,omitempty"`
+}
+
+type QueryWithGroupBy struct {
+	DbQuery
+	WithGroupBy
 }
