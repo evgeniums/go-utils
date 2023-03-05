@@ -178,3 +178,12 @@ func (h *HandlerBase[T]) Data() interface{} {
 type QueryData struct {
 	Query string `long:"query" description:"Query to filter items in response"`
 }
+
+type GroupByData struct {
+	GroupBy []string `long:"groupby" description:"Fields to group by, can be specified multiple times"`
+}
+
+type QueryWithGroupBy struct {
+	QueryData
+	GroupByData
+}

@@ -40,6 +40,6 @@ func (w *WithGroupBy) Groups() []string {
 }
 
 type QueryWithGroupBy struct {
-	DbQuery
+	*DbQuery
 	WithGroupBy
 }
