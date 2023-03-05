@@ -32,7 +32,11 @@ func NewDbQuery(filter *db.Filter) *DbQuery {
 }
 
 type WithGroupBy struct {
-	GroupBy []string `json:"group_by,omitempty"`
+	GroupBy []string `json:"group_by"`
+}
+
+func (w *WithGroupBy) Groups() []string {
+	return w.GroupBy
 }
 
 type QueryWithGroupBy struct {

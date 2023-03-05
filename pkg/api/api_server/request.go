@@ -56,10 +56,14 @@ func FullRequestServicePath(r Request) string {
 	return r.Endpoint().Resource().BuildActualPath(r.ResourceIds(), true)
 }
 
-func ParseDbQuery(request Request, model interface{}, queryName string) (*db.Filter, error) {
+func ParseDbQuery(request Request, model interface{}, queryName string, cmd ...api.Query) (*db.Filter, error) {
 
-	q := &api.DbQuery{}
-
+	var q api.Query
+	if len(cmd) == 0 {
+		q = &api.DbQuery{}
+	} else {
+		q = cmd[0]
+	}
 	c := request.TraceInMethod("ParseDbQuery", logger.Fields{"query_name": queryName})
 	defer request.TraceOutMethod()
 
