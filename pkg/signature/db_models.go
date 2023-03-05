@@ -9,7 +9,7 @@ import (
 
 type MessageSignature struct {
 	common.ObjectBase
-	utils.WithMonthBase
+	utils.MonthDataBase
 	auth.WithUserBase
 	Context    string `gorm:"uniqueIndex"`
 	Operation  string `gorm:"index"`

@@ -102,7 +102,7 @@ func (m *Month) Next() Month {
 	return next
 }
 
-type WithMonth interface {
+type MonthData interface {
 	GetMonth() Month
 	SetMonth(m Month)
 }
@@ -124,18 +124,18 @@ func MonthFromId(id string) (Month, error) {
 	return m, nil
 }
 
-type WithMonthBase struct {
+type MonthDataBase struct {
 	Month Month `gorm:"index" json:"month"`
 }
 
-func (w *WithMonthBase) InitMonth() {
+func (w *MonthDataBase) InitMonth() {
 	w.Month = CurrentMonth()
 }
 
-func (w *WithMonthBase) SetMonth(m Month) {
+func (w *MonthDataBase) SetMonth(m Month) {
 	w.Month = m
 }
 
-func (w *WithMonthBase) GetMonth() Month {
+func (w *MonthDataBase) GetMonth() Month {
 	return w.Month
 }
