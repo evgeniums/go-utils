@@ -9,6 +9,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
+	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
@@ -188,6 +189,8 @@ func (s *SignatureManagerBase) Verify(ctx auth.UserContext, signature string, me
 	// keep signature
 	obj := &MessageSignature{}
 	obj.InitObject()
+	month, _ := utils.MonthFromId(ctx.ID())
+	obj.SetMonth(month)
 	obj.Context = ctx.ID()
 	obj.SetUser(ctx.AuthUser())
 	obj.Operation = ctx.Name()
@@ -235,8 +238,17 @@ func (s *SignatureManagerBase) Find(ctx op_context.Context, contextId string) (*
 	}
 	defer onExit()
 
+	month, err := utils.MonthFromId(contextId)
+	if err != nil {
+		c.SetMessage("invalid context ID")
+		return nil, err
+	}
+
 	obj := &MessageSignature{}
-	found, err := op_context.DB(ctx).FindByField(ctx, "context", contextId, obj)
+	fields := db.Fields{}
+	fields["month"] = month
+	fields["context"] = contextId
+	found, err := op_context.DB(ctx).FindByFields(ctx, fields, obj)
 	if err != nil {
 		c.SetMessage("failed to find signature in database")
 		return nil, err

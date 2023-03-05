@@ -2,7 +2,9 @@ package utils
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -11,6 +13,12 @@ type Month int
 
 func CurrentMonth() Month {
 	t := time.Now()
+	var m Month
+	m.SetTime(t)
+	return m
+}
+
+func MonthFromTime(t time.Time) Month {
 	var m Month
 	m.SetTime(t)
 	return m
@@ -92,4 +100,42 @@ func (m *Month) Next() Month {
 		next.Set(year, month+1)
 	}
 	return next
+}
+
+type WithMonth interface {
+	GetMonth() Month
+	SetMonth(m Month)
+}
+
+func MonthFromId(id string) (Month, error) {
+
+	if len(id) != 16 {
+		return 0, errors.New("too short ID")
+	}
+
+	idTimeStr := id[:8]
+	timeInt, err := strconv.ParseInt(idTimeStr, 16, 64)
+	if err != nil {
+		return 0, errors.New("invalid time in ID")
+	}
+	tm := time.Unix(timeInt, 0)
+
+	m := MonthFromTime(tm)
+	return m, nil
+}
+
+type WithMonthBase struct {
+	Month Month `gorm:"index" json:"month"`
+}
+
+func (w *WithMonthBase) InitMonth() {
+	w.Month = CurrentMonth()
+}
+
+func (w *WithMonthBase) SetMonth(m Month) {
+	w.Month = m
+}
+
+func (w *WithMonthBase) GetMonth() Month {
+	return w.Month
 }
