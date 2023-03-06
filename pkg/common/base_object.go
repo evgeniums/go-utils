@@ -91,3 +91,14 @@ func (o *ObjectBase) InitObject() {
 	o.InitCreatedAt()
 	o.UPDATED_AT = o.CREATED_AT
 }
+
+type ObjectWithMonth struct {
+	ObjectBase
+	utils.MonthDataBase
+}
+
+func (o *ObjectWithMonth) InitObject() {
+	o.ObjectBase.InitObject()
+	month, _ := utils.MonthFromId(o.GetID())
+	o.MonthDataBase.SetMonth(month)
+}
