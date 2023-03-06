@@ -21,6 +21,7 @@ type CallContext interface {
 	SetMessage(msg string)
 
 	SetLoggerField(name string, value interface{})
+	AddLoggerFields(fields logger.Fields)
 	UnsetLoggerField(name string)
 	LoggerFields() logger.Fields
 
@@ -74,6 +75,7 @@ type Context interface {
 	Tr(phrase string) string
 
 	SetLoggerField(name string, value interface{})
+	AddLoggerFields(fields logger.Fields)
 	LoggerFields() logger.Fields
 	UnsetLoggerField(name string)
 

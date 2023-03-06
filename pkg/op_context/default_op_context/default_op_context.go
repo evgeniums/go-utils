@@ -39,6 +39,12 @@ func (c *CallContextBase) SetLoggerField(name string, value interface{}) {
 	c.proxyLogger.SetStaticField(name, value)
 }
 
+func (c *CallContextBase) AddLoggerFields(fields logger.Fields) {
+	for key, value := range fields {
+		c.SetLoggerField(key, value)
+	}
+}
+
 func (c *CallContextBase) LoggerFields() logger.Fields {
 	return c.proxyLogger.StaticFields()
 }
@@ -287,6 +293,12 @@ func (c *ContextBase) Close(successMessage ...string) {
 				c.Logger().Info(msg)
 			}
 		}
+	}
+}
+
+func (c *ContextBase) AddLoggerFields(fields logger.Fields) {
+	for key, value := range fields {
+		c.SetLoggerField(key, value)
 	}
 }
 
