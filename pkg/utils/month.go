@@ -24,6 +24,12 @@ func MonthFromTime(t time.Time) Month {
 	return m
 }
 
+func MonthFromDate(d Date) Month {
+	var m Month
+	m.Set(d.Year(), d.Month())
+	return m
+}
+
 func MonthFromString(str string) (Month, error) {
 
 	if str == "" {
