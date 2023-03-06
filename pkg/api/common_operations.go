@@ -35,11 +35,19 @@ func Subresource(sampleResource Resource, resourceId string, subResourceName str
 	return subResource
 }
 
+func Create(name string) Operation {
+	return NewOperation(name, access_control.Create)
+}
+
 func Add(name string) Operation {
 	return NewOperation(name, access_control.Create)
 }
 
 func Find(name string) Operation {
+	return NewOperation(name, access_control.Get)
+}
+
+func Read(name string) Operation {
 	return NewOperation(name, access_control.Get)
 }
 
