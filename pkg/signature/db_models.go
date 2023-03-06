@@ -4,12 +4,10 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type MessageSignature struct {
-	common.ObjectBase
-	utils.MonthDataBase
+	common.ObjectWithMonth
 	auth.WithUserBase
 	Context    string `gorm:"uniqueIndex"`
 	Operation  string `gorm:"index"`
