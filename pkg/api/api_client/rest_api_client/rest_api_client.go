@@ -190,18 +190,15 @@ func (r *RestApiClientBase) sendRequest(send DoRequest, ctx op_context.Context, 
 	// fill good response
 	if resp.Code() < http.StatusBadRequest {
 		if response != nil {
-			if resp.Code() < http.StatusBadRequest {
+			b := resp.Body()
+			if len(b) == 0 {
+				return nil, c.SetError(errors.New("failed to parse empty response"))
+			}
 
-				b := resp.Body()
-				if len(b) == 0 {
-					return nil, c.SetError(errors.New("failed to parse empty response"))
-				}
-
-				err = json.Unmarshal(b, response)
-				if err != nil {
-					fmt.Printf("message: %s\n", err)
-					return nil, c.SetError(errors.New("failed to parse response message"))
-				}
+			err = json.Unmarshal(b, response)
+			if err != nil {
+				fmt.Printf("message: %s\n", err)
+				return nil, c.SetError(errors.New("failed to parse response message"))
 			}
 		}
 	} else {
