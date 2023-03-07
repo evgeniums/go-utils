@@ -37,33 +37,3 @@ func (s *ServiceClient) Client() Client {
 func (s *ServiceClient) ApiClient() Client {
 	return s.client
 }
-
-type Handler[Cmd any, Result any] struct {
-	Cmd    *Cmd
-	Result *Result
-}
-
-func (h *Handler[Cmd, Result]) Exec(client Client, ctx op_context.Context, operation api.Operation) error {
-
-	c := ctx.TraceInMethod("Handler.Exec")
-	defer ctx.TraceOutMethod()
-
-	err := client.Exec(ctx, operation, h.Cmd, h.Result)
-	c.SetError(err)
-	return err
-}
-
-func NewHandler[Cmd any, Result any](cmd *Cmd, result *Result) *Handler[Cmd, Result] {
-	e := &Handler[Cmd, Result]{Cmd: cmd, Result: result}
-	return e
-}
-
-func NewHandlerCmd[Cmd any](cmd *Cmd) *Handler[Cmd, interface{}] {
-	e := &Handler[Cmd, interface{}]{Cmd: cmd}
-	return e
-}
-
-func NewHandlerResult[Result any](result *Result) *Handler[interface{}, Result] {
-	e := &Handler[interface{}, Result]{Result: result}
-	return e
-}
