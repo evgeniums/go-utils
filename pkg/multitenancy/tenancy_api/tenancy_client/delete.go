@@ -8,20 +8,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
-type Delete struct {
-	tenancy_api.DeleteTenancyCmd
-}
-
-func (d *Delete) Exec(client api_client.Client, ctx op_context.Context, operation api.Operation) error {
-
-	c := ctx.TraceInMethod("DeleteTenancy.Exec")
-	defer ctx.TraceOutMethod()
-
-	err := client.Exec(ctx, operation, d, nil)
-	c.SetError(err)
-	return err
-}
-
 func (t *TenancyClient) Delete(ctx op_context.Context, id string, withDb bool, idIsDisplay ...bool) error {
 
 	// setup
@@ -43,7 +29,7 @@ func (t *TenancyClient) Delete(ctx op_context.Context, id string, withDb bool, i
 	}
 
 	// prepare and exec handler
-	handler := &Delete{}
+	handler := api_client.NewHandlerCmd(&tenancy_api.DeleteTenancyCmd{WithDatabase: withDb})
 	op := api.NamedResourceOperation(t.TenancyResource,
 		tenancyId,
 		tenancy_api.Delete())

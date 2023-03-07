@@ -9,21 +9,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
-type List struct {
-	cmd    api.Query
-	result *tenancy_api.ListTenanciesResponse
-}
-
-func (l *List) Exec(client api_client.Client, ctx op_context.Context, operation api.Operation) error {
-
-	c := ctx.TraceInMethod("ListTenancies.Exec")
-	defer ctx.TraceOutMethod()
-
-	err := client.Exec(ctx, operation, l.cmd, l.result)
-	c.SetError(err)
-	return err
-}
-
 func (t *TenancyClient) List(ctx op_context.Context, filter *db.Filter) ([]*multitenancy.TenancyItem, int64, error) {
 
 	// setup
@@ -41,10 +26,7 @@ func (t *TenancyClient) List(ctx op_context.Context, filter *db.Filter) ([]*mult
 	cmd := api.NewDbQuery(filter)
 
 	// prepare and exec handler
-	handler := &List{
-		cmd:    cmd,
-		result: &tenancy_api.ListTenanciesResponse{},
-	}
+	handler := api_client.NewHandler(cmd, &tenancy_api.ListTenanciesResponse{})
 	err = t.list.Exec(ctx, api_client.MakeOperationHandler(t.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")
@@ -52,5 +34,5 @@ func (t *TenancyClient) List(ctx op_context.Context, filter *db.Filter) ([]*mult
 	}
 
 	// done
-	return handler.result.Items, handler.result.Count, nil
+	return handler.Result.Items, handler.Result.Count, nil
 }

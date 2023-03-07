@@ -9,20 +9,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
-type SetActive struct {
-	cmd *common.WithActiveBase
-}
-
-func (s *SetActive) Exec(client api_client.Client, ctx op_context.Context, operation api.Operation) error {
-
-	c := ctx.TraceInMethod("SetTenancyActive.Exec")
-	defer ctx.TraceOutMethod()
-
-	err := client.Exec(ctx, operation, s.cmd, nil)
-	c.SetError(err)
-	return err
-}
-
 func (t *TenancyClient) SetActive(ctx op_context.Context, id string, active bool, idIsDisplay ...bool) error {
 
 	// setup
@@ -37,9 +23,7 @@ func (t *TenancyClient) SetActive(ctx op_context.Context, id string, active bool
 	}
 
 	// create command
-	handler := &SetActive{
-		cmd: &common.WithActiveBase{ACTIVE: active},
-	}
+	handler := api_client.NewHandlerCmd(&common.WithActiveBase{ACTIVE: active})
 
 	// prepare and exec handler
 	op := api.OperationAsResource(t.TenancyResource, "active", tenancyId, tenancy_api.SetActive())

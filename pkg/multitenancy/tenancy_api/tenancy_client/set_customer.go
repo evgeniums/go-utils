@@ -9,20 +9,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
-type SetCustomer struct {
-	cmd *multitenancy.WithCustomerId
-}
-
-func (s *SetCustomer) Exec(client api_client.Client, ctx op_context.Context, operation api.Operation) error {
-
-	c := ctx.TraceInMethod("SetTenancyCustomer.Exec")
-	defer ctx.TraceOutMethod()
-
-	err := client.Exec(ctx, operation, s.cmd, nil)
-	c.SetError(err)
-	return err
-}
-
 func (t *TenancyClient) SetCustomer(ctx op_context.Context, id string, customerId string, idIsDisplay ...bool) error {
 
 	// setup
@@ -37,9 +23,7 @@ func (t *TenancyClient) SetCustomer(ctx op_context.Context, id string, customerI
 	}
 
 	// create command
-	handler := &SetCustomer{
-		cmd: &multitenancy.WithCustomerId{CUSTOMER_ID: customerId},
-	}
+	handler := api_client.NewHandlerCmd(&multitenancy.WithCustomerId{CUSTOMER_ID: customerId})
 
 	// prepare and exec handler
 	op := api.OperationAsResource(t.TenancyResource, "customer", tenancyId, tenancy_api.SetCustomer())

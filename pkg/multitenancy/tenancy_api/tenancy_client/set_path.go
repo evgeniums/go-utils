@@ -9,20 +9,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
-type SetPath struct {
-	cmd *multitenancy.WithPath
-}
-
-func (s *SetPath) Exec(client api_client.Client, ctx op_context.Context, operation api.Operation) error {
-
-	c := ctx.TraceInMethod("SetTenancyPath.Exec")
-	defer ctx.TraceOutMethod()
-
-	err := client.Exec(ctx, operation, s.cmd, nil)
-	c.SetError(err)
-	return err
-}
-
 func (t *TenancyClient) SetPath(ctx op_context.Context, id string, path string, idIsDisplay ...bool) error {
 
 	// setup
@@ -37,9 +23,7 @@ func (t *TenancyClient) SetPath(ctx op_context.Context, id string, path string, 
 	}
 
 	// create command
-	handler := &SetPath{
-		cmd: &multitenancy.WithPath{PATH: path},
-	}
+	handler := api_client.NewHandlerCmd(&multitenancy.WithPath{PATH: path})
 
 	// prepare and exec handler
 	op := api.OperationAsResource(t.TenancyResource, "path", tenancyId, tenancy_api.SetPath())

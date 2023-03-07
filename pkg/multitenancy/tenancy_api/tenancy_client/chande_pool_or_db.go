@@ -9,20 +9,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
-type ChangePoolOrDb struct {
-	cmd *multitenancy.WithPoolAndDb
-}
-
-func (s *ChangePoolOrDb) Exec(client api_client.Client, ctx op_context.Context, operation api.Operation) error {
-
-	c := ctx.TraceInMethod("ChangePoolOrDb.Exec")
-	defer ctx.TraceOutMethod()
-
-	err := client.Exec(ctx, operation, s.cmd, nil)
-	c.SetError(err)
-	return err
-}
-
 func (t *TenancyClient) ChangePoolOrDb(ctx op_context.Context, id string, poolId string, dbName string, idIsDisplay ...bool) error {
 
 	// setup
@@ -37,9 +23,7 @@ func (t *TenancyClient) ChangePoolOrDb(ctx op_context.Context, id string, poolId
 	}
 
 	// create command
-	handler := &ChangePoolOrDb{
-		cmd: &multitenancy.WithPoolAndDb{POOL_ID: poolId, DBNAME: dbName},
-	}
+	handler := api_client.NewHandlerCmd(&multitenancy.WithPoolAndDb{POOL_ID: poolId, DBNAME: dbName})
 
 	// prepare and exec handler
 	op := api.OperationAsResource(t.TenancyResource, "pool-db", tenancyId, tenancy_api.ChangePoolOrDb())
