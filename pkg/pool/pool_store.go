@@ -63,7 +63,7 @@ func NewPoolStore(config ...PoolStoreConfigI) *PoolStoreBase {
 func (p *PoolStoreBase) Init(ctx op_context.Context, configPath ...string) error {
 
 	c := ctx.TraceInMethod("PoolStore.Init")
-	ctx.TraceOutMethod()
+	defer ctx.TraceOutMethod()
 
 	// load configuration
 	err := object_config.LoadLogValidate(ctx.App().Cfg(), ctx.Logger(), ctx.App().Validator(), p, "pools", configPath...)
