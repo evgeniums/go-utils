@@ -84,7 +84,7 @@ func NewGet(ctx op_context.Context, uRL string, msg interface{}) (*Request, erro
 	return r, nil
 }
 
-func (r *Request) Send(ctx op_context.Context) error {
+func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 
 	c := ctx.TraceInMethod("Request.Send", logger.Fields{"url": r.NativeRequest.URL.String(), "method": r.NativeRequest.Method})
 
@@ -123,7 +123,11 @@ func (r *Request) Send(ctx op_context.Context) error {
 				if r.GoodResponse != nil {
 					parseResponse(r.GoodResponse)
 					if err != nil {
-						c.SetMessage("failed to parse good response")
+						if !utils.OptionalArg(false, relaxedParsing...) {
+							c.SetMessage("failed to parse good response")
+						} else {
+							err = nil
+						}
 					}
 				}
 			} else {
