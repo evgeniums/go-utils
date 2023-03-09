@@ -55,6 +55,10 @@ func Exists(name string) Operation {
 	return NewOperation(name, access_control.Get)
 }
 
+func Check(name string) Operation {
+	return NewOperation(name, access_control.Get)
+}
+
 func List(name string) Operation {
 	return NewOperation(name, access_control.Read)
 }
