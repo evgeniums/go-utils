@@ -52,6 +52,7 @@ type Context interface {
 	MainDB() db.DB
 	MainLogger() logger.Logger
 
+	ExecDbTransaction(handler func() error) error
 	DbTransaction() db.Transaction
 	SetDbTransaction(tx db.Transaction)
 	ClearDbTransaction()

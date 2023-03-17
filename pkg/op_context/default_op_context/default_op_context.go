@@ -373,6 +373,17 @@ func (c *ContextBase) SetOrigin(o op_context.Origin) {
 	c.origin = o
 }
 
+func (c *ContextBase) ExecDbTransaction(handler func() error) error {
+	h := func(tx db.Transaction) error {
+
+		c.SetDbTransaction(tx)
+		defer c.ClearDbTransaction()
+
+		return handler()
+	}
+	return c.Db().Transaction(h)
+}
+
 type OriginHolder struct {
 	App           string
 	Name          string
