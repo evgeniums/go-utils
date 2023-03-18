@@ -62,3 +62,21 @@ func NewHandlerResult[Result any](result *Result) *HandlerResult[Result] {
 	e := &HandlerResult[Result]{Result: result}
 	return e
 }
+
+type HandlerNil struct {
+}
+
+func (h *HandlerNil) Exec(client Client, ctx op_context.Context, operation api.Operation) error {
+
+	c := ctx.TraceInMethod("Handler.Exec")
+	defer ctx.TraceOutMethod()
+
+	err := client.Exec(ctx, operation, nil, nil)
+	c.SetError(err)
+	return err
+}
+
+func NewHandlerNil() *HandlerNil {
+	e := &HandlerNil{}
+	return e
+}
