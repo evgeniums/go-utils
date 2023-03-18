@@ -27,12 +27,24 @@ func NamedSubresource(sampleResource Resource, resourceId string, subResourceNam
 	return subResource
 }
 
+func NamedSubresourceOperation(sampleResource Resource, resourceId string, subResourceName string, subResourceId string, op Operation) Operation {
+	r := NamedSubresource(sampleResource, resourceId, subResourceName, subResourceId)
+	r.AddOperation(op)
+	return op
+}
+
 func Subresource(sampleResource Resource, resourceId string, subResourceName string) Resource {
 	subResource := NewResource(subResourceName)
 	namedResource := sampleResource.CloneChain(false)
 	namedResource.SetId(resourceId)
 	namedResource.AddChild(subResource)
 	return subResource
+}
+
+func SubresourceOperation(sampleResource Resource, resourceId string, subResourceName string, op Operation) Operation {
+	subResource := Subresource(sampleResource, resourceId, subResourceName)
+	subResource.AddOperation(op)
+	return op
 }
 
 func Create(name string) Operation {
