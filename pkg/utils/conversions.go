@@ -102,6 +102,17 @@ func StrToUint64(s string) (uint64, error) {
 	return val, nil
 }
 
+func StrToInt(s string) (int, error) {
+	if s == "" {
+		return 0, nil
+	}
+	val, err := strconv.ParseInt(s, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	return int(val), nil
+}
+
 func StrToInt32(s string) (int32, error) {
 	if s == "" {
 		return 0, nil
