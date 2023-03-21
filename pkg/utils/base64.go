@@ -11,11 +11,11 @@ type Base64StringCoding struct {
 }
 
 func (b *Base64StringCoding) Encode(data []byte) string {
-	return base64.RawStdEncoding.WithPadding(base64.StdPadding).EncodeToString(data)
+	return Base64Encode(data)
 }
 
 func (b *Base64StringCoding) Decode(data string) ([]byte, error) {
-	return base64.RawStdEncoding.WithPadding(base64.StdPadding).DecodeString(data)
+	return Base64Decode(data)
 }
 
 type WithStringCoder interface {
@@ -36,4 +36,12 @@ func (w *WithStringCoderBase) Construct(encoder ...StringCoding) {
 
 func (w *WithStringCoderBase) Coder() StringCoding {
 	return w.StringCoding
+}
+
+func Base64Encode(data []byte) string {
+	return base64.RawStdEncoding.WithPadding(base64.StdPadding).EncodeToString(data)
+}
+
+func Base64Decode(data string) ([]byte, error) {
+	return base64.RawStdEncoding.WithPadding(base64.StdPadding).DecodeString(data)
 }
