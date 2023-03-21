@@ -181,6 +181,13 @@ func (t *TenancyManager) TenancyByPath(path string) (multitenancy.Tenancy, error
 	return tenancy, nil
 }
 
+func (t *TenancyManager) Tenancies() []multitenancy.Tenancy {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	tenancies := utils.AllMapValues(t.tenanciesById)
+	return tenancies
+}
+
 func (t *TenancyManager) UnloadTenancy(id string) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()

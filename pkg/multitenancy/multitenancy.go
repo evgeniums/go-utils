@@ -56,6 +56,9 @@ type Multitenancy interface {
 	// Check if multiple tenancies are enabled
 	IsMultiTenancy() bool
 
+	// Get all tenancies
+	Tenancies() []Tenancy
+
 	// Find tenancy by ID.
 	Tenancy(id string) (Tenancy, error)
 
