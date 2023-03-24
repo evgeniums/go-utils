@@ -23,7 +23,7 @@ type WithActive interface {
 }
 
 type WithActiveBase struct {
-	ACTIVE bool `gorm:"index,default:true" json:"active" default:"true"`
+	ACTIVE bool `gorm:"index;default:true" json:"active" default:"true"`
 }
 
 func (d *WithActiveBase) IsActive() bool {

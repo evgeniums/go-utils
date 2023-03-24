@@ -17,7 +17,7 @@ type WithProtocol interface {
 }
 
 type WithProtocolBase struct {
-	PROTOCOL string `validate:"required"`
+	PROTOCOL string `gorm:"index" json:"protocol" validate:"required"`
 }
 
 func (p *WithProtocolBase) Protocol() string {
