@@ -23,7 +23,7 @@ type WithActive interface {
 }
 
 type WithActiveBase struct {
-	ACTIVE bool `gorm:"index;default:true" json:"active" default:"true"`
+	ACTIVE bool `gorm:"index;default:true" json:"active" default:"true" long:"active" description:"Active"`
 }
 
 func (d *WithActiveBase) IsActive() bool {
@@ -94,7 +94,7 @@ type WithUniqueName interface {
 }
 
 type WithUniqueNameBase struct {
-	NAME string `gorm:"uniqueIndex" json:"name" validate:"required" vmessage:"Name can not be empty"`
+	NAME string `gorm:"uniqueIndex" json:"name" validate:"required" vmessage:"Name can not be empty" long:"name" description:"Unique name"`
 }
 
 func (w *WithUniqueNameBase) Name() string {
