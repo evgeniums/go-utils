@@ -6,6 +6,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
@@ -29,18 +30,30 @@ func NewEmbeddedClient(app app_context.Context) *EmbeddedClient {
 	return e
 }
 
-func (a *EmbeddedClient) Config() interface{} {
-	return a.EmbeddedClientConfig
+func (e *EmbeddedClient) Config() interface{} {
+	return e.EmbeddedClientConfig
 }
 
-func (a *EmbeddedClient) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
+func (e *EmbeddedClient) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
-	err := object_config.LoadLogValidate(cfg, log, vld, a, "rest_api_client", configPath...)
+	err := object_config.LoadLogValidate(cfg, log, vld, e, "rest_api_client", configPath...)
 	if err != nil {
 		return log.PushFatalStack("failed to load configuration of rest api client", err)
 	}
 
-	a.Client.Init(a.BASE_URL, a.USER_AGENT)
+	e.Client.Init(e.BASE_URL, e.USER_AGENT)
+
+	return nil
+}
+
+func (e *EmbeddedClient) Setup(ctx op_context.Context, baseUrl string, login string, password string, tokenCacheKey string, userAgent ...string) error {
+
+	e.BASE_URL = baseUrl
+	e.LOGIN = login
+	e.PASSWORD = password
+	e.TOKEN_CACHE_KEY = tokenCacheKey
+	e.USER_AGENT = utils.OptionalArg("go-backend-helpers", userAgent...)
+	e.Client.Init(e.BASE_URL, e.USER_AGENT)
 
 	return nil
 }
