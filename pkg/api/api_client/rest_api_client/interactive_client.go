@@ -26,14 +26,14 @@ type InteractiveClientConfig struct {
 type InteractiveClient struct {
 	app_context.WithAppBase
 	InteractiveClientConfig
-	Client *RestApiClientBase
+	*RestApiClientBase
 }
 
-func NewInteractiveClient(app app_context.Context) *EmbeddedClient {
-	e := &EmbeddedClient{}
-	e.WithAppBase.Init(app)
-	e.Client = AutoReconnectRestApiClient(e)
-	return e
+func NewInteractiveClient(app app_context.Context) *InteractiveClient {
+	c := &InteractiveClient{}
+	c.WithAppBase.Init(app)
+	c.RestApiClientBase = AutoReconnectRestApiClient(c)
+	return c
 }
 
 func (a *InteractiveClient) Config() interface{} {
@@ -47,7 +47,7 @@ func (a *InteractiveClient) Init(cfg config.Config, log logger.Logger, vld valid
 		return log.PushFatalStack("failed to load configuration of rest api client", err)
 	}
 
-	a.Client.Init(a.BASE_URL, a.USER_AGENT)
+	a.RestApiClientBase.Init(a.BASE_URL, a.USER_AGENT)
 
 	return nil
 }

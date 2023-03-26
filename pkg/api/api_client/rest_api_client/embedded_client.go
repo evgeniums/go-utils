@@ -20,13 +20,13 @@ type EmbeddedClientConfig struct {
 type EmbeddedClient struct {
 	app_context.WithAppBase
 	EmbeddedClientConfig
-	Client *RestApiClientBase
+	*RestApiClientBase
 }
 
 func NewEmbeddedClient(app app_context.Context) *EmbeddedClient {
 	e := &EmbeddedClient{}
 	e.WithAppBase.Init(app)
-	e.Client = AutoReconnectRestApiClient(e)
+	e.RestApiClientBase = AutoReconnectRestApiClient(e)
 	return e
 }
 
@@ -41,7 +41,7 @@ func (e *EmbeddedClient) Init(cfg config.Config, log logger.Logger, vld validato
 		return log.PushFatalStack("failed to load configuration of rest api client", err)
 	}
 
-	e.Client.Init(e.BASE_URL, e.USER_AGENT)
+	e.RestApiClientBase.Init(e.BASE_URL, e.USER_AGENT)
 
 	return nil
 }
@@ -53,7 +53,7 @@ func (e *EmbeddedClient) Setup(ctx op_context.Context, baseUrl string, login str
 	e.PASSWORD = password
 	e.TOKEN_CACHE_KEY = tokenCacheKey
 	e.USER_AGENT = utils.OptionalArg("go-backend-helpers", userAgent...)
-	e.Client.Init(e.BASE_URL, e.USER_AGENT)
+	e.RestApiClientBase.Init(e.BASE_URL, e.USER_AGENT)
 
 	return nil
 }
