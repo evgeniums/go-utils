@@ -485,3 +485,9 @@ func PrepareCollectionAndNameResource(typeName string) (serviceName string, coll
 
 	return
 }
+
+func AddChildResource(resource Resource, childName string) Resource {
+	child := NewResource(childName)
+	resource.AddChild(child)
+	return child
+}
