@@ -413,8 +413,3 @@ func fillResponseError(resp Response) error {
 	}
 	return nil
 }
-
-type ClientBase struct {
-	BASE_URL   string `validate:"required"`
-	USER_AGENT string `default:"go-backend-helpers"`
-}

@@ -1,24 +1,19 @@
 package rest_api_client
 
 import (
+	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_csrf"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_token"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
-type AutoReconnectHandlers interface {
-	GetRefreshToken() string
-	SaveRefreshToken(ctx op_context.Context, token string)
-	GetCredentials(ctx op_context.Context) (login string, password string, err error)
-}
-
 type autoReconnect struct {
 	client   *RestApiClientBase
-	handlers AutoReconnectHandlers
+	handlers api_client.AutoReconnectHandlers
 }
 
-func newAutoReconnectHelper(handlers AutoReconnectHandlers) *autoReconnect {
+func newAutoReconnectHelper(handlers api_client.AutoReconnectHandlers) *autoReconnect {
 	a := &autoReconnect{}
 	a.handlers = handlers
 	return a
@@ -94,7 +89,7 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 	return lastResp, lastErr
 }
 
-func AutoReconnectRestApiClient(reconnectHandlers AutoReconnectHandlers) *RestApiClientBase {
+func NewAutoReconnectRestApiClient(reconnectHandlers api_client.AutoReconnectHandlers) *RestApiClientWithConfig {
 
 	reconnect := newAutoReconnectHelper(reconnectHandlers)
 
@@ -113,8 +108,8 @@ func AutoReconnectRestApiClient(reconnectHandlers AutoReconnectHandlers) *RestAp
 		return reconnect.checkResponse(ctx, send, resp, err)
 	}
 
-	client := NewRestApiClientBase(sendWithBody, sendWithQuery)
-	reconnect.client = client
+	client := NewRestApiClientWithConfig(sendWithBody, sendWithQuery)
+	reconnect.client = client.RestApiClientBase
 	reconnect.init()
 	return client
 }

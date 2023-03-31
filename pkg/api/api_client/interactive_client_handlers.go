@@ -1,4 +1,4 @@
-package rest_api_client
+package api_client
 
 import (
 	"bufio"
@@ -9,50 +9,42 @@ import (
 	"syscall"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
-	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 	"golang.org/x/term"
 )
 
-type InteractiveClientConfig struct {
-	ClientBase
+type InteractiveClientHandlersConfig struct {
 	TOKEN_FILE_NAME string `validate:"required,file"`
 }
 
-type InteractiveClient struct {
+type InteractiveClientHandlers struct {
 	app_context.WithAppBase
-	InteractiveClientConfig
-	*RestApiClientBase
+	InteractiveClientHandlersConfig
 }
 
-func NewInteractiveClient(app app_context.Context) *InteractiveClient {
-	c := &InteractiveClient{}
-	c.WithAppBase.Init(app)
-	c.RestApiClientBase = AutoReconnectRestApiClient(c)
-	return c
+func (e *InteractiveClientHandlers) Config() interface{} {
+	return &e.InteractiveClientHandlersConfig
 }
 
-func (a *InteractiveClient) Config() interface{} {
-	return a.InteractiveClientConfig
+func NewInteractiveClientHandlers(app app_context.Context) *EmbeddedClientHandlers {
+	e := &EmbeddedClientHandlers{}
+	e.WithAppBase.Init(app)
+	return e
 }
 
-func (a *InteractiveClient) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
+func (e *InteractiveClientHandlers) Init(configPath ...string) error {
 
-	err := object_config.LoadLogValidate(cfg, log, vld, a, "rest_api_client", configPath...)
+	err := object_config.LoadLogValidate(e.App().Cfg(), e.App().Logger(), e.App().Validator(), e, "interactive_client", configPath...)
 	if err != nil {
-		return log.PushFatalStack("failed to load configuration of rest api client", err)
+		return e.App().Logger().PushFatalStack("failed to load configuration of interactive api client", err)
 	}
-
-	a.RestApiClientBase.Init(a.BASE_URL, a.USER_AGENT)
 
 	return nil
 }
 
-func (e *InteractiveClient) GetRefreshToken() string {
+func (e *InteractiveClientHandlers) GetRefreshToken() string {
 
 	content, err := os.ReadFile(e.TOKEN_FILE_NAME)
 	if err != nil || content == nil {
@@ -70,9 +62,9 @@ func (e *InteractiveClient) GetRefreshToken() string {
 	return tokenKeeper.Token
 }
 
-func (e *InteractiveClient) SaveRefreshToken(ctx op_context.Context, token string) {
+func (e *InteractiveClientHandlers) SaveRefreshToken(ctx op_context.Context, token string) {
 
-	c := ctx.TraceInMethod("rest_api_client.InteractiveClient")
+	c := ctx.TraceInMethod("InteractiveClientHandlers.SaveRefreshToken")
 	defer ctx.TraceOutMethod()
 
 	tokenKeeper := &TokenKeeper{Token: token}
@@ -88,9 +80,9 @@ func (e *InteractiveClient) SaveRefreshToken(ctx op_context.Context, token strin
 	}
 }
 
-func (e *InteractiveClient) GetCredentials(ctx op_context.Context) (string, string, error) {
+func (e *InteractiveClientHandlers) GetCredentials(ctx op_context.Context) (string, string, error) {
 
-	c := ctx.TraceInMethod("rest_api_client.InteractiveClient")
+	c := ctx.TraceInMethod("InteractiveClientHandlers.GetCredentials")
 	defer ctx.TraceOutMethod()
 
 	reader := bufio.NewReader(os.Stdin)
