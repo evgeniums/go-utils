@@ -33,7 +33,11 @@ func (r *RestApiClientWithConfig) Init(app app_context.Context, configPath ...st
 
 func NewRestApiClientWithConfig(withBodySender DoRequest, withQuerySender DoRequest) *RestApiClientWithConfig {
 	r := &RestApiClientWithConfig{}
-	r.RestApiClientBase = &RestApiClientBase{}
-	r.Construct(withBodySender, withQuerySender)
+	r.RestApiClientBase = NewRestApiClientBase(withBodySender, withQuerySender)
 	return r
+}
+
+func DefaultRestApiClientWithConfig() *RestApiClientWithConfig {
+	c := NewRestApiClientWithConfig(DefaultSendWithBody, DefaultSendWithQuery)
+	return c
 }
