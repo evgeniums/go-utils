@@ -12,11 +12,13 @@ import (
 
 type Auth interface {
 	generic_error.ErrorDefinitions
+	HandleRequest(ctx AuthContext, path string, access access_control.AccessType) error
+}
 
+type EndpointsAuth interface {
+	Auth
 	Manager() AuthManager
 	EndpointsConfig() EndpointsAuthConfig
-
-	HandleRequest(ctx AuthContext, path string, access access_control.AccessType) error
 }
 
 type AuthBaseConfig struct {

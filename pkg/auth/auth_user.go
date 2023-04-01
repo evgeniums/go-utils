@@ -11,6 +11,29 @@ type User interface {
 	IsBlocked() bool
 }
 
+type UserBase struct {
+	UserId      string `gorm:"index"`
+	UserLogin   string `gorm:"index"`
+	UserDisplay string `gorm:"index"`
+	UserBlocked bool   `gorm:"index"`
+}
+
+func (u *UserBase) GetID() string {
+	return u.UserId
+}
+
+func (u *UserBase) Display() string {
+	return u.UserDisplay
+}
+
+func (u *UserBase) Login() string {
+	return u.UserLogin
+}
+
+func (u *UserBase) IsBlocked() bool {
+	return u.UserBlocked
+}
+
 type WithUser interface {
 	SetUser(user User)
 	GetUserId() string
