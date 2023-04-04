@@ -25,7 +25,7 @@ type CallContext interface {
 	UnsetLoggerField(name string)
 	LoggerFields() logger.Fields
 
-	Logger() logger.Logger
+	logger.WithLogger
 }
 
 type Origin interface {

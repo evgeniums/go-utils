@@ -22,6 +22,8 @@ type CallContextBase struct {
 	proxyLogger *logger.ProxyLogger
 }
 
+func (c *CallContextBase) SetLogger(logger.Logger) {}
+
 func (c *CallContextBase) Method() string {
 	return c.method
 }
