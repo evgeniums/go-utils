@@ -23,7 +23,7 @@ type WithActive interface {
 }
 
 type WithActiveBase struct {
-	ACTIVE bool `gorm:"index;default:true" json:"active" default:"true" long:"active" description:"Active"`
+	ACTIVE bool `gorm:"index" json:"active" default:"true" long:"active" description:"Active"`
 }
 
 func (d *WithActiveBase) IsActive() bool {
@@ -34,8 +34,13 @@ func (d *WithActiveBase) SetActive(value bool) {
 	d.ACTIVE = value
 }
 
-func (d *WithActiveBase) Init() {
+func (d *WithActiveBase) Init(notActive ...bool) {
 	d.ACTIVE = true
+	if len(notActive) != 0 {
+		if notActive[0] {
+			d.ACTIVE = false
+		}
+	}
 }
 
 type WithType interface {
