@@ -13,3 +13,8 @@ func DbModels() []interface{} {
 func DbInternalModels() []interface{} {
 	return []interface{}{&TenancyMeta{}}
 }
+
+type TenancyDbModels struct {
+	DbModels            []interface{}
+	PartitionedDbModels []interface{}
+}

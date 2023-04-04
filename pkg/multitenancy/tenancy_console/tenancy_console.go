@@ -15,7 +15,7 @@ import (
 )
 
 type MultitenancyAppBuilder struct {
-	Models   []interface{}
+	Models   *multitenancy.TenancyDbModels
 	Config   app_with_multitenancy.AppConfigI
 	App      *app_with_multitenancy.AppWithMultitenancyBase
 	SetupApp *app_with_pools.AppWithPoolsBase

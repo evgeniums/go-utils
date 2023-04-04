@@ -44,8 +44,10 @@ type InTenancyItem struct {
 	Field5 bool
 }
 
-func tenancyDbModels() []interface{} {
-	return []interface{}{&InTenancySample{}, &InTenancyItem{}}
+func tenancyDbModels() *multitenancy.TenancyDbModels {
+	models := &multitenancy.TenancyDbModels{}
+	models.DbModels = []interface{}{&InTenancySample{}, &InTenancyItem{}}
+	return models
 }
 
 func dbModels() []interface{} {

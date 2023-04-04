@@ -56,21 +56,22 @@ type TenancyManager struct {
 	Controller                 multitenancy.TenancyController
 	Pools                      pool.PoolStore
 	Customers                  customer.CustomerController
-	DbModels                   []interface{}
 	PubsubTopic                *multitenancy.PubsubTopic
 	PoolPubsub                 pool_pubsub.PoolPubsub
 	tenancyNotificationHandler *TenancyNotificationHandler
 
 	selfTopicSubscription   string
 	poolTopicsSubscriptions map[string]string
+
+	tenancyDbModels *multitenancy.TenancyDbModels
 }
 
-func NewTenancyManager(pools pool.PoolStore, poolPubsub pool_pubsub.PoolPubsub, dbModels []interface{}) *TenancyManager {
+func NewTenancyManager(pools pool.PoolStore, poolPubsub pool_pubsub.PoolPubsub, tenancyDbModels *multitenancy.TenancyDbModels) *TenancyManager {
 	m := &TenancyManager{}
 	m.Pools = pools
 	m.tenanciesById = make(map[string]multitenancy.Tenancy)
 	m.tenanciesByPath = make(map[string]multitenancy.Tenancy)
-	m.DbModels = append(dbModels, multitenancy.DbInternalModels()...)
+	m.tenancyDbModels = tenancyDbModels
 	m.PoolPubsub = poolPubsub
 	m.PubsubTopic = &multitenancy.PubsubTopic{}
 
@@ -400,7 +401,7 @@ func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenanc
 	defer tenancy.Db().Close()
 
 	// create database
-	err = tenancy.Db().AutoMigrate(ctx, t.DbModels)
+	err = multitenancy.UpgradeTenancyDatabase(ctx, tenancy, t.tenancyDbModels)
 	if err != nil {
 		ctx.SetGenericErrorCode(multitenancy.ErrorCodeTenancyDbInitializationFailed)
 		c.SetMessage("failed to initialize database models")
@@ -476,23 +477,6 @@ func (t *TenancyManager) LoadTenancies(ctx op_context.Context, selfPool pool.Poo
 	}
 
 	// done
-	return nil
-}
-
-func (t *TenancyManager) MigrateDatabase(ctx op_context.Context) error {
-
-	c := ctx.TraceInMethod("TenancyManager.MigrateDatabase")
-	defer ctx.TraceOutMethod()
-
-	for _, tenancy := range t.tenanciesById {
-		err := tenancy.Db().AutoMigrate(ctx, t.DbModels)
-		if err != nil {
-			c.SetLoggerField("tenancy", multitenancy.TenancyDisplay(tenancy))
-			c.SetLoggerField("tenancy_id", tenancy.GetID())
-			return c.SetError(err)
-		}
-	}
-
 	return nil
 }
 

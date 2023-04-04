@@ -48,7 +48,7 @@ type AppConfig struct {
 	MultitenancyConfig
 }
 
-func NewApp(buildConfig *app_context.BuildConfig, tenancyDbModels []interface{}, appConfig ...AppConfigI) *AppWithMultitenancyBase {
+func NewApp(buildConfig *app_context.BuildConfig, tenancyDbModels *multitenancy.TenancyDbModels, appConfig ...AppConfigI) *AppWithMultitenancyBase {
 	a := &AppWithMultitenancyBase{}
 	if len(appConfig) != 0 {
 		cfg := appConfig[0]
