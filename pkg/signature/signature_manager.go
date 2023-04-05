@@ -25,7 +25,7 @@ type UserWithPubkey interface {
 type SignatureManager interface {
 	generic_error.ErrorDefinitions
 
-	Verify(ctx auth.AuthContext, signature string, message []byte, extraData ...string) error
+	Verify(ctx auth.UserContext, signature string, message []byte, extraData ...string) error
 	CheckPubKey(ctx op_context.Context, key string) error
 }
 
