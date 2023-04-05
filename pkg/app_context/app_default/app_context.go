@@ -76,9 +76,13 @@ func (c *Context) AppInstance() string {
 	return c.APP_INSTANCE
 }
 
-func (c *Context) Application() string {
+func Application() string {
 	proc, _ := os.Executable()
 	return filepath.Base(proc)
+}
+
+func (c *Context) Application() string {
+	return Application()
 }
 
 func (c *Context) TestParameters() map[string]interface{} {
