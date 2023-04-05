@@ -355,7 +355,7 @@ func (s *Server) AddEndpoint(ep api_server.Endpoint, multitenancy ...bool) {
 	}
 
 	if s.tenancies.IsMultiTenancy() && utils.OptionalArg(false, multitenancy...) {
-		s.tenancyResource.AddChild(ep.Resource().Service())
+		s.tenancyResource.AddChild(ep.Resource().ServiceResource())
 	}
 
 	path := fmt.Sprintf("%s/%s%s", s.PATH_PREFIX, s.ApiVersion(), ep.Resource().FullPathPrototype())

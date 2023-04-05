@@ -23,7 +23,7 @@ type PoolService struct {
 	PoolsResource    api.Resource
 	PoolResource     api.Resource
 	ServicesResource api.Resource
-	ServiceResource  api.Resource
+	ServResource     api.Resource
 }
 
 func NewPoolService(poolController pool.PoolController) *PoolService {
@@ -37,7 +37,7 @@ func NewPoolService(poolController pool.PoolController) *PoolService {
 	s.Init(serviceName)
 	s.AddChild(s.PoolsResource)
 
-	_, s.ServicesResource, s.ServiceResource = api.PrepareCollectionAndNameResource("service")
+	_, s.ServicesResource, s.ServResource = api.PrepareCollectionAndNameResource("service")
 	s.AddChild(s.ServicesResource)
 
 	listPools := ListPools(s)
@@ -56,13 +56,13 @@ func NewPoolService(poolController pool.PoolController) *PoolService {
 
 	listServices := ListServices(s)
 	s.ServicesResource.AddOperations(AddService(s), listServices)
-	s.ServiceResource.AddOperation(FindService(s), true)
-	s.ServiceResource.AddOperations(UpdateService(s), DeleteService(s))
+	s.ServResource.AddOperation(FindService(s), true)
+	s.ServResource.AddOperations(UpdateService(s), DeleteService(s))
 
 	servicePoolAssociations := api.NewResource("pool")
 	listServicePools := ListServicePools(s)
 	servicePoolAssociations.AddOperations(listServicePools, RemoveServiceFromAllPools(s))
-	s.ServiceResource.AddChild(servicePoolAssociations)
+	s.ServResource.AddChild(servicePoolAssociations)
 
 	poolTableConfig := &api_server.DynamicTableConfig{Model: &pool.PoolBase{}, Operation: listPools}
 	serviceTableConfig := &api_server.DynamicTableConfig{Model: &pool.PoolServiceBase{}, Operation: listServices}

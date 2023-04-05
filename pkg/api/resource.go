@@ -19,7 +19,7 @@ type Resource interface {
 	IsService() bool
 	SetSetvice(val bool)
 	IsServicePart() bool
-	Service() Resource
+	ServiceResource() Resource
 
 	IsTenancy() bool
 	IsInTenancy() bool
@@ -219,12 +219,12 @@ func (r *ResourceBase) IsInTenancy() bool {
 	return false
 }
 
-func (r *ResourceBase) Service() Resource {
+func (r *ResourceBase) ServiceResource() Resource {
 	if r.IsService() {
 		return r
 	}
 	if r.Parent() != nil {
-		return r.parent.Service()
+		return r.parent.ServiceResource()
 	}
 	return nil
 }
