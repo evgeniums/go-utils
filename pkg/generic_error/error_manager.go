@@ -108,6 +108,12 @@ func (e *ErrorsExtenderBase) Init(errorDescriptions map[string]string, errorProt
 }
 
 func (e *ErrorsExtenderBase) AddErrors(errorDescriptions map[string]string, errorProtocolCodes ...map[string]int) {
+
+	if e.errorDescriptions == nil {
+		e.Init(errorDescriptions, errorProtocolCodes...)
+		return
+	}
+
 	utils.AppendMap(e.errorDescriptions, errorDescriptions)
 	if len(errorProtocolCodes) > 0 {
 		utils.AppendMap(e.errorProtocolCodes, errorProtocolCodes[0])
