@@ -52,6 +52,8 @@ func NewCustomerService(customers *customer.Manager) *CustomerService {
 	customerTableConfig := &api_server.DynamicTableConfig{Model: &customer.Customer{}, Operation: s.ListOperation()}
 	s.AddDynamicTables(customerTableConfig)
 
+	s.AppendErrorExtender(customers.CustomerController)
+
 	return s
 }
 

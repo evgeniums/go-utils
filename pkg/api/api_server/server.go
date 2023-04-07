@@ -42,6 +42,7 @@ func AddServiceToServer(s Server, service Service, multitenancy ...bool) {
 	if err != nil {
 		panic(fmt.Errorf("failed to attach service %s to server", service.Type()))
 	}
+	service.AttachToErrorManager(s)
 }
 
 type ServerBaseConfig struct {

@@ -2,6 +2,7 @@ package api_client
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
@@ -21,6 +22,7 @@ func MakeOperationHandler(client Client, clientOperation ClientOperation) api.Op
 }
 
 type ServiceClient struct {
+	generic_error.ErrorsExtenderStub
 	api.ResourceBase
 	client Client
 }

@@ -11,6 +11,7 @@ type ServiceEachEndpointHandler = func(ep Endpoint)
 
 // Interface of service that implements one or more groups of API endpoints.
 type Service interface {
+	generic_error.ErrorsExtender
 	api.Resource
 
 	Server() Server
@@ -47,7 +48,6 @@ func (s *ServiceBase) AddDynamicTables(tables ...*DynamicTableConfig) {
 func (s *ServiceBase) AttachToServer(server Server, multitenancy ...bool) error {
 
 	s.server = server
-	s.AttachToErrorManager(server)
 
 	dynamicTables := server.DynamicTables()
 	if dynamicTables != nil {

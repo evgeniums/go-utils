@@ -15,6 +15,7 @@ import (
 )
 
 type TenancyController struct {
+	generic_error.ErrorsExtenderBase
 	CRUD    crud.CRUD
 	Manager *TenancyManager
 }
@@ -24,6 +25,9 @@ func NewTenancyController(crud crud.CRUD, manager *TenancyManager) *TenancyContr
 	t.CRUD = crud
 	t.Manager = manager
 	t.Manager.SetController(t)
+
+	t.ErrorsExtenderBase.Init(multitenancy.ErrorDescriptions, multitenancy.ErrorHttpCodes)
+
 	return t
 }
 

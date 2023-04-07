@@ -39,7 +39,7 @@ type TenancyService struct {
 func NewTenancyService(tenancyController multitenancy.TenancyController) *TenancyService {
 
 	s := &TenancyService{}
-	s.ErrorsExtenderBase.Init(multitenancy.ErrorDescriptions, multitenancy.ErrorHttpCodes)
+	s.AppendErrorExtender(tenancyController)
 	s.ErrorsExtenderBase.AddErrors(customer.ErrorDescriptions, customer.ErrorHttpCodes)
 	s.Tenancies = tenancyController
 

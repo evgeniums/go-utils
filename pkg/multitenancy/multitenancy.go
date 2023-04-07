@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_subscriber"
 )
@@ -97,6 +98,7 @@ func NewPubsubNotification() *PubsubNotification {
 }
 
 type TenancyController interface {
+	generic_error.ErrorsExtender
 	Add(ctx op_context.Context, tenancy *TenancyData) (*TenancyItem, error)
 	Find(ctx op_context.Context, id string, idIsDisplay ...bool) (*TenancyItem, error)
 	List(ctx op_context.Context, filter *db.Filter) ([]*TenancyItem, int64, error)

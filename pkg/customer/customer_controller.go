@@ -4,11 +4,11 @@ import (
 	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
 )
 
-// TODO add to errors
 const (
 	ErrorCodeCustomerNotFound string = "customer_not_found"
 )
@@ -97,6 +97,7 @@ func (cu *UserNameAndDescriptionControllerB[T]) SetDescription(ctx op_context.Co
 
 func LocalCustomerController() *CustomersControllerBase {
 	c := &CustomersControllerBase{}
+	c.ErrorsExtenderBase.Init(ErrorDescriptions, ErrorHttpCodes)
 	c.UserControllerBase = user.LocalUserController[*Customer]()
 	c.SetUserBuilder(NewCustomer)
 	c.SetOplogBuilder(NewOplog)
@@ -104,9 +105,11 @@ func LocalCustomerController() *CustomersControllerBase {
 }
 
 type CustomerController interface {
+	generic_error.ErrorsExtender
 	UserNameAndDescriptionController[*Customer]
 }
 
 type CustomersControllerBase struct {
+	generic_error.ErrorsExtenderBase
 	UserNameAndDescriptionControllerB[*Customer]
 }

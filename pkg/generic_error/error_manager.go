@@ -90,6 +90,9 @@ func (e *ErrorManagerBaseHttp) Init() {
 
 type ErrorsExtender interface {
 	ErrorDefinitions
+	AppendErrorExtender(extender ErrorsExtender)
+	Descriptions() map[string]string
+	Codes() map[string]int
 }
 
 type ErrorsExtenderBase struct {
@@ -114,4 +117,38 @@ func (e *ErrorsExtenderBase) AddErrors(errorDescriptions map[string]string, erro
 func (e *ErrorsExtenderBase) AttachToErrorManager(manager ErrorManager) {
 	manager.AddErrorDescriptions(e.errorDescriptions)
 	manager.AddErrorProtocolCodes(e.errorProtocolCodes)
+}
+
+func (e *ErrorsExtenderBase) Descriptions() map[string]string {
+	return e.errorDescriptions
+}
+
+func (e *ErrorsExtenderBase) Codes() map[string]int {
+	return e.errorProtocolCodes
+}
+
+func (e *ErrorsExtenderBase) AppendErrorExtender(extender ErrorsExtender) {
+	e.AddErrors(extender.Descriptions(), extender.Codes())
+}
+
+type ErrorsExtenderStub struct {
+}
+
+func (e *ErrorsExtenderStub) AddErrors(errorDescriptions map[string]string, errorProtocolCodes ...map[string]int) {
+	panic("Can't add errors to error stub")
+}
+
+func (e *ErrorsExtenderStub) AttachToErrorManager(manager ErrorManager) {
+}
+
+func (e *ErrorsExtenderStub) Descriptions() map[string]string {
+	return map[string]string{}
+}
+
+func (e *ErrorsExtenderStub) Codes() map[string]int {
+	return map[string]int{}
+}
+
+func (e *ErrorsExtenderStub) AppendErrorExtender(extender ErrorsExtender) {
+	e.AddErrors(extender.Descriptions(), extender.Codes())
 }
