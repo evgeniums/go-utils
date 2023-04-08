@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
-	"github.com/spf13/viper"
+	"github.com/evgeniums/viper"
 	"github.com/tidwall/jsonc"
 )
 
@@ -160,15 +160,12 @@ func (c *ConfigViper) ConfigType() string {
 }
 
 func (c *ConfigViper) Load(fromCfg *ConfigViper) error {
-	all := fromCfg.AllSettings()
-	b, err := json.MarshalIndent(all, "", " ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal viper settings: %s", err)
-	}
+
+	json := fromCfg.ToString()
 
 	c.Viper = viper.New()
-	c.Viper.SetConfigType(fromCfg.configType)
-	if err = c.Viper.ReadConfig(bytes.NewReader(b)); err != nil {
+	c.Viper.SetConfigType("json")
+	if err := c.Viper.ReadConfig(strings.NewReader(json)); err != nil {
 		return fmt.Errorf("failed to re-read viper settings: %s", err)
 	}
 	return nil
@@ -233,8 +230,6 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 
 		return nil
 	}
-
-	// TODO fix extend some kind of files
 
 	// load includes
 	includes := c.Viper.GetStringSlice("include")

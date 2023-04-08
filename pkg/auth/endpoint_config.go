@@ -47,7 +47,7 @@ func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld
 
 	path := utils.OptionalArg("endpoints_auth_config", configPath...)
 	fields := logger.Fields{"config_path": path}
-	log.Info("Init configuration of endpoints authorization", fields)
+	log.Debug("Init configuration of endpoints authorization", fields)
 
 	e.endpoints = make(map[string][]endpointSchema)
 
@@ -57,6 +57,8 @@ func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld
 		endpointPath := object_config.Key(path, endpoint)
 		fields := utils.AppendMapNew(fields, logger.Fields{"endpoint": endpoint, "endpoint_path": endpointPath})
 		endpointSchemas := make([]endpointSchema, 0)
+
+		log.Debug("Add auth schemas for endpoint", fields)
 
 		schemasSection := cfg.Get(endpointPath)
 		schemas := schemasSection.([]interface{})
@@ -68,16 +70,19 @@ func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld
 			if err != nil {
 				return log.PushFatalStack("failed to load endpoint authorization schema", err, fields)
 			}
+			fields["access"] = epSchema.ACCESS
+			fields["http_method"] = epSchema.HTTP_METHOD
+			fields["schema"] = epSchema.SCHEMA
 			if epSchema.HTTP_METHOD != "" {
 				epSchema.ACCESS = access_control.HttpMethod2Access(epSchema.HTTP_METHOD)
 			}
 			endpointSchemas = append(endpointSchemas, epSchema)
+
+			log.Info("Add auth schema", fields)
 		}
 
 		e.endpoints[endpoint] = endpointSchemas
 	}
-
-	// TODO log configuration
 
 	return nil
 }

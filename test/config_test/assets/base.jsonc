@@ -13,6 +13,7 @@
                 "subitem1"
             ]
         },
+        "empty_subsection" : {},
         "with_comments1" : "Hi! /*Hello world*/",
         "with_comments2" : "Hi! //Hello world"
     }

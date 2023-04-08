@@ -11,5 +11,6 @@
     },
     "replacable_section" : {
         "replacable_parameter" : "replacable_value"
-    }
+    },
+    "empty_subsection" : {}
 }

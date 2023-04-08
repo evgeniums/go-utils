@@ -1,5 +1,15 @@
 {
-    "include" : ["../../api_test/assets/api_server.jsonc"],
+    // "include" : ["../../api_test/assets/api_server.jsonc"],
+
+    "extend" : {        
+        "path": "../../api_test/assets/api_server.jsonc",
+        "rules" : [
+            {
+                "mode":"direct"
+            }
+        ]        
+    },
+
     "app_instance" : "tenancy_api_test",
     "multitenancy" : {
         "multitenancy" : true

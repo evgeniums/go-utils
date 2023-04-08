@@ -66,7 +66,7 @@ func (a *AuthManagerBase) Init(cfg config.Config, log logger.Logger, vld validat
 
 	path := utils.OptionalArg("auth_manager", configPath...)
 	fields := logger.Fields{"config_path": path}
-	log.Info("Init authorization manager", fields)
+	log.Debug("Init authorization manager", fields)
 
 	a.handlers = NewHandlerStore()
 	a.schemas = NewHandlerStore()

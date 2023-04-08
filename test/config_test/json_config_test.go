@@ -21,9 +21,13 @@ func TestJsonConfig(t *testing.T) {
 	require.NoErrorf(t, app.Init(configFile), "failed to init application context")
 	defer app.Close()
 
+	// t.Logf("Keys: %v", app.Cfg().AllKeys())
+	// t.Logf("Merged json: %s", app.Cfg().ToString())
+
 	assert.True(t, app.Cfg().IsSet("include"))
 	assert.True(t, app.Cfg().IsSet("include_advanced"))
 
+	assert.True(t, app.Cfg().IsSet("main_section.main_empty_subsection"))
 	assert.True(t, app.Cfg().IsSet("main_section.array_parameter"))
 
 	assert.True(t, app.Cfg().IsSet("main_section.parameter1"))
@@ -73,6 +77,7 @@ func testExtendCommon(t *testing.T, app app_context.Context) {
 	assert.True(t, app.Cfg().IsSet("main_section.override_parameter"))
 	assert.True(t, app.Cfg().IsSet("main_section.map_parameter.nested_parameter1"))
 	assert.True(t, app.Cfg().IsSet("main_section.map_parameter.nested_parameter2"))
+	assert.True(t, app.Cfg().IsSet("main_section.empty_subsection"))
 
 	assert.Equal(t, "value1", app.Cfg().GetString("main_section.parameter1"))
 	assert.Equal(t, "value2", app.Cfg().GetString("main_section.additional_parameter2"))
@@ -85,6 +90,8 @@ func TestJsonExtendDirect(t *testing.T) {
 	app := app_default.New(nil)
 	require.NoErrorf(t, app.Init(configFile), "failed to init application context")
 	defer app.Close()
+
+	// t.Logf("Merged json: %s", app.Cfg().ToString())
 
 	testExtendCommon(t, app)
 }

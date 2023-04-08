@@ -45,6 +45,7 @@
         },
         "with_comments1" : "Hi! /*Hello world*/",
         "with_comments2" : "Hi! //Hello world",
-        "float_list": [100.99,200.01,300.01]
+        "float_list": [100.99,200.01,300.01],
+        "main_empty_subsection" : {}
     }
 }
