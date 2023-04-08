@@ -42,6 +42,17 @@ func New() *ConfigViper {
 	return v
 }
 
+func ReadJsonc(path string) ([]byte, error) {
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("fatal error while reading config file: %s", err)
+	}
+	b := jsonc.ToJSON(data)
+
+	return b, nil
+}
+
 func ReadConfigFromFile(v *viper.Viper, path string, cfgType string) error {
 
 	v.SetConfigType(cfgType)
@@ -66,6 +77,30 @@ func ReadConfigFromFile(v *viper.Viper, path string, cfgType string) error {
 	return nil
 }
 
+func MergeConfigFile(v *viper.Viper, path string, configType ...string) error {
+
+	cfgType := utils.OptionalArg("json", configType...)
+	v.SetConfigType(cfgType)
+
+	if cfgType != "json" {
+		v.SetConfigFile(path)
+		err := v.MergeInConfig()
+		if err != nil {
+			return fmt.Errorf("fatal error while merging config file: %s", err)
+		}
+	} else {
+		data, err := ReadJsonc(path)
+		if err != nil {
+			return err
+		}
+		err = v.MergeConfig(bytes.NewReader(data))
+		if err != nil {
+			return fmt.Errorf("failed to merge configuration JSON: %s", err)
+		}
+	}
+	return nil
+}
+
 func MakeIncludePath(configFile string, path string) (string, error) {
 	r := path
 	if !utils.FileExists(r) || !utils.IsFile(r) {
@@ -81,8 +116,7 @@ func MakeIncludePath(configFile string, path string) (string, error) {
 func MergeConfigs(fromCfg *ConfigViper, toCfg *ConfigViper, mode string, keysMap map[string]string) error {
 
 	if mode == MergeDirect {
-		toCfg.SetConfigFile(fromCfg.configFile)
-		err := toCfg.MergeInConfig()
+		err := MergeConfigFile(toCfg.Viper, fromCfg.configFile, fromCfg.configType)
 		if err != nil {
 			return fmt.Errorf("failed to include config file %s to %s: %s", fromCfg.configFile, toCfg.configFile, err)
 		}
@@ -200,7 +234,6 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 		return nil
 	}
 
-	// TODO include JSONC
 	// TODO fix extend some kind of files
 
 	// load includes
@@ -210,8 +243,7 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 		if err != nil {
 			return err
 		}
-		c.Viper.SetConfigFile(path)
-		err = c.Viper.MergeInConfig()
+		err = MergeConfigFile(c.Viper, path, cfgType)
 		if err != nil {
 			return fmt.Errorf("failed to include config file %s: %s", path, err)
 		}

@@ -1,6 +1,6 @@
 {
     "main_section" : {
-        "additional_parameter2" : "value2",
+        "additional_parameter2" : "value2", // some comments
         "override_parameter" : "new_value",
         "map_parameter" : {
             "nested_parameter2": "nested_value2"

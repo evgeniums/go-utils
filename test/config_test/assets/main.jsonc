@@ -1,7 +1,7 @@
 {
     // include content as is, included content overrides content in this file
     "include" : [
-        "include.json"
+        "include.jsonc"
     ],
     /*
     advanced include and merge, included content overrides content in this file
@@ -23,7 +23,7 @@
         },
         {
             "mode": "value",
-            "path": "include.json",
+            "path": "include.jsonc",
             "map" : {
                 "replacable_section":"main_section.replacable_section"
             }
