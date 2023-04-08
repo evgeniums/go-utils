@@ -91,6 +91,7 @@ type DB interface {
 	EnableVerboseErrors(bool)
 
 	AutoMigrate(ctx logger.WithLogger, models []interface{}) error
+	PartitionedMonthAutoMigrate(ctx logger.WithLogger, models []interface{}) error
 
 	NativeHandler() interface{}
 

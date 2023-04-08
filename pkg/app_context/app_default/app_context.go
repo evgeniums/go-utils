@@ -118,6 +118,7 @@ func New(buildConfig *app_context.BuildConfig, appConfig ...AppConfigI) *Context
 		Revision = buildConfig.Revision
 	}
 
+	os.Setenv("TZ", "UTC")
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	c := &Context{}

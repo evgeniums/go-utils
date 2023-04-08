@@ -44,14 +44,27 @@ type InTenancyItem struct {
 	Field5 bool
 }
 
+type PartitionedItem struct {
+	common.ObjectWithMonth
+	Field4 string
+	Field5 int
+}
+
 func tenancyDbModels() *multitenancy.TenancyDbModels {
 	models := &multitenancy.TenancyDbModels{}
 	models.DbModels = []interface{}{&InTenancySample{}, &InTenancyItem{}}
+	models.PartitionedDbModels = []interface{}{&PartitionedItem{}}
 	return models
 }
 
+type SampleModel1 struct {
+	common.ObjectBase
+	Field1 string `gorm:"uniqueIndex"`
+	Field2 string `gorm:"index"`
+}
+
 func dbModels() []interface{} {
-	return utils.ConcatSlices(admin.DbModels(), pool.DbModels(), customer.DbModels(), multitenancy.DbModels())
+	return utils.ConcatSlices([]interface{}{&SampleModel1{}}, admin.DbModels(), pool.DbModels(), customer.DbModels(), multitenancy.DbModels())
 }
 
 type TenancyTestContext struct {
@@ -117,12 +130,7 @@ func preparePools(t *testing.T, ctx *TenancyTestContext, names ...string) []pool
 	return pools
 }
 
-type DbConfig struct {
-	DbHost     string
-	DbPort     uint16
-	DbUser     string
-	DbPassword string
-}
+type DbConfig = test_utils.PostgresDbConfig
 
 type TenancyServiceConfig struct {
 	Name     string

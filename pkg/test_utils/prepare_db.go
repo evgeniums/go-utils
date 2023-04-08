@@ -10,6 +10,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
+	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
@@ -88,12 +89,23 @@ func CheckDuplicateKeyError(provider string, result *gorm.DB) (bool, error) {
 		if err, ok := result.Error.(sqlite3.Error); ok {
 			if err.ExtendedCode == sqlite3.ErrConstraintUnique {
 				return true, errors.New("record already exists")
-
 			}
 		}
 	}
 
 	return false, result.Error
+}
+
+func PartitionedMonthMigrator(provider string, ctx logger.WithLogger, db *gorm.DB, models ...interface{}) error {
+
+	switch provider {
+	case "postgres":
+		return db_gorm.PostgresPartitionedMonthAutoMigrate(ctx, db, models...)
+	case "sqlite":
+		return db.AutoMigrate(models...)
+	}
+
+	return errors.New("unknown database provider")
 }
 
 func SetupGormDB(t *testing.T) {
@@ -105,6 +117,7 @@ func SetupGormDB(t *testing.T) {
 			return DbDsnBuilder(t, config)
 		}
 		c.DbCreator = DbCreator
+		c.PartitionedMonthMigrator = PartitionedMonthMigrator
 		return c
 	}
 }

@@ -19,25 +19,28 @@ func UpgradeTenancyDatabase(ctx op_context.Context, tenancy Tenancy, dbModels *T
 	}
 	defer onExit()
 
+	// migrate internal implicit models
 	err = tenancy.Db().AutoMigrate(ctx, DbInternalModels())
 	if err != nil {
 		c.SetMessage("failed to upgrade internal models in tenancy database")
 		return err
 	}
 
+	// migrate explicit models
 	err = tenancy.Db().AutoMigrate(ctx, dbModels.DbModels)
 	if err != nil {
 		c.SetMessage("failed to upgrade ordinary models tenancy database")
 		return err
 	}
 
-	// TODO migrate partitioned db models
-	err = tenancy.Db().AutoMigrate(ctx, dbModels.PartitionedDbModels)
+	// migrate partitioned db models
+	err = tenancy.Db().PartitionedMonthAutoMigrate(ctx, dbModels.PartitionedDbModels)
 	if err != nil {
 		c.SetMessage("failed to upgrade partitioned models in tenancy database")
 		return err
 	}
 
+	// done
 	return nil
 }
 

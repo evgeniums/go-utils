@@ -115,7 +115,7 @@ type MonthData interface {
 
 func MonthFromId(id string) (Month, error) {
 
-	if len(id) != 16 {
+	if len(id) != 20 {
 		return 0, errors.New("too short ID")
 	}
 
@@ -131,7 +131,7 @@ func MonthFromId(id string) (Month, error) {
 }
 
 type MonthDataBase struct {
-	Month Month `gorm:"index" json:"month"`
+	Month Month `gorm:"primary_key;index" json:"month"`
 }
 
 func (w *MonthDataBase) InitMonth() {

@@ -46,11 +46,11 @@ type CreatedAt interface {
 }
 
 type CreatedAtBase struct {
-	CREATED_AT time.Time `gorm:"index" json:"created_at" display:"Created"`
+	CREATED_AT time.Time `gorm:"index;autoCreateTime:false" json:"created_at" display:"Created"`
 }
 
 func (w *CreatedAtBase) InitCreatedAt() {
-	w.CREATED_AT = time.Now().UTC()
+	w.CREATED_AT = time.Now().UTC().Truncate(time.Microsecond)
 }
 
 func (w *CreatedAtBase) GetCreatedAt() time.Time {
@@ -66,7 +66,7 @@ type UpdatedAt interface {
 }
 
 type UpdatedAtBase struct {
-	UPDATED_AT time.Time `gorm:"index" json:"updated_at" display:"Updated"`
+	UPDATED_AT time.Time `gorm:"index;autoUpdateTime:false" json:"updated_at" display:"Updated"`
 }
 
 func (w *UpdatedAtBase) GetUpdatedAt() time.Time {

@@ -1,0 +1,30 @@
+{
+    "extend" : {        
+        "path": "../../api_test/assets/api_server.jsonc",
+        "rules" : [
+            {
+                "mode":"direct"
+            }
+        ]        
+    },
+
+    "db":{
+        "db_provider": "postgres",
+        "db_host": "127.0.0.1",
+        "db_port": 5432,
+        "db_name": "bhelpers_db",
+        "db_user": "bhelpers_user",
+        "db_password": "bhelpers_password"
+    },
+
+    "app_instance" : "postgres_api_test",
+    "multitenancy" : {
+        "multitenancy" : true
+    },
+    "server": { 
+        "rest_api_server": {
+            "auth_from_tenancy_db" : false,
+            "allow_not_active_tenancy" : true
+        }
+    }
+}

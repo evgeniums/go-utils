@@ -24,10 +24,11 @@ type gormDBConfig struct {
 }
 
 type DbConnector struct {
-	DialectorOpener        func(provider string, dsn string) (gorm.Dialector, error)
-	DsnBuilder             func(config *db.DBConfig) (string, error)
-	DbCreator              func(provider string, db *gorm.DB, dbName string) error
-	CheckDuplicateKeyError func(provider string, result *gorm.DB) (bool, error)
+	DialectorOpener          func(provider string, dsn string) (gorm.Dialector, error)
+	DsnBuilder               func(config *db.DBConfig) (string, error)
+	DbCreator                func(provider string, db *gorm.DB, dbName string) error
+	CheckDuplicateKeyError   func(provider string, result *gorm.DB) (bool, error)
+	PartitionedMonthMigrator func(provider string, ctx logger.WithLogger, db *gorm.DB, models ...interface{}) error
 }
 
 type GormDB struct {
@@ -176,6 +177,10 @@ func (g *GormDB) AutoMigrate(ctx logger.WithLogger, models []interface{}) error 
 		return ctx.Logger().PushFatalStack("failed to migrate database", err)
 	}
 	return nil
+}
+
+func (g *GormDB) PartitionedMonthAutoMigrate(ctx logger.WithLogger, models []interface{}) error {
+	return g.dbConnector.PartitionedMonthMigrator(g.DB_PROVIDER, ctx, g.db_(), models...)
 }
 
 func (g *GormDB) FindByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}, dest ...interface{}) (bool, error) {

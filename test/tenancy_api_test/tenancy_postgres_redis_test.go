@@ -3,31 +3,53 @@ package tenancy_api_test
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_providers/pubsub_factory"
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_providers/pubsub_redis"
+	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func testPostgresConfig() DbConfig {
-	cfg := DbConfig{}
-	cfg.DbHost = "127.0.0.1"
-	cfg.DbPort = 5432
-	cfg.DbUser = "bhelpers_user"
-	cfg.DbPassword = "123456"
-	return cfg
+func initDatabase(t *testing.T) (string, *test_utils.PostgresDbConfig) {
+	pgConfig := test_utils.NewPostgresDbConfig()
+	dbName := "bhelpers_db"
+	test_utils.DropDatabase(t, pgConfig, dbName)
+	test_utils.CreateDatabase(t, pgConfig, dbName)
+
+	test_utils.DropDatabase(t, pgConfig, "tenancy_customer1_dev")
+	test_utils.DropDatabase(t, pgConfig, "tenancy_customer1_stage")
+
+	return dbName, pgConfig
 }
 
 func TestPostgresRedis(t *testing.T) {
 
-	t.Skip("Run this test manually after preparing postgres and redis service.\n Don't forget to drop created databases after each run.")
+	// t.Skip("Run this test manually after preparing postgres and redis service.")
+
+	// TODO set in app initializtion
+	loc, _ := time.LoadLocation("UTC")
+	time.Local = loc
 
 	// prepare pools with postgres and redis services
+	dbName, pgConfig := initDatabase(t)
+	prepareCtx := initContext(t, true, "postgres")
 
-	prepareCtx := initContext(t, true)
+	doc1 := &SampleModel1{}
+	doc1.InitObject()
+	doc1.Field1 = "value1"
+	doc1.Field2 = "value2"
+	require.NoError(t, prepareCtx.ServerApp.Db().Create(prepareCtx.ServerApp, doc1), "failed to create doc1 in database")
+
+	docDb1 := &SampleModel1{}
+	found, err := prepareCtx.ServerApp.Db().FindByFields(prepareCtx.ServerApp, db.Fields{"field1": "value1"}, docDb1)
+	require.NoError(t, err, "failed to find doc1 in database")
+	assert.Equal(t, found, true)
+	assert.Equal(t, doc1.GetCreatedAt(), docDb1.GetCreatedAt())
 
 	pools1 := prepareCtx.AppWithTenancy.Pools()
 	require.NotNil(t, pools1)
@@ -40,8 +62,8 @@ func TestPostgresRedis(t *testing.T) {
 		PoolName: "pool1",
 	}
 	poolConfig1.DbService = TenancyServiceConfig{Name: "database_service1", Type: pool.TypeDatabase, Provider: "postgres"}
-	poolConfig1.DbService.DbConfig = testPostgresConfig()
-	poolConfig1.DbService.DbName = "bhelpers_db"
+	poolConfig1.DbService.DbConfig = *pgConfig
+	poolConfig1.DbService.DbName = dbName
 	poolConfig1.PubsubService = TenancyServiceConfig{Name: "pubsub_service1", Type: pool.TypePubsub, Provider: pubsub_redis.Provider}
 	poolConfig1.PubsubService.DbHost = "127.0.0.1"
 	poolConfig1.PubsubService.DbPort = 6379
@@ -52,8 +74,8 @@ func TestPostgresRedis(t *testing.T) {
 		PoolName: "pool2",
 	}
 	poolConfig2.DbService = TenancyServiceConfig{Name: "database_service2", Type: pool.TypeDatabase, Provider: "postgres"}
-	poolConfig2.DbService.DbConfig = testPostgresConfig()
-	poolConfig2.DbService.DbName = "bhelpers_db"
+	poolConfig2.DbService.DbConfig = *pgConfig
+	poolConfig2.DbService.DbName = dbName
 	poolConfig2.PubsubService = TenancyServiceConfig{Name: "pubsub_service2", Type: pool.TypePubsub, Provider: pubsub_redis.Provider}
 	poolConfig2.PubsubService.DbHost = "127.0.0.1"
 	poolConfig2.PubsubService.DbPort = 6379
@@ -68,7 +90,7 @@ func TestPostgresRedis(t *testing.T) {
 	prepareCtx.Close()
 
 	// prepare app with multiple pools
-	multiPoolCtx := initContext(t, false)
+	multiPoolCtx := initContext(t, false, "postgres")
 
 	// add customers
 	customer1, err := multiPoolCtx.LocalCustomerManager.Add(multiPoolCtx.AdminOp, "customer1", "12345678")
@@ -79,7 +101,6 @@ func TestPostgresRedis(t *testing.T) {
 	require.NotNil(t, customer2)
 
 	// add tenancies
-	// NOTE may fail on th second run - drop all created databases befor re-run
 	addedTenancy1, _ := AddTenancies(t, multiPoolCtx)
 
 	// check if tenancy was loaded
@@ -94,17 +115,40 @@ func TestPostgresRedis(t *testing.T) {
 
 	// check if database tables were created
 	sample1 := &InTenancySample{Field1: "hello world", Field2: 10}
+	sample1.GenerateID()
 	err = loadedTenancy1.Db().Create(multiPoolCtx.AdminOp, sample1)
 	require.NoError(t, err)
 	readSample1 := &InTenancySample{}
-	found, err := loadedTenancy1.Db().FindByField(multiPoolCtx.AdminOp, "field2", 10, readSample1)
+	found, err = loadedTenancy1.Db().FindByField(multiPoolCtx.AdminOp, "field2", 10, readSample1)
 	require.NoError(t, err)
 	assert.True(t, found)
 	assert.Equal(t, sample1, readSample1)
 
+	// check partitions
+	inPart1 := &PartitionedItem{}
+	inPart1.InitObject()
+	inPart1.Field4 = "p1_field4"
+	inPart1.Field5 = 1010
+	err = loadedTenancy1.Db().Create(multiPoolCtx.AdminOp, inPart1)
+	require.NoError(t, err)
+	readInPart1 := &PartitionedItem{}
+	found, err = loadedTenancy1.Db().FindByField(multiPoolCtx.AdminOp, "field5", 1010, readInPart1)
+	require.NoError(t, err)
+	assert.True(t, found)
+	assert.Equal(t, inPart1.GetID(), readInPart1.GetID())
+	assert.Equal(t, inPart1.GetCreatedAt().Truncate(time.Millisecond), readInPart1.GetCreatedAt().Truncate(time.Millisecond))
+	assert.Equal(t, inPart1.Month, readInPart1.Month)
+	assert.Equal(t, inPart1.Field4, readInPart1.Field4)
+	assert.Equal(t, inPart1.Field5, readInPart1.Field5)
+
+	// TODO check explicit partitions
+
 	// close apps
 	multiPoolCtx.Close()
 	pubsub_factory.ResetSingletonInmemPubsub()
+}
 
-	t.Logf("Drop all created databases before re-running this test!")
+func TestPostgresPartitions(t *testing.T) {
+
+	t.Skip("Run this test manually after preparing postgres and redis service.")
 }
