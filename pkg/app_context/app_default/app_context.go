@@ -118,8 +118,7 @@ func New(buildConfig *app_context.BuildConfig, appConfig ...AppConfigI) *Context
 		Revision = buildConfig.Revision
 	}
 
-	os.Setenv("TZ", "UTC")
-	rand.Seed(time.Now().UTC().UnixNano())
+	rand.Seed(time.Now().UnixNano())
 
 	c := &Context{}
 	c.validator = validator_playground.New()
@@ -145,6 +144,8 @@ func (c *Context) InitWithArgs(configFile string, args []string, configType ...s
 	if c.initialized {
 		return nil
 	}
+
+	app_context.SetTimeZone()
 
 	// load configuration
 	fmt.Printf("Application %s using configuration file %s\n", c.Application(), configFile)

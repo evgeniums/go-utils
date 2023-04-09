@@ -1,10 +1,13 @@
 package app_context
 
 import (
+	"time"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
@@ -32,4 +35,19 @@ type Context interface {
 	Hostname() string
 
 	Close()
+}
+
+var Timezone = "UTC"
+
+func SetTimeZone(timezone ...string) error {
+
+	tz := utils.OptionalArg(Timezone, timezone...)
+
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		return err
+	}
+	time.Local = loc
+	Timezone = tz
+	return nil
 }

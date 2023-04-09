@@ -10,7 +10,7 @@ import (
 var idCount atomic.Uint32
 
 func GenerateID() string {
-	t := time.Now().UTC().Unix()
+	t := time.Now().Unix()
 	r1 := rand.Int31n(0x7fffffff)
 
 	count := idCount.Add(1) % 0x10000

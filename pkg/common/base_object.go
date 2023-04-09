@@ -50,7 +50,7 @@ type CreatedAtBase struct {
 }
 
 func (w *CreatedAtBase) InitCreatedAt() {
-	w.CREATED_AT = time.Now().UTC().Truncate(time.Microsecond)
+	w.CREATED_AT = time.Now().Truncate(time.Microsecond)
 }
 
 func (w *CreatedAtBase) GetCreatedAt() time.Time {

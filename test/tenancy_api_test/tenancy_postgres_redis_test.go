@@ -3,7 +3,6 @@ package tenancy_api_test
 import (
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_manager"
@@ -31,10 +30,6 @@ func TestPostgresRedis(t *testing.T) {
 
 	// t.Skip("Run this test manually after preparing postgres and redis service.")
 
-	// TODO set in app initializtion
-	loc, _ := time.LoadLocation("UTC")
-	time.Local = loc
-
 	// prepare pools with postgres and redis services
 	dbName, pgConfig := initDatabase(t)
 	prepareCtx := initContext(t, true, "postgres")
@@ -49,7 +44,7 @@ func TestPostgresRedis(t *testing.T) {
 	found, err := prepareCtx.ServerApp.Db().FindByFields(prepareCtx.ServerApp, db.Fields{"field1": "value1"}, docDb1)
 	require.NoError(t, err, "failed to find doc1 in database")
 	assert.Equal(t, found, true)
-	assert.Equal(t, doc1.GetCreatedAt(), docDb1.GetCreatedAt())
+	assert.True(t, doc1.GetCreatedAt().Equal(docDb1.GetCreatedAt()))
 
 	pools1 := prepareCtx.AppWithTenancy.Pools()
 	require.NotNil(t, pools1)
@@ -136,7 +131,7 @@ func TestPostgresRedis(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, found)
 	assert.Equal(t, inPart1.GetID(), readInPart1.GetID())
-	assert.Equal(t, inPart1.GetCreatedAt().Truncate(time.Millisecond), readInPart1.GetCreatedAt().Truncate(time.Millisecond))
+	assert.True(t, inPart1.GetCreatedAt().Equal(readInPart1.GetCreatedAt()))
 	assert.Equal(t, inPart1.Month, readInPart1.Month)
 	assert.Equal(t, inPart1.Field4, readInPart1.Field4)
 	assert.Equal(t, inPart1.Field5, readInPart1.Field5)
@@ -146,9 +141,4 @@ func TestPostgresRedis(t *testing.T) {
 	// close apps
 	multiPoolCtx.Close()
 	pubsub_factory.ResetSingletonInmemPubsub()
-}
-
-func TestPostgresPartitions(t *testing.T) {
-
-	t.Skip("Run this test manually after preparing postgres and redis service.")
 }
