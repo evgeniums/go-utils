@@ -7,6 +7,11 @@ import (
 	"os"
 )
 
+func Panic(msg string, err error) {
+	m := fmt.Errorf("%s: %s", msg, err)
+	panic(m)
+}
+
 func AbortError(ctx Context, msg string, err ...error) {
 	e := errors.New(msg)
 	if len(err) > 0 {
