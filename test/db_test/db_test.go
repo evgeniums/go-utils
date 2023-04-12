@@ -57,7 +57,7 @@ func TestMainDbOperations(t *testing.T) {
 	found, err := app.Db().FindByFields(app, db.Fields{"field1": "value1"}, docDb1)
 	require.NoError(t, err, "failed to find doc1 in database")
 	assert.Equal(t, found, true)
-	assert.Equal(t, doc1, docDb1)
+	test_utils.ObjectEqual(t, doc1, docDb1)
 
 	docDb1NotFound := &SampleModel1{}
 	found, err = app.Db().FindByFields(app, db.Fields{"field1": "value11"}, docDb1NotFound)
@@ -74,7 +74,7 @@ func TestMainDbOperations(t *testing.T) {
 	require.NoError(t, err, "failed to find docs with filter in database")
 	assert.Equal(t, int64(1), count)
 	require.Len(t, docsDb1, 1)
-	assert.Equal(t, doc1, docsDb1[0])
+	test_utils.ObjectEqual(t, doc1, docsDb1[0])
 
 	doc2 := &SampleModel1{}
 	doc2.InitObject()
@@ -87,7 +87,7 @@ func TestMainDbOperations(t *testing.T) {
 	require.NoError(t, err, "failed to find docs with filter in database")
 	assert.Equal(t, int64(1), count)
 	require.Len(t, docsDb2, 1)
-	assert.Equal(t, doc1, docsDb2[0])
+	test_utils.ObjectEqual(t, doc1, docsDb2[0])
 
 	doc3 := &SampleModel1{}
 	doc3.InitObject()
@@ -100,8 +100,8 @@ func TestMainDbOperations(t *testing.T) {
 	require.NoError(t, err, "failed to find docs with filter in database")
 	require.Len(t, docsDb3, 2)
 	require.Equal(t, int64(2), count)
-	assert.Equal(t, doc1, docsDb3[0])
-	assert.Equal(t, doc3, docsDb3[1])
+	test_utils.ObjectEqual(t, doc1, docsDb3[0])
+	test_utils.ObjectEqual(t, doc3, docsDb3[1])
 
 	require.NoError(t, app.Db().Update(app, doc3, db.Fields{"field1": "value3"}, db.Fields{"field2": "value33"}), "failed to update doc3 in database")
 
@@ -110,7 +110,7 @@ func TestMainDbOperations(t *testing.T) {
 	require.NoError(t, err, "failed to find docsDb4 with filter in database")
 	require.Len(t, docsDb4, 1)
 	require.Equal(t, int64(1), count)
-	assert.Equal(t, doc1, docsDb4[0])
+	test_utils.ObjectEqual(t, doc1, docsDb4[0])
 
 	docDb33 := &SampleModel1{}
 	found, err = app.Db().FindByFields(app, db.Fields{"field2": "value33"}, docDb33)

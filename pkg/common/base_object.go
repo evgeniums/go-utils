@@ -62,11 +62,16 @@ func (w *CreatedAtBase) SetCreatedAt(t time.Time) {
 }
 
 type UpdatedAt interface {
+	SetUpDatedAt(time.Time)
 	GetUpdatedAt() time.Time
 }
 
 type UpdatedAtBase struct {
 	UPDATED_AT time.Time `gorm:"index;autoUpdateTime:false" json:"updated_at" display:"Updated"`
+}
+
+func (w *UpdatedAtBase) SetUpDatedAt(t time.Time) {
+	w.UPDATED_AT = t
 }
 
 func (w *UpdatedAtBase) GetUpdatedAt() time.Time {

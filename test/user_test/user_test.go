@@ -78,6 +78,10 @@ func TestUserOperations(t *testing.T) {
 	userDb1_1, err := users.FindByLogin(ctx, login1)
 	require.NoErrorf(t, err, "failed to find user")
 	require.NotNil(t, userDb1_1)
+	assert.True(t, user1.GetCreatedAt().Equal(userDb1_1.GetCreatedAt()))
+	assert.True(t, user1.GetUpdatedAt().Equal(userDb1_1.GetUpdatedAt()))
+	userDb1_1.SetCreatedAt(user1.GetCreatedAt())
+	userDb1_1.SetUpDatedAt(user1.GetUpdatedAt())
 	assert.Equal(t, user1, userDb1_1)
 
 	userNotInDb, err := users.FindByLogin(ctx, "unknown-login")
