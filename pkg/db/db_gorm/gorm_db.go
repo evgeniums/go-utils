@@ -184,39 +184,39 @@ func (g *GormDB) PartitionedMonthAutoMigrate(ctx logger.WithLogger, models []int
 }
 
 func (g *GormDB) FindByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}, dest ...interface{}) (bool, error) {
-	notFound, err := FindByField(g.db_(), field, value, obj, dest...)
-	if err != nil && g.VERBOSE_ERRORS && !notFound {
+	found, err := FindByField(g.db_(), field, value, obj, dest...)
+	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to FindByField %v", ObjectTypeName(obj))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"field": field, "value": value, "error": err})
 	}
-	return notFound, err
+	return found, err
 }
 
 func (g *GormDB) FindByFields(ctx logger.WithLogger, fields db.Fields, obj interface{}, dest ...interface{}) (bool, error) {
-	notFound, err := FindByFields(g.db_(), fields, obj, dest...)
-	if err != nil && g.VERBOSE_ERRORS && !notFound {
+	found, err := FindByFields(g.db_(), fields, obj, dest...)
+	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to FindByFields %v", ObjectTypeName(obj))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
 	}
-	return notFound, err
+	return found, err
 }
 
 func (g *GormDB) FindForUpdate(ctx logger.WithLogger, fields db.Fields, obj interface{}) (bool, error) {
-	notFound, err := FindForUpdate(g.db_(), fields, obj)
-	if err != nil && g.VERBOSE_ERRORS && !notFound {
+	found, err := FindForUpdate(g.db_(), fields, obj)
+	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to FindForUpdate %v", ObjectTypeName(obj))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
 	}
-	return notFound, err
+	return found, err
 }
 
 func (g *GormDB) FindForShare(ctx logger.WithLogger, fields db.Fields, obj interface{}) (bool, error) {
-	notFound, err := FindForUpdate(g.db_(), fields, obj)
-	if err != nil && g.VERBOSE_ERRORS && !notFound {
+	found, err := FindForUpdate(g.db_(), fields, obj)
+	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to FindForShare %v", ObjectTypeName(obj))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
 	}
-	return notFound, err
+	return found, err
 }
 
 func (g *GormDB) RowsByFields(ctx logger.WithLogger, fields db.Fields, obj interface{}) (db.Cursor, error) {
