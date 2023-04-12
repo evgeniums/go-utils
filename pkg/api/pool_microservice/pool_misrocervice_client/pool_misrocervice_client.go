@@ -26,13 +26,14 @@ type PoolMicroserviceClient struct {
 	PoolServiceClient
 }
 
-func NewPoolMicroserviceClient(client ...PoolServiceClient) *PoolMicroserviceClient {
+func NewPoolMicroserviceClient(defaultRole string, client ...PoolServiceClient) *PoolMicroserviceClient {
 	p := &PoolMicroserviceClient{}
 	if len(client) != 0 {
 		p.PoolServiceClient = client[0]
 	} else {
 		p.PoolServiceClient = &RestApiPoolServiceClient{}
 	}
+	p.POOL_SERVICE_ROLE = defaultRole
 	return p
 }
 
