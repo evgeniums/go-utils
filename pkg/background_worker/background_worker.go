@@ -7,7 +7,10 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-condchan"
+	finish "github.com/evgeniums/go-finish-service"
 )
+
+const ContextUser string = "background_user"
 
 type JobRunner func()
 type JobStopper func()
@@ -38,15 +41,18 @@ func (w *WithBackgroundWorkerBase) Worker() *BackgroundWorker {
 	return w.WorkerInterface
 }
 
-func New(log logger.Logger, jobRunner JobRunner, period int) *BackgroundWorker {
+func New(log logger.Logger, jobRunner JobRunner, period int, jobStopper ...JobStopper) *BackgroundWorker {
 	b := &BackgroundWorker{RunJob: jobRunner, Period: period}
 	b.WithLoggerBase.Init(log)
 	b.CondChan = condchan.New(&sync.Mutex{})
 	b.Finished = make(chan bool, 1)
+	if len(jobStopper) != 0 {
+		b.StopJob = jobStopper[0]
+	}
 	return b
 }
 
-func (w *BackgroundWorker) Run() {
+func (w *BackgroundWorker) RunInBackground() {
 
 	w.Running = true
 	w.Stopped = false
@@ -107,4 +113,9 @@ func (w *BackgroundWorker) Stop() {
 func (w *BackgroundWorker) Shutdown(ctx system_context.Context) error {
 	w.Stop()
 	return nil
+}
+
+func (w *BackgroundWorker) Run(fin *finish.Finisher) {
+	fin.Add(w)
+	w.RunInBackground()
 }
