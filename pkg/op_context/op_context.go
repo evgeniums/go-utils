@@ -11,6 +11,8 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
+const AutoUserType string = "auto"
+
 type CallContext interface {
 	Method() string
 	Error() error
@@ -89,6 +91,7 @@ type Context interface {
 
 	ClearError()
 	Reset()
+	DumpLog(successMessage ...string)
 	Close(successMessage ...string)
 }
 

@@ -240,26 +240,7 @@ func (c *ContextBase) GenericError() generic_error.Error {
 	return c.genericError
 }
 
-func (c *ContextBase) Close(successMessage ...string) {
-
-	// write oplog
-	if c.oplogHandler != nil {
-		oplog := c.oplogHandler(c)
-		for _, o := range c.oplogs {
-			o.InitObject()
-			o.SetContext(c.ID())
-			o.SetContextName(c.Name())
-			if c.origin != nil {
-				o.SetOriginApp(c.origin.App())
-				o.SetOriginName(c.origin.Name())
-				o.SetOriginSource(c.origin.Source())
-				o.SetUser(c.origin.User())
-				o.SetOriginClient(c.origin.SessionClient())
-				o.SetUserType(c.origin.UserType())
-			}
-			oplog.Write(o)
-		}
-	}
+func (c *ContextBase) DumpLog(successMessage ...string) {
 
 	if c.errorStack != nil {
 		// log error
@@ -296,6 +277,32 @@ func (c *ContextBase) Close(successMessage ...string) {
 			}
 		}
 	}
+
+	c.ClearError()
+}
+
+func (c *ContextBase) Close(successMessage ...string) {
+
+	// write oplog
+	if c.oplogHandler != nil {
+		oplog := c.oplogHandler(c)
+		for _, o := range c.oplogs {
+			o.InitObject()
+			o.SetContext(c.ID())
+			o.SetContextName(c.Name())
+			if c.origin != nil {
+				o.SetOriginApp(c.origin.App())
+				o.SetOriginName(c.origin.Name())
+				o.SetOriginSource(c.origin.Source())
+				o.SetUser(c.origin.User())
+				o.SetOriginClient(c.origin.SessionClient())
+				o.SetUserType(c.origin.UserType())
+			}
+			oplog.Write(o)
+		}
+	}
+
+	c.DumpLog(successMessage...)
 }
 
 func (c *ContextBase) AddLoggerFields(fields logger.Fields) {
