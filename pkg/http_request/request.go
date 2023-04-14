@@ -48,10 +48,25 @@ func NewPost(ctx op_context.Context, url string, msg interface{}, serializer ...
 		return nil, c.SetError(err)
 	}
 
-	r.NativeRequest.Header.Set("Content-Type", utils.ConcatStrings(r.Serializer.ContentMime(), ";charset=UTF-8"))
-	r.NativeRequest.Header.Set("Accept", r.Serializer.ContentMime())
+	if r.Serializer.ContentMime() != "" {
+		r.NativeRequest.Header.Set("Content-Type", utils.ConcatStrings(r.Serializer.ContentMime(), ";charset=UTF-8"))
+	}
 
 	return r, nil
+}
+
+func UrlEncode(msg interface{}) (string, error) {
+	if msg != nil {
+		encoder := schema.NewEncoder()
+		encoder.SetAliasTag("json")
+		v := url.Values{}
+		err := encoder.Encode(msg, v)
+		if err != nil {
+			return "", err
+		}
+		return v.Encode(), nil
+	}
+	return "", nil
 }
 
 func NewGet(ctx op_context.Context, uRL string, msg interface{}) (*Request, error) {
@@ -69,17 +84,13 @@ func NewGet(ctx op_context.Context, uRL string, msg interface{}) (*Request, erro
 		return nil, c.SetError(err)
 	}
 
-	if msg != nil {
-		encoder := schema.NewEncoder()
-		encoder.SetAliasTag("json")
-		v := url.Values{}
-		err := encoder.Encode(msg, v)
-		if err != nil {
-			c.SetMessage("failed to build query")
-			return nil, c.SetError(err)
-		}
-		r.NativeRequest.URL.RawQuery = v.Encode()
+	query, err := UrlEncode(msg)
+	if err != nil {
+		c.SetMessage("failed to build query")
+		return nil, c.SetError(err)
 	}
+
+	r.NativeRequest.URL.RawQuery = query
 
 	return r, nil
 }
