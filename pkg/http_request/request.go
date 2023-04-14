@@ -23,6 +23,7 @@ type Request struct {
 	GoodResponse    interface{}
 	BadResponse     interface{}
 	Serializer      message.Serializer
+	Transport       *http.Transport
 }
 
 func NewPost(ctx op_context.Context, url string, msg interface{}, serializer ...message.Serializer) (*Request, error) {
@@ -108,7 +109,7 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 	}
 	defer onExit()
 
-	client := &http.Client{}
+	client := &http.Client{Transport: r.Transport}
 	r.NativeResponse, err = client.Do(r.NativeRequest)
 	if err != nil {
 		c.SetMessage("failed to send request")
