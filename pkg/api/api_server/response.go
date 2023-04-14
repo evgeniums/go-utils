@@ -14,12 +14,16 @@ type Response interface {
 
 	Text() string
 	SetText(text string)
+
+	SetRedirectPath(path string)
+	RedirectPath() string
 }
 
 type ResponseBase struct {
-	message interface{}
-	request Request
-	text    string
+	message              interface{}
+	request              Request
+	text                 string
+	redirectResourcePath string
 }
 
 func (r *ResponseBase) Message() interface{} {
@@ -58,4 +62,12 @@ func (r *ResponseBase) SetText(text string) {
 
 func (r *ResponseBase) Text() string {
 	return r.text
+}
+
+func (r *ResponseBase) SetRedirectPath(path string) {
+	r.redirectResourcePath = path
+}
+
+func (r *ResponseBase) RedirectPath() string {
+	return r.redirectResourcePath
 }

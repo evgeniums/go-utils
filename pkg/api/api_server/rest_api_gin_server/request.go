@@ -73,7 +73,9 @@ func (r *Request) GetRequestUserAgent() string {
 func (r *Request) Close(successMessage ...string) {
 	var reponseBody interface{}
 	if r.GenericError() == nil {
-		if r.response.Text() != "" {
+		if r.response.RedirectPath() != "" {
+			r.ginCtx.Redirect(http.StatusFound, r.response.RedirectPath())
+		} else if r.response.Text() != "" {
 			r.ginCtx.String(r.response.httpCode, r.response.Text())
 		} else {
 			if r.response.Message() != nil {
