@@ -59,6 +59,10 @@ func Find(name string) Operation {
 	return NewOperation(name, access_control.Get)
 }
 
+func Get(name string) Operation {
+	return NewOperation(name, access_control.Get)
+}
+
 func Read(name string) Operation {
 	return NewOperation(name, access_control.Get)
 }
