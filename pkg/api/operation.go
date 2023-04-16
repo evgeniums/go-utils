@@ -2,11 +2,13 @@ package api
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type OperationHandler = func(ctx op_context.Context, operation Operation) error
+type TenancyOperationHandler = func(ctx multitenancy.TenancyContext, operation Operation) error
 
 type Operation interface {
 	Name() string
@@ -16,6 +18,7 @@ type Operation interface {
 
 	AccessType() access_control.AccessType
 	Exec(ctx op_context.Context, handler OperationHandler) error
+	ExecInTenancy(ctx multitenancy.TenancyContext, handler TenancyOperationHandler) error
 
 	TestOnly() bool
 	SetTestOnly(val bool)
@@ -67,6 +70,16 @@ func (o *OperationBase) AccessType() access_control.AccessType {
 func (o *OperationBase) Exec(ctx op_context.Context, handler OperationHandler) error {
 
 	c := ctx.TraceInMethod("Operation.Exec")
+	defer ctx.TraceOutMethod()
+
+	err := handler(ctx, o)
+	c.SetError(err)
+	return err
+}
+
+func (o *OperationBase) ExecInTenancy(ctx multitenancy.TenancyContext, handler TenancyOperationHandler) error {
+
+	c := ctx.TraceInMethod("Operation.ExecInTenancy")
 	defer ctx.TraceOutMethod()
 
 	err := handler(ctx, o)

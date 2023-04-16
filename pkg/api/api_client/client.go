@@ -3,6 +3,7 @@ package api_client
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
@@ -15,8 +16,18 @@ type ClientOperation interface {
 	Exec(client Client, ctx op_context.Context, operation api.Operation) error
 }
 
+type TenancyClientOperation interface {
+	Exec(client Client, ctx multitenancy.TenancyContext, operation api.Operation) error
+}
+
 func MakeOperationHandler(client Client, clientOperation ClientOperation) api.OperationHandler {
 	return func(ctx op_context.Context, operation api.Operation) error {
+		return clientOperation.Exec(client, ctx, operation)
+	}
+}
+
+func MakeTenancyOperationHandler(client Client, clientOperation TenancyClientOperation) api.TenancyOperationHandler {
+	return func(ctx multitenancy.TenancyContext, operation api.Operation) error {
 		return clientOperation.Exec(client, ctx, operation)
 	}
 }
