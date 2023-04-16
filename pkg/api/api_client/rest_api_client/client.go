@@ -33,7 +33,7 @@ func (cl *Client) Transport() interface{} {
 	return cl.RestApiClient
 }
 
-func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd interface{}, response interface{}) error {
+func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd interface{}, response interface{}, tenancyId ...string) error {
 
 	// TODO support hateoas links of resource
 
@@ -47,7 +47,13 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 		c.SetError(genericError)
 		return genericError
 	}
-	resp, err := method(ctx, operation.Resource().FullActualPath(), cmd, response)
+	var path string
+	if len(tenancyId) == 0 {
+		path = operation.Resource().FullActualPath()
+	} else {
+		path = operation.Resource().FullActualTenancyPath(tenancyId[0])
+	}
+	resp, err := method(ctx, path, cmd, response)
 	if err != nil {
 		c.SetMessage("failed to invoke HTTP method")
 		return c.SetError(err)

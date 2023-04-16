@@ -1,6 +1,8 @@
 package api
 
 import (
+	"strings"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
@@ -23,6 +25,7 @@ type Resource interface {
 
 	IsTenancy() bool
 	IsInTenancy() bool
+	TenancyResourceInPath() Resource
 
 	SetParent(parent Resource, rebuild ...bool)
 	Parent() Resource
@@ -43,6 +46,7 @@ type Resource interface {
 	ActualPath() string
 	FullPathPrototype() string
 	FullActualPath() string
+	FullActualTenancyPath(tenancyId string) string
 	ServicePathPrototype() string
 	ServiceActualPath() string
 	BuildActualPath(actualResourceIds map[string]string, service ...bool) string
@@ -80,6 +84,9 @@ type ResourceBase struct {
 	children             []Resource
 	operations           []Operation
 	getter               Operation
+
+	inTenancy       bool
+	tenancyResource Resource
 }
 
 func NewResource(resourceType string, config ...ResourceConfig) *ResourceBase {
@@ -93,6 +100,10 @@ func (r *ResourceBase) Init(resourceType string, config ...ResourceConfig) {
 	r.operations = make([]Operation, 0)
 	r.resourceType = resourceType
 	r.ResourceConfig = utils.OptionalArg(ResourceConfig{}, config...)
+	r.inTenancy = r.ResourceConfig.Tenancy
+	if r.ResourceConfig.Tenancy {
+		r.tenancyResource = r
+	}
 	r.RebuildPaths()
 }
 
@@ -100,7 +111,11 @@ func (r *ResourceBase) RebuildPaths() {
 
 	if r.HasId() {
 		r.pathPrototype = utils.ConcatStrings("/:", r.Type())
-		r.actualPath = utils.ConcatStrings("/", r.Id())
+		if r.Tenancy && r.Id() == "" {
+			r.actualPath = r.pathPrototype
+		} else {
+			r.actualPath = utils.ConcatStrings("/", r.Id())
+		}
 	} else {
 		r.pathPrototype = utils.ConcatStrings("/", r.Type())
 		r.actualPath = r.pathPrototype
@@ -114,6 +129,8 @@ func (r *ResourceBase) RebuildPaths() {
 		r.serviceActualPath = r.actualPath
 	}
 
+	r.inTenancy = r.isInTenancy()
+
 	parent := r.Parent()
 	if parent != nil {
 		r.fullPathPrototype = utils.ConcatStrings(parent.FullPathPrototype(), r.pathPrototype)
@@ -122,11 +139,18 @@ func (r *ResourceBase) RebuildPaths() {
 			r.servicePathPrototype = utils.ConcatStrings(parent.ServicePathPrototype(), r.pathPrototype)
 			r.serviceActualPath = utils.ConcatStrings(parent.ServiceActualPath(), r.actualPath)
 		}
+		if r.inTenancy && !r.IsTenancy() {
+			r.tenancyResource = parent.TenancyResourceInPath()
+		}
 	}
 
 	for _, child := range r.children {
 		child.RebuildPaths()
 	}
+}
+
+func (r *ResourceBase) TenancyResourceInPath() Resource {
+	return r.tenancyResource
 }
 
 func (r *ResourceBase) PathPrototype() string {
@@ -143,6 +167,19 @@ func (r *ResourceBase) FullPathPrototype() string {
 
 func (r *ResourceBase) FullActualPath() string {
 	return r.fullActualPath
+}
+
+func (r *ResourceBase) FullActualTenancyPath(tenancyId string) string {
+	if !r.IsInTenancy() {
+		return r.FullActualPath()
+	}
+
+	if r.TenancyResourceInPath() == nil {
+		panic("Tenancy resource must mot be nil")
+	}
+
+	path := strings.ReplaceAll(r.fullActualPath, r.TenancyResourceInPath().Type(), tenancyId)
+	return path
 }
 
 func (r *ResourceBase) ServicePathPrototype() string {
@@ -209,7 +246,7 @@ func (r *ResourceBase) IsTenancy() bool {
 	return r.ResourceConfig.Tenancy
 }
 
-func (r *ResourceBase) IsInTenancy() bool {
+func (r *ResourceBase) isInTenancy() bool {
 	if r.IsTenancy() {
 		return true
 	}
@@ -217,6 +254,10 @@ func (r *ResourceBase) IsInTenancy() bool {
 		return r.parent.IsInTenancy()
 	}
 	return false
+}
+
+func (r *ResourceBase) IsInTenancy() bool {
+	return r.inTenancy
 }
 
 func (r *ResourceBase) ServiceResource() Resource {
