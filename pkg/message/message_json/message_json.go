@@ -21,7 +21,7 @@ func (j *JsonSerializer) Format() string {
 }
 
 func (j *JsonSerializer) ContentMime() string {
-	return "application/xml"
+	return "application/json"
 }
 
 var Serializer = &JsonSerializer{}
