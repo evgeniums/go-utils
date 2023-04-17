@@ -5,7 +5,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/confirmation_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/confirmation_control/confirmation_control_api"
-	"github.com/evgeniums/go-backend-helpers/pkg/confirmation_control/sms_code_api"
 )
 
 type ExternalEndpoint struct {
@@ -32,8 +31,8 @@ func NewConfirmationExternalService(confirmationCallbackHandler confirmation_con
 	s := &ConfirmationExternalService{CheckCode: checkCode}
 	s.ConfirmationCallbackHandler = confirmationCallbackHandler
 
-	s.Init(sms_code_api.ServiceName)
-	s.OperationResource = api.NamedResource(sms_code_api.OperationResource)
+	s.Init(confirmation_control_api.ServiceName)
+	s.OperationResource = api.NamedResource(confirmation_control_api.OperationResource)
 	s.AddChild(s.OperationResource.Parent())
 	s.OperationResource.AddOperations(CheckConfirmation(s), PrepareCheckConfirmation(s))
 

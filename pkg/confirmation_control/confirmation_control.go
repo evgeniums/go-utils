@@ -9,5 +9,5 @@ type ConfirmationSender interface {
 }
 
 type ConfirmationCallbackHandler interface {
-	ConfirmationCallback(ctx multitenancy.TenancyContext, operationId string, codeOrStatus string, callbackUrl ...string) (redirectUrl string, err error)
+	ConfirmationCallback(ctx multitenancy.TenancyContext, operationId string, codeOrStatus string) (redirectUrl string, err error)
 }
