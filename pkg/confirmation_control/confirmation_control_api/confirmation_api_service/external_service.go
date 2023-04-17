@@ -66,14 +66,15 @@ func (e *CheckConfirmationEndpoint) HandleRequest(request api_server.Request) er
 	}
 
 	// invoke callback
-	redirectUrl, err := e.service.ConfirmationCallbackHandler.ConfirmationCallback(request, request.GetResourceId(confirmation_control_api.OperationResource), codeOrStatus)
-	if redirectUrl != "" {
-		request.Response().SetRedirectPath(redirectUrl)
-	}
+	resp := &confirmation_control_api.CodeResponse{}
+	resp.RedirectUrl, err = e.service.ConfirmationCallbackHandler.ConfirmationCallback(request, request.GetResourceId(confirmation_control_api.OperationResource), codeOrStatus)
 	if err != nil {
 		c.SetMessage("failed to invoke callback")
 		return c.SetError(err)
 	}
+
+	// set response
+	request.Response().SetMessage(resp)
 
 	// done
 	return nil

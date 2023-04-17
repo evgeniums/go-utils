@@ -40,6 +40,11 @@ type CodeCmd struct {
 	Code string `json:"code" validate:"required" vmessage:"Code must be specified"`
 }
 
+type CodeResponse struct {
+	api.ResponseStub
+	RedirectUrl string `json:"code"`
+}
+
 type PrepareCheckConfirmationResponse struct {
 	api.ResponseStub
 	FailedUrl string `json:"failed_url"`
