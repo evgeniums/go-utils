@@ -11,6 +11,7 @@ import (
 const ServiceName string = "confirmation"
 
 const OperationResource string = "operation"
+const CallbackResource string = "callback"
 
 func CheckConfirmation() api.Operation {
 	return api.Post("check_confirmation")
@@ -81,4 +82,17 @@ func GetTokenFromCache(ctx auth.AuthContext) (*OperationCacheToken, error) {
 
 	// done
 	return cacheToken, nil
+}
+
+func CallbackConfirmation() api.Operation {
+	return api.Post("callback_confirmation")
+}
+
+type CallbackConfirmationCmd struct {
+	CodeOrStatus string `json:"code_status" validate:"required" vmessage:"Code or status must be specified"`
+}
+
+type CallbackConfirmationResponse struct {
+	api.ResponseStub
+	Url string `json:"url"`
 }
