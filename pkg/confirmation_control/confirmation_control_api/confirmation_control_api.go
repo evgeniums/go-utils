@@ -24,19 +24,19 @@ func PrepareOperation() api.Operation {
 	return api.Post("prepare_operation")
 }
 
-type Operation struct {
+type PrepareOperationCmd struct {
 	Id        string `json:"id" validate:"required,id" vmessage:"Operation ID must be specified"`
-	Recipient string `json:"phone" validate:"required" vmessage:"Recipient must be specified"`
+	Recipient string `json:"recipient" validate:"required" vmessage:"Recipient must be specified"`
 	FailedUrl string `json:"failed_url" validate:"required,url" vmessage:"Invalid format of failed URL"`
-}
-
-type CodeCmd struct {
-	Code string `json:"code" validate:"required" vmessage:"Code must be specified"`
 }
 
 type PrepareOperationResponse struct {
 	api.ResponseStub
 	Url string `json:"url"`
+}
+
+type CodeCmd struct {
+	Code string `json:"code" validate:"required" vmessage:"Code must be specified"`
 }
 
 type PrepareCheckConfirmationResponse struct {
