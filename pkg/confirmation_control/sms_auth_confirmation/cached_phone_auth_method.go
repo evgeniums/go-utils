@@ -1,4 +1,4 @@
-package sms_code_api_service
+package sms_code_confirmation
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
