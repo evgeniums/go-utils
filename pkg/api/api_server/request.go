@@ -18,9 +18,6 @@ type Request interface {
 	Server() Server
 	Response() Response
 	Endpoint() Endpoint
-	ResourceIds() map[string]string
-
-	GetResourceId(resourceType string) string
 
 	ParseValidate(cmd interface{}) error
 }

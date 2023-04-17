@@ -20,6 +20,8 @@ type AuthContext interface {
 	CheckRequestContent(smsMessage *string) error
 	GetRequestPath() string
 	GetRequestMethod() string
+	GetResourceId(resourceType string) string
+	ResourceIds() map[string]string
 
 	GetRequestClientIp() string
 	GetRequestUserAgent() string
