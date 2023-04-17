@@ -66,7 +66,11 @@ func (e *PrepareOperationEndpoint) HandleRequest(request api_server.Request) err
 
 	// set response
 	resp := &confirmation_control_api.PrepareOperationResponse{}
-	resp.Url = fmt.Sprintf("%s/tenancy/%s/%s/%s/%s", e.service.BaseUrl, request.GetTenancy().GetID(), confirmation_control_api.ServiceName, confirmation_control_api.OperationResource, cmd.Id)
+	if request.GetTenancy() != nil {
+		resp.Url = fmt.Sprintf("%s/tenancy/%s/%s/%s/%s", e.service.BaseUrl, request.GetTenancy().GetID(), confirmation_control_api.ServiceName, confirmation_control_api.OperationResource, cmd.Id)
+	} else {
+		resp.Url = fmt.Sprintf("%s/%s/%s/%s", e.service.BaseUrl, confirmation_control_api.ServiceName, confirmation_control_api.OperationResource, cmd.Id)
+	}
 	request.SetLoggerField("url", resp.Url)
 	request.Response().SetMessage(resp)
 
