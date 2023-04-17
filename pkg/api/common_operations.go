@@ -47,6 +47,10 @@ func SubresourceOperation(sampleResource Resource, resourceId string, subResourc
 	return op
 }
 
+func Post(name string) Operation {
+	return NewOperation(name, access_control.Post)
+}
+
 func Create(name string) Operation {
 	return NewOperation(name, access_control.Create)
 }
