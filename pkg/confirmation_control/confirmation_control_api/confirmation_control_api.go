@@ -89,6 +89,7 @@ func CallbackConfirmation() api.Operation {
 }
 
 type CallbackConfirmationCmd struct {
+	Id           string `json:"operation_id" validate:"required,id" vmessage:"Invalid operation ID"`
 	CodeOrStatus string `json:"code_status" validate:"required" vmessage:"Code or status must be specified"`
 }
 

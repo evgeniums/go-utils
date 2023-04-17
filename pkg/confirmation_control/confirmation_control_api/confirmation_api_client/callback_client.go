@@ -10,7 +10,8 @@ import (
 type ConfirmationCallbackClient struct {
 	api_client.ServiceClient
 
-	CallbackResource api.Resource
+	CallbackResource      api.Resource
+	callback_confirmation api.Operation
 }
 
 func NewConfirmationCallbackClient(client api_client.Client) *ConfirmationCallbackClient {
@@ -19,8 +20,11 @@ func NewConfirmationCallbackClient(client api_client.Client) *ConfirmationCallba
 
 	c.Init(client, confirmation_control_api.ServiceName)
 
-	c.CallbackResource = api.NamedResource(confirmation_control_api.CallbackResource)
-	c.AddChild(c.CallbackResource.Parent())
+	c.CallbackResource = api.NewResource(confirmation_control_api.CallbackResource)
+	c.AddChild(c.CallbackResource)
+
+	c.callback_confirmation = confirmation_control_api.CallbackConfirmation()
+	c.CallbackResource.AddOperation(c.callback_confirmation)
 
 	return c
 }
@@ -40,11 +44,11 @@ func (cl *ConfirmationCallbackClient) ConfirmationCallback(ctx multitenancy.Tena
 
 	// prepare and exec handler
 	cmd := &confirmation_control_api.CallbackConfirmationCmd{
+		Id:           operationId,
 		CodeOrStatus: codeOrStatus,
 	}
 	handler := api_client.NewHandler(cmd, &confirmation_control_api.CallbackConfirmationResponse{})
-	op := api.NamedResourceOperation(cl.CallbackResource, operationId, confirmation_control_api.CallbackConfirmation())
-	err = op.Exec(ctx, api_client.MakeOperationHandler(cl.ApiClient(), handler))
+	err = cl.callback_confirmation.Exec(ctx, api_client.MakeOperationHandler(cl.ApiClient(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")
 		return "", err
