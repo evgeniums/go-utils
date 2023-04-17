@@ -104,10 +104,7 @@ type UserContext interface {
 }
 
 func Tenancy(ctx UserContext) string {
-	if ctx.GetTenancy() == nil {
-		return ""
-	}
-	return ctx.GetTenancy().GetID()
+	return multitenancy.ContextTenancy(ctx)
 }
 
 type UserContextBase struct {
