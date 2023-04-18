@@ -1,4 +1,4 @@
-package confirmation_client
+package confirmation_api_client
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
