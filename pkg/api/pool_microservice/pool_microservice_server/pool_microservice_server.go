@@ -12,13 +12,13 @@ type Config struct {
 	noauth_server.Config
 }
 
-func New(config ...Config) *PoolMicroserviceServer {
+func New(config ...*Config) *PoolMicroserviceServer {
 	s := &PoolMicroserviceServer{}
 	s.Construct(config...)
 	return s
 }
 
-func (s *PoolMicroserviceServer) Construct(config ...Config) {
+func (s *PoolMicroserviceServer) Construct(config ...*Config) {
 	if len(config) != 0 {
 		s.NoAuthServer.Construct(config[0].Config)
 	}
