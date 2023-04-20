@@ -1,11 +1,16 @@
 package app_with_multitenancy
 
 import (
+	"net/http"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/background_worker"
 	"github.com/evgeniums/go-backend-helpers/pkg/customer"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pool_pubsub"
 )
 
@@ -114,4 +119,19 @@ func (a *AppWithMultitenancyBase) Close() {
 		a.tenancyManager.Close()
 	}
 	a.AppWithPoolsBase.Close()
+}
+
+func BackgroundOpContext(app AppWithMultitenancy, tenancy multitenancy.Tenancy, name string) multitenancy.TenancyContext {
+	opCtx := multitenancy.NewContext()
+	opCtx.Init(app, app.Logger(), app.Db())
+	opCtx.SetName(name)
+	errManager := &generic_error.ErrorManagerBase{}
+	errManager.Init(http.StatusInternalServerError)
+	opCtx.SetErrorManager(errManager)
+	origin := default_op_context.NewOrigin(app)
+	origin.SetUser(background_worker.ContextUser)
+	origin.SetUserType(op_context.AutoUserType)
+	opCtx.SetOrigin(origin)
+	opCtx.SetTenancy(tenancy)
+	return opCtx
 }
