@@ -3,6 +3,7 @@ package background_worker
 import (
 	system_context "context"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
@@ -12,8 +13,31 @@ import (
 
 const ContextUser string = "background_user"
 
-type JobRunner func()
-type JobStopper func()
+type BackgroundStopper interface {
+	IsStopped() bool
+}
+
+type JobRunner interface {
+	RunJob()
+	StopJob()
+	SetStopper(stopper BackgroundStopper)
+	Stopper() BackgroundStopper
+}
+
+type JobRunnerBase struct {
+	stopper BackgroundStopper
+}
+
+func (j *JobRunnerBase) StopJob() {
+}
+
+func (j *JobRunnerBase) SetStopper(stopper BackgroundStopper) {
+	j.stopper = stopper
+}
+
+func (j *JobRunnerBase) Stopper() BackgroundStopper {
+	return j.stopper
+}
 
 type BackgroundWorker struct {
 	logger.WithLoggerBase
@@ -22,11 +46,10 @@ type BackgroundWorker struct {
 
 	CondChan *condchan.CondChan
 	Finished chan bool
-	Stopped  bool
-	Running  bool
+	Stopped  atomic.Bool
+	Running  atomic.Bool
 
-	RunJob  JobRunner
-	StopJob JobStopper
+	JobRunner JobRunner
 }
 
 type WithBackgroundWorker interface {
@@ -41,26 +64,24 @@ func (w *WithBackgroundWorkerBase) Worker() *BackgroundWorker {
 	return w.WorkerInterface
 }
 
-func New(log logger.Logger, jobRunner JobRunner, period int, jobStopper ...JobStopper) *BackgroundWorker {
-	b := &BackgroundWorker{RunJob: jobRunner, Period: period}
+func New(log logger.Logger, jobRunner JobRunner, period int) *BackgroundWorker {
+	b := &BackgroundWorker{JobRunner: jobRunner, Period: period}
+	jobRunner.SetStopper(b)
 	b.WithLoggerBase.Init(log)
 	b.CondChan = condchan.New(&sync.Mutex{})
 	b.Finished = make(chan bool, 1)
-	if len(jobStopper) != 0 {
-		b.StopJob = jobStopper[0]
-	}
 	return b
 }
 
 func (w *BackgroundWorker) RunInBackground() {
 
-	w.Running = true
-	w.Stopped = false
+	w.Running.Store(true)
+	w.Stopped.Store(false)
 
 	// run in go routine
 	go func() {
-		w.RunJob()
-		if w.Stopped {
+		w.JobRunner.RunJob()
+		if w.IsStopped() {
 			w.Logger().Debug("Background worker: stopped after first run")
 			w.Finished <- true
 		}
@@ -77,15 +98,15 @@ func (w *BackgroundWorker) RunInBackground() {
 					w.Logger().Debug("Background worker: signal received")
 					*br = true
 				case <-timeoutChan:
-					if !w.Stopped {
+					if !w.IsStopped() {
 						// w.Log.LogDebug("Background worker: run job")
-						w.RunJob()
+						w.JobRunner.RunJob()
 					}
 				}
 			})
 			w.CondChan.L.Unlock()
 
-			if w.Stopped || *br {
+			if w.IsStopped() || *br {
 				w.Logger().Debug("Background worker: break cycle")
 				break
 			}
@@ -96,17 +117,15 @@ func (w *BackgroundWorker) RunInBackground() {
 
 func (w *BackgroundWorker) Stop() {
 	w.Logger().Info("Background worker: stopping...")
-	if !w.Running {
+	if !w.Running.Load() {
 		w.Logger().Info("Background worker: not running, quit")
 		return
 	}
-	w.Stopped = true
-	if w.StopJob != nil {
-		w.StopJob()
-	}
+	w.Stopped.Store(true)
+	w.JobRunner.StopJob()
 	w.CondChan.Broadcast()
 	<-w.Finished
-	w.Running = false
+	w.Running.Store(false)
 	w.Logger().Info("Background worker: finished")
 }
 
@@ -118,4 +137,8 @@ func (w *BackgroundWorker) Shutdown(ctx system_context.Context) error {
 func (w *BackgroundWorker) Run(fin *finish.Finisher) {
 	fin.Add(w)
 	w.RunInBackground()
+}
+
+func (w *BackgroundWorker) IsStopped() bool {
+	return w.Stopped.Load()
 }
