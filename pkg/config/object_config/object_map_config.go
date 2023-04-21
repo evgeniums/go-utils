@@ -1,6 +1,8 @@
 package object_config
 
 import (
+	"fmt"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
@@ -94,4 +96,41 @@ func LoadLogValidateSubobjectsList[T WithInit](cfg config.Config, log logger.Log
 	}
 
 	return subobjects, nil
+}
+
+func LoadLogStringMapPlain[T any](cfg config.Config, log logger.Logger, configPath string, loggerFields ...logger.Fields) (map[string]T, error) {
+
+	if !cfg.IsSet(configPath) {
+		return nil, nil
+	}
+
+	fields := logger.AppendFieldsNew(logger.Fields{"config_path": configPath}, loggerFields...)
+	m := make(map[string]T)
+
+	mapSection := cfg.Get(configPath)
+	mapConfig, ok := mapSection.(map[string]interface{})
+	if !ok {
+		return nil, log.PushFatalStack("invalid map section in configuration", nil, fields)
+	}
+	for key, value := range mapConfig {
+		val, ok := value.(T)
+		fullKey := Key(configPath, key)
+		if !ok {
+			fields["key"] = fullKey
+			return nil, log.PushFatalStack("invalid value type in configuration", nil, fields)
+		}
+		m[key] = val
+
+		logParameter(log, fullKey, fmt.Sprintf("%v", val), logger.InfoLevel)
+	}
+
+	return m, nil
+}
+
+func LoadLogStringMapInt(cfg config.Config, log logger.Logger, configPath string, loggerFields ...logger.Fields) (map[string]int, error) {
+	return LoadLogStringMapPlain[int](cfg, log, configPath, loggerFields...)
+}
+
+func LoadLogStringMapString(cfg config.Config, log logger.Logger, configPath string, loggerFields ...logger.Fields) (map[string]string, error) {
+	return LoadLogStringMapPlain[string](cfg, log, configPath, loggerFields...)
 }
