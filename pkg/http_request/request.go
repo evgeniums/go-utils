@@ -108,8 +108,10 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 		ctx.TraceOutMethod()
 	}
 	defer onExit()
-
-	client := &http.Client{Transport: r.Transport}
+	client := &http.Client{}
+	if r.Transport != nil {
+		client.Transport = r.Transport
+	}
 	r.NativeResponse, err = client.Do(r.NativeRequest)
 	if err != nil {
 		c.SetMessage("failed to send request")
