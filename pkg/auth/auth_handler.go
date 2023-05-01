@@ -42,8 +42,6 @@ type AuthHandler interface {
 
 	ErrorDescriptions() map[string]string
 	ErrorProtocolCodes() map[string]int
-
-	IsReal() bool
 }
 
 type AuthHandlerBase struct {
@@ -71,10 +69,6 @@ func (a *AuthHandlerBase) Protocol() string {
 
 func (a *AuthHandlerBase) Handlers() []AuthHandler {
 	return nil
-}
-
-func (a *AuthHandlerBase) IsReal() bool {
-	return true
 }
 
 func (a *AuthHandlerBase) SetAuthManager(manager AuthManager) {

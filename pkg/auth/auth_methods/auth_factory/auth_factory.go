@@ -10,12 +10,14 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_token"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
+	"github.com/evgeniums/go-backend-helpers/pkg/signature"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
 )
 
 type DefaultAuthFactory struct {
-	Users      auth_session.WithUserSessionManager
-	SmsManager sms.SmsManager
+	Users            auth_session.WithUserSessionManager
+	SmsManager       sms.SmsManager
+	SignatureManager signature.SignatureManager
 }
 
 func (f *DefaultAuthFactory) Create(protocol string) (auth.AuthHandler, error) {
@@ -36,10 +38,9 @@ func (f *DefaultAuthFactory) Create(protocol string) (auth.AuthHandler, error) {
 	case auth_sms.SmsProtocol:
 		return auth_sms.New(f.SmsManager), nil
 	case auth_signature.SignatureProtocol:
-		return &auth_signature.AuthSignature{}, nil
+		return auth_signature.New(f.SignatureManager), nil
 	case auth.NoAuthProtocol:
 		return &auth.NoAuthMethod{}, nil
-
 	}
 
 	return nil, fmt.Errorf("unknown auth handler %s", protocol)

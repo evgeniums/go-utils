@@ -130,27 +130,29 @@ func (a *AuthSchema) Handle(ctx AuthContext) (bool, error) {
 
 	authMethodFound := false
 	for _, handler := range a.handlers {
-		sectionFound, err := handler.Handle(ctx)
-		if !handler.IsReal() || !sectionFound && a.config.AGGREGATION == Or {
-			continue
+		c.SetLoggerField("auth_method", handler.Name())
+		authMethodFound, err = handler.Handle(ctx)
+		if !authMethodFound {
+			if a.config.AGGREGATION == Or {
+				continue
+			}
+			err := errors.New("auth method not found in request")
+			ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeUnauthorized))
+			if err == nil {
+				err = ctx.GenericError()
+			}
+			return false, err
 		}
 		if err != nil {
 			ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeUnauthorized))
-			return sectionFound, c.SetError(err)
+			return true, err
 		}
 		if a.config.AGGREGATION == Or {
-			return sectionFound, nil
-		}
-		if sectionFound {
-			authMethodFound = true
+			return true, nil
 		}
 	}
-	if len(a.handlers) != 0 && !authMethodFound {
-		err := errors.New("no auth section in request")
-		ctx.SetGenericErrorCode(ErrorCodeUnauthorized)
-		return authMethodFound, c.SetError(err)
-	}
-	return authMethodFound, nil
+
+	return len(a.handlers) == 0, nil
 }
 
 func (a *AuthSchema) Protocol() string {
