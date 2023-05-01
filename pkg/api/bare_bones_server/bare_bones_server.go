@@ -10,6 +10,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
+	"github.com/evgeniums/go-backend-helpers/pkg/signature"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
@@ -18,21 +19,24 @@ type Server interface {
 	ApiServer() api_server.Server
 	Auth() auth.Auth
 	SmsManager() sms.SmsManager
+	SignatureManager() signature.SignatureManager
 }
 
 type Config struct {
-	Auth         auth.Auth
-	Server       api_server.Server
-	SmsManager   sms.SmsManager
-	SmsProviders sms.ProviderFactory
+	Auth             auth.Auth
+	Server           api_server.Server
+	SmsManager       sms.SmsManager
+	SmsProviders     sms.ProviderFactory
+	SignatureManager signature.SignatureManager
 }
 
 type pimpl struct {
-	auth         auth.Auth
-	server       api_server.Server
-	smsManager   sms.SmsManager
-	smsProviders sms.ProviderFactory
-	users        auth_session.WithUserSessionManager
+	auth             auth.Auth
+	server           api_server.Server
+	smsManager       sms.SmsManager
+	smsProviders     sms.ProviderFactory
+	users            auth_session.WithUserSessionManager
+	signatureManager signature.SignatureManager
 }
 
 type BareBonesServerBase struct {
@@ -47,6 +51,7 @@ func (s *BareBonesServerBase) Construct(users auth_session.WithUserSessionManage
 		s.pimpl.auth = cfg.Auth
 		s.pimpl.smsManager = cfg.SmsManager
 		s.pimpl.smsProviders = cfg.SmsProviders
+		s.pimpl.signatureManager = cfg.SignatureManager
 	}
 }
 
@@ -74,7 +79,7 @@ func (s *BareBonesServerBase) Init(app app_context.Context, tenancyManager multi
 	if s.pimpl.auth == nil {
 		auth := auth.NewAuth()
 		authPath := object_config.Key(path, "auth")
-		err := auth.Init(app.Cfg(), app.Logger(), app.Validator(), &auth_factory.DefaultAuthFactory{Users: s.pimpl.users, SmsManager: s.pimpl.smsManager}, authPath)
+		err := auth.Init(app.Cfg(), app.Logger(), app.Validator(), &auth_factory.DefaultAuthFactory{Users: s.pimpl.users, SmsManager: s.pimpl.smsManager, SignatureManager: s.pimpl.signatureManager}, authPath)
 		if err != nil {
 			return app.Logger().PushFatalStack("failed to init auth manager", err)
 		}
@@ -111,4 +116,8 @@ func (s *BareBonesServerBase) ApiServer() api_server.Server {
 
 func (s *BareBonesServerBase) SmsManager() sms.SmsManager {
 	return s.pimpl.smsManager
+}
+
+func (s *BareBonesServerBase) SignatureManager() signature.SignatureManager {
+	return s.pimpl.signatureManager
 }
