@@ -70,6 +70,7 @@ func (a *AuthSignature) Handle(ctx auth.AuthContext) (bool, error) {
 	// get token from request
 	requestSignature := ctx.GetAuthParameter(a.Protocol(), SignatureParameter)
 	if requestSignature == "" {
+		c.Logger().Info("skip signature auth")
 		return false, nil
 	}
 
@@ -81,4 +82,8 @@ func (a *AuthSignature) Handle(ctx auth.AuthContext) (bool, error) {
 
 	// done
 	return true, nil
+}
+
+func (a *AuthSignature) SetAuthManager(manager auth.AuthManager) {
+	manager.Schemas().AddHandler(a)
 }

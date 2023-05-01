@@ -8,6 +8,8 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/bare_bones_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_manager"
+	"github.com/evgeniums/go-backend-helpers/pkg/signature"
+	"github.com/evgeniums/go-backend-helpers/pkg/signature/user_pubkey"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms/sms_provider_factory"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
@@ -22,8 +24,12 @@ var testDir = filepath.Dir(testBasePath)
 
 type User = user_default.User
 
+type UserPubKey struct {
+	user_pubkey.UserPubkey
+}
+
 func dbModels() []interface{} {
-	return append([]interface{}{}, &User{}, &user_session_default.UserSession{}, &user_session_default.UserSessionClient{}, &sms.SmsMessage{})
+	return append([]interface{}{}, &User{}, &user_session_default.UserSession{}, &user_session_default.UserSessionClient{}, &sms.SmsMessage{}, &UserPubKey{})
 }
 
 func initServer(t *testing.T, config ...string) (app_context.Context, *user_session_default.Users, bare_bones_server.Server) {
@@ -34,7 +40,11 @@ func initServer(t *testing.T, config ...string) (app_context.Context, *user_sess
 
 	tenancyManager := &tenancy_manager.TenancyManager{}
 
-	server := bare_bones_server.New(users, bare_bones_server.Config{SmsProviders: &sms_provider_factory.MockFactory{}})
+	signatureManager := signature.NewSignatureManager()
+	err := signatureManager.Init(app.Cfg(), app.Logger(), app.Validator())
+	require.NoError(t, err)
+
+	server := bare_bones_server.New(users, bare_bones_server.Config{SmsProviders: &sms_provider_factory.MockFactory{}, SignatureManager: signatureManager})
 	require.NoErrorf(t, server.Init(app, tenancyManager), "failed to init auth server")
 
 	return app, users, server

@@ -12,6 +12,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/signature"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 const (
@@ -25,7 +26,7 @@ var ErrorDescriptions = map[string]string{
 }
 
 var ErrorHttpCodes = map[string]int{
-	ErrorCodeActiveKeyNotFound: http.StatusNotFound,
+	ErrorCodeActiveKeyNotFound: http.StatusUnauthorized,
 }
 
 type PubkeyController[T UserPubkeyI] interface {
@@ -210,15 +211,20 @@ func (p *PubkeyControllerBase[T, U]) FindActivePubKey(ctx op_context.Context, us
 	defer onExit()
 
 	// find user
-	user, err := user.FindUser(p.userFinder, ctx, userId, idIsLogin...)
-	if err != nil {
-		return *new(T), err
+	uId := userId
+	useLogin := utils.OptionalArg(false, idIsLogin...)
+	if useLogin {
+		user, err := user.FindUser(p.userFinder, ctx, userId, idIsLogin...)
+		if err != nil {
+			return *new(T), err
+		}
+		c.SetLoggerField("user", user.Display())
+		uId = user.GetID()
 	}
-	c.SetLoggerField("user", user.Display())
 
 	// find key
 	doc := p.objectBuilder()
-	fields := db.Fields{"public_key_owner": user.GetID(), "active": true}
+	fields := db.Fields{"public_key_owner": uId, "active": true}
 	found, err := p.crud.Read(ctx, fields, doc)
 	if err != nil {
 		c.SetMessage("failed to find active public key")
@@ -266,9 +272,10 @@ func (p *PubkeyControllerBase[T, U]) AttachToErrorManager(errManager generic_err
 
 func NewPubkeyController[T UserPubkeyI, U user.User](objectBuilder func() T,
 	signatureManager signature.SignatureManager,
+	userFinder user.UserFinder[U],
 	cruds ...crud.CRUD) *PubkeyControllerBase[T, U] {
 
-	p := &PubkeyControllerBase[T, U]{objectBuilder: objectBuilder, signatureManager: signatureManager}
+	p := &PubkeyControllerBase[T, U]{objectBuilder: objectBuilder, signatureManager: signatureManager, userFinder: userFinder}
 
 	if len(cruds) == 0 {
 		p.crud = &crud.DbCRUD{}

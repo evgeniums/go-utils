@@ -32,7 +32,8 @@
                         "token_ttl_seconds": 3,
                         "max_tries":3
                     },
-                    "noauth":{}
+                    "noauth":{},
+                    "signature":{}
                 },
                 "schemas":[
                     {
@@ -40,6 +41,13 @@
                         "handlers" : [
                             {"name":"check_token"},
                             {"name":"sms"}
+                        ]
+                    },
+                    {
+                        "name" : "token_signature",
+                        "handlers" : [
+                            {"name":"check_token"},
+                            {"name":"signature"}
                         ]
                     }
                 ]
@@ -50,6 +58,12 @@
                     {
                         "http_method": "POST",
                         "schema":"login_phash_token"
+                    }
+                ],
+                "/status/echo": [
+                    {
+                        "http_method": "POST",
+                        "schema":"token_signature"
                     }
                 ],
                 "/status/check": [

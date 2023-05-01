@@ -1,6 +1,7 @@
 package user_pubkey
 
 import (
+	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/signature"
 )
@@ -62,4 +63,14 @@ func (u *UserPubkey) SetPubKeyOwner(owner string) {
 
 func NewOplog() *signature.OpLogPubKey {
 	return &signature.OpLogPubKey{}
+}
+
+func FindUserPubKey[T UserPubkeyI](ctrl PubkeyController[T], ctx auth.AuthContext) (signature.UserWithPubkey, error) {
+
+	pubKey, err := ctrl.FindActivePubKey(ctx, ctx.AuthUser().GetID())
+	if err != nil {
+		return nil, err
+	}
+
+	return pubKey, nil
 }

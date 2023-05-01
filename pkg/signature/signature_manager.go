@@ -25,8 +25,9 @@ type UserWithPubkey interface {
 type SignatureManager interface {
 	generic_error.ErrorDefinitions
 
-	Verify(ctx auth.UserContext, signature string, message []byte, extraData ...string) error
+	Verify(ctx auth.AuthContext, signature string, message []byte, extraData ...string) error
 	CheckPubKey(ctx op_context.Context, key string) error
+	SetUserKeyFinder(userKeyFinder func(ctx auth.AuthContext) (UserWithPubkey, error))
 }
 
 type WithSignatureManager interface {
@@ -48,7 +49,7 @@ var ErrorHttpCodes = map[string]int{
 }
 
 type SignatureManagerBaseConfig struct {
-	ALGORITHM             string `validate:"required,oneof:rsa_h256_signature" default:"rsa_h256_signature"`
+	ALGORITHM             string `validate:"required,oneof=rsa_h256_signature" default:"rsa_h256_signature"`
 	ENCRYPT_MESSAGE_STORE bool
 	SECRET                string `mask:"true"`
 	SALT                  string `mask:"true"`
@@ -57,6 +58,8 @@ type SignatureManagerBaseConfig struct {
 type SignatureManagerBase struct {
 	SignatureManagerBaseConfig
 	cipher *crypt_utils.AEAD
+
+	userKeyFinder func(ctx auth.AuthContext) (UserWithPubkey, error)
 }
 
 func NewSignatureManager() *SignatureManagerBase {
@@ -92,6 +95,10 @@ func (s *SignatureManagerBase) Init(cfg config.Config, log logger.Logger, vld va
 
 	// done
 	return nil
+}
+
+func (s *SignatureManagerBase) SetUserKeyFinder(userKeyFinder func(ctx auth.AuthContext) (UserWithPubkey, error)) {
+	s.userKeyFinder = userKeyFinder
 }
 
 func (s *SignatureManagerBase) CheckPubKey(ctx op_context.Context, key string) error {
@@ -151,7 +158,7 @@ func (s *SignatureManagerBase) MakeVerifier(ctx op_context.Context, key string) 
 	return verifier, nil
 }
 
-func (s *SignatureManagerBase) Verify(ctx auth.UserContext, signature string, message []byte, extraData ...string) error {
+func (s *SignatureManagerBase) Verify(ctx auth.AuthContext, signature string, message []byte, extraData ...string) error {
 
 	// setup
 	c := ctx.TraceInMethod("SignatureManagerBase.Verify", logger.Fields{"user": ctx.AuthUser().Display(), "extra_data": extraData})
@@ -165,15 +172,22 @@ func (s *SignatureManagerBase) Verify(ctx auth.UserContext, signature string, me
 	defer onExit()
 
 	// extract auth user from context
-	user, ok := ctx.AuthUser().(UserWithPubkey)
-	if !ok {
-		c.SetMessage("user must be of UserWithPubkey interface")
+	if ctx.AuthUser() != nil {
+		c.SetMessage("user must be authorized")
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
+		return err
+	}
+
+	// find user pubkey
+	userKey, err := s.userKeyFinder(ctx)
+	if err != nil {
+		c.SetMessage("failed to find user key")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return err
 	}
 
 	// make verifier
-	verifier, err := s.MakeVerifier(ctx, user.PubKey())
+	verifier, err := s.MakeVerifier(ctx, userKey.PubKey())
 	if err != nil {
 		return err
 	}
@@ -197,7 +211,7 @@ func (s *SignatureManagerBase) Verify(ctx auth.UserContext, signature string, me
 	obj.Algorithm = s.ALGORITHM
 	obj.Signature = signature
 	obj.ExtraData = strings.Join(extraData, "+")
-	obj.PubKeyHash = user.PubKeyHash()
+	obj.PubKeyHash = userKey.PubKeyHash()
 	if s.ENCRYPT_MESSAGE_STORE {
 		ciphertext, err := s.cipher.Encrypt([]byte(message))
 		if err != nil {
