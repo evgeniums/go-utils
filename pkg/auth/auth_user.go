@@ -70,6 +70,7 @@ type Session interface {
 	SetSessionId(id string)
 	GetClientId() string
 	SetClientId(id string)
+	IsLoggedIn() bool
 }
 
 type SessionBase struct {
@@ -91,6 +92,10 @@ func (u *SessionBase) GetClientId() string {
 
 func (u *SessionBase) SetClientId(id string) {
 	u.client = id
+}
+
+func (u *SessionBase) IsLoggedIn() bool {
+	return u.session != ""
 }
 
 type WithAuthUser interface {

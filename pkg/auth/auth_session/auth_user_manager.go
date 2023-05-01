@@ -2,7 +2,6 @@ package auth_session
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
 type UserValidators interface {
@@ -10,9 +9,13 @@ type UserValidators interface {
 	ValidatePassword(password string) error
 }
 
+type AuthUserFinder interface {
+	FindAuthUser(ctx auth.AuthContext, login string) (auth.User, error)
+}
+
 type AuthUserManager interface {
 	UserValidators
-	FindAuthUser(ctx op_context.Context, login string) (auth.User, error)
+	AuthUserFinder
 }
 
 type WithAuthUserManager interface {

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/crud"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
@@ -44,7 +43,6 @@ type UserController[UserType User] interface {
 	UserFinder[UserType]
 
 	Add(ctx op_context.Context, login string, password string, extraFieldsSetters ...SetUserFields[UserType]) (UserType, error)
-	FindAuthUser(ctx op_context.Context, login string) (auth.User, error)
 	FindUsers(ctx op_context.Context, filter *db.Filter) ([]UserType, int64, error)
 
 	SetUserBuilder(builder func() UserType)
@@ -354,18 +352,6 @@ func (u *UserControllerBase[UserType]) SetEmail(ctx op_context.Context, id strin
 	return nil
 }
 
-func (u *UserControllerBase[UserType]) FindAuthUser(ctx op_context.Context, login string) (auth.User, error) {
-	user := u.MakeUser()
-	found, err := FindByLogin(u.crudController, ctx, login, user)
-	if err != nil {
-		return nil, err
-	}
-	if !found {
-		return nil, nil
-	}
-	return user, nil
-}
-
 func (u *UserControllerBase[UserType]) SetBlocked(ctx op_context.Context, id string, blocked bool, idIsLogin ...bool) error {
 
 	// setup
@@ -439,12 +425,22 @@ func (u *UsersValidator) Init(vld validator.Validator, loginValidationRules ...s
 type UsersBase[UserType User] struct {
 	UsersValidator
 	UserController[UserType]
+	auth_session.AuthUserFinder
 }
 
-func (u *UsersBase[UserType]) Construct(userController UserController[UserType]) {
+func (u *UsersBase[UserType]) Construct(userController UserController[UserType], authUserFinder ...auth_session.AuthUserFinder) {
 	u.UserController = userController
+	if len(authUserFinder) != 0 {
+		u.AuthUserFinder = authUserFinder[0]
+	} else {
+		u.AuthUserFinder = NewAuthUserFinder(func() User { return u.UserController.MakeUser() })
+	}
 }
 
 func (m *UsersBase[UserType]) AuthUserManager() auth_session.AuthUserManager {
 	return m
+}
+
+func (u *UsersBase[UserType]) SetAuthUserFinder(authUserFinder auth_session.AuthUserFinder) {
+	u.AuthUserFinder = authUserFinder
 }

@@ -12,11 +12,17 @@ type Manager struct {
 
 type CustomersBase struct {
 	user.UsersValidator
+	auth_session.AuthUserFinder
 	CustomerController
 }
 
-func (c *CustomersBase) Construct(customerController CustomerController) {
+func (c *CustomersBase) Construct(customerController CustomerController, authUserFinder ...auth_session.AuthUserFinder) {
 	c.CustomerController = customerController
+	if len(authUserFinder) != 0 {
+		c.AuthUserFinder = authUserFinder[0]
+	} else {
+		c.AuthUserFinder = user.NewAuthUserFinder(func() user.User { return c.CustomerController.MakeUser() })
+	}
 }
 
 func (m *CustomersBase) AuthUserManager() auth_session.AuthUserManager {
