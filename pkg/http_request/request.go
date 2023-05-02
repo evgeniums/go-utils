@@ -23,7 +23,7 @@ type Request struct {
 	GoodResponse    interface{}
 	BadResponse     interface{}
 	Serializer      message.Serializer
-	Transport       *http.Transport
+	Transport       http.RoundTripper
 }
 
 func NewPost(ctx op_context.Context, url string, msg interface{}, serializer ...message.Serializer) (*Request, error) {
