@@ -27,7 +27,6 @@ func TestSignature(t *testing.T) {
 
 	pubKeyBuilder := func() *UserPubKey { return &UserPubKey{} }
 	pubkeyController := user_pubkey.NewPubkeyController[*UserPubKey, *User](pubKeyBuilder, server.SignatureManager(), users)
-	pubkeyController.AttachToErrorManager(server.ApiServer())
 	pubKeyFinder := func(ctx auth.AuthContext) (signature.UserWithPubkey, error) {
 		return user_pubkey.FindUserPubKey[*UserPubKey](pubkeyController, ctx)
 	}
@@ -40,15 +39,13 @@ func TestSignature(t *testing.T) {
 	require.NoErrorf(t, err, "failed to add user")
 	require.NotNil(t, user1)
 
-	// add pubkey for user 1
-	pubKey1, err := os.ReadFile(pubkey1Path)
-	require.NoError(t, err)
-	keyId, err := pubkeyController.AddPubKey(opCtx, user1.GetID(), string(pubKey1))
-	require.NoError(t, err)
-	assert.NotEmpty(t, keyId)
-
 	// prepare client
 	client := test_utils.PrepareHttpClient(t, test_utils.BBGinEngine(t, server))
+
+	// prepare signer
+	signer1 := crypt_utils.NewRsaSigner()
+	err = signer1.LoadKeyFromFile(privkey1Path, "")
+	require.NoError(t, err)
 
 	// good login
 	client.Login(login1, password1)
@@ -60,11 +57,20 @@ func TestSignature(t *testing.T) {
 	resp := client.Post(path, cmd1)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: auth.ErrorCodeUnauthorized})
 
+	// no pubkey for user
+	t.Logf("No pubkey")
+	resp = client.PostSigned(t, signer1, path, cmd1)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: user_pubkey.ErrorCodeActiveKeyNotFound, Message: "Active public key not found."})
+
+	// add pubkey for user 1
+	pubKey1, err := os.ReadFile(pubkey1Path)
+	require.NoError(t, err)
+	keyId, err := pubkeyController.AddPubKey(opCtx, user1.GetID(), string(pubKey1))
+	require.NoError(t, err)
+	assert.NotEmpty(t, keyId)
+
 	// good signature
 	t.Logf("Good signature")
-	signer1 := crypt_utils.NewRsaSigner()
-	err = signer1.LoadKeyFromFile(privkey1Path, "")
-	require.NoError(t, err)
 	resp = client.PostSigned(t, signer1, path, cmd1)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusOK})
 

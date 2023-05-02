@@ -6,6 +6,8 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/signature"
+	"github.com/evgeniums/go-backend-helpers/pkg/signature/user_pubkey"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
@@ -43,11 +45,15 @@ func (a *AuthSignature) Init(cfg config.Config, log logger.Logger, vld validator
 }
 
 func (a *AuthSignature) ErrorDescriptions() map[string]string {
-	return signature.ErrorDescriptions
+	h := signature.ErrorDescriptions
+	utils.AppendMap(h, user_pubkey.ErrorDescriptions)
+	return h
 }
 
 func (a *AuthSignature) ErrorProtocolCodes() map[string]int {
-	return signature.ErrorHttpCodes
+	h := signature.ErrorHttpCodes
+	utils.AppendMap(h, user_pubkey.ErrorHttpCodes)
+	return h
 }
 
 // Check signature in request.
