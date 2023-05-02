@@ -3,6 +3,7 @@ package crypt_utils
 import (
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"hash"
@@ -88,4 +89,10 @@ func H256B64(data []byte, extras ...string) string {
 	h := H256(data, extras...)
 	c := utils.Base64StringCoding{}
 	return c.Encode(h)
+}
+
+func H256Hex(data []byte, extras ...string) string {
+	h := H256(data, extras...)
+	c := hex.EncodeToString(h)
+	return c
 }
