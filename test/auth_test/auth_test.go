@@ -21,6 +21,7 @@ import (
 
 var _, testBasePath, _, _ = runtime.Caller(0)
 var testDir = filepath.Dir(testBasePath)
+var assetsDir = filepath.Join(testDir, "assets")
 
 type User = user_default.User
 
@@ -29,7 +30,14 @@ type UserPubKey struct {
 }
 
 func dbModels() []interface{} {
-	return append([]interface{}{}, &User{}, &user_session_default.UserSession{}, &user_session_default.UserSessionClient{}, &sms.SmsMessage{}, &UserPubKey{})
+	return append([]interface{}{},
+		&User{},
+		&user_session_default.UserSession{},
+		&user_session_default.UserSessionClient{},
+		&sms.SmsMessage{},
+		&UserPubKey{},
+		&signature.MessageSignature{},
+	)
 }
 
 func initServer(t *testing.T, config ...string) (app_context.Context, *user_session_default.Users, bare_bones_server.Server) {

@@ -161,7 +161,7 @@ func (s *SignatureManagerBase) MakeVerifier(ctx op_context.Context, key string) 
 func (s *SignatureManagerBase) Verify(ctx auth.AuthContext, signature string, message []byte, extraData ...string) error {
 
 	// setup
-	c := ctx.TraceInMethod("SignatureManagerBase.Verify", logger.Fields{"user": ctx.AuthUser().Display(), "extra_data": extraData})
+	c := ctx.TraceInMethod("SignatureManagerBase.Verify")
 	var err error
 	onExit := func() {
 		if err != nil {
@@ -172,8 +172,8 @@ func (s *SignatureManagerBase) Verify(ctx auth.AuthContext, signature string, me
 	defer onExit()
 
 	// extract auth user from context
-	if ctx.AuthUser() != nil {
-		c.SetMessage("user must be authorized")
+	if ctx.AuthUser() == nil {
+		err = errors.New("user must be authorized")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return err
 	}
@@ -193,7 +193,7 @@ func (s *SignatureManagerBase) Verify(ctx auth.AuthContext, signature string, me
 	}
 
 	// verify
-	err = crypt_utils.VerifySignature(verifier, []byte(message), signature)
+	err = crypt_utils.VerifySignature(verifier, []byte(message), signature, extraData...)
 	if err != nil {
 		c.SetMessage("invalid signature")
 		ctx.SetGenericErrorCode(ErrorCodeInvalidSignature)

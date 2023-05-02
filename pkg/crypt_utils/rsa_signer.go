@@ -75,3 +75,13 @@ func (r *RsaSigner) Sign(data []byte, extraData ...string) ([]byte, error) {
 
 	return signature, nil
 }
+
+func (r *RsaSigner) SignB64(data []byte, extraData ...string) (string, error) {
+
+	signature, err := r.Sign(data, extraData...)
+	if err != nil {
+		return string(signature), err
+	}
+
+	return utils.Base64Encode(signature), nil
+}

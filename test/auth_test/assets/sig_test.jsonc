@@ -22,8 +22,8 @@
                     "login_phash_token": {},
                     "token": {
                         "secret": "hdidyuvp98-32kj4p98y",
-                        "access_token_ttl_seconds" : 3,
-                        "refresh_token_ttl_seconds" : 5
+                        "access_token_ttl_seconds" : 300,
+                        "refresh_token_ttl_seconds" : 900
                     },
                     "sms": {
                         "testing": true,
@@ -101,7 +101,7 @@
             "trusted_proxies": ["127.0.0.1"],
             "csrf": {
                 "secret": "0000000000000",
-                "token_ttl_seconds": 2,
+                "token_ttl_seconds": 900,
                 "ignore_paths": ["/status/check", "/status/echo"]
             }
         }

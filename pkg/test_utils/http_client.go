@@ -11,6 +11,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_sms"
+	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -217,6 +218,20 @@ func (c *HttpClient) RequestQuery(method string, path string, cmd interface{}, h
 
 func (c *HttpClient) Post(path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
 	return c.RequestBody(http.MethodPost, path, cmd, headers...)
+}
+
+func (c *HttpClient) PostSigned(t *testing.T, signer *crypt_utils.RsaSigner, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {
+
+	content, err := json.Marshal(cmd)
+	require.NoError(t, err)
+	sig, err := signer.SignB64(content, http.MethodPost, path)
+	h := map[string]string{"x-auth-signature": sig}
+	require.NoError(t, err)
+	if len(headers) > 0 {
+		utils.AppendMap(h, headers[0])
+	}
+
+	return c.RequestBody(http.MethodPost, path, cmd, h)
 }
 
 func (c *HttpClient) Put(t *testing.T, path string, cmd interface{}, headers ...map[string]string) *HttpResponse {

@@ -20,7 +20,7 @@ import (
 )
 
 func initOpTest(t *testing.T, config ...string) (app_context.Context, *user_session_default.Users, bare_bones_server.Server, op_context.Context) {
-	app, users, server := initServer(t)
+	app, users, server := initServer(t, config...)
 
 	ctx := test_utils.SimpleOpContext(app, t.Name())
 

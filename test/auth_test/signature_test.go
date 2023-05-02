@@ -1,23 +1,32 @@
 package auth_test
 
 import (
+	"encoding/json"
 	"net/http"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
+	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/signature"
 	"github.com/evgeniums/go-backend-helpers/pkg/signature/user_pubkey"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+var pubkey1Path = filepath.Join(assetsDir, "pub1.pem")
+var privkey1Path = filepath.Join(assetsDir, "priv1.pem")
+var privkey2Path = filepath.Join(assetsDir, "priv2.pem")
+
 func TestSignature(t *testing.T) {
-	app, users, server, opCtx := initOpTest(t)
+	app, users, server, opCtx := initOpTest(t, "sig_test.jsonc")
 	defer app.Close()
 
 	pubKeyBuilder := func() *UserPubKey { return &UserPubKey{} }
-	pubkeyController := user_pubkey.NewPubkeyController[*UserPubKey, *User](pubKeyBuilder, server.SignatureManager(), nil)
+	pubkeyController := user_pubkey.NewPubkeyController[*UserPubKey, *User](pubKeyBuilder, server.SignatureManager(), users)
 	pubkeyController.AttachToErrorManager(server.ApiServer())
 	pubKeyFinder := func(ctx auth.AuthContext) (signature.UserWithPubkey, error) {
 		return user_pubkey.FindUserPubKey[*UserPubKey](pubkeyController, ctx)
@@ -31,29 +40,68 @@ func TestSignature(t *testing.T) {
 	require.NoErrorf(t, err, "failed to add user")
 	require.NotNil(t, user1)
 
+	// add pubkey for user 1
+	pubKey1, err := os.ReadFile(pubkey1Path)
+	require.NoError(t, err)
+	keyId, err := pubkeyController.AddPubKey(opCtx, user1.GetID(), string(pubKey1))
+	require.NoError(t, err)
+	assert.NotEmpty(t, keyId)
+
 	// prepare client
 	client := test_utils.PrepareHttpClient(t, test_utils.BBGinEngine(t, server))
 
 	// good login
 	client.Login(login1, password1)
 
-	// send altered data or path
+	// try echo without signature
+	path := "/status/echo"
 	t.Logf("No pubkey")
 	cmd1 := &Cmd{Param1: "value1_1", Param2: "value1_2"}
-	// cmd2 := &Cmd{Param1: "value2_1", Param2: "value2_2"}
-	resp := client.Post("/status/echo", cmd1)
+	resp := client.Post(path, cmd1)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: auth.ErrorCodeUnauthorized})
-	// smsToken := resp.Object.Header().Get("x-auth-sms-token")
-	// smsDelay := resp.Object.Header().Get("x-auth-sms-delay")
-	// t.Logf("Current delay: %s", smsDelay)
-	// resp = client.SendSmsConfirmation(resp, auth_sms.LastSmsCode, http.MethodPost, "/status/sms", cmd2)
-	// test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: auth_sms.ErrorCodeContentMismatch})
-	// headers := map[string]string{"x-auth-sms-token": smsToken}
-	// resp = client.SendSmsConfirmation(resp, auth_sms.LastSmsCode, http.MethodPost, "/status/sms-alt", cmd1, headers)
-	// test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: auth_sms.ErrorCodeContentMismatch})
-	// resp = client.SendSmsConfirmation(resp, auth_sms.LastSmsCode, http.MethodPut, "/status/sms", cmd1, headers)
-	// test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: auth_sms.ErrorCodeContentMismatch})
-	// resp = client.SendSmsConfirmation(resp, auth_sms.LastSmsCode, http.MethodPost, "/status/sms", cmd1, headers)
-	// test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusOK})
 
+	// good signature
+	t.Logf("Good signature")
+	signer1 := crypt_utils.NewRsaSigner()
+	err = signer1.LoadKeyFromFile(privkey1Path, "")
+	require.NoError(t, err)
+	resp = client.PostSigned(t, signer1, path, cmd1)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusOK})
+
+	// invalid key
+	t.Logf("Good signature")
+	signer2 := crypt_utils.NewRsaSigner()
+	err = signer2.LoadKeyFromFile(privkey2Path, "")
+	require.NoError(t, err)
+	resp = client.PostSigned(t, signer2, path, cmd1)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: signature.ErrorCodeInvalidSignature})
+
+	// mismatched content
+	t.Logf("Mismatched content")
+	cmd2 := &Cmd{Param1: "value1_2", Param2: "value1_2"}
+	content, err := json.Marshal(cmd2)
+	require.NoError(t, err)
+	sig, err := signer1.SignB64(content, http.MethodPost, path)
+	h := map[string]string{"x-auth-signature": sig}
+	require.NoError(t, err)
+	resp = client.Post(path, cmd1, h)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: signature.ErrorCodeInvalidSignature})
+
+	// mismatched path
+	t.Logf("Mismatched path")
+	content, err = json.Marshal(cmd1)
+	require.NoError(t, err)
+	sig, err = signer1.SignB64(content, http.MethodPost, "/status/csrf")
+	h = map[string]string{"x-auth-signature": sig}
+	require.NoError(t, err)
+	resp = client.Post(path, cmd1, h)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: signature.ErrorCodeInvalidSignature})
+
+	// mismatched method
+	t.Logf("Mismatched method")
+	sig, err = signer1.SignB64(content, http.MethodPut, path)
+	h = map[string]string{"x-auth-signature": sig}
+	require.NoError(t, err)
+	resp = client.Post(path, cmd1, h)
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: signature.ErrorCodeInvalidSignature})
 }
