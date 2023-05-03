@@ -28,7 +28,7 @@ func initDatabase(t *testing.T) (string, *test_utils.PostgresDbConfig) {
 
 func TestPostgresRedis(t *testing.T) {
 
-	// t.Skip("Run this test manually after preparing postgres and redis service.")
+	t.Skip("Run this test manually after preparing postgres and redis service.")
 
 	// prepare pools with postgres and redis services
 	dbName, pgConfig := initDatabase(t)
