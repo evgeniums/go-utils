@@ -118,6 +118,7 @@ func SetupGormDB(t *testing.T) {
 		}
 		c.DbCreator = DbCreator
 		c.PartitionedMonthMigrator = PartitionedMonthMigrator
+		c.CheckDuplicateKeyError = CheckDuplicateKeyError
 		return c
 	}
 }
