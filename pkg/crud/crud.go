@@ -26,6 +26,8 @@ type CRUD interface {
 	Exists(ctx op_context.Context, filter *db.Filter, object interface{}) (bool, error)
 
 	Join(ctx op_context.Context, joinConfig *db.JoinQueryConfig, filter *db.Filter, dest interface{}) (int64, error)
+
+	Db(ctx op_context.Context) db.DBHandlers
 }
 
 type WithCRUD interface {
@@ -50,6 +52,17 @@ func (w *WithCRUDBase) Construct(cruds ...CRUD) {
 
 func (w *WithCRUDBase) CRUD() CRUD {
 	return w.crud
+}
+
+func (w *WithCRUDBase) SetForceMainDb(enable bool) {
+	dbCrud, ok := w.crud.(*DbCRUD)
+	if ok {
+		dbCrud.ForceMainDb = enable
+	}
+}
+
+func (d *DbCRUD) Db(ctx op_context.Context) db.DBHandlers {
+	return op_context.DB(ctx, d.ForceMainDb)
 }
 
 func (d *DbCRUD) Create(ctx op_context.Context, object common.Object) error {

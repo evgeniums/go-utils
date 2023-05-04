@@ -36,6 +36,7 @@ type JoinQueryConstructor struct {
 	groupFields map[string]bool
 }
 
+// TODO make join type configurable LEFT/LEFT OUTER/RIGHT/RIGHT OUTER
 func constructJoins(g *gorm.DB, f *FilterManager, q *JoinQueryConstructor) (*gorm.DB, error) {
 	db := g
 
@@ -48,7 +49,7 @@ func constructJoins(g *gorm.DB, f *FilterManager, q *JoinQueryConstructor) (*gor
 		if err != nil {
 			return nil, err
 		}
-		join := fmt.Sprintf("JOIN \"%s\" ON \"%s\".\"%s\"=\"%s\".\"%s\"", rightSchema.Table, leftSchema.Table, pair.LeftField(), rightSchema.Table, pair.RightField())
+		join := fmt.Sprintf("LEFT OUTER JOIN \"%s\" ON \"%s\".\"%s\"=\"%s\".\"%s\"", rightSchema.Table, leftSchema.Table, pair.LeftField(), rightSchema.Table, pair.RightField())
 		db = db.Joins(join)
 	}
 
@@ -125,6 +126,7 @@ type JoinQuery struct {
 }
 
 func (j *JoinQuery) Join(ctx logger.WithLogger, filter *Filter, dest interface{}) (int64, error) {
+	// TODO process filter fields to match nested field names
 	session := j.preparedSession.Session(&gorm.Session{})
 	if j.db != nil && j.db.ENABLE_DEBUG {
 		session = session.Debug()

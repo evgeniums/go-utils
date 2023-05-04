@@ -48,8 +48,16 @@ func (d *ModelDescriptor) ParseFields() error {
 
 	// first run with plain list
 	for _, field := range d.Schema.Fields {
+
+		if field.IgnoreMigration {
+			continue
+		}
+
 		fd := &FieldDescriptor{Schema: field}
 		fd.Json = field.Tag.Get("json")
+		if fd.Json == "-" {
+			continue
+		}
 		if fd.Json == "" {
 			fd.Json = field.DBName
 		}
