@@ -169,6 +169,14 @@ func (u *TenancyContextBase) SetTenancy(tenancy Tenancy) {
 	}
 }
 
+func (u *TenancyContextBase) Db() db.DB {
+	t := u.GetTenancy()
+	if t != nil {
+		return t.Db()
+	}
+	return u.ContextBase.Db()
+}
+
 func NewContext() *TenancyContextBase {
 	ctx := &TenancyContextBase{}
 	return ctx
