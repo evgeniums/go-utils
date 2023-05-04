@@ -26,6 +26,10 @@ func (p *WithProtocolBase) Protocol() string {
 	return p.PROTOCOL
 }
 
+func (p *WithProtocolBase) SetProtocol(protocol string) {
+	p.PROTOCOL = protocol
+}
+
 type Subobject interface {
 	WithProtocol
 	common.WithName
