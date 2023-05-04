@@ -31,14 +31,19 @@ type DbConnector struct {
 	PartitionedMonthMigrator func(provider string, ctx logger.WithLogger, db *gorm.DB, models ...interface{}) error
 }
 
-type GormDB struct {
-	db *gorm.DB
-	gormDBConfig
+type DbState struct {
 	dbConnector *DbConnector
 
 	joinQueries   *db.JoinQueries
 	filterManager *FilterManager
 	paginator     *Paginator
+}
+
+type GormDB struct {
+	gormDBConfig
+	db *gorm.DB
+
+	DbState
 }
 
 func (g *GormDB) Config() interface{} {
@@ -299,6 +304,7 @@ func (g *GormDB) Transaction(handler db.TransactionHandler) error {
 
 	nativeHandler := func(nativeTx *gorm.DB) error {
 		tx := &GormDB{}
+		tx.DbState = g.DbState
 		tx.db = nativeTx
 		return handler(tx)
 	}

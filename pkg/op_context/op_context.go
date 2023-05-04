@@ -54,7 +54,6 @@ type Context interface {
 	MainDB() db.DB
 	MainLogger() logger.Logger
 
-	ExecDbTransaction(handler func() error) error
 	DbTransaction() db.Transaction
 	SetDbTransaction(tx db.Transaction)
 	ClearDbTransaction()
@@ -93,6 +92,17 @@ type Context interface {
 	Reset()
 	DumpLog(successMessage ...string)
 	Close(successMessage ...string)
+}
+
+func ExecDbTransaction(ctx Context, handler func() error) error {
+	h := func(tx db.Transaction) error {
+
+		ctx.SetDbTransaction(tx)
+		defer ctx.ClearDbTransaction()
+
+		return handler()
+	}
+	return ctx.Db().Transaction(h)
 }
 
 type WithCtx interface {
