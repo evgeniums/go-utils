@@ -16,6 +16,7 @@ type PostgresDbConfig struct {
 	DbPassword string
 
 	DbNameForLogin string
+	DbName         string
 }
 
 func NewPostgresDbConfig() *PostgresDbConfig {
@@ -25,6 +26,7 @@ func NewPostgresDbConfig() *PostgresDbConfig {
 	p.DbUser = "bhelpers_user"
 	p.DbPassword = "bhelpers_password"
 	p.DbNameForLogin = "bhelpers_db_login"
+	p.DbName = p.DbNameForLogin
 	return p
 }
 
