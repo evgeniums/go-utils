@@ -109,6 +109,7 @@ func prepareInterval(db *gorm.DB, name string, interval *Interval) *gorm.DB {
 	return h
 }
 
+// TODO be careful with quotes for hirerarchical fields
 func prepareFilter(db *gorm.DB, filter *Filter) *gorm.DB {
 	h := db
 
@@ -137,12 +138,15 @@ func prepareFilter(db *gorm.DB, filter *Filter) *gorm.DB {
 	}
 
 	for _, orFields := range filter.OrFields {
+		m := map[string]interface{}{}
 		for i, field := range orFields.Fields {
+			m[field] = orFields.Value
 			if i == 0 {
-				h = h.Where(fmt.Sprintf("\"%s\" = ?", field), orFields.Value)
+				h = h.Where(m)
 			} else {
-				h = h.Or(fmt.Sprintf("\"%s\" = ?", field), orFields.Value)
+				h = h.Or(m)
 			}
+			delete(m, field)
 		}
 	}
 
