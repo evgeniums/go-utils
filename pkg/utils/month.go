@@ -131,7 +131,7 @@ func MonthFromId(id string) (Month, error) {
 }
 
 type MonthDataBase struct {
-	Month Month `gorm:"primary_key;index" json:"month"`
+	Month Month `gorm:"primary_key;index;index:,unique,composite:u_month" json:"month"`
 }
 
 func (w *MonthDataBase) InitMonth() {
