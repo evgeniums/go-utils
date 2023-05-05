@@ -7,6 +7,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
@@ -29,6 +30,7 @@ type RequestBase struct {
 }
 
 func (r *RequestBase) Init(app app_context.Context, log logger.Logger, db db.DB, endpoint Endpoint, fields ...logger.Fields) {
+	r.ContextBase = default_op_context.NewContext()
 	r.ContextBase.Init(app, log, db, fields...)
 	r.endpoint = endpoint
 }
