@@ -28,6 +28,9 @@ type Config struct {
 	SmsManager       sms.SmsManager
 	SmsProviders     sms.ProviderFactory
 	SignatureManager signature.SignatureManager
+
+	WithoutStatusService bool
+	WithoutDynamicTables bool
 }
 
 type pimpl struct {
@@ -41,6 +44,9 @@ type pimpl struct {
 
 type BareBonesServerBase struct {
 	pimpl
+
+	WithoutStatusService bool
+	WithoutDynamicTables bool
 }
 
 func (s *BareBonesServerBase) Construct(users auth_session.WithUserSessionManager, config ...Config) {
@@ -52,6 +58,9 @@ func (s *BareBonesServerBase) Construct(users auth_session.WithUserSessionManage
 		s.pimpl.smsManager = cfg.SmsManager
 		s.pimpl.smsProviders = cfg.SmsProviders
 		s.pimpl.signatureManager = cfg.SignatureManager
+
+		s.WithoutDynamicTables = cfg.WithoutDynamicTables
+		s.WithoutStatusService = cfg.WithoutStatusService
 	}
 }
 
@@ -98,8 +107,12 @@ func (s *BareBonesServerBase) Init(app app_context.Context, tenancyManager multi
 	}
 
 	// add services
-	api_server.AddServiceToServer(s.pimpl.server, api_server.NewStatusService())
-	api_server.AddServiceToServer(s.pimpl.server, api_server.NewDynamicTablesService())
+	if !s.WithoutStatusService {
+		api_server.AddServiceToServer(s.pimpl.server, api_server.NewStatusService())
+	}
+	if !s.WithoutDynamicTables {
+		api_server.AddServiceToServer(s.pimpl.server, api_server.NewDynamicTablesService())
+	}
 	api_server.AddServiceToServer(s.pimpl.server, auth_service.NewAuthService())
 
 	// done
