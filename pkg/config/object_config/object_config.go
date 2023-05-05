@@ -104,22 +104,34 @@ func loadValue(cfg config.Config, configPath string, objectValue reflect.Value) 
 
 		switch field.Type.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			fieldValue.SetInt(int64(cfg.GetInt(fieldConfigPath)))
+			if cfg.IsSet(fieldConfigPath) {
+				fieldValue.SetInt(int64(cfg.GetInt(fieldConfigPath)))
+			}
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			fieldValue.SetUint(uint64(cfg.GetUint(fieldConfigPath)))
+			if cfg.IsSet(fieldConfigPath) {
+				fieldValue.SetUint(uint64(cfg.GetUint(fieldConfigPath)))
+			}
 		case reflect.Float64, reflect.Float32:
-			fieldValue.SetFloat(cfg.GetFloat64(fieldConfigPath))
+			if cfg.IsSet(fieldConfigPath) {
+				fieldValue.SetFloat(cfg.GetFloat64(fieldConfigPath))
+			}
 		case reflect.String:
-			fieldValue.SetString(cfg.GetString(fieldConfigPath))
+			if cfg.IsSet(fieldConfigPath) {
+				fieldValue.SetString(cfg.GetString(fieldConfigPath))
+			}
 		case reflect.Bool:
-			fieldValue.SetBool(cfg.GetBool(fieldConfigPath))
+			if cfg.IsSet(fieldConfigPath) {
+				fieldValue.SetBool(cfg.GetBool(fieldConfigPath))
+			}
 		case reflect.Slice:
-			if field.Type.Elem().Kind() == reflect.Int {
-				slice := cfg.GetIntSlice(fieldConfigPath)
-				fieldValue.Set(reflect.ValueOf(slice))
-			} else {
-				slice := cfg.GetStringSlice(fieldConfigPath)
-				fieldValue.Set(reflect.ValueOf(slice))
+			if cfg.IsSet(fieldConfigPath) {
+				if field.Type.Elem().Kind() == reflect.Int {
+					slice := cfg.GetIntSlice(fieldConfigPath)
+					fieldValue.Set(reflect.ValueOf(slice))
+				} else {
+					slice := cfg.GetStringSlice(fieldConfigPath)
+					fieldValue.Set(reflect.ValueOf(slice))
+				}
 			}
 		case reflect.Struct:
 			if field.Anonymous {
