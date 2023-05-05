@@ -29,6 +29,8 @@ type RedisClient struct {
 	RedisConfig
 	redisClient *redis.Client
 	context     context.Context
+	mode        string
+	logger      logger.Logger
 }
 
 func (r *RedisClient) Config() interface{} {
@@ -54,6 +56,9 @@ func (r *RedisClient) InitWithConfig(log logger.Logger, cfg *RedisConfig) error 
 
 	r.RedisConfig = *cfg
 
+	r.logger = log
+	logFields := logger.Fields{"host": r.Host, "port": r.Port, "mode": r.mode}
+
 	address := fmt.Sprintf("%s:%d", r.Host, r.Port)
 	r.context = context.Background()
 	r.redisClient = redis.NewClient(&redis.Options{
@@ -63,13 +68,23 @@ func (r *RedisClient) InitWithConfig(log logger.Logger, cfg *RedisConfig) error 
 	})
 	err := r.redisClient.Ping(r.context).Err()
 	if err != nil {
-		return log.PushFatalStack("failed to connect to Redis server", err)
+		return log.PushFatalStack("failed to connect to Redis server", err, logFields)
 	}
+
+	log.Info("redis client connected", logFields)
+
 	return nil
 }
 
-func (p *RedisClient) Shutdown(ctx context.Context) error {
-	return p.redisClient.Close()
+func (r *RedisClient) Shutdown(ctx context.Context) error {
+	logFields := logger.Fields{"host": r.Host, "port": r.Port, "mode": r.mode}
+	err := r.redisClient.Close()
+	if err != nil {
+		r.logger.Error("failed to shutdown redis client", err, logFields)
+		return err
+	}
+	r.logger.Info("redis client closed", logFields)
+	return nil
 }
 
 //---------------------------------------
@@ -82,6 +97,7 @@ type Publisher struct {
 func NewPublisher(serializer ...message.Serializer) *Publisher {
 	p := &Publisher{}
 	p.Construct(serializer...)
+	p.mode = "publisher"
 	return p
 }
 
@@ -108,6 +124,7 @@ type Subscriber struct {
 func NewSubscriber(app app_context.Context, serializer ...message.Serializer) *Subscriber {
 	s := &Subscriber{}
 	s.Construct(app, serializer...)
+	s.mode = "subscriber"
 	s.channels = make(map[string]*redis.PubSub)
 	return s
 }
