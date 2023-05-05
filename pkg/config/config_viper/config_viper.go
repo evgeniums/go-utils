@@ -181,7 +181,7 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 	// read main configuration file
 	err := ReadConfigFromFile(c.Viper, configFile, cfgType)
 	if err != nil {
-		return fmt.Errorf("fatal error while reading config file: %s", err)
+		return err
 	}
 	c.configFile = configFile
 	c.configType = cfgType
