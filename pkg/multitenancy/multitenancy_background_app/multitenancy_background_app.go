@@ -24,8 +24,9 @@ type BuildMainRunner = func(app app_with_multitenancy.AppWithMultitenancy, opCtx
 
 type RunnerConfig struct {
 	*background_worker.FinisherMainConfig
-	RunnerBuilder     BuildMainRunner
-	DefaultConfigFile string
+	RunnerBuilder          BuildMainRunner
+	DefaultConfigFile      string
+	ForceDefaultConfigFlag bool
 }
 
 type Main struct {
@@ -49,7 +50,10 @@ func ConfigFile(defaultConfigFile ...string) string {
 func New(buildConfig *app_context.BuildConfig, tenancyDbModels *multitenancy.TenancyDbModels, runnerConfig *RunnerConfig, appConfig ...app_with_multitenancy.AppConfigI) *Main {
 
 	// get name of configuration file
-	configFile := ConfigFile(runnerConfig.DefaultConfigFile)
+	configFile := runnerConfig.DefaultConfigFile
+	if !runnerConfig.ForceDefaultConfigFlag {
+		configFile = ConfigFile(runnerConfig.DefaultConfigFile)
+	}
 
 	// init db gorm models
 	db_gorm.NewModelStore(true)
