@@ -184,7 +184,7 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, tenancyManager mu
 
 	var err error
 	s.hostname = ctx.Hostname()
-	ctx.Logger().Info("Init REST API gin server", logger.Fields{"hostname": s.hostname})
+	ctx.Logger().Info("REST API server: init gin server", logger.Fields{"hostname": s.hostname})
 
 	s.WithAppBase.Init(ctx)
 	s.ErrorManagerBaseHttp.Init()
@@ -194,9 +194,12 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, tenancyManager mu
 	s.tenancies = tenancyManager
 
 	if s.tenancies.IsMultiTenancy() {
+		ctx.Logger().Info("REST API server: enabling multitenancy mode")
 		parent := api.NewResource(TenancyParameter)
 		s.tenancyResource = api.NewResource(TenancyParameter, api.ResourceConfig{HasId: true, Tenancy: true})
 		parent.AddChild(s.tenancyResource)
+	} else {
+		ctx.Logger().Info("REST API server: disabling multitenancy mode")
 	}
 
 	defaultPath := "rest_api_server"

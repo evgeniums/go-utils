@@ -77,10 +77,10 @@ type StatusService struct {
 	ServiceBase
 }
 
-func NewStatusService() *StatusService {
+func NewStatusService(multitenancy ...bool) *StatusService {
 	s := &StatusService{}
 
-	s.Init("status")
+	s.Init("status", multitenancy...)
 	s.AddChildren(NewCheckStatusEndpoint(),
 		NewCheckAccessResourceEndpoint("csrf", "CheckCsrf"),
 		NewCheckAccessResourceEndpoint("logged", "CheckLogged"),

@@ -49,11 +49,11 @@ type DynamicTablesService struct {
 	ServiceBase
 }
 
-func NewDynamicTablesService() *DynamicTablesService {
+func NewDynamicTablesService(multitenancy ...bool) *DynamicTablesService {
 
 	s := &DynamicTablesService{}
 
-	s.Init("dynamic-tables")
+	s.Init("dynamic-tables", multitenancy...)
 	s.AddChild(NewDynamicTableEndpoint(s))
 
 	return s

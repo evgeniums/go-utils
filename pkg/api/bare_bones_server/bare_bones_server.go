@@ -31,6 +31,8 @@ type Config struct {
 
 	WithoutStatusService bool
 	WithoutDynamicTables bool
+
+	MultitenancyBaseServices bool
 }
 
 type pimpl struct {
@@ -47,6 +49,8 @@ type BareBonesServerBase struct {
 
 	WithoutStatusService bool
 	WithoutDynamicTables bool
+
+	MultitenancyBaseServices bool
 }
 
 func (s *BareBonesServerBase) Construct(users auth_session.WithUserSessionManager, config ...Config) {
@@ -61,6 +65,7 @@ func (s *BareBonesServerBase) Construct(users auth_session.WithUserSessionManage
 
 		s.WithoutDynamicTables = cfg.WithoutDynamicTables
 		s.WithoutStatusService = cfg.WithoutStatusService
+		s.MultitenancyBaseServices = cfg.MultitenancyBaseServices
 	}
 }
 
@@ -108,12 +113,12 @@ func (s *BareBonesServerBase) Init(app app_context.Context, tenancyManager multi
 
 	// add services
 	if !s.WithoutStatusService {
-		api_server.AddServiceToServer(s.pimpl.server, api_server.NewStatusService())
+		api_server.AddServiceToServer(s.pimpl.server, api_server.NewStatusService(s.MultitenancyBaseServices))
 	}
 	if !s.WithoutDynamicTables {
-		api_server.AddServiceToServer(s.pimpl.server, api_server.NewDynamicTablesService())
+		api_server.AddServiceToServer(s.pimpl.server, api_server.NewDynamicTablesService(s.MultitenancyBaseServices))
 	}
-	api_server.AddServiceToServer(s.pimpl.server, auth_service.NewAuthService())
+	api_server.AddServiceToServer(s.pimpl.server, auth_service.NewAuthService(s.MultitenancyBaseServices))
 
 	// done
 	return nil

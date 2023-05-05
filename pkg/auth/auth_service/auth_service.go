@@ -45,9 +45,9 @@ type AuthService struct {
 	api_server.ServiceBase
 }
 
-func NewAuthService() *AuthService {
+func NewAuthService(multitenancy ...bool) *AuthService {
 	s := &AuthService{}
-	s.Init("auth")
+	s.Init("auth", multitenancy...)
 	s.AddChildren(NewLoginEndpoint(), NewLogoutEndpoint(), NewRefreshEndpoint())
 	return s
 }

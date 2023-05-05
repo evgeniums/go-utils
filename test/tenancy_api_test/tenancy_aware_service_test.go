@@ -25,7 +25,7 @@ func NewSampleService() *SampleService {
 
 	s := &SampleService{}
 
-	s.Init("samples")
+	s.Init("samples", true)
 	s.SampleResource = api.NewResource("sample")
 	s.AddChild(s.SampleResource)
 	s.SampleResource.AddOperation(List(s))
@@ -175,7 +175,7 @@ func TestTenancyAwareService(t *testing.T) {
 
 	// add sample service
 	sampleService := NewSampleService()
-	api_server.AddServiceToServer(multiPoolCtx.Server.ApiServer(), sampleService, true)
+	api_server.AddServiceToServer(multiPoolCtx.Server.ApiServer(), sampleService)
 
 	// create sample client
 	sampleClient := NewSampleClient(multiPoolCtx.RestApiClient)
@@ -204,7 +204,7 @@ func TestTenancyAwareService(t *testing.T) {
 
 	// init service for singlepool app
 	singlePoolSampleService := NewSampleService()
-	api_server.AddServiceToServer(singlePoolCtx.Server.ApiServer(), singlePoolSampleService, true)
+	api_server.AddServiceToServer(singlePoolCtx.Server.ApiServer(), singlePoolSampleService)
 	singlePoolSampleClient := NewSampleClient(singlePoolCtx.RestApiClient)
 	singlePoolTenancyResource := api.NamedResource("tenancy")
 	singlePoolTenancyResource.AddChild(singlePoolSampleClient)
@@ -221,7 +221,7 @@ func TestTenancyAwareService(t *testing.T) {
 	// check disallowed not active tenancy
 	multiPoolCtx = initContext(t, false, "tenancy_notactive")
 	sampleService1 := NewSampleService()
-	api_server.AddServiceToServer(multiPoolCtx.Server.ApiServer(), sampleService1, true)
+	api_server.AddServiceToServer(multiPoolCtx.Server.ApiServer(), sampleService1)
 	sampleClient1 := NewSampleClient(multiPoolCtx.RestApiClient)
 	tenancyResource1 := api.NamedResource("tenancy")
 	tenancyResource1.AddChild(sampleClient1)

@@ -40,7 +40,7 @@ func (t *TenancyNotificationHandler) Handle(ctx op_context.Context, msg *multite
 }
 
 type TenancyManagerConfig struct {
-	MULTITENANCY bool
+	MULTITENANCY bool   `default:"true"`
 	DB_PREFIX    string `validate:"required,alphanum" vmessage:"Invalid prefix for names of databases" default:"tenancy"`
 }
 

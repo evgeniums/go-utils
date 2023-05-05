@@ -29,7 +29,7 @@ func NewConfirmationInternalService(baseUrl string, tokenTtl int) *ConfirmationI
 
 	s := &ConfirmationInternalService{BaseUrl: baseUrl, TokenTtl: tokenTtl}
 
-	s.Init(confirmation_control_api.ServiceName)
+	s.Init(confirmation_control_api.ServiceName, true)
 	s.OperationResource = api.NewResource(confirmation_control_api.OperationResource)
 	s.AddChild(s.OperationResource)
 	s.OperationResource.AddOperation(PrepareOperation(s))

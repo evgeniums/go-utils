@@ -37,8 +37,8 @@ type Server interface {
 	DynamicTables() DynamicTables
 }
 
-func AddServiceToServer(s Server, service Service, multitenancy ...bool) {
-	err := service.AttachToServer(s, multitenancy...)
+func AddServiceToServer(s Server, service Service) {
+	err := service.AttachToServer(s)
 	if err != nil {
 		panic(fmt.Errorf("failed to attach service %s to server", service.Type()))
 	}
