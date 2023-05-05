@@ -104,6 +104,7 @@ func (p *PoolStoreBase) Init(ctx op_context.Context, configPath ...string) error
 			p.poolsByName[pool.Name()] = pool
 		}
 	} else {
+		c.SetLoggerField("pool_name", p.POOL_NAME)
 		pool, err := p.poolController.FindPool(ctx, p.POOL_NAME, true)
 		if err != nil {
 			msg := "failed to load self pool"
