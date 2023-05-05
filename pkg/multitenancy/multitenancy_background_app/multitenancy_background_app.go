@@ -7,35 +7,53 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context/app_default"
+	"github.com/evgeniums/go-backend-helpers/pkg/background_worker"
 	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/app_with_multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	finish "github.com/evgeniums/go-finish-service"
+	"github.com/markphelps/optional"
 )
 
 type MainRunner interface {
-	Run(fin *finish.Finisher)
+	Run(fin background_worker.Finisher)
 }
 
 type BuildMainRunner = func(app app_with_multitenancy.AppWithMultitenancy, opCtx op_context.Context) (MainRunner, error)
 
-func Exec(buildConfig *app_context.BuildConfig, tenancyDbModels *multitenancy.TenancyDbModels, buildMainRunner BuildMainRunner, appConfig ...app_with_multitenancy.AppConfigI) {
+type RunnerConfig struct {
+	*background_worker.FinisherMainConfig
+	RunnerBuilder BuildMainRunner
+}
 
+type Main struct {
+	runner   MainRunner
+	Finisher background_worker.Finisher
+	App      app_with_multitenancy.AppWithMultitenancy
+}
+
+func DefaultConfigFile() string {
 	appPath := app_default.Application()
 	configPath := fmt.Sprintf("%s.jsonc", appPath[:len(appPath)-len(filepath.Ext(appPath))])
 
-	// get name of configuration file
 	configFile := flag.String("config", configPath, "Configuration file")
 	flag.Parse()
 	fmt.Printf("Using config file %v\n", *configFile)
+
+	return *configFile
+}
+
+func New(buildConfig *app_context.BuildConfig, tenancyDbModels *multitenancy.TenancyDbModels, runnerConfig *RunnerConfig, appConfig ...app_with_multitenancy.AppConfigI) *Main {
+
+	// get name of configuration file
+	configFile := DefaultConfigFile()
 
 	// init db gorm models
 	db_gorm.NewModelStore(true)
 
 	// init app context
 	app := app_with_multitenancy.NewApp(buildConfig, tenancyDbModels)
-	initOpCtx, err := app.InitWithArgs(*configFile, flag.Args())
+	initOpCtx, err := app.InitWithArgs(configFile, flag.Args())
 	if err != nil {
 		initOpCtx.Close()
 		app_context.AbortFatal(app, "failed to init application context", err)
@@ -43,25 +61,39 @@ func Exec(buildConfig *app_context.BuildConfig, tenancyDbModels *multitenancy.Te
 	defer app.Close()
 
 	// create main runner
-	runner, err := buildMainRunner(app, initOpCtx)
+	runner, err := runnerConfig.RunnerBuilder(app, initOpCtx)
 	initOpCtx.Close()
 	if err != nil {
 		app_context.AbortFatal(app, "failed to init main runner", err)
 	}
 
-	// run
-	startedMsg := fmt.Sprintf("%s started", app.Application())
-	app.Logger().Info(startedMsg)
+	// create finisher
+	finisherConfig := &background_worker.FinisherConfig{Logger: app.Logger()}
+	if runnerConfig.FinisherMainConfig != nil {
+		finisherConfig.FinisherMainConfig = *runnerConfig.FinisherMainConfig
+	}
+	fin := background_worker.NewFinisher(finisherConfig)
+	fin.AddRunner(app.Pubsub(), &background_worker.RunnerConfig{Name: optional.NewString("pubsub")})
+
+	// return main
+	return &Main{runner: runner, App: app, Finisher: fin}
+}
+
+func (m *Main) Exec() {
+
+	// log
+	startedMsg := fmt.Sprintf("%s started", m.App.Application())
+	m.App.Logger().Info(startedMsg)
 	fmt.Println(startedMsg)
-	fin := finish.New()
-	runner.Run(fin)
-	fin.Add(app.Pubsub())
+
+	// run runner
+	m.runner.Run(m.Finisher)
 
 	// wait for signals
-	fin.Wait()
+	m.Finisher.Wait()
 
 	// done
-	finishedMsg := fmt.Sprintf("%s finished", app.Application())
-	app.Logger().Info(finishedMsg)
+	finishedMsg := fmt.Sprintf("%s finished", m.App.Application())
+	m.App.Logger().Info(finishedMsg)
 	fmt.Println(finishedMsg)
 }
