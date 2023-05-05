@@ -148,8 +148,6 @@ func (l *LoggerBase) PushFatalStack(message string, err error, fields ...Fields)
 
 	if l.fatalError.deepestError == nil {
 		l.fatalError.deepestError = e
-	} else {
-		l.fatalError.messageStack = append(l.fatalError.messageStack, e.Error())
 	}
 
 	AppendFields(l.fatalError.fields, fields...)
