@@ -133,12 +133,6 @@ func (p *PoolPubsubBase) Init(app app_context.Context, pools pool.PoolStore) err
 
 func (p *PoolPubsubBase) Shutdown(ctx context.Context) error {
 	var err error
-	if p.selfPoolPublisher != nil {
-		err1 := p.selfPoolPublisher.Shutdown(ctx)
-		if err1 != nil {
-			err = err1
-		}
-	}
 	if p.selfPoolSubscriber != nil {
 		err1 := p.selfPoolSubscriber.Shutdown(ctx)
 		if err1 != nil {
