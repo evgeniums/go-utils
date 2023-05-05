@@ -74,8 +74,6 @@ func TestSignature(t *testing.T) {
 	resp = client.PostSigned(t, signer1, path, cmd1)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusOK})
 
-	return
-
 	// invalid key
 	t.Logf("Good signature")
 	signer2 := crypt_utils.NewRsaSigner()
