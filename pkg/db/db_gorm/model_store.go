@@ -117,11 +117,12 @@ type ModelStore struct {
 var GlobalModelStore *ModelStore
 
 func NewModelStore(global bool) *ModelStore {
+
 	m := &ModelStore{}
 	m.descriptors = make(map[string]*ModelDescriptor)
 	m.schemaCache = &sync.Map{}
 	m.schemaNamer = &schema.NamingStrategy{}
-	if global {
+	if global && GlobalModelStore == nil {
 		GlobalModelStore = m
 		db.SetGlobalModelStore(m)
 	}
