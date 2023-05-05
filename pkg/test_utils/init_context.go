@@ -143,3 +143,7 @@ func UserOpContext(app app_context.Context, name string, user auth.User, tenancy
 	ctx.SetOrigin(origin)
 	return ctx
 }
+
+func SetTesting(t *testing.T) {
+	app_context.Testing = t
+}

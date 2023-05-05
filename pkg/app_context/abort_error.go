@@ -5,11 +5,23 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
+var Testing *testing.T
+
+func testError(err error) {
+	if Testing != nil {
+		require.NoError(Testing, err)
+	}
+}
+
 func Panic(msg string, err error) {
-	m := fmt.Errorf("%s: %s", msg, err)
-	panic(m)
+	e := fmt.Errorf("%s: %s", msg, err)
+	testError(e)
+	panic(e)
 }
 
 func AbortError(ctx Context, msg string, err ...error) {
@@ -20,6 +32,7 @@ func AbortError(ctx Context, msg string, err ...error) {
 			ctx.Logger().ErrorRaw(err[0].Error())
 		}
 	}
+	testError(e)
 	ErrorLn(e.Error())
 	ErrorLn("Failed")
 	os.Exit(1)
@@ -27,6 +40,7 @@ func AbortError(ctx Context, msg string, err ...error) {
 
 func AbortFatal(ctx Context, msg string, err ...error) {
 	if ctx.Logger().CheckFatalStack(ctx.Logger(), msg) {
+		testError(errors.New("abort fatal"))
 		ErrorLn("Failed")
 		os.Exit(1)
 	}
