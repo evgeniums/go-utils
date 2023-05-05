@@ -241,6 +241,7 @@ func (s *Server) Run(fin background_worker.Finisher) {
 	fin.AddRunner(srv, &background_worker.RunnerConfig{Name: optional.NewString(s.Name())})
 
 	go func() {
+		s.App().Logger().Info("running REST API server", logger.Fields{"name": s.Name()})
 		err := srv.ListenAndServe()
 		if err != http.ErrServerClosed {
 			msg := "failed to start HTTP server"
