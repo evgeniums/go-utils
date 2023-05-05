@@ -1,10 +1,10 @@
 package confirmation_control_server
 
 import (
+	"github.com/evgeniums/go-backend-helpers/pkg/background_worker"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/app_with_multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
-	finish "github.com/evgeniums/go-finish-service"
 )
 
 type ConfirmationControlServer struct {
@@ -41,7 +41,7 @@ func (s *ConfirmationControlServer) Init(app app_with_multitenancy.AppWithMultit
 	return nil
 }
 
-func (s *ConfirmationControlServer) Run(fin *finish.Finisher) {
+func (s *ConfirmationControlServer) Run(fin background_worker.Finisher) {
 	s.ExternalServer.ApiServer().Run(fin)
 	s.InternalServer.ApiServer().Run(fin)
 }

@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
+	"github.com/evgeniums/go-backend-helpers/pkg/background_worker"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
-	finish "github.com/evgeniums/go-finish-service"
 )
 
 // Interface of generic server that implements some API.
@@ -19,7 +19,7 @@ type Server interface {
 	ApiVersion() string
 
 	// Run server.
-	Run(fin *finish.Finisher)
+	Run(fin background_worker.Finisher)
 
 	// Add operation endpoint to server.
 	AddEndpoint(ep Endpoint, multitenancy ...bool)

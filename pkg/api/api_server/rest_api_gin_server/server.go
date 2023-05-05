@@ -15,6 +15,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_csrf"
+	"github.com/evgeniums/go-backend-helpers/pkg/background_worker"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
@@ -22,8 +23,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/gin-gonic/gin"
-
-	finish "github.com/evgeniums/go-finish-service"
+	"github.com/markphelps/optional"
 )
 
 const TenancyParameter string = "tenancy"
@@ -235,10 +235,10 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, tenancyManager mu
 	return nil
 }
 
-func (s *Server) Run(fin *finish.Finisher) {
+func (s *Server) Run(fin background_worker.Finisher) {
 
 	srv := &http.Server{Addr: s.address(), Handler: s.ginEngine}
-	fin.Add(srv)
+	fin.AddRunner(srv, &background_worker.RunnerConfig{Name: optional.NewString(s.Name())})
 
 	go func() {
 		err := srv.ListenAndServe()
