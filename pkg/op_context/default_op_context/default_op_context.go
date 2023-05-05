@@ -75,6 +75,10 @@ func DefaultCallContextBuilder(methodName string, parentLogger logger.Logger, fi
 	return ctx
 }
 
+type WithBaseContext interface {
+	BaseContext() *ContextBase
+}
+
 type ContextBase struct {
 	app_context.WithAppBase
 	logger.WithLoggerBase
@@ -104,6 +108,10 @@ type ContextBase struct {
 
 func NewContext() *ContextBase {
 	return &ContextBase{}
+}
+
+func (c *ContextBase) BaseContext() *ContextBase {
+	return c
 }
 
 func (c *ContextBase) SetWriteCloseLog(enable bool) {

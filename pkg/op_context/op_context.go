@@ -59,6 +59,7 @@ type Context interface {
 	ClearDbTransaction()
 
 	Cache() cache.Cache
+	SetCache(cache.Cache)
 
 	ErrorManager() generic_error.ErrorManager
 	SetErrorManager(manager generic_error.ErrorManager)

@@ -153,7 +153,7 @@ func ContextTenancy(ctx TenancyContext) string {
 }
 
 type TenancyContextBase struct {
-	default_op_context.ContextBase
+	*default_op_context.ContextBase
 	Tenancy Tenancy
 }
 
@@ -177,7 +177,13 @@ func (u *TenancyContextBase) Db() db.DB {
 	return u.ContextBase.Db()
 }
 
-func NewContext() *TenancyContextBase {
+func NewContext(fromCtx ...op_context.Context) *TenancyContextBase {
 	ctx := &TenancyContextBase{}
+	if len(fromCtx) == 0 {
+		ctx.ContextBase = default_op_context.NewContext()
+	} else {
+		baseCtx := fromCtx[0].(default_op_context.WithBaseContext)
+		ctx.ContextBase = baseCtx.BaseContext()
+	}
 	return ctx
 }
