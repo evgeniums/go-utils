@@ -12,6 +12,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/app_with_multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/markphelps/optional"
 )
 
@@ -23,7 +24,8 @@ type BuildMainRunner = func(app app_with_multitenancy.AppWithMultitenancy, opCtx
 
 type RunnerConfig struct {
 	*background_worker.FinisherMainConfig
-	RunnerBuilder BuildMainRunner
+	RunnerBuilder     BuildMainRunner
+	DefaultConfigFile string
 }
 
 type Main struct {
@@ -32,9 +34,10 @@ type Main struct {
 	App      app_with_multitenancy.AppWithMultitenancy
 }
 
-func DefaultConfigFile() string {
+func ConfigFile(defaultConfigFile ...string) string {
 	appPath := app_default.Application()
 	configPath := fmt.Sprintf("%s.jsonc", appPath[:len(appPath)-len(filepath.Ext(appPath))])
+	configPath = utils.OptionalString(configPath, defaultConfigFile...)
 
 	configFile := flag.String("config", configPath, "Configuration file")
 	flag.Parse()
@@ -46,7 +49,7 @@ func DefaultConfigFile() string {
 func New(buildConfig *app_context.BuildConfig, tenancyDbModels *multitenancy.TenancyDbModels, runnerConfig *RunnerConfig, appConfig ...app_with_multitenancy.AppConfigI) *Main {
 
 	// get name of configuration file
-	configFile := DefaultConfigFile()
+	configFile := ConfigFile(runnerConfig.DefaultConfigFile)
 
 	// init db gorm models
 	db_gorm.NewModelStore(true)
@@ -55,7 +58,9 @@ func New(buildConfig *app_context.BuildConfig, tenancyDbModels *multitenancy.Ten
 	app := app_with_multitenancy.NewApp(buildConfig, tenancyDbModels)
 	initOpCtx, err := app.InitWithArgs(configFile, flag.Args())
 	if err != nil {
-		initOpCtx.Close()
+		if initOpCtx != nil {
+			initOpCtx.Close()
+		}
 		app_context.AbortFatal(app, "failed to init application context", err)
 	}
 	defer app.Close()
