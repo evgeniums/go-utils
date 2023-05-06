@@ -32,7 +32,7 @@ func (s *ConfirmationControlServer) Init(app app_with_multitenancy.AppWithMultit
 	}
 
 	// init internal server
-	err = s.InternalServer.Init(app, internalServerConfigPath)
+	err = s.InternalServer.Init(app, s.ExternalServer.BaseUrl(), internalServerConfigPath)
 	if err != nil {
 		return app.Logger().PushFatalStack("failed to init internal server", err)
 	}

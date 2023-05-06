@@ -1,8 +1,10 @@
 package confirmation_control_server
 
 import (
+	"fmt"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
-	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server/rest_api_gin_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/api/noauth_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/pool_microservice/pool_misrocervice_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
@@ -12,6 +14,8 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
+
+const ExternalServerType string = "confirmation_control_external"
 
 type ExternalServerConfig struct {
 	EXPLICIT_CODE_CHECK bool
@@ -55,7 +59,7 @@ func (s *ExternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, con
 
 	err := object_config.LoadLogValidate(app.Cfg(), app.Logger(), app.Validator(), s, path)
 	if err != nil {
-		return app.Logger().PushFatalStack("failed to init external server of confirmation control server", err)
+		return app.Logger().PushFatalStack("failed to init external server of confirmation control", err)
 	}
 
 	// init SMS manager
@@ -79,14 +83,13 @@ func (s *ExternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, con
 		s.auth = auth
 	}
 
-	// init REST API server
-	server := rest_api_gin_server.NewServer()
-	serverPath := object_config.Key(path, "rest_api_server")
-	err = server.Init(app, s.auth, app.Multitenancy(), serverPath)
+	serverCfg := noauth_server.Config{DefaultPoolServiceType: ExternalServerType}
+	server := noauth_server.New(serverCfg)
+	err = server.Init(app, path)
 	if err != nil {
-		return app.Logger().PushFatalStack("failed to init REST API server", err)
+		return app.Logger().PushFatalStack("failed to init noauth server", err)
 	}
-	s.server = server
+	s.server = server.ApiServer()
 
 	// create callback client
 	callbackTransportPath := object_config.Key(path, "callback_client")
@@ -107,4 +110,15 @@ func (s *ExternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, con
 
 func (s *ExternalServer) ApiServer() api_server.Server {
 	return s.server
+}
+
+func (s *ExternalServer) BaseUrl() string {
+
+	poolService := s.server.ConfigPoolService()
+	publicUrl := poolService.PublicUrl()
+	if publicUrl == "" {
+		publicUrl = fmt.Sprintf("https://%s:%d%s%s", poolService.PublicHost(), poolService.PublicPort(), poolService.PathPrefix(), poolService.ApiVersion())
+	}
+
+	return publicUrl
 }

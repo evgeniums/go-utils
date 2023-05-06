@@ -10,8 +10,7 @@ import (
 )
 
 type InternalServerConfig struct {
-	BASE_URL  string `validate:"required,url" vmessage:"Invalid base URL"`
-	TOKEN_TTL int    `default:"180" validate:"gte=1" vmessage:"Token TTL must be positive"`
+	TOKEN_TTL int `default:"180" validate:"gte=1" vmessage:"Token TTL must be positive"`
 }
 
 const InternalServerType = "confirmation_control_internal"
@@ -19,6 +18,7 @@ const InternalServerType = "confirmation_control_internal"
 type InternalServer struct {
 	InternalServerConfig
 
+	basePublicUrl string
 	*pool_microservice_server.PoolMicroserviceServer
 }
 
@@ -31,13 +31,15 @@ func (s *InternalServer) Config() interface{} {
 	return &s.InternalServerConfig
 }
 
-func (s *InternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, configPath ...string) error {
+func (s *InternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, basePublicUrl string, configPath ...string) error {
+
+	s.basePublicUrl = basePublicUrl
 
 	path := utils.OptionalArg("internal_server", configPath...)
 
 	err := object_config.LoadLogValidate(app.Cfg(), app.Logger(), app.Validator(), s, path)
 	if err != nil {
-		return app.Logger().PushFatalStack("failed to init internal server of confirmation control server", err)
+		return app.Logger().PushFatalStack("failed to init internal server of confirmation control", err)
 	}
 
 	// init microservice server for internal requests
@@ -48,7 +50,7 @@ func (s *InternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, con
 	}
 
 	// create and add service
-	service := confirmation_api_service.NewConfirmationInternalService(s.BASE_URL, s.TOKEN_TTL)
+	service := confirmation_api_service.NewConfirmationInternalService(s.basePublicUrl, s.TOKEN_TTL)
 	api_server.AddServiceToServer(s.PoolMicroserviceServer.ApiServer(), service)
 
 	// done
