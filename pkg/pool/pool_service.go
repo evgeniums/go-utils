@@ -24,6 +24,9 @@ type ServiceConfig interface {
 	Parameter2Name() string
 	Parameter3Name() string
 	User() string
+	IpAddress() string
+	ApiVersion() string
+	PathPrefix() string
 }
 
 type PoolServiceEssentials interface {
@@ -73,6 +76,9 @@ type ServiceConfigBase struct {
 	PARAMETER1_NAME string `gorm:"index;column:parameter1_name" json:"parameter1_name" long:"parameter1_name" description:"Name of generic parameter1 of the service (optional)"`
 	PARAMETER2_NAME string `gorm:"index;column:parameter2_name" json:"parameter2_name" long:"parameter2_name" description:"Name of generic parameter2 of the service (optional)"`
 	PARAMETER3_NAME string `gorm:"index;column:parameter3_name" json:"parameter3_name" long:"parameter3_name" description:"Name of generic parameter3 of the service (optional)"`
+	IP_ADDRESS      string `gorm:"index" json:"ip_address" long:"ip" description:"IP address of the service (optional)"`
+	API_VERSION     string `gorm:"index" json:"api_version" long:"api-version" default:"1.0.0" description:"API version of the service (optional)"`
+	PATH_PREFIX     string `gorm:"index" json:"path_prefix" long:"path-prefix" default:"/api" description:"URL path prefix of the service (optional)"`
 }
 
 func (s *ServiceConfigBase) User() string {
@@ -81,6 +87,18 @@ func (s *ServiceConfigBase) User() string {
 
 func (s *ServiceConfigBase) DbName() string {
 	return s.DB_NAME
+}
+
+func (s *ServiceConfigBase) IpAddress() string {
+	return s.IP_ADDRESS
+}
+
+func (s *ServiceConfigBase) PathPrefix() string {
+	return s.PATH_PREFIX
+}
+
+func (s *ServiceConfigBase) ApiVersion() string {
+	return s.API_VERSION
 }
 
 func (s *ServiceConfigBase) PublicHost() string {
@@ -96,6 +114,9 @@ func (s *ServiceConfigBase) PublicUrl() string {
 }
 
 func (s *ServiceConfigBase) PrivateHost() string {
+	if s.PRIVATE_HOST == "" {
+		return s.IP_ADDRESS
+	}
 	return s.PRIVATE_HOST
 }
 
