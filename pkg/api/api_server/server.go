@@ -38,7 +38,10 @@ type Server interface {
 	DynamicTables() DynamicTables
 
 	// Load default server configuration from corresponding pool service
-	SetConfigFromPoolService(service pool.PoolService, private ...bool)
+	SetConfigFromPoolService(service pool.PoolService, public ...bool)
+
+	// Get pool service used for server configuration
+	ConfigPoolService() pool.PoolService
 }
 
 func AddServiceToServer(s Server, service Service) {

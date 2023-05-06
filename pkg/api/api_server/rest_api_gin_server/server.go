@@ -57,6 +57,8 @@ type Server struct {
 
 	tenancies multitenancy.Multitenancy
 
+	configPoolService pool.PoolService
+
 	ginEngine     *gin.Engine
 	notFoundError *api.ResponseError
 	hostname      string
@@ -100,25 +102,31 @@ func NewServer() *Server {
 	return s
 }
 
-func (s *Server) SetConfigFromPoolService(service pool.PoolService, private ...bool) {
+func (s *Server) ConfigPoolService() pool.PoolService {
+	return s.configPoolService
+}
 
-	priv := utils.OptionalArg(true, private...)
+func (s *Server) SetConfigFromPoolService(service pool.PoolService, public ...bool) {
+
+	s.configPoolService = service
+
+	pub := utils.OptionalArg(true, public...)
 
 	s.SetName(service.Name())
 	s.API_VERSION = service.ApiVersion()
 	s.HOST = service.IpAddress()
 	s.PATH_PREFIX = service.PathPrefix()
 
-	if priv {
-		if s.HOST == "" {
-			service.PrivateHost()
-		}
-		s.PORT = service.PrivatePort()
-	} else {
+	if pub {
 		if s.HOST == "" {
 			service.PublicHost()
 		}
 		s.PORT = service.PublicPort()
+	} else {
+		if s.HOST == "" {
+			service.PrivateHost()
+		}
+		s.PORT = service.PrivatePort()
 	}
 }
 

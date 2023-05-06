@@ -36,9 +36,9 @@ type Config struct {
 
 	MultitenancyBaseServices bool
 
-	DefaultPoolServiceName    string
-	DefaultPoolServiceType    string
-	DefaultPrivatePoolService bool
+	DefaultPoolServiceName   string
+	DefaultPoolServiceType   string
+	DefaultPublicPoolService bool
 }
 
 type pimpl struct {
@@ -51,9 +51,9 @@ type pimpl struct {
 }
 
 type BareBonesServerBaseConfig struct {
-	POOL_SERVICE_NAME    string
-	POOL_SERVICE_TYPE    string
-	PRIVATE_POOL_SERVICE bool
+	POOL_SERVICE_NAME   string
+	POOL_SERVICE_TYPE   string
+	PUBLIC_POOL_SERVICE bool
 }
 
 type BareBonesServerBase struct {
@@ -87,7 +87,7 @@ func (s *BareBonesServerBase) Construct(users auth_session.WithUserSessionManage
 
 		s.config.POOL_SERVICE_NAME = cfg.DefaultPoolServiceName
 		s.config.POOL_SERVICE_TYPE = cfg.DefaultPoolServiceType
-		s.config.PRIVATE_POOL_SERVICE = cfg.DefaultPrivatePoolService
+		s.config.PUBLIC_POOL_SERVICE = cfg.DefaultPublicPoolService
 	}
 }
 
@@ -173,7 +173,7 @@ func (s *BareBonesServerBase) initFromPoolService(app app_context.Context, restA
 			return app.Logger().PushFatalStack("self pool must be specified for API server", err)
 		}
 
-		// find service for role
+		// find service by name
 		service, err := selfPool.ServiceByName(s.config.POOL_SERVICE_NAME)
 		if err != nil {
 			return app.Logger().PushFatalStack("failed to find service with specified name", err, logger.Fields{"name": s.config.POOL_SERVICE_NAME})
@@ -188,7 +188,7 @@ func (s *BareBonesServerBase) initFromPoolService(app app_context.Context, restA
 		}
 
 		// load server configuration from service
-		restApiServer.SetConfigFromPoolService(service, s.config.PRIVATE_POOL_SERVICE)
+		restApiServer.SetConfigFromPoolService(service, s.config.PUBLIC_POOL_SERVICE)
 	}
 
 	return nil
