@@ -21,6 +21,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/markphelps/optional"
@@ -97,6 +98,28 @@ func NewServer() *Server {
 	s.TENANCY_PARAMETER = TenancyParameter
 
 	return s
+}
+
+func (s *Server) SetConfigFromPoolService(service pool.PoolService, private ...bool) {
+
+	priv := utils.OptionalArg(true, private...)
+
+	s.SetName(service.Name())
+	s.API_VERSION = service.ApiVersion()
+	s.HOST = service.IpAddress()
+	s.PATH_PREFIX = service.PathPrefix()
+
+	if priv {
+		if s.HOST == "" {
+			service.PrivateHost()
+		}
+		s.PORT = service.PrivatePort()
+	} else {
+		if s.HOST == "" {
+			service.PublicHost()
+		}
+		s.PORT = service.PublicPort()
+	}
 }
 
 func (s *Server) Config() interface{} {

@@ -8,6 +8,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 )
 
 // Interface of generic server that implements some API.
@@ -35,6 +36,9 @@ type Server interface {
 
 	// Get dynamic tables store
 	DynamicTables() DynamicTables
+
+	// Load default server configuration from corresponding pool service
+	SetConfigFromPoolService(service pool.PoolService, private ...bool)
 }
 
 func AddServiceToServer(s Server, service Service) {
@@ -49,7 +53,7 @@ type ServerBaseConfig struct {
 	common.WithNameBaseConfig
 	API_VERSION     string `validate:"required"`
 	HATEOAS         bool
-	OPLOG_USER_TYPE string
+	OPLOG_USER_TYPE string `default:"server_user"`
 }
 
 func (s *ServerBaseConfig) ApiVersion() string {
