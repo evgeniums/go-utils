@@ -54,7 +54,7 @@ func (s *NoAuthServer) Init(app app_with_multitenancy.AppWithMultitenancy, confi
 
 	// init REST API server
 	if s.restApiServer != nil {
-		serverPath := object_config.Key(path, "rest_api")
+		serverPath := object_config.Key(path, "rest_api_server")
 		err := s.restApiServer.Init(app, s.auth, app.Multitenancy(), serverPath)
 		if err != nil {
 			return app.Logger().PushFatalStack("failed to init REST API server", err)
