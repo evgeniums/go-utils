@@ -66,7 +66,7 @@ func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld
 			schemaPath := object_config.KeyInt(endpointPath, i)
 			fields := utils.AppendMapNew(fields, logger.Fields{"schema_path": schemaPath})
 			epSchema := endpointSchema{}
-			err := object_config.Load(cfg, schemaPath, &epSchema)
+			err := object_config.Load(cfg, &epSchema, schemaPath)
 			if err != nil {
 				return log.PushFatalStack("failed to load endpoint authorization schema", err, fields)
 			}

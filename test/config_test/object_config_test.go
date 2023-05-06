@@ -52,7 +52,7 @@ func TestObjectConfig(t *testing.T) {
 	}
 
 	s1 := &sample1{}
-	err = object_config.Load(cfg1, "", s1)
+	err = object_config.Load(cfg1, s1, "")
 	if err != nil {
 		t.Fatalf("failed to load object configuration: %s", err)
 	}
@@ -95,7 +95,7 @@ func TestObjectConfig(t *testing.T) {
 		t.Fatalf("failed to load configuration 2 from string: %s", err)
 	}
 	s2 := &sample1{}
-	err = object_config.Load(cfg2, "", s2)
+	err = object_config.Load(cfg2, s2, "")
 	if err != nil {
 		t.Fatalf("failed to load object 2 configuration: %s", err)
 	}

@@ -217,7 +217,7 @@ func (c *Context) initConfig(configFile string, configType ...string) error {
 	if err != nil {
 		return err
 	}
-	object_config.Load(v, "", c)
+	object_config.Load(v, c, "")
 	return nil
 }
 

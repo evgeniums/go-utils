@@ -31,7 +31,7 @@ func Key(path string, key string) string {
 	return fmt.Sprintf("%s.%s", path, key)
 }
 
-func Load(cfg config.Config, configPath string, obj Object) error {
+func Load(cfg config.Config, obj Object, configPath string) error {
 	_, err := loadConfiguration(cfg, configPath, obj)
 	return err
 }
