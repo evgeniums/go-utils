@@ -30,6 +30,8 @@ type contextConfig struct {
 	TESTING      bool
 	APP_INSTANCE string
 	HOSTNAME     string
+
+	APPLICATION string
 }
 
 type WithInitGormDb interface {
@@ -82,6 +84,9 @@ func Application() string {
 }
 
 func (c *Context) Application() string {
+	if c.APPLICATION != "" {
+		return c.APPLICATION
+	}
 	return Application()
 }
 
