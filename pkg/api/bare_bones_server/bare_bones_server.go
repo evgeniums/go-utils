@@ -184,7 +184,7 @@ func (s *BareBonesServerBase) initFromPoolService(app app_context.Context, restA
 		}
 
 		if service.Provider() != app.Application() {
-			return app.Logger().PushFatalStack("invalid service type", err, logger.Fields{"name": s.config.POOL_SERVICE_NAME, "service_type": s.config.POOL_SERVICE_TYPE, "pool_service_type": service.TypeName()})
+			return app.Logger().PushFatalStack("invalid service provider", err, logger.Fields{"name": s.config.POOL_SERVICE_NAME, "application": app.Application(), "pool_service_provider": service.Provider()})
 		}
 
 		// load server configuration from service
