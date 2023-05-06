@@ -69,3 +69,11 @@ type PoolServiceBinding struct {
 	ServiceId           string `json:"service_id" source:"pool_services.id" display:"Service ID"`
 	ServiceName         string `json:"service_name" source:"pool_services.name" display:"Service"`
 }
+
+func (s *PoolServiceBinding) Name() string {
+	return s.ServiceName
+}
+
+func (s *PoolServiceBinding) SetName(name string) {
+	s.ServiceName = name
+}
