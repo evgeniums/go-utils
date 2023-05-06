@@ -26,6 +26,8 @@ import (
 	"github.com/markphelps/optional"
 )
 
+var DefaultHttpConfigSection string = "http"
+
 const TenancyParameter string = "tenancy"
 
 type ServerConfig struct {
@@ -203,6 +205,12 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, tenancyManager mu
 	}
 
 	defaultPath := "rest_api_server"
+
+	// load default configuration
+	err = object_config.Load(ctx.Cfg(), s, DefaultHttpConfigSection)
+	if err != nil {
+		return ctx.Logger().PushFatalStack("failed to load default server configuration", err, logger.Fields{"name": s.Name()})
+	}
 
 	// load configuration
 	err = object_config.LoadLogValidate(ctx.Cfg(), ctx.Logger(), ctx.Validator(), s, defaultPath, configPath...)
