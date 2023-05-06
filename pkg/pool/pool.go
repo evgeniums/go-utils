@@ -15,6 +15,8 @@ type Pool interface {
 
 	Service(role string) (*PoolServiceBinding, error)
 	SetServices([]*PoolServiceBinding)
+
+	ServiceByName(name string) (*PoolServiceBinding, error)
 }
 
 type PoolBaseData struct {
@@ -59,6 +61,17 @@ func (p *PoolBase) Service(role string) (*PoolServiceBinding, error) {
 	}
 
 	return service, nil
+}
+
+func (p *PoolBase) ServiceByName(name string) (*PoolServiceBinding, error) {
+
+	for _, service := range p.Services {
+		if service.ServiceName == name {
+			return service, nil
+		}
+	}
+
+	return nil, errors.New("service not found")
 }
 
 func (p *PoolBase) SetServices(services []*PoolServiceBinding) {
