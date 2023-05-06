@@ -51,6 +51,10 @@ func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld
 
 	e.endpoints = make(map[string][]endpointSchema)
 
+	if !cfg.IsSet(path) {
+		return nil
+	}
+
 	endpointsSection := cfg.Get(path)
 	endpoints := endpointsSection.(map[string]interface{})
 	for endpoint := range endpoints {
