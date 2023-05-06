@@ -28,7 +28,7 @@ import (
 
 var DefaultHttpConfigSection string = "http"
 
-const TenancyParameter string = "tenancy"
+var TenancyParameter string = "tenancy"
 
 type ServerConfig struct {
 	api_server.ServerBaseConfig
@@ -41,6 +41,8 @@ type ServerConfig struct {
 	VERBOSE_BODY_MAX_LENGTH  int `default:"2048"`
 	ALLOW_NOT_ACTIVE_TENANCY bool
 	AUTH_FROM_TENANCY_DB     bool `default:"true"`
+
+	TENANCY_PARAMETER string `validate:"omitempty,alphanum"`
 }
 
 type AuthParameterGetter = func(r *Request, key string) string
@@ -91,6 +93,8 @@ func NewServer() *Server {
 		name := csrfKey(key)
 		return getHttpHeader(r.ginCtx, name)
 	}
+
+	s.TENANCY_PARAMETER = TenancyParameter
 
 	return s
 }
@@ -197,8 +201,8 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, tenancyManager mu
 
 	if s.tenancies.IsMultiTenancy() {
 		ctx.Logger().Info("REST API server: enabling multitenancy mode")
-		parent := api.NewResource(TenancyParameter)
-		s.tenancyResource = api.NewResource(TenancyParameter, api.ResourceConfig{HasId: true, Tenancy: true})
+		parent := api.NewResource(s.TENANCY_PARAMETER)
+		s.tenancyResource = api.NewResource(s.TENANCY_PARAMETER, api.ResourceConfig{HasId: true, Tenancy: true})
 		parent.AddChild(s.tenancyResource)
 	} else {
 		ctx.Logger().Info("REST API server: disabling multitenancy mode")
@@ -286,7 +290,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		// extract tenancy if applicable
 		var tenancy multitenancy.Tenancy
 		if s.tenancies.IsMultiTenancy() && ep.Resource().IsInTenancy() {
-			tenancyInPath := request.GetResourceId(TenancyParameter)
+			tenancyInPath := request.GetResourceId(s.TENANCY_PARAMETER)
 			request.SetLoggerField("tenancy", tenancyInPath)
 			tenancy, err = s.tenancies.TenancyByPath(tenancyInPath)
 			if err != nil {
