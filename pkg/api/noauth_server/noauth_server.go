@@ -17,9 +17,9 @@ type Server interface {
 }
 
 type NoAuthServerConfig struct {
-	POOL_SERVICE_NAME    string
-	POOL_SERVICE_TYPE    string
-	PRIVATE_POOL_SERVICE bool
+	POOL_SERVICE_NAME   string
+	POOL_SERVICE_TYPE   string
+	PUBLIC_POOL_SERVICE bool
 }
 
 type NoAuthServer struct {
@@ -31,11 +31,11 @@ type NoAuthServer struct {
 }
 
 type Config struct {
-	Auth                      auth.Auth
-	Server                    api_server.Server
-	DefaultPoolServiceName    string
-	DefaultPoolServiceType    string
-	DefaultPrivatePoolService bool
+	Auth                     auth.Auth
+	Server                   api_server.Server
+	DefaultPoolServiceName   string
+	DefaultPoolServiceType   string
+	DefaultPublicPoolService bool
 }
 
 func New(config ...Config) *NoAuthServer {
@@ -54,7 +54,7 @@ func (s *NoAuthServer) Construct(config ...Config) {
 		s.server = cfg.Server
 		s.config.POOL_SERVICE_TYPE = cfg.DefaultPoolServiceType
 		s.config.POOL_SERVICE_NAME = cfg.DefaultPoolServiceName
-		s.config.PRIVATE_POOL_SERVICE = cfg.DefaultPrivatePoolService
+		s.config.PUBLIC_POOL_SERVICE = cfg.DefaultPublicPoolService
 		s.auth = cfg.Auth
 	}
 
@@ -107,7 +107,7 @@ func (s *NoAuthServer) Init(app app_with_multitenancy.AppWithMultitenancy, confi
 			}
 
 			// load server configuration from service
-			s.restApiServer.SetConfigFromPoolService(service, s.config.PRIVATE_POOL_SERVICE)
+			s.restApiServer.SetConfigFromPoolService(service, s.config.PUBLIC_POOL_SERVICE)
 		}
 
 		serverPath := object_config.Key(path, "rest_api_server")
