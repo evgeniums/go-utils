@@ -16,6 +16,7 @@ type WithInit interface {
 
 type WithProtocol interface {
 	Protocol() string
+	SetProtocol(protocol string)
 }
 
 type WithProtocolBase struct {
@@ -56,11 +57,15 @@ func LoadLogValidateSubobjectsMap[T Subobject](cfg config.Config, log logger.Log
 		path := Key(configPath, subobjectName)
 		protocolPath := Key(path, "protocol")
 		protocol := cfg.GetString(protocolPath)
+		if protocol == "" {
+			protocol = subobjectName
+		}
 		fields := utils.AppendMapNew(fields, logger.Fields{"name": subobjectName, "config_path": path, "protocol": protocol})
 		subobject, err := createSubobjectFnc(protocol)
 		if err != nil {
 			return nil, log.PushFatalStack("failed to create subobject", err, fields)
 		}
+		subobject.SetProtocol(protocol)
 		err = subobject.Init(cfg, log, vld, path)
 		if err != nil {
 			return nil, log.PushFatalStack("failed to initialize subobject", err, fields)
