@@ -28,8 +28,8 @@ func (e *InteractiveClientHandlers) Config() interface{} {
 	return &e.InteractiveClientHandlersConfig
 }
 
-func NewInteractiveClientHandlers(app app_context.Context) *EmbeddedClientHandlers {
-	e := &EmbeddedClientHandlers{}
+func NewInteractiveClientHandlers(app app_context.Context) *InteractiveClientHandlers {
+	e := &InteractiveClientHandlers{}
 	e.WithAppBase.Init(app)
 	return e
 }
