@@ -1,8 +1,10 @@
 package rest_api_client
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
+	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
 type RestApiClientWithConfigCfg struct {
@@ -19,11 +21,11 @@ func (r *RestApiClientWithConfig) Config() interface{} {
 	return &r.RestApiClientWithConfigCfg
 }
 
-func (r *RestApiClientWithConfig) Init(app app_context.Context, configPath ...string) error {
+func (r *RestApiClientWithConfig) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
-	err := object_config.LoadLogValidate(app.Cfg(), app.Logger(), app.Validator(), r, "rest_api_client", configPath...)
+	err := object_config.LoadLogValidate(cfg, log, vld, r, "rest_api_client", configPath...)
 	if err != nil {
-		return app.Logger().PushFatalStack("failed to load configuration of rest api client", err)
+		return log.PushFatalStack("failed to load configuration of rest api client", err)
 	}
 
 	r.RestApiClientBase.Init(r.BASE_URL, r.USER_AGENT)
