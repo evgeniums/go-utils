@@ -44,12 +44,22 @@ func New() *ConfigViper {
 
 func ReadJsonc(path string) ([]byte, error) {
 
+	// read file
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("fatal error while reading config file: %s", err)
 	}
-	b := jsonc.ToJSON(data)
 
+	// expand relative paths
+	dir := filepath.Dir(path)
+	dir = strings.ReplaceAll(dir, "\\", "/")
+	str := string(data)
+	str = strings.ReplaceAll(str, "\"$rel/", fmt.Sprintf("\"%s/", dir))
+
+	// process JSONC
+	b := jsonc.ToJSON([]byte(str))
+
+	// done
 	return b, nil
 }
 
@@ -64,12 +74,12 @@ func ReadConfigFromFile(v *viper.Viper, path string, cfgType string) error {
 			return fmt.Errorf("fatal error while reading config file: %s", err)
 		}
 	} else {
-		data, err := os.ReadFile(path)
+		b, err := ReadJsonc(path)
 		if err != nil {
 			return fmt.Errorf("fatal error while reading config file: %s", err)
 		}
-		b := jsonc.ToJSON(data)
-		if err = v.ReadConfig(bytes.NewReader(b)); err != nil {
+		r := bytes.NewReader(b)
+		if err = v.ReadConfig(r); err != nil {
 			msg := fmt.Errorf("failed to parse configuration JSON: %s", err)
 			return msg
 		}
