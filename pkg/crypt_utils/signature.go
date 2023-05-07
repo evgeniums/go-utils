@@ -7,6 +7,7 @@ import (
 type ESigner interface {
 	utils.WithStringCoder
 	Sign(data []byte, extraData ...string) ([]byte, error)
+	SignB64(data []byte, extraData ...string) (string, error)
 }
 
 type EVerifier interface {

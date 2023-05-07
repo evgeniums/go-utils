@@ -11,20 +11,37 @@ import (
 
 type EndpointsAuthConfig interface {
 	Schema(path string, accessType access_control.AccessType) (string, bool)
+	AddSchema(path string, access access_control.AccessType, schema string)
 }
 
-type endpointSchema struct {
+type EndpointSchema struct {
 	ACCESS      access_control.AccessType
 	HTTP_METHOD string
 	SCHEMA      string
 }
 
-func (e *endpointSchema) Config() interface{} {
+func (e *EndpointSchema) Config() interface{} {
 	return e
 }
 
 type EndpointsAuthConfigBase struct {
-	endpoints map[string][]endpointSchema
+	endpoints map[string][]EndpointSchema
+}
+
+func NewEndpointsAuthConfigBase() *EndpointsAuthConfigBase {
+	e := &EndpointsAuthConfigBase{}
+	e.endpoints = make(map[string][]EndpointSchema)
+	return e
+}
+
+func (e *EndpointsAuthConfigBase) AddSchema(path string, access access_control.AccessType, schema string) {
+
+	schemas, ok := e.endpoints[path]
+	if !ok {
+		schemas = make([]EndpointSchema, 0)
+	}
+	schemas = append(schemas, EndpointSchema{ACCESS: access, SCHEMA: schema})
+	e.endpoints[path] = schemas
 }
 
 func (e *EndpointsAuthConfigBase) Schema(path string, access access_control.AccessType) (string, bool) {
@@ -49,7 +66,7 @@ func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld
 	fields := logger.Fields{"config_path": path}
 	log.Debug("Init configuration of endpoints authorization", fields)
 
-	e.endpoints = make(map[string][]endpointSchema)
+	e.endpoints = make(map[string][]EndpointSchema)
 
 	if !cfg.IsSet(path) {
 		return nil
@@ -60,7 +77,7 @@ func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld
 	for endpoint := range endpoints {
 		endpointPath := object_config.Key(path, endpoint)
 		fields := utils.AppendMapNew(fields, logger.Fields{"endpoint": endpoint, "endpoint_path": endpointPath})
-		endpointSchemas := make([]endpointSchema, 0)
+		endpointSchemas := make([]EndpointSchema, 0)
 
 		log.Debug("Add auth schemas for endpoint", fields)
 
@@ -69,7 +86,7 @@ func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld
 		for i := range schemas {
 			schemaPath := object_config.KeyInt(endpointPath, i)
 			fields := utils.AppendMapNew(fields, logger.Fields{"schema_path": schemaPath})
-			epSchema := endpointSchema{}
+			epSchema := EndpointSchema{}
 			err := object_config.Load(cfg, &epSchema, schemaPath)
 			if err != nil {
 				return log.PushFatalStack("failed to load endpoint authorization schema", err, fields)
