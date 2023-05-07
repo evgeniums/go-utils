@@ -9,14 +9,19 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
+type Auth interface {
+	MakeHeaders(ctx op_context.Context, operation api.Operation, cmd interface{}) (map[string]string, error)
+}
+
 type RestApiMethod func(ctx op_context.Context, path string, cmd interface{}, response interface{}, headers ...map[string]string) (Response, error)
 
 type Client struct {
 	RestApiClient RestApiClient
 	methods       map[access_control.AccessType]RestApiMethod
+	auth          Auth
 }
 
-func New(restApiClient RestApiClient) *Client {
+func New(restApiClient RestApiClient, auth ...Auth) *Client {
 	c := &Client{RestApiClient: restApiClient}
 	c.methods = make(map[access_control.AccessType]RestApiMethod, 0)
 
@@ -25,6 +30,10 @@ func New(restApiClient RestApiClient) *Client {
 	c.methods[access_control.HttpMethod2Access(http.MethodPatch)] = c.RestApiClient.Patch
 	c.methods[access_control.HttpMethod2Access(http.MethodGet)] = c.RestApiClient.Get
 	c.methods[access_control.HttpMethod2Access(http.MethodDelete)] = c.RestApiClient.Delete
+
+	if len(auth) != 0 {
+		c.auth = auth[0]
+	}
 
 	return c
 }
@@ -37,9 +46,11 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 
 	// TODO support hateoas links of resource
 
+	// setup
 	c := ctx.TraceInMethod("Client.Exec")
 	defer ctx.TraceOutMethod()
 
+	// find method for operation
 	method, ok := cl.methods[operation.AccessType()]
 	if !ok {
 		c.SetLoggerField("access_type", operation.AccessType())
@@ -47,17 +58,36 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 		c.SetError(genericError)
 		return genericError
 	}
+
+	// evaluate path
 	var path string
 	if len(tenancyId) == 0 {
 		path = operation.Resource().FullActualPath()
 	} else {
 		path = operation.Resource().FullActualTenancyPath(tenancyId[0])
 	}
-	resp, err := method(ctx, path, cmd, response)
+
+	var resp Response
+	var err error
+	if cl.auth != nil {
+		// make auth headers
+		headers, err1 := cl.auth.MakeHeaders(ctx, operation, cmd)
+		if err1 != nil {
+			c.SetMessage("failed to make auth headers")
+			return c.SetError(err1)
+		}
+		// invoke method with auth headers
+		resp, err = method(ctx, path, cmd, response, headers)
+	} else {
+		// invoke method without auth headers
+		resp, err = method(ctx, path, cmd, response)
+	}
 	if err != nil {
 		c.SetMessage("failed to invoke HTTP method")
 		return c.SetError(err)
 	}
+
+	// process generic error
 	genericError := api.ResponseGenericError(resp.Error())
 	if genericError != nil {
 		c.SetLoggerField("response_code", genericError.Code())
@@ -67,5 +97,6 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 		return c.SetError(genericError)
 	}
 
+	// done
 	return nil
 }
