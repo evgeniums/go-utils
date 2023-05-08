@@ -43,6 +43,7 @@ type Resource interface {
 	ReplaceOperation(op Operation)
 
 	PathPrototype() string
+	ParameterSubstitution() string
 	ActualPath() string
 	FullPathPrototype() string
 	FullActualPath() string
@@ -85,6 +86,8 @@ type ResourceBase struct {
 	operations           []Operation
 	getter               Operation
 
+	parameterSubstitution string
+
 	inTenancy       bool
 	tenancyResource Resource
 }
@@ -92,6 +95,13 @@ type ResourceBase struct {
 func NewResource(resourceType string, config ...ResourceConfig) *ResourceBase {
 	r := &ResourceBase{}
 	r.Init(resourceType, config...)
+	return r
+}
+
+func NewTenancyResource(resourceType string) *ResourceBase {
+	parent := NewResource(resourceType)
+	r := NewResource(resourceType, ResourceConfig{HasId: true, Tenancy: true})
+	parent.AddChild(r)
 	return r
 }
 
@@ -104,6 +114,7 @@ func (r *ResourceBase) Init(resourceType string, config ...ResourceConfig) {
 	if r.ResourceConfig.Tenancy {
 		r.tenancyResource = r
 	}
+	r.parameterSubstitution = utils.ConcatStrings(":", resourceType)
 	r.RebuildPaths()
 }
 
@@ -153,6 +164,10 @@ func (r *ResourceBase) TenancyResourceInPath() Resource {
 	return r.tenancyResource
 }
 
+func (r *ResourceBase) ParameterSubstitution() string {
+	return r.parameterSubstitution
+}
+
 func (r *ResourceBase) PathPrototype() string {
 	return r.pathPrototype
 }
@@ -169,16 +184,18 @@ func (r *ResourceBase) FullActualPath() string {
 	return r.fullActualPath
 }
 
-func (r *ResourceBase) FullActualTenancyPath(tenancyId string) string {
+func (r *ResourceBase) FullActualTenancyPath(tenancyPath string) string {
 	if !r.IsInTenancy() {
 		return r.FullActualPath()
 	}
 
 	if r.TenancyResourceInPath() == nil {
-		panic("Tenancy resource must mot be nil")
+		panic("Tenancy resource must not be nil")
 	}
 
-	path := strings.ReplaceAll(r.fullActualPath, r.TenancyResourceInPath().Type(), tenancyId)
+	actualPath := r.fullActualPath
+	tenancyParameter := r.TenancyResourceInPath().ParameterSubstitution()
+	path := strings.ReplaceAll(actualPath, tenancyParameter, tenancyPath)
 	return path
 }
 
