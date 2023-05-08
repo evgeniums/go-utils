@@ -67,7 +67,6 @@ func New(buildConfig *app_context.BuildConfig, tenancyDbModels *multitenancy.Ten
 		}
 		app_context.AbortFatal(app, "failed to init application context", err)
 	}
-	defer app.Close()
 
 	// create main runner
 	runner, err := runnerConfig.RunnerBuilder(app, initOpCtx)
@@ -104,5 +103,6 @@ func (m *Main) Exec() {
 	// done
 	finishedMsg := fmt.Sprintf("%s finished", m.App.Application())
 	m.App.Logger().Info(finishedMsg)
+	m.App.Close()
 	fmt.Println(finishedMsg)
 }
