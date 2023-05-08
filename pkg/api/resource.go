@@ -98,7 +98,10 @@ func NewResource(resourceType string, config ...ResourceConfig) *ResourceBase {
 	return r
 }
 
-func NewTenancyResource(resourceType string) *ResourceBase {
+func NewTenancyResource(tenancyResourceName ...string) *ResourceBase {
+
+	resourceType := utils.OptionalArg("tenancy", tenancyResourceName...)
+
 	parent := NewResource(resourceType)
 	r := NewResource(resourceType, ResourceConfig{HasId: true, Tenancy: true})
 	parent.AddChild(r)
