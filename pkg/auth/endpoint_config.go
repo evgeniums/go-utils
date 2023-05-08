@@ -73,7 +73,10 @@ func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld
 	}
 
 	endpointsSection := cfg.Get(path)
-	endpoints := endpointsSection.(map[string]interface{})
+	endpoints, ok := endpointsSection.(map[string]interface{})
+	if !ok {
+		return log.PushFatalStack("invalid endpoints section", nil)
+	}
 	for endpoint := range endpoints {
 		endpointPath := object_config.Key(path, endpoint)
 		fields := utils.AppendMapNew(fields, logger.Fields{"endpoint": endpoint, "endpoint_path": endpointPath})
@@ -82,7 +85,10 @@ func (e *EndpointsAuthConfigBase) Init(cfg config.Config, log logger.Logger, vld
 		log.Debug("Add auth schemas for endpoint", fields)
 
 		schemasSection := cfg.Get(endpointPath)
-		schemas := schemasSection.([]interface{})
+		schemas, ok := schemasSection.([]interface{})
+		if !ok {
+			return log.PushFatalStack("invalid endpoint item", nil, fields)
+		}
 		for i := range schemas {
 			schemaPath := object_config.KeyInt(endpointPath, i)
 			fields := utils.AppendMapNew(fields, logger.Fields{"schema_path": schemaPath})
