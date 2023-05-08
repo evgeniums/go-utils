@@ -13,7 +13,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
-	"github.com/google/go-querystring/query"
 )
 
 type RestApiClient interface {
@@ -390,13 +389,10 @@ func DefaultSendWithQuery(ctx op_context.Context, method string, url string, cmd
 	}
 
 	// prepare data
-	if cmd != nil {
-		v, err := query.Values(cmd)
-		if err != nil {
-			c.SetMessage("failed to build query")
-			return nil, c.SetError(err)
-		}
-		req.URL.RawQuery = v.Encode()
+	req.URL.RawQuery, err = http_request.UrlEncode(cmd)
+	if err != nil {
+		c.SetMessage("failed to build query")
+		return nil, c.SetError(err)
 	}
 	req.Header.Set("Accept", "application/json")
 	http_request.HttpHeadersSet(req, headers...)
