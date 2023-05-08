@@ -6,6 +6,7 @@ import (
 	"math"
 	"net/http"
 	"net/http/httputil"
+	"strings"
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
@@ -147,8 +148,10 @@ func (s *Server) TenancyManager() multitenancy.Multitenancy {
 }
 
 func (s *Server) address() string {
-	a := fmt.Sprintf("%s:%d", s.HOST, s.PORT)
-	return a
+	if strings.Contains(s.HOST, "::") {
+		return fmt.Sprintf("[%s]:%d", s.HOST, s.PORT)
+	}
+	return fmt.Sprintf("%s:%d", s.HOST, s.PORT)
 }
 
 func (s *Server) logGinRequest(log logger.Logger, path string, start time.Time, ginCtx *gin.Context, extraFields ...logger.Fields) {
@@ -287,12 +290,13 @@ func (s *Server) Run(fin background_worker.Finisher) {
 	fin.AddRunner(srv, &background_worker.RunnerConfig{Name: optional.NewString(s.Name())})
 
 	go func() {
-		s.App().Logger().Info("running REST API server", logger.Fields{"name": s.Name()})
+		s.App().Logger().Info("Running REST API server", logger.Fields{"name": s.Name(), "address": srv.Addr})
 		err := srv.ListenAndServe()
 		if err != http.ErrServerClosed {
 			msg := "failed to start HTTP server"
 			fmt.Printf("%s %s: %s\n", msg, s.Name(), err)
 			s.App().Logger().Fatal(msg, err, logger.Fields{"name": s.Name()})
+			app_context.AbortFatal(s.App(), msg)
 		}
 	}()
 }
