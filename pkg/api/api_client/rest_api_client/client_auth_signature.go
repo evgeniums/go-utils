@@ -28,7 +28,7 @@ func (a *ClientAuthSignature) MakeHeaders(ctx op_context.Context, operation api.
 	defer ctx.TraceOutMethod()
 
 	// find auth schema for operation
-	path := operation.Resource().PathPrototype()
+	path := operation.Resource().ServicePathPrototype()
 	schema, found := a.EndpoindsConfig.Schema(path, operation.AccessType())
 	if !found || schema != auth_signature.SignatureProtocol {
 		return nil, nil
