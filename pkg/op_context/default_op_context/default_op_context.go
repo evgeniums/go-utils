@@ -66,8 +66,7 @@ func (c *CallContextBase) SetMessage(msg string) {
 	c.message = msg
 }
 func (c *CallContextBase) SetErrorStr(err string) error {
-	c.error_ = errors.New(err)
-	return c.error_
+	return c.SetError(errors.New(err))
 }
 
 func DefaultCallContextBuilder(methodName string, parentLogger logger.Logger, fields ...logger.Fields) op_context.CallContext {
@@ -196,11 +195,16 @@ func stackPath(stack []op_context.CallContext) string {
 
 func (c *ContextBase) TraceInMethod(methodName string, fields ...logger.Fields) op_context.CallContext {
 
-	ctx := c.callContextBuilder(methodName, c.proxyLogger, fields...)
+	var deepestLogger logger.Logger
+	deepestLogger = c.proxyLogger
+	if len(c.stack) != 0 {
+		deepestLogger = c.stack[len(c.stack)-1].Logger()
+	}
+	ctx := c.callContextBuilder(methodName, deepestLogger, fields...)
 
 	c.stack = append(c.stack, ctx)
-	c.SetLoggerField("stack", stackPath(c.stack))
 
+	c.SetLoggerField("stack", stackPath(c.stack))
 	c.Logger().Trace("callin")
 
 	return ctx
@@ -254,6 +258,7 @@ func (c *ContextBase) DumpLog(successMessage ...string) {
 		// log error
 		var msg string
 		var err error
+		var deepestLogger logger.Logger
 		for _, item := range c.errorStack {
 			// collect messages
 			if item.Message() != "" {
@@ -266,16 +271,16 @@ func (c *ContextBase) DumpLog(successMessage ...string) {
 				// override with deepest error
 				err = item.Error()
 			}
+			deepestLogger = item.Logger()
 		}
-		c.stack = c.errorStack
-		c.SetLoggerField("stack", stackPath(c.stack))
+		loggerFields := logger.Fields{"stack": stackPath(c.errorStack)}
 		if !c.errorAsWarn {
-			c.Logger().Error(msg, err)
+			deepestLogger.Error(msg, err, loggerFields)
 		} else {
-			c.Logger().Warn(msg, logger.Fields{"error": err})
+			loggerFields["error"] = err
+			deepestLogger.Warn(msg, loggerFields)
 		}
-		c.stack = []op_context.CallContext{}
-		c.UnsetLoggerField("stack")
+		// c.stack = []op_context.CallContext{}
 	} else {
 		// log success
 		if c.writeCloseLog {
