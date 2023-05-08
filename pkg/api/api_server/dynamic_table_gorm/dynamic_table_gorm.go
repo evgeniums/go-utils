@@ -55,7 +55,7 @@ func (d *DynamicTablesGorm) Table(request api_server.Request, path string) (*api
 	// find table
 	d.mutex.RLock()
 	t, ok := d.tables[path]
-	d.mutex.Unlock()
+	d.mutex.RUnlock()
 	if !ok {
 		return nil, c.SetErrorStr("unknown table")
 	}
