@@ -37,9 +37,15 @@ type RestApiClient interface {
 
 type DoRequest = func(ctx op_context.Context, method string, path string, cmd interface{}, headers ...map[string]string) (Response, error)
 
+type TenancyAuth struct {
+	TenancyPath string
+	TenancyType string
+}
+
 type RestApiClientBase struct {
 	BaseUrl   string
 	UserAgent string
+	Tenancy   *TenancyAuth
 
 	AccessToken  string
 	RefreshToken string
@@ -55,9 +61,12 @@ func NewRestApiClientBase(withBodySender DoRequest, withQuerySender DoRequest) *
 	return r
 }
 
-func (r *RestApiClientBase) Init(baseUrl string, userAgent string) {
+func (r *RestApiClientBase) Init(baseUrl string, userAgent string, tenancy ...*TenancyAuth) {
 	r.BaseUrl = baseUrl
 	r.UserAgent = userAgent
+	if len(tenancy) != 0 {
+		r.Tenancy = tenancy[0]
+	}
 }
 
 func (r *RestApiClientBase) Construct(withBodySender DoRequest, withQuerySender DoRequest) {
@@ -69,14 +78,23 @@ func (r *RestApiClientBase) Url(path string) string {
 	return utils.ConcatStrings(r.BaseUrl, path)
 }
 
+func (r *RestApiClientBase) AuthPath(path string) string {
+	if r.Tenancy == nil {
+		return path
+	}
+	return fmt.Sprintf("/%s/%s%s", r.Tenancy.TenancyType, r.Tenancy.TenancyPath, path)
+}
+
 func (r *RestApiClientBase) SetRefreshToken(token string) {
 	r.RefreshToken = token
 }
 
 func (r *RestApiClientBase) Login(ctx op_context.Context, user string, password string) (Response, error) {
 
+	path := r.AuthPath("/auth/login")
+
 	var err error
-	c := ctx.TraceInMethod("RestApiClientBase.Login", logger.Fields{"user": user})
+	c := ctx.TraceInMethod("RestApiClientBase.Login", logger.Fields{"user": user, "path": path})
 	onExit := func() {
 		if err != nil {
 			c.SetError(err)
@@ -85,20 +103,16 @@ func (r *RestApiClientBase) Login(ctx op_context.Context, user string, password 
 	}
 	defer onExit()
 
-	path := "/auth/login"
-
 	// first step
 	headers := map[string]string{"x-auth-login": user}
 	resp, err := r.Post(ctx, path, nil, nil, headers)
 	if err != nil {
-		c.SetMessage("failed to send first request")
-		return nil, err
+		if resp.Error().Code != auth_login_phash.ErrorCodeCredentialsRequired {
+			c.SetMessage("failed to send first request")
+			return resp, err
+		}
 	}
-	if resp.Error().Code != auth_login_phash.ErrorCodeCredentialsRequired {
-		err = errors.New("unexpected error code")
-		c.SetLoggerField("error_code", resp.Error().Code)
-		return resp, err
-	}
+	ctx.ClearError()
 
 	// second
 	salt := resp.Header().Get("x-auth-login-salt")
@@ -107,7 +121,7 @@ func (r *RestApiClientBase) Login(ctx op_context.Context, user string, password 
 	resp, err = r.Post(ctx, path, nil, nil, headers)
 	if err != nil {
 		c.SetMessage("failed to send second request")
-		return nil, err
+		return resp, err
 	}
 	if resp.Code() != http.StatusOK {
 		err = errors.New("login failed")
@@ -160,17 +174,17 @@ func (r *RestApiClientBase) SendSmsConfirmation(send DoRequest, ctx op_context.C
 	if token != "" {
 		hs["x-auth-sms-token"] = token
 	}
-	nextResp, err := r.sendRequest(send, ctx, method, path, cmd, nil, hs)
+	nextResp, err := r.SendRequest(send, ctx, method, path, cmd, nil, hs)
 	if err != nil {
 		return nil, c.SetError(err)
 	}
 	return nextResp, nil
 }
 
-func (r *RestApiClientBase) sendRequest(send DoRequest, ctx op_context.Context, method string, path string, cmd interface{}, response interface{}, headers ...map[string]string) (Response, error) {
+func (r *RestApiClientBase) SendRequest(send DoRequest, ctx op_context.Context, method string, path string, cmd interface{}, response interface{}, headers ...map[string]string) (Response, error) {
 
 	// setup
-	c := ctx.TraceInMethod("RestApiClientBase.sendRequest", logger.Fields{"method": method, "path": path})
+	c := ctx.TraceInMethod("RestApiClientBase.SendRequest", logger.Fields{"method": method, "path": path})
 	defer ctx.TraceOutMethod()
 
 	// prepare tokens
@@ -183,7 +197,7 @@ func (r *RestApiClientBase) sendRequest(send DoRequest, ctx op_context.Context, 
 	resp, err := send(ctx, method, r.Url(path), cmd, hs)
 	if err != nil {
 		c.SetMessage("failed to send request")
-		return nil, c.SetError(err)
+		return resp, c.SetError(err)
 	}
 	r.updateTokens(resp)
 
@@ -201,13 +215,7 @@ func (r *RestApiClientBase) sendRequest(send DoRequest, ctx op_context.Context, 
 				return nil, c.SetError(errors.New("failed to parse response message"))
 			}
 		}
-	} else {
-		// fill response error
-		err = fillResponseError(resp)
-		if err != nil {
-			c.SetMessage("failed to parse response error")
-			return resp, c.SetError(err)
-		}
+	} else if resp.Error() != nil {
 		ctx.SetGenericError(api.ResponseGenericError(resp.Error()))
 	}
 
@@ -216,11 +224,11 @@ func (r *RestApiClientBase) sendRequest(send DoRequest, ctx op_context.Context, 
 }
 
 func (r *RestApiClientBase) RequestBody(ctx op_context.Context, method string, path string, cmd interface{}, response interface{}, headers ...map[string]string) (Response, error) {
-	return r.sendRequest(r.SendWithBody, ctx, method, path, cmd, response, headers...)
+	return r.SendRequest(r.SendWithBody, ctx, method, path, cmd, response, headers...)
 }
 
 func (r *RestApiClientBase) RequestQuery(ctx op_context.Context, method string, path string, cmd interface{}, response interface{}, headers ...map[string]string) (Response, error) {
-	return r.sendRequest(r.SendWithQuery, ctx, method, path, cmd, response, headers...)
+	return r.SendRequest(r.SendWithQuery, ctx, method, path, cmd, response, headers...)
 }
 
 func (r *RestApiClientBase) Post(ctx op_context.Context, path string, cmd interface{}, response interface{}, headers ...map[string]string) (Response, error) {
@@ -244,9 +252,12 @@ func (r *RestApiClientBase) Delete(ctx op_context.Context, path string, cmd inte
 }
 
 func (r *RestApiClientBase) Logout(ctx op_context.Context) (Response, error) {
-	c := ctx.TraceInMethod("RestApiClientBase.Logout")
+
+	path := r.AuthPath("/auth/logout")
+
+	c := ctx.TraceInMethod("RestApiClientBase.Logout", logger.Fields{"path": path})
 	defer ctx.TraceOutMethod()
-	resp, err := r.Post(ctx, "/auth/logout", nil, nil)
+	resp, err := r.Post(ctx, path, nil, nil)
 	if err != nil {
 		return nil, c.SetError(err)
 	}
@@ -288,11 +299,13 @@ func (r *RestApiClientBase) UpdateTokens(ctx op_context.Context) (Response, erro
 
 func (r *RestApiClientBase) RequestRefreshToken(ctx op_context.Context) (Response, error) {
 
-	c := ctx.TraceInMethod("RestApiClientBase.RequestRefreshToken")
+	path := r.AuthPath("/auth/refresh")
+
+	c := ctx.TraceInMethod("RestApiClientBase.RequestRefreshToken", logger.Fields{"path": path})
 	defer ctx.TraceOutMethod()
 
 	headers := map[string]string{"x-auth-refresh-token": r.RefreshToken}
-	resp, err := r.Post(ctx, "/auth/refresh", nil, nil, headers)
+	resp, err := r.Post(ctx, path, nil, nil, headers)
 	if err != nil {
 		return nil, c.SetError(err)
 	}
@@ -345,8 +358,14 @@ func DefaultSendWithBody(ctx op_context.Context, method string, url string, cmd 
 		return nil, c.SetError(err)
 	}
 
+	// parse response
+	resp, err := NewResponse(rawResp)
+	if err != nil {
+		c.SetMessage("failed to parse response")
+		return nil, c.SetError(err)
+	}
+
 	// done
-	resp := NewResponse(rawResp)
 	return resp, nil
 }
 
@@ -389,8 +408,14 @@ func DefaultSendWithQuery(ctx op_context.Context, method string, url string, cmd
 		return nil, c.SetError(err)
 	}
 
+	// parse response
+	resp, err := NewResponse(rawResp)
+	if err != nil {
+		c.SetMessage("failed to parse response")
+		return nil, c.SetError(err)
+	}
+
 	// done
-	resp := NewResponse(rawResp)
 	return resp, nil
 }
 

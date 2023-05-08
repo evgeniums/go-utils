@@ -15,7 +15,7 @@ func (h *HandlerInTenancy[Cmd, Result]) Exec(client Client, ctx multitenancy.Ten
 	c := ctx.TraceInMethod("HandlerInTenancy.Exec")
 	defer ctx.TraceOutMethod()
 
-	err := client.Exec(ctx, operation, h.Cmd, h.Result, multitenancy.ContextTenancy(ctx))
+	err := client.Exec(ctx, operation, h.Cmd, h.Result, multitenancy.ContextTenancyPath(ctx))
 	c.SetError(err)
 	return err
 }
@@ -34,7 +34,7 @@ func (h *HandlerInTenancyCmd[Cmd]) Exec(client Client, ctx multitenancy.TenancyC
 	c := ctx.TraceInMethod("HandlerInTenancy.Exec")
 	defer ctx.TraceOutMethod()
 
-	err := client.Exec(ctx, operation, h.Cmd, nil, multitenancy.ContextTenancy(ctx))
+	err := client.Exec(ctx, operation, h.Cmd, nil, multitenancy.ContextTenancyPath(ctx))
 	c.SetError(err)
 	return err
 }
@@ -53,7 +53,7 @@ func (h *HandlerInTenancyResult[Result]) Exec(client Client, ctx multitenancy.Te
 	c := ctx.TraceInMethod("HandlerInTenancy.Exec")
 	defer ctx.TraceOutMethod()
 
-	err := client.Exec(ctx, operation, nil, h.Result, multitenancy.ContextTenancy(ctx))
+	err := client.Exec(ctx, operation, nil, h.Result, multitenancy.ContextTenancyPath(ctx))
 	c.SetError(err)
 	return err
 }
@@ -71,7 +71,7 @@ func (h *HandlerInTenancyNil) Exec(client Client, ctx multitenancy.TenancyContex
 	c := ctx.TraceInMethod("HandlerInTenancy.Exec")
 	defer ctx.TraceOutMethod()
 
-	err := client.Exec(ctx, operation, nil, nil, multitenancy.ContextTenancy(ctx))
+	err := client.Exec(ctx, operation, nil, nil, multitenancy.ContextTenancyPath(ctx))
 	c.SetError(err)
 	return err
 }

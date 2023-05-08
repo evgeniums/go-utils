@@ -18,7 +18,7 @@ type EmbeddedClientHandlers struct {
 }
 
 func (e *EmbeddedClientHandlers) Config() interface{} {
-	return e.EmbeddedClientHandlersConfig
+	return &e.EmbeddedClientHandlersConfig
 }
 
 func NewEmbeddedClientHandlers(app app_context.Context) *EmbeddedClientHandlers {

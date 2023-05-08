@@ -23,8 +23,29 @@ type RestApiTestResponse struct {
 	serverError *api.ResponseError
 }
 
-func NewRestApiTestResponse(raw *httptest.ResponseRecorder) *RestApiTestResponse {
-	return &RestApiTestResponse{Raw: raw}
+func NewRestApiTestResponse(raw *httptest.ResponseRecorder) (*RestApiTestResponse, error) {
+	resp := &RestApiTestResponse{Raw: raw}
+	if resp.Code() >= http.StatusBadRequest {
+		err := fillResponseError(resp)
+		if err != nil {
+			return resp, err
+		}
+	}
+	return resp, nil
+}
+
+func fillResponseError(resp *RestApiTestResponse) error {
+	b := resp.Body()
+	if b != nil {
+		errResp := &api.ResponseError{}
+		err := json.Unmarshal(b, errResp)
+		if err != nil {
+			return err
+		}
+		resp.SetError(errResp)
+		return nil
+	}
+	return nil
 }
 
 func (r *RestApiTestResponse) Code() int {
@@ -72,7 +93,9 @@ func HttptestSendWithBody(t *testing.T, g *gin.Engine, method string, url string
 	g.ServeHTTP(httprec, req)
 
 	// done
-	return NewRestApiTestResponse(httprec)
+	resp, err := NewRestApiTestResponse(httprec)
+	require.NoError(t, err)
+	return resp
 }
 
 func HttptestSendWithQuery(t *testing.T, g *gin.Engine, method string, url string, cmd interface{}, headers ...map[string]string) *RestApiTestResponse {
@@ -95,7 +118,9 @@ func HttptestSendWithQuery(t *testing.T, g *gin.Engine, method string, url strin
 	g.ServeHTTP(httprec, req)
 
 	// done
-	return NewRestApiTestResponse(httprec)
+	resp, err := NewRestApiTestResponse(httprec)
+	require.NoError(t, err)
+	return resp
 }
 
 func RestApiTestClient(t *testing.T, g *gin.Engine, baseUrl string, userAgent ...string) *rest_api_client.RestApiClientBase {

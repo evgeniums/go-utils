@@ -23,8 +23,17 @@ type HttpResponse struct {
 	serverError *api.ResponseError
 }
 
-func NewResponse(raw *http.Response) *HttpResponse {
-	return &HttpResponse{Raw: raw}
+func NewResponse(raw *http.Response) (*HttpResponse, error) {
+
+	resp := &HttpResponse{Raw: raw}
+	if resp.Code() >= http.StatusBadRequest {
+		err := fillResponseError(resp)
+		if err != nil {
+			return resp, err
+		}
+	}
+
+	return resp, nil
 }
 
 func (r *HttpResponse) Code() int {

@@ -7,6 +7,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type Auth interface {
@@ -42,7 +43,7 @@ func (cl *Client) Transport() interface{} {
 	return cl.RestApiClient
 }
 
-func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd interface{}, response interface{}, tenancyId ...string) error {
+func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd interface{}, response interface{}, tenancyPath ...string) error {
 
 	// TODO support hateoas links of resource
 
@@ -61,10 +62,11 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 
 	// evaluate path
 	var path string
-	if len(tenancyId) == 0 {
+	tenancy := utils.OptionalString("", tenancyPath...)
+	if tenancy == "" {
 		path = operation.Resource().FullActualPath()
 	} else {
-		path = operation.Resource().FullActualTenancyPath(tenancyId[0])
+		path = operation.Resource().FullActualTenancyPath(tenancy)
 	}
 
 	var resp Response

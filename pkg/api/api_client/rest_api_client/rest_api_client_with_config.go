@@ -8,8 +8,10 @@ import (
 )
 
 type RestApiClientWithConfigCfg struct {
-	BASE_URL   string `validate:"required"`
-	USER_AGENT string `default:"go-backend-helpers"`
+	BASE_URL     string `validate:"required"`
+	USER_AGENT   string `default:"go-backend-helpers"`
+	TENANCY_TYPE string `default:"tenancy"`
+	TENANCY_PATH string
 }
 
 type RestApiClientWithConfig struct {
@@ -28,7 +30,12 @@ func (r *RestApiClientWithConfig) Init(cfg config.Config, log logger.Logger, vld
 		return log.PushFatalStack("failed to load configuration of rest api client", err)
 	}
 
-	r.RestApiClientBase.Init(r.BASE_URL, r.USER_AGENT)
+	if r.TENANCY_PATH != "" {
+		tenancy := &TenancyAuth{TenancyType: r.TENANCY_TYPE, TenancyPath: r.TENANCY_PATH}
+		r.RestApiClientBase.Init(r.BASE_URL, r.USER_AGENT, tenancy)
+	} else {
+		r.RestApiClientBase.Init(r.BASE_URL, r.USER_AGENT)
+	}
 
 	return nil
 }

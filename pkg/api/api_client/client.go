@@ -8,7 +8,7 @@ import (
 )
 
 type Client interface {
-	Exec(ctx op_context.Context, operation api.Operation, cmd interface{}, response interface{}, tenancyId ...string) error
+	Exec(ctx op_context.Context, operation api.Operation, cmd interface{}, response interface{}, tenancyPath ...string) error
 	Transport() interface{}
 }
 
