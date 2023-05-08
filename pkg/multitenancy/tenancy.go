@@ -69,6 +69,10 @@ func (t *WithPath) Path() string {
 	return t.PATH
 }
 
+func (t *WithPath) SetPath(path string) {
+	t.PATH = path
+}
+
 func (t *WithPoolAndDb) PoolId() string {
 	return t.POOL_ID
 }
@@ -78,7 +82,17 @@ func (t *WithPoolAndDb) DbName() string {
 }
 
 func TenancyDisplay(t Tenancy) string {
-	return utils.ConcatStrings(t.CustomerDisplay(), "/", t.Role())
+
+	if t.CustomerDisplay() != "" {
+
+		return utils.ConcatStrings(t.CustomerDisplay(), "/", t.Role())
+	}
+
+	if t.GetID() == "" {
+		return t.Path()
+	}
+
+	return t.GetID()
 }
 
 func TenancySelector(customer string, role string) string {
@@ -150,6 +164,13 @@ func ContextTenancy(ctx TenancyContext) string {
 		return ""
 	}
 	return ctx.GetTenancy().GetID()
+}
+
+func ContextTenancyPath(ctx TenancyContext) string {
+	if ctx.GetTenancy() == nil {
+		return ""
+	}
+	return ctx.GetTenancy().Path()
 }
 
 type TenancyContextBase struct {

@@ -189,5 +189,8 @@ func (t *TenancyBase) ConnectDatabase(ctx op_context.Context, newDb ...bool) err
 }
 
 func (t *TenancyBase) CustomerDisplay() string {
+	if t.Customer == nil {
+		return ""
+	}
 	return t.Customer.Display()
 }
