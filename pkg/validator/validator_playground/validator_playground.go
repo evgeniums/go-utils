@@ -135,7 +135,7 @@ func ValidatePhone(fl playground.FieldLevel) bool {
 	return phoneRegex.MatchString(fl.Field().String())
 }
 
-const idRegexString = "^[a-f0-9]{16}$"
+const idRegexString = "^[a-f0-9]{20}$"
 
 var idRegex = regexp.MustCompile(idRegexString)
 
