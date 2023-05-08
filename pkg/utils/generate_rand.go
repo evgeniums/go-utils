@@ -11,16 +11,16 @@ var idCount atomic.Uint32
 
 func GenerateID() string {
 	t := time.Now().Unix()
-	r1 := rand.Int31n(0x7fffffff)
+	r1 := rand.Uint32()
 
 	count := idCount.Add(1) % 0x10000
 
-	id := fmt.Sprintf("%08x%04x%04x", t, count, r1)
+	id := fmt.Sprintf("%08x%04x%08x", t, count, r1)
 	return id
 }
 
 func GenerateRand64() string {
-	r1 := rand.Int63()
+	r1 := rand.Uint64()
 	id := fmt.Sprintf("%016x", r1)
 	return id
 }
