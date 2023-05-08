@@ -32,6 +32,7 @@ type DbConnector struct {
 }
 
 type DbState struct {
+	gormDBConfig
 	dbConnector *DbConnector
 
 	joinQueries   *db.JoinQueries
@@ -40,7 +41,6 @@ type DbState struct {
 }
 
 type GormDB struct {
-	gormDBConfig
 	db *gorm.DB
 
 	DbState
