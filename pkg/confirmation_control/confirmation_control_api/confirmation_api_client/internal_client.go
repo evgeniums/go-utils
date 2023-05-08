@@ -26,6 +26,8 @@ func NewConfirmationInternalClient(client api_client.Client) *ConfirmationIntern
 	c.prepare_operation = confirmation_control_api.PrepareOperation()
 	c.OperationResource.AddOperation(c.prepare_operation)
 
+	api.NewTenancyResource().AddChild(c)
+
 	return c
 }
 
