@@ -86,22 +86,16 @@ func (s *NoAuthServer) Init(app app_with_multitenancy.AppWithMultitenancy, confi
 
 			app.Logger().Info("Using configuration of pool service", logger.Fields{"service_name": s.config.POOL_SERVICE_NAME})
 
-			// check if app with self pool
-			selfPool, err := app.Pools().SelfPool()
-			if err != nil {
-				return app.Logger().PushFatalStack("self pool must be specified for api server", err)
-			}
-
 			// find service by name
-			service, err := selfPool.ServiceByName(s.config.POOL_SERVICE_NAME)
+			service, err := app.Pools().SelfPoolServiceByName(s.config.POOL_SERVICE_NAME)
 			if err != nil {
 				return app.Logger().PushFatalStack("failed to find service with specified name", err, logger.Fields{"name": s.config.POOL_SERVICE_NAME})
 			}
 
+			// check service config
 			if service.TypeName() != s.config.POOL_SERVICE_TYPE {
 				return app.Logger().PushFatalStack("invalid service type", err, logger.Fields{"name": s.config.POOL_SERVICE_NAME, "service_type": s.config.POOL_SERVICE_TYPE, "pool_service_type": service.TypeName()})
 			}
-
 			if service.Provider() != app.Application() {
 				return app.Logger().PushFatalStack("invalid service provider", err, logger.Fields{"name": s.config.POOL_SERVICE_NAME, "application": app.Application(), "pool_service_provider": service.Provider()})
 			}
