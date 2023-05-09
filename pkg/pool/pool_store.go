@@ -27,6 +27,8 @@ type PoolStore interface {
 	PoolByName(name string) (Pool, error)
 	Pools() []Pool
 	PoolController() PoolController
+	SelfPoolService(role string) (*PoolServiceBinding, error)
+	SelfPoolServiceByName(name string) (*PoolServiceBinding, error)
 }
 
 type poolStoreConfig struct {
@@ -134,6 +136,26 @@ func (p *PoolStoreBase) SelfPool() (Pool, error) {
 		return nil, errors.New("self pool undefined")
 	}
 	return p.selfPool, nil
+}
+
+func (p *PoolStoreBase) SelfPoolService(role string) (*PoolServiceBinding, error) {
+
+	selfPool, err := p.SelfPool()
+	if err != nil {
+		return nil, err
+	}
+
+	return selfPool.Service(role)
+}
+
+func (p *PoolStoreBase) SelfPoolServiceByName(name string) (*PoolServiceBinding, error) {
+
+	selfPool, err := p.SelfPool()
+	if err != nil {
+		return nil, err
+	}
+
+	return selfPool.ServiceByName(name)
 }
 
 func (p *PoolStoreBase) Pool(id string) (Pool, error) {
