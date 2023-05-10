@@ -66,6 +66,8 @@ type AuthSms struct {
 	AuthSmsConfig
 	Encryption auth.AuthParameterEncryption
 	smsManager sms.SmsManager
+
+	testCodes map[string]string
 }
 
 func (a *AuthSms) Config() interface{} {
@@ -88,6 +90,7 @@ func (a *AuthSms) Init(cfg config.Config, log logger.Logger, vld validator.Valid
 	if err != nil {
 		return log.PushFatalStack("failed to load configuration of auth SMS handler", err)
 	}
+	a.testCodes = cfg.GetStringMapString("test_codes")
 
 	encryption := &auth.AuthParameterEncryptionBase{}
 	err = encryption.Init(cfg, log, vld, path)
@@ -314,7 +317,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 	token := &SmsToken{}
 	token.GenerateID()
 	cacheToken := &SmsCacheToken{}
-	cacheToken.Code = a.genCode()
+	cacheToken.Code = a.genCode(phone)
 	cacheToken.Try = 1
 	h := a.hmacOfRequest(ctx, userId)
 	cacheToken.Checksum = h.SumStr()
@@ -370,7 +373,15 @@ func (a *AuthSms) smsTokenCacheKey(userId string) string {
 	return fmt.Sprintf("%s/%s", SmsTokenCacheKey, userId)
 }
 
-func (a *AuthSms) genCode() string {
+func (a *AuthSms) genCode(phone string) string {
+
+	if a.TESTING && a.testCodes != nil {
+		code, ok := a.testCodes[phone]
+		if ok {
+			return code
+		}
+	}
+
 	r := rand.Uint32()
 	str := fmt.Sprintf("%08d", r)
 	return str[len(str)-a.CODE_LENGTH:]
