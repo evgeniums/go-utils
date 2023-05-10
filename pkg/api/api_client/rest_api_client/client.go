@@ -12,6 +12,7 @@ import (
 
 type Auth interface {
 	MakeHeaders(ctx op_context.Context, operation api.Operation, cmd interface{}) (map[string]string, error)
+	HandleResponse(resp Response)
 }
 
 type RestApiMethod func(ctx op_context.Context, path string, cmd interface{}, response interface{}, headers ...map[string]string) (Response, error)
@@ -80,6 +81,7 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 		}
 		// invoke method with auth headers
 		resp, err = method(ctx, path, cmd, response, headers)
+		cl.auth.HandleResponse(resp)
 	} else {
 		// invoke method without auth headers
 		resp, err = method(ctx, path, cmd, response)

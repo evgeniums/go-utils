@@ -21,6 +21,9 @@ type ClientAuthSignature struct {
 	EndpoindsConfig auth.EndpointsAuthConfig
 }
 
+func (a *ClientAuthSignature) HandleResponse(resp Response) {
+}
+
 func (a *ClientAuthSignature) MakeHeaders(ctx op_context.Context, operation api.Operation, cmd interface{}) (map[string]string, error) {
 
 	// setup
