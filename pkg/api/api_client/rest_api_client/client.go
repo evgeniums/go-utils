@@ -72,16 +72,28 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 
 	var resp Response
 	var err error
+	var errr error
 	if cl.auth != nil {
-		// make auth headers
-		headers, err1 := cl.auth.MakeHeaders(ctx, operation, cmd)
-		if err1 != nil {
-			c.SetMessage("failed to make auth headers")
-			return c.SetError(err1)
+
+		exec := func() {
+			// make auth headers
+			headers, err1 := cl.auth.MakeHeaders(ctx, operation, cmd)
+			if err1 != nil {
+				c.SetMessage("failed to make auth headers")
+				errr = err1
+			}
+			// invoke method with auth headers
+			resp, err = method(ctx, path, cmd, response, headers)
+			cl.auth.HandleResponse(resp)
 		}
-		// invoke method with auth headers
-		resp, err = method(ctx, path, cmd, response, headers)
-		cl.auth.HandleResponse(resp)
+		exec()
+		if errr != nil {
+			return c.SetError(errr)
+		}
+		if resp != nil && resp.Code() == http.StatusUnauthorized {
+			exec()
+		}
+
 	} else {
 		// invoke method without auth headers
 		resp, err = method(ctx, path, cmd, response)

@@ -90,7 +90,9 @@ func (a *AuthSms) Init(cfg config.Config, log logger.Logger, vld validator.Valid
 	if err != nil {
 		return log.PushFatalStack("failed to load configuration of auth SMS handler", err)
 	}
-	a.testCodes = cfg.GetStringMapString("test_codes")
+
+	testCodesPath := object_config.Key(path, "test_codes")
+	a.testCodes = cfg.GetStringMapString(testCodesPath)
 
 	encryption := &auth.AuthParameterEncryptionBase{}
 	err = encryption.Init(cfg, log, vld, path)
