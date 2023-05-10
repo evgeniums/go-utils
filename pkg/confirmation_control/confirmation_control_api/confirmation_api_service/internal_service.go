@@ -6,6 +6,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/confirmation_control/confirmation_control_api"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 )
 
 type InternalEndpoint struct {
@@ -67,7 +68,7 @@ func (e *PrepareOperationEndpoint) HandleRequest(request api_server.Request) err
 	// set response
 	resp := &confirmation_control_api.PrepareOperationResponse{}
 	if request.GetTenancy() != nil {
-		resp.Url = fmt.Sprintf("%s/tenancy/%s/%s/%s/%s", e.service.BaseUrl, request.GetTenancy().GetID(), confirmation_control_api.ServiceName, confirmation_control_api.OperationResource, cmd.Id)
+		resp.Url = fmt.Sprintf("%s/tenancy/%s/%s/%s/%s", e.service.BaseUrl, multitenancy.ContextTenancyPath(request), confirmation_control_api.ServiceName, confirmation_control_api.OperationResource, cmd.Id)
 	} else {
 		resp.Url = fmt.Sprintf("%s/%s/%s/%s", e.service.BaseUrl, confirmation_control_api.ServiceName, confirmation_control_api.OperationResource, cmd.Id)
 	}

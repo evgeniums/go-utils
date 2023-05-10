@@ -117,7 +117,11 @@ func (s *ExternalServer) BaseUrl() string {
 	poolService := s.server.ConfigPoolService()
 	publicUrl := poolService.PublicUrl()
 	if publicUrl == "" {
-		publicUrl = fmt.Sprintf("https://%s:%d%s%s", poolService.PublicHost(), poolService.PublicPort(), poolService.PathPrefix(), poolService.ApiVersion())
+		portStr := ""
+		if poolService.PublicPort() != 443 {
+			portStr = fmt.Sprintf(":%d", poolService.PublicPort())
+		}
+		publicUrl = fmt.Sprintf("https://%s%s%s/%s", poolService.PublicHost(), portStr, poolService.PathPrefix(), poolService.ApiVersion())
 	}
 
 	return publicUrl
