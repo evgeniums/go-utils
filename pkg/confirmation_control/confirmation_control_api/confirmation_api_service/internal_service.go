@@ -57,7 +57,7 @@ func (e *PrepareOperationEndpoint) HandleRequest(request api_server.Request) err
 	}
 
 	// save data in cache
-	cacheToken := &confirmation_control_api.OperationCacheToken{Recipient: cmd.Recipient, FailedUrl: cmd.FailedUrl}
+	cacheToken := &confirmation_control_api.OperationCacheToken{Id: cmd.Id, Recipient: cmd.Recipient, FailedUrl: cmd.FailedUrl}
 	cacheKey := confirmation_control_api.OperationIdCacheKey(cmd.Id)
 	err = request.Cache().Set(cacheKey, cacheToken, e.service.TokenTtl)
 	if err != nil {

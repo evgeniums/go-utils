@@ -83,7 +83,7 @@ func (s *ExternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, con
 		s.auth = auth
 	}
 
-	serverCfg := noauth_server.Config{DefaultPoolServiceType: ExternalServerType}
+	serverCfg := noauth_server.Config{DefaultPoolServiceType: ExternalServerType, Auth: s.auth}
 	server := noauth_server.New(serverCfg)
 	err = server.Init(app, path)
 	if err != nil {

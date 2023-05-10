@@ -42,7 +42,7 @@ type CodeCmd struct {
 
 type CodeResponse struct {
 	api.ResponseStub
-	RedirectUrl string `json:"code"`
+	RedirectUrl string `json:"redirect_url"`
 }
 
 type PrepareCheckConfirmationResponse struct {

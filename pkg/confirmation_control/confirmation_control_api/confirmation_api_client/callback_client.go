@@ -26,6 +26,8 @@ func NewConfirmationCallbackClient(client api_client.Client) *ConfirmationCallba
 	c.callback_confirmation = confirmation_control_api.CallbackConfirmation()
 	c.CallbackResource.AddOperation(c.callback_confirmation)
 
+	api.NewTenancyResource().AddChild(c)
+
 	return c
 }
 
