@@ -47,7 +47,8 @@ type CodeResponse struct {
 
 type PrepareCheckConfirmationResponse struct {
 	api.ResponseStub
-	FailedUrl string `json:"failed_url"`
+	CodeInBody bool   `json:"code_in_body"`
+	FailedUrl  string `json:"failed_url"`
 }
 
 type OperationCacheToken struct {
