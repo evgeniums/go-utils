@@ -54,7 +54,7 @@ func (e *CheckConfirmationEndpoint) HandleRequest(request api_server.Request) er
 	var codeOrStatus string
 	if e.service.CheckCode {
 		// parse command
-		cmd := &confirmation_control_api.CodeCmd{}
+		cmd := &confirmation_control_api.CheckConfirmationCmd{}
 		err := request.ParseValidate(cmd)
 		if err != nil {
 			c.SetMessage("failed to parse/validate command")
@@ -66,7 +66,7 @@ func (e *CheckConfirmationEndpoint) HandleRequest(request api_server.Request) er
 	}
 
 	// invoke callback
-	resp := &confirmation_control_api.CodeResponse{}
+	resp := &confirmation_control_api.CheckConfirmationResponse{}
 	resp.RedirectUrl, err = e.service.ConfirmationCallbackHandler.ConfirmationCallback(request, request.GetResourceId(confirmation_control_api.OperationResource), codeOrStatus)
 	if err != nil {
 		c.SetMessage("failed to invoke callback")

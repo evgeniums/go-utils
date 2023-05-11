@@ -39,10 +39,10 @@ func (cl *ConfirmationExternalClient) CheckConfirmation(ctx multitenancy.Tenancy
 	defer onExit()
 
 	// prepare and exec handler
-	cmd := &confirmation_control_api.CodeCmd{
+	cmd := &confirmation_control_api.CheckConfirmationCmd{
 		Code: code,
 	}
-	handler := api_client.NewHandlerInTenancy(cmd, &confirmation_control_api.CodeResponse{})
+	handler := api_client.NewHandlerInTenancy(cmd, &confirmation_control_api.CheckConfirmationResponse{})
 	op := api.NamedResourceOperation(cl.OperationResource, operationId, confirmation_control_api.CheckConfirmation())
 	err = op.ExecInTenancy(ctx, api_client.MakeTenancyOperationHandler(cl.ApiClient(), handler))
 	if err != nil {

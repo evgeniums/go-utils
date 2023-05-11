@@ -36,11 +36,11 @@ type PrepareOperationResponse struct {
 	Url string `json:"url"`
 }
 
-type CodeCmd struct {
+type CheckConfirmationCmd struct {
 	Code string `json:"code" validate:"required" vmessage:"Code must be specified"`
 }
 
-type CodeResponse struct {
+type CheckConfirmationResponse struct {
 	api.ResponseStub
 	RedirectUrl string `json:"redirect_url"`
 }
