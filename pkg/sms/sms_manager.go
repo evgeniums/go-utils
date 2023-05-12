@@ -45,8 +45,9 @@ const (
 )
 
 type SmsMessage struct {
-	common.ObjectBase
+	common.ObjectWithMonth
 	auth.WithUserBase
+	Context     string `gorm:"index;index:,unique,composite:u_month"`
 	ForeignId   string `gorm:"index"`
 	Phone       string `gorm:"index"`
 	Operation   string `gorm:"index"`
@@ -202,6 +203,7 @@ func (s *SmsManagerBase) Send(ctx auth.UserContext, message string, recipient st
 	sms.SetUser(ctx.AuthUser())
 	sms.Tenancy = auth.Tenancy(ctx)
 	sms.Phone = recipient
+	sms.Context = ctx.ID()
 	sms.Operation = ctx.Name()
 	sms.Provider = provider.Name()
 	sms.Status = StatusSending
