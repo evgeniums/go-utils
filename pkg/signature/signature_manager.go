@@ -222,8 +222,6 @@ func (s *SignatureManagerBase) Verify(ctx auth.AuthContext, signature string, me
 	} else {
 		obj.Message = string(message)
 	}
-	// TODO remove it
-	ctx.Db().EnableDebug(true)
 	err = op_context.DB(ctx).Create(ctx, obj)
 	if err != nil {
 		c.SetMessage("failed to save message signature in database")

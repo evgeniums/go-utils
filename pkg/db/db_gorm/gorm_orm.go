@@ -109,7 +109,6 @@ func prepareInterval(db *gorm.DB, name string, interval *Interval) *gorm.DB {
 	return h
 }
 
-// TODO be careful with quotes for hirerarchical fields
 func prepareFilter(db *gorm.DB, filter *Filter) *gorm.DB {
 	h := db
 
