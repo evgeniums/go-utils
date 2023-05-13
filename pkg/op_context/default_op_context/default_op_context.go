@@ -103,6 +103,8 @@ type ContextBase struct {
 
 	origin        op_context.Origin
 	writeCloseLog bool
+
+	overrideDb db.DBHandlers
 }
 
 func NewContext() *ContextBase {
@@ -111,6 +113,14 @@ func NewContext() *ContextBase {
 
 func (c *ContextBase) BaseContext() *ContextBase {
 	return c
+}
+
+func (c *ContextBase) SetOverrideDb(db db.DBHandlers) {
+	c.overrideDb = db
+}
+
+func (c *ContextBase) OverrideDb() db.DBHandlers {
+	return c.overrideDb
 }
 
 func (c *ContextBase) SetWriteCloseLog(enable bool) {

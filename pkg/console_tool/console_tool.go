@@ -127,8 +127,7 @@ func (c *ConsoleUtility) InitCommandContext(group string, command string) multit
 		}
 	}
 
-	opCtx := multitenancy.NewContext()
-	opCtx.Init(c.App, c.App.Logger(), c.App.Db())
+	opCtx := multitenancy.NewInitContext(c.App, c.App.Logger(), c.App.Db())
 	opCtx.SetName(fmt.Sprintf("%s.%s", group, command))
 	errManager := &generic_error.ErrorManagerBase{}
 	errManager.Init(http.StatusBadRequest)

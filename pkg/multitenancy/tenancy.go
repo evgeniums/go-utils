@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
@@ -11,6 +12,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool/app_with_pools"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
@@ -155,7 +157,7 @@ type WithTenancy interface {
 }
 
 type TenancyContext interface {
-	op_context.Context
+	app_with_pools.Context
 	WithTenancy
 }
 
@@ -174,7 +176,7 @@ func ContextTenancyPath(ctx TenancyContext) string {
 }
 
 type TenancyContextBase struct {
-	*default_op_context.ContextBase
+	app_with_pools.ContextBase
 	Tenancy Tenancy
 }
 
@@ -192,19 +194,29 @@ func (u *TenancyContextBase) SetTenancy(tenancy Tenancy) {
 
 func (u *TenancyContextBase) Db() db.DB {
 	t := u.GetTenancy()
-	if t != nil {
+	if t != nil && t.Db() != nil {
 		return t.Db()
 	}
 	return u.ContextBase.Db()
 }
 
-func NewContext(fromCtx ...op_context.Context) *TenancyContextBase {
-	ctx := &TenancyContextBase{}
-	if len(fromCtx) == 0 {
-		ctx.ContextBase = default_op_context.NewContext()
-	} else {
-		baseCtx := fromCtx[0].(default_op_context.WithBaseContext)
-		ctx.ContextBase = baseCtx.BaseContext()
+func (u *TenancyContextBase) Pool() pool.Pool {
+	t := u.GetTenancy()
+	if t != nil && t.Pool() != nil {
+		return t.Pool()
 	}
-	return ctx
+	return u.ContextBase.Pool()
+}
+
+func NewContext(fromCtx ...op_context.Context) *TenancyContextBase {
+	c := &TenancyContextBase{}
+	c.Construct(fromCtx...)
+	return c
+}
+
+func NewInitContext(app app_context.Context, log logger.Logger, db db.DB) *TenancyContextBase {
+	c := default_op_context.NewContext()
+	c.Init(app, log, db)
+	t := NewContext(c)
+	return t
 }

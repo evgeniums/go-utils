@@ -57,6 +57,8 @@ type Context interface {
 	DbTransaction() db.Transaction
 	SetDbTransaction(tx db.Transaction)
 	ClearDbTransaction()
+	SetOverrideDb(db db.DBHandlers)
+	OverrideDb() db.DBHandlers
 
 	Cache() cache.Cache
 	SetCache(cache.Cache)
@@ -115,6 +117,9 @@ type CallContextBuilder = func(methodName string, parentLogger logger.Logger, fi
 type OplogHandler = func(ctx Context) oplog.OplogController
 
 func DB(c Context, forceMainDb ...bool) db.DBHandlers {
+	if c.OverrideDb() != nil {
+		return c.OverrideDb()
+	}
 	if c.DbTransaction() != nil {
 		return c.DbTransaction()
 	}

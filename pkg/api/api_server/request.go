@@ -30,8 +30,9 @@ type RequestBase struct {
 }
 
 func (r *RequestBase) Init(app app_context.Context, log logger.Logger, db db.DB, endpoint Endpoint, fields ...logger.Fields) {
-	r.ContextBase = default_op_context.NewContext()
-	r.ContextBase.Init(app, log, db, fields...)
+	baseCtx := default_op_context.NewContext()
+	baseCtx.Init(app, log, db, fields...)
+	r.Construct(baseCtx)
 	r.endpoint = endpoint
 }
 

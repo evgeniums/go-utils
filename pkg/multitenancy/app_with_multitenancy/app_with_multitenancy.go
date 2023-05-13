@@ -122,8 +122,7 @@ func (a *AppWithMultitenancyBase) Close() {
 }
 
 func BackgroundOpContext(app AppWithMultitenancy, tenancy multitenancy.Tenancy, name string) multitenancy.TenancyContext {
-	opCtx := multitenancy.NewContext()
-	opCtx.Init(app, app.Logger(), app.Db())
+	opCtx := multitenancy.NewInitContext(app, app.Logger(), app.Db())
 	opCtx.SetName(name)
 	errManager := &generic_error.ErrorManagerBase{}
 	errManager.Init(http.StatusInternalServerError)
