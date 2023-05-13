@@ -15,6 +15,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
@@ -92,6 +93,8 @@ type SmsManagerBase struct {
 	destinations    []*SmsDestination
 	cipher          *crypt_utils.AEAD
 	defaultProvider Provider
+
+	db db.DB
 }
 
 func NewSmsManager() *SmsManagerBase {
@@ -171,6 +174,37 @@ func (s *SmsManagerBase) Init(cfg config.Config, log logger.Logger, vld validato
 	return nil
 }
 
+func (s *SmsManagerBase) InitDbService(ctx op_context.Context, poool pool.Pool, role string) error {
+
+	// setup
+	c := ctx.TraceInMethod("SmsManagerBase.InitDbService")
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
+
+	// connect to database
+	s.db, err = pool.ConnectDatabaseService(ctx, poool, role, "")
+	if err != nil {
+		c.SetMessage("faield to connect to database service in the pool")
+		return err
+	}
+
+	// done
+	return nil
+}
+
+func (s *SmsManagerBase) Db(ctx op_context.Context) db.DBHandlers {
+	if s.db != nil {
+		return s.db
+	}
+	return op_context.DB(ctx)
+}
+
 func (s *SmsManagerBase) Send(ctx auth.UserContext, message string, recipient string) (string, error) {
 
 	// setup
@@ -220,7 +254,7 @@ func (s *SmsManagerBase) Send(ctx auth.UserContext, message string, recipient st
 	} else {
 		sms.Message = message
 	}
-	err = op_context.DB(ctx).Create(ctx, sms)
+	err = s.Db(ctx).Create(ctx, sms)
 	if err != nil {
 		c.SetMessage("failed to save SMS in database")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
@@ -241,7 +275,7 @@ func (s *SmsManagerBase) Send(ctx auth.UserContext, message string, recipient st
 	}
 
 	// update status in database
-	err1 := db.Update(op_context.DB(ctx), ctx, sms, db.Fields{"status": sms.Status, "raw_response": sms.RawResponse, "foreign_id": sms.ForeignId})
+	err1 := db.Update(s.Db(ctx), ctx, sms, db.Fields{"status": sms.Status, "raw_response": sms.RawResponse, "foreign_id": sms.ForeignId})
 	if err1 != nil {
 		c.LoggerFields()["status"] = sms.Status
 		c.LoggerFields()["raw_response"] = sms.RawResponse
@@ -270,7 +304,7 @@ func (s *SmsManagerBase) FindSms(ctx op_context.Context, smsId string) (*SmsMess
 	defer onExit()
 
 	msg := &SmsMessage{}
-	found, err := op_context.DB(ctx).FindByField(ctx, "id", smsId, msg)
+	found, err := s.Db(ctx).FindByField(ctx, "id", smsId, msg)
 	if err != nil {
 		c.SetMessage("failed to find SMS in database")
 		return nil, err
