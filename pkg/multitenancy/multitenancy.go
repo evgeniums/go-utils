@@ -31,7 +31,6 @@ const (
 	ErrorCodeTenancyDbInitializationFailed = "tenancy_db_initialization_failed"
 	ErrorCodeForeignDatabase               = "foreign_tenancy_database"
 	ErrorCodeNoDbserviceInPool             = "no_db_service_in_pool"
-	ErrorCodeCreateTenancyDatabaseFailed   = "create_tenancy_database_dailed"
 )
 
 var ErrorDescriptions = map[string]string{
@@ -41,7 +40,6 @@ var ErrorDescriptions = map[string]string{
 	ErrorCodeTenancyDbInitializationFailed: "Failed to initialize tenancy database.",
 	ErrorCodeForeignDatabase:               "Database does not belong to this tenancy.",
 	ErrorCodeNoDbserviceInPool:             "Pool does not contain service for tenancy database.",
-	ErrorCodeCreateTenancyDatabaseFailed:   "Failed to create tenancy database.",
 }
 
 var ErrorHttpCodes = map[string]int{
@@ -49,7 +47,6 @@ var ErrorHttpCodes = map[string]int{
 	ErrorCodeNoDbserviceInPool:             http.StatusInternalServerError,
 	ErrorCodeTenancyDbInitializationFailed: http.StatusInternalServerError,
 	ErrorCodeForeignDatabase:               http.StatusInternalServerError,
-	ErrorCodeCreateTenancyDatabaseFailed:   http.StatusInternalServerError,
 }
 
 type Multitenancy interface {
