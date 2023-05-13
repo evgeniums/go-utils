@@ -41,7 +41,7 @@ func AddPool(t *testing.T, ctx *PoolTestContext, poolName ...string) pool.Pool {
 	assert.Equal(t, p1Sample.Name(), addedPool1.Name())
 	assert.Equal(t, p1Sample.LongName(), addedPool1.LongName())
 	assert.Equal(t, p1Sample.Description(), addedPool1.Description())
-	assert.False(t, addedPool1.IsActive())
+	assert.True(t, addedPool1.IsActive())
 	assert.NotEmpty(t, addedPool1.GetID())
 
 	// find pool locally
