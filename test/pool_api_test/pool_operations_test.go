@@ -221,23 +221,23 @@ func TestBindings(t *testing.T) {
 
 	// try to add duplicate service to pool
 	err = ctx.RemotePoolController.AddServiceToPool(ctx.ClientOp, p.GetID(), service.GetID(), role)
-	test_utils.CheckGenericError(t, err, pool.ErrorCodeServiceRoleConflict, "Pool already has service for that role.")
+	test_utils.CheckGenericError(t, err, pool.ErrorCodeServiceRoleConflict, "Pool already has service for that role")
 
 	// try to add unknown service to pool
 	err = ctx.RemotePoolController.AddServiceToPool(ctx.ClientOp, p.GetID(), "unknown_id", role)
-	test_utils.CheckGenericError(t, err, pool.ErrorCodeServiceNotFound, "Service not found.")
+	test_utils.CheckGenericError(t, err, pool.ErrorCodeServiceNotFound, "Service not found")
 
 	// try to add service to unknown pool
 	err = ctx.RemotePoolController.AddServiceToPool(ctx.ClientOp, "unknown_id", "unknown_id", role)
-	test_utils.CheckGenericError(t, err, pool.ErrorCodePoolNotFound, "Pool not found.")
+	test_utils.CheckGenericError(t, err, pool.ErrorCodePoolNotFound, "Pool not found")
 
 	// try to remove pool with services
 	err = ctx.RemotePoolController.DeletePool(ctx.ClientOp, p.GetID())
-	test_utils.CheckGenericError(t, err, pool.ErrorCodePoolServiceBindingsExist, "Can't delete pool with services. First, remove all services from the pool.")
+	test_utils.CheckGenericError(t, err, pool.ErrorCodePoolServiceBindingsExist, "Can't delete pool with services. First, remove all services from the pool")
 
 	// try to remove bound service
 	err = ctx.RemotePoolController.DeleteService(ctx.ClientOp, service.GetID())
-	test_utils.CheckGenericError(t, err, pool.ErrorCodePoolServiceBoundToPool, "Can't delete service bound to pool. First, remove the services from all pools.")
+	test_utils.CheckGenericError(t, err, pool.ErrorCodePoolServiceBoundToPool, "Can't delete service bound to pool. First, remove the services from all pools")
 
 	// try to remove unknown service from pool
 	err = ctx.RemotePoolController.RemoveServiceFromPool(ctx.ClientOp, "unknown_id", role)
@@ -337,19 +337,19 @@ func TestUpdatePool(t *testing.T) {
 	delete(fields, "name")
 	_, err = ctx.RemotePoolController.UpdatePool(ctx.ClientOp, "someid", fields)
 	require.Error(t, err)
-	test_utils.CheckGenericError(t, err, pool.ErrorCodePoolNotFound, "Pool not found.")
+	test_utils.CheckGenericError(t, err, pool.ErrorCodePoolNotFound, "Pool not found")
 
 	// unknown field
 	fields = db.Fields{"unknown_field": "try me"}
 	_, err = ctx.RemotePoolController.UpdatePool(ctx.ClientOp, p.GetID(), fields)
 	require.Error(t, err)
-	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeFormat, "Invalid fields for update.")
+	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeFormat, "Invalid fields for update")
 
 	// duplicate name
 	fields = db.Fields{"name": "updated name"}
 	_, err = ctx.RemotePoolController.UpdatePool(ctx.ClientOp, p.GetID(), fields)
 	require.Error(t, err)
-	test_utils.CheckGenericError(t, err, pool.ErrorCodePoolNameConflict, "Pool with such name already exists, choose another name.")
+	test_utils.CheckGenericError(t, err, pool.ErrorCodePoolNameConflict, "Pool with such name already exists, choose another name")
 }
 
 func TestUpdateService(t *testing.T) {
@@ -433,17 +433,17 @@ func TestUpdateService(t *testing.T) {
 	delete(fields, "name")
 	_, err = ctx.RemotePoolController.UpdateService(ctx.ClientOp, "someid", fields)
 	require.Error(t, err)
-	test_utils.CheckGenericError(t, err, pool.ErrorCodeServiceNotFound, "Service not found.")
+	test_utils.CheckGenericError(t, err, pool.ErrorCodeServiceNotFound, "Service not found")
 
 	// unknown field
 	fields = db.Fields{"unknown_field": "try me"}
 	_, err = ctx.RemotePoolController.UpdateService(ctx.ClientOp, s.GetID(), fields)
 	require.Error(t, err)
-	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeFormat, "Invalid fields for update.")
+	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeFormat, "Invalid fields for update")
 
 	// duplicate name
 	fields = db.Fields{"name": "updated name"}
 	_, err = ctx.RemotePoolController.UpdateService(ctx.ClientOp, s.GetID(), fields)
 	require.Error(t, err)
-	test_utils.CheckGenericError(t, err, pool.ErrorCodeServiceNameConflict, "Service with such name already exists, choose another name.")
+	test_utils.CheckGenericError(t, err, pool.ErrorCodeServiceNameConflict, "Service with such name already exists, choose another name")
 }

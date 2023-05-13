@@ -73,7 +73,7 @@ func ValidateMap(v Validator, m map[string]interface{}, sampleStruct interface{}
 	err = dec.Decode(m)
 	if err != nil {
 		vErr := &ValidationError{}
-		vErr.Message = "Invalid fields for update."
+		vErr.Message = "Invalid fields for update"
 		vErr.Err = err
 		return vErr
 	}

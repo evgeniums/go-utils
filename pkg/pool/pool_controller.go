@@ -23,20 +23,22 @@ const ErrorCodeServiceInitializationFailed = "service_initialization_failed"
 const ErrorCodePoolServiceBoundToPool = "service_bound_to_pool"
 const ErrorCodeServiceNotActive = "service_not_active"
 const ErrorCodePoolNotActive = "pool_not_active"
+const ErrorCodeCreateServiceDatabaseFailed = "create_service_database_failed"
 
 var ErrorDescriptions = map[string]string{
-	ErrorCodePoolNotFound:                "Pool not found.",
-	ErrorCodeServiceNotFound:             "Service not found.",
-	ErrorCodePoolNameConflict:            "Pool with such name already exists, choose another name.",
-	ErrorCodeServiceNameConflict:         "Service with such name already exists, choose another name.",
-	ErrorCodeServiceRoleConflict:         "Pool already has service for that role.",
-	ErrorCodePoolServiceBindingsExist:    "Can't delete pool with services. First, remove all services from the pool.",
-	ErrorCodePoolServiceBoundToPool:      "Can't delete service bound to pool. First, remove the services from all pools.",
+	ErrorCodePoolNotFound:                "Pool not found",
+	ErrorCodeServiceNotFound:             "Service not found",
+	ErrorCodePoolNameConflict:            "Pool with such name already exists, choose another name",
+	ErrorCodeServiceNameConflict:         "Service with such name already exists, choose another name",
+	ErrorCodeServiceRoleConflict:         "Pool already has service for that role",
+	ErrorCodePoolServiceBindingsExist:    "Can't delete pool with services. First, remove all services from the pool",
+	ErrorCodePoolServiceBoundToPool:      "Can't delete service bound to pool. First, remove the services from all pools",
 	ErrorCodeNoServiceWithRole:           "Pool does not include service with requested role",
 	ErrorCodeInvalidServiceConfiguration: "Invalid configuration of service in the pool",
 	ErrorCodeServiceInitializationFailed: "Failed to connect to service",
-	ErrorCodeServiceNotActive:            "Service not active. First, activate corresponsing service.",
-	ErrorCodePoolNotActive:               "Pool not active. First, activate corresponsing pool.",
+	ErrorCodeServiceNotActive:            "Service not active. First, activate corresponsing service",
+	ErrorCodePoolNotActive:               "Pool not active. First, activate corresponsing pool",
+	ErrorCodeCreateServiceDatabaseFailed: "Failed to create database for pool service",
 }
 
 var ErrorHttpCodes = map[string]int{
@@ -46,6 +48,7 @@ var ErrorHttpCodes = map[string]int{
 	ErrorCodeServiceInitializationFailed: http.StatusInternalServerError,
 	ErrorCodeServiceNotActive:            http.StatusInternalServerError,
 	ErrorCodePoolNotActive:               http.StatusInternalServerError,
+	ErrorCodeCreateServiceDatabaseFailed: http.StatusInternalServerError,
 }
 
 type PoolController interface {
