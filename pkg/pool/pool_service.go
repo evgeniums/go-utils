@@ -178,6 +178,7 @@ type PoolServiceBase struct {
 
 func NewService() *PoolServiceBase {
 	p := &PoolServiceBase{}
+	p.Init()
 	return p
 }
 

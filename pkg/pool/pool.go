@@ -45,6 +45,7 @@ type PoolBase struct {
 
 func NewPool() *PoolBase {
 	p := &PoolBase{}
+	p.Init()
 	p.Services = make(map[string]*PoolServiceBinding)
 	return p
 }
