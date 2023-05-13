@@ -11,6 +11,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/confirmation_control/confirmation_control_api/confirmation_api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/confirmation_control/confirmation_control_api/confirmation_api_service"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/app_with_multitenancy"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
@@ -19,6 +20,7 @@ const ExternalServerType string = "confirmation_control_external"
 
 type ExternalServerConfig struct {
 	EXPLICIT_CODE_CHECK bool
+	SMS_DB_SERVICE_ROLE string
 }
 
 type ExternalServer struct {
@@ -53,13 +55,25 @@ func (s *ExternalServer) Config() interface{} {
 	return &s.ExternalServerConfig
 }
 
-func (s *ExternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, configPath ...string) error {
+func (s *ExternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, ctx op_context.Context, configPath ...string) error {
 
+	// setup
+	c := ctx.TraceInMethod("ExternalServer.Init")
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
 	path := utils.OptionalArg("external_server", configPath...)
 
-	err := object_config.LoadLogValidate(app.Cfg(), app.Logger(), app.Validator(), s, path)
+	// load config
+	err = object_config.LoadLogValidate(app.Cfg(), app.Logger(), app.Validator(), s, path)
 	if err != nil {
-		return app.Logger().PushFatalStack("failed to init external server of confirmation control", err)
+		c.SetMessage("failed to init external server of confirmation control")
+		return err
 	}
 
 	// init SMS manager
@@ -67,7 +81,20 @@ func (s *ExternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, con
 		smsManager := sms.NewSmsManager()
 		err := smsManager.Init(app.Cfg(), app.Logger(), app.Validator(), s.smsProviders, "sms")
 		if err != nil {
-			return app.Logger().PushFatalStack("failed to init SMS manager", err)
+			c.SetMessage("failed to init SMS manager")
+			return err
+		}
+		if s.SMS_DB_SERVICE_ROLE != "" {
+			selfPool, err := app.Pools().SelfPool()
+			if err != nil {
+				c.SetMessage("self pool must be specified")
+				return err
+			}
+			err = smsManager.InitDbService(ctx, selfPool, s.SMS_DB_SERVICE_ROLE)
+			if err != nil {
+				c.SetMessage("failed to init database service for SMS manager")
+				return err
+			}
 		}
 		s.smsManager = smsManager
 	}
@@ -78,7 +105,8 @@ func (s *ExternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, con
 		authPath := object_config.Key(path, "auth")
 		err := auth.Init(app.Cfg(), app.Logger(), app.Validator(), &AuthFactory{SmsManager: s.smsManager}, authPath)
 		if err != nil {
-			return app.Logger().PushFatalStack("failed to init auth manager", err)
+			c.SetMessage("failed to init auth manager")
+			return err
 		}
 		s.auth = auth
 	}
@@ -87,7 +115,8 @@ func (s *ExternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, con
 	server := noauth_server.New(serverCfg)
 	err = server.Init(app, path)
 	if err != nil {
-		return app.Logger().PushFatalStack("failed to init noauth server", err)
+		c.SetMessage("failed to init noauth server")
+		return err
 	}
 	s.server = server.ApiServer()
 
@@ -96,7 +125,8 @@ func (s *ExternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, con
 	callbackTransport := pool_misrocervice_client.NewPoolMicroserviceClient("confirmation_callback")
 	err = callbackTransport.Init(app, callbackTransportPath)
 	if err != nil {
-		return app.Logger().PushFatalStack("failed to init callback client", err)
+		c.SetMessage("failed to init callback client")
+		return err
 	}
 	callbackClient := confirmation_api_client.NewConfirmationCallbackClient(callbackTransport)
 

@@ -4,6 +4,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/background_worker"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/app_with_multitenancy"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
@@ -19,22 +20,35 @@ func New(externalServerCfg ...ExternalServerCfg) *ConfirmationControlServer {
 	return s
 }
 
-func (s *ConfirmationControlServer) Init(app app_with_multitenancy.AppWithMultitenancy, configPath ...string) error {
+func (s *ConfirmationControlServer) Init(app app_with_multitenancy.AppWithMultitenancy, ctx op_context.Context, configPath ...string) error {
+
+	// setup
+	c := ctx.TraceInMethod("ConfirmationControlServer.Init")
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
 
 	path := utils.OptionalArg("confirmation_control_server", configPath...)
 	externalServerConfigPath := object_config.Key(path, "external_server")
 	internalServerConfigPath := object_config.Key(path, "internal_server")
 
 	// init external server
-	err := s.ExternalServer.Init(app, externalServerConfigPath)
+	err = s.ExternalServer.Init(app, ctx, externalServerConfigPath)
 	if err != nil {
-		return app.Logger().PushFatalStack("failed to init external server", err)
+		c.SetMessage("failed to init external server")
+		return err
 	}
 
 	// init internal server
-	err = s.InternalServer.Init(app, s.ExternalServer.BaseUrl(), internalServerConfigPath)
+	err = s.InternalServer.Init(app, ctx, s.ExternalServer.BaseUrl(), internalServerConfigPath)
 	if err != nil {
-		return app.Logger().PushFatalStack("failed to init internal server", err)
+		c.SetMessage("failed to init internal server")
+		return err
 	}
 
 	// done
