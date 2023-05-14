@@ -141,6 +141,12 @@ func Today() Date {
 	return d
 }
 
+func Yesterday() Date {
+	var d Date
+	d.SetTime(time.Now().Add(-time.Hour * 24))
+	return d
+}
+
 func DateOfTime(t time.Time) Date {
 	var d Date
 	d.SetTime(BeginningOfDay(t))
