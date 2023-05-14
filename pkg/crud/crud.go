@@ -17,6 +17,7 @@ type CRUD interface {
 	ReadForUpdate(ctx op_context.Context, fields db.Fields, object interface{}) (bool, error)
 	ReadForShare(ctx op_context.Context, fields db.Fields, object interface{}) (bool, error)
 	Update(ctx op_context.Context, object common.Object, fields db.Fields) error
+	UpdateMonthObject(ctx op_context.Context, obj common.ObjectWithMonth, fields db.Fields) error
 	UpdateMulti(ctx op_context.Context, model interface{}, filter db.Fields, fields db.Fields) error
 	UpdateWithFilter(ctx op_context.Context, model interface{}, filter *db.Filter, fields db.Fields) error
 	Delete(ctx op_context.Context, object common.Object) error
@@ -146,6 +147,18 @@ func (d *DbCRUD) Update(ctx op_context.Context, obj common.Object, fields db.Fie
 	defer ctx.TraceOutMethod()
 
 	err := db.Update(op_context.DB(ctx, d.ForceMainDb), ctx, obj, fields)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	return nil
+}
+
+func (d *DbCRUD) UpdateMonthObject(ctx op_context.Context, obj common.ObjectWithMonth, fields db.Fields) error {
+	c := ctx.TraceInMethod("CRUD.UpdateMonthObject")
+	defer ctx.TraceOutMethod()
+
+	err := db.UpdateMulti(op_context.DB(ctx, d.ForceMainDb), ctx, obj, db.Fields{"month": obj.GetMonth(), "id": obj.GetID()}, fields)
 	if err != nil {
 		return c.SetError(err)
 	}

@@ -45,7 +45,7 @@ type InTenancyItem struct {
 }
 
 type PartitionedItem struct {
-	common.ObjectWithMonth
+	common.ObjectWithMonthBase
 	Field4 string
 	Field5 int
 }

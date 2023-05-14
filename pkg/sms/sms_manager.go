@@ -46,7 +46,7 @@ const (
 )
 
 type SmsMessage struct {
-	common.ObjectWithMonth
+	common.ObjectWithMonthBase
 	auth.WithUserBase
 	Context     string `gorm:"index;index:,unique,composite:u_month"`
 	ForeignId   string `gorm:"index"`

@@ -132,7 +132,7 @@ func TestPostgresRedis(t *testing.T) {
 	assert.True(t, found)
 	assert.Equal(t, inPart1.GetID(), readInPart1.GetID())
 	assert.True(t, inPart1.GetCreatedAt().Equal(readInPart1.GetCreatedAt()))
-	assert.Equal(t, inPart1.Month, readInPart1.Month)
+	assert.Equal(t, inPart1.GetMonth(), readInPart1.GetMonth())
 	assert.Equal(t, inPart1.Field4, readInPart1.Field4)
 	assert.Equal(t, inPart1.Field5, readInPart1.Field5)
 
