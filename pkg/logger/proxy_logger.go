@@ -1,16 +1,12 @@
 package logger
 
-import (
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
-)
-
 type ProxyLogger struct {
 	logger       Logger
 	staticFields Fields
 }
 
-func NewProxy(logger Logger, fields ...Fields) *ProxyLogger {
-	return &ProxyLogger{logger, utils.OptionalArg(Fields{}, fields...)}
+func NewProxy(log Logger, fields ...Fields) *ProxyLogger {
+	return &ProxyLogger{log, NewFields(fields...)}
 }
 
 func (p *ProxyLogger) Reset() {
