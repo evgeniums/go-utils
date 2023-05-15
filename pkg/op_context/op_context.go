@@ -1,6 +1,8 @@
 package op_context
 
 import (
+	"errors"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
@@ -98,6 +100,11 @@ type Context interface {
 }
 
 func ExecDbTransaction(ctx Context, handler func() error) error {
+
+	if ctx.DbTransaction() != nil {
+		return errors.New("nested transactions not supported")
+	}
+
 	h := func(tx db.Transaction) error {
 
 		ctx.SetDbTransaction(tx)
@@ -105,7 +112,7 @@ func ExecDbTransaction(ctx Context, handler func() error) error {
 
 		return handler()
 	}
-	return ctx.Db().Transaction(h)
+	return DB(ctx).Transaction(h)
 }
 
 type WithCtx interface {
@@ -117,11 +124,11 @@ type CallContextBuilder = func(methodName string, parentLogger logger.Logger, fi
 type OplogHandler = func(ctx Context) oplog.OplogController
 
 func DB(c Context, forceMainDb ...bool) db.DBHandlers {
-	if c.OverrideDb() != nil {
-		return c.OverrideDb()
-	}
 	if c.DbTransaction() != nil {
 		return c.DbTransaction()
+	}
+	if c.OverrideDb() != nil {
+		return c.OverrideDb()
 	}
 	if utils.OptionalArg(false, forceMainDb...) {
 		return c.MainDB()

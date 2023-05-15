@@ -62,6 +62,8 @@ type DBHandlers interface {
 	MakeExpression(expr string, args ...interface{}) interface{}
 
 	Sum(ctx logger.WithLogger, groupFields []string, sumFields []string, filter *Filter, model interface{}, dest ...interface{}) (int64, error)
+
+	Transaction(handler TransactionHandler) error
 }
 
 type Transaction interface {
@@ -84,8 +86,6 @@ type DB interface {
 	InitWithConfig(ctx logger.WithLogger, vld validator.Validator, cfg *DBConfig) error
 
 	DBHandlers
-
-	Transaction(handler TransactionHandler) error
 
 	EnableDebug(bool)
 	EnableVerboseErrors(bool)

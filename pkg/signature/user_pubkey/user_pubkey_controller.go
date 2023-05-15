@@ -93,10 +93,7 @@ func (p *PubkeyControllerBase[T, U]) AddPubKey(ctx op_context.Context, userId st
 
 	// run transaction
 	doc := p.objectBuilder()
-	err = ctx.Db().Transaction(func(tx db.Transaction) error {
-
-		ctx.SetDbTransaction(tx)
-		defer ctx.ClearDbTransaction()
+	err = op_context.ExecDbTransaction(ctx, func() error {
 
 		// check if this key was already loaded
 		filter := db.NewFilter()
