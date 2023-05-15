@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
@@ -47,6 +48,10 @@ func LoadValidate(cfg config.Config, vld validator.Validator, obj Object, defaul
 	}
 
 	return nil
+}
+
+func LoadLogValidateApp(app app_context.Context, obj Object, defaultPath string, optionalPath ...string) error {
+	return LoadLogValidate(app.Cfg(), app.Logger(), app.Validator(), obj, defaultPath, optionalPath...)
 }
 
 func LoadLogValidate(cfg config.Config, log logger.Logger, vld validator.Validator, obj Object, defaultPath string, optionalPath ...string) error {
