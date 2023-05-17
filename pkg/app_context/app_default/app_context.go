@@ -162,7 +162,7 @@ func (c *Context) InitWithArgs(configFile string, args []string, configType ...s
 	// load command line arguments
 	err = config.LoadArgs(c.Cfg(), args)
 	if err != nil {
-		return c.Logger().PushFatalStack("failed to override confiuration parameters", err)
+		return c.Logger().PushFatalStack("failed to override configuration parameters", err)
 	}
 
 	// setup logger
