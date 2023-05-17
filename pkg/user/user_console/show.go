@@ -14,7 +14,7 @@ const ShowDescription string = "Show object"
 
 func Show[T user.User]() console_tool.Handler[*UserCommands[T]] {
 	a := &ListHandler[T]{}
-	a.Init(ListCmd, ListDescription)
+	a.Init(ShowCmd, ShowDescription)
 	return a
 }
 

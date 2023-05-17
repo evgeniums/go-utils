@@ -8,11 +8,11 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
-type OplogConteollerDb struct {
+type OplogControllerDb struct {
 	Ctx op_context.Context
 }
 
-func (o *OplogConteollerDb) Write(op oplog.Oplog) error {
+func (o *OplogControllerDb) Write(op oplog.Oplog) error {
 	err := db.DB(o.Ctx.Db()).Create(o.Ctx, op)
 	if err != nil {
 		o.Ctx.Logger().Error("failed to write oplog", err, logger.Fields{"oplog": utils.ObjectTypeName(op)})
@@ -20,7 +20,7 @@ func (o *OplogConteollerDb) Write(op oplog.Oplog) error {
 	return err
 }
 
-func (o *OplogConteollerDb) Read(filter *db.Filter, docs interface{}) (int64, error) {
+func (o *OplogControllerDb) Read(filter *db.Filter, docs interface{}) (int64, error) {
 	count, err := db.DB(o.Ctx.Db()).FindWithFilter(o.Ctx, filter, docs)
 	if err != nil {
 		o.Ctx.Logger().Error("failed to read oplog", err, logger.Fields{"oplog": utils.ObjectTypeName(docs)})
@@ -29,5 +29,5 @@ func (o *OplogConteollerDb) Read(filter *db.Filter, docs interface{}) (int64, er
 }
 
 func MakeOplogController(ctx op_context.Context) oplog.OplogController {
-	return &OplogConteollerDb{Ctx: ctx}
+	return &OplogControllerDb{Ctx: ctx}
 }
