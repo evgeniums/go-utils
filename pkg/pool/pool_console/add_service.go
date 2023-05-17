@@ -51,6 +51,7 @@ func (a *AddServiceHandler) Execute(args []string) error {
 	s.SecretsBase = a.SecretsBase
 	s.SetActive(a.Active == "true")
 
+	// TODO check secret1 and secret2
 	addedService, err := controller.AddService(ctx, s)
 	if err == nil {
 		fmt.Printf("Added service:\n%s\n", utils.DumpPrettyJson(addedService))
