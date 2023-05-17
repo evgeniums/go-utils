@@ -64,7 +64,7 @@ func TenancyId(ctrl multitenancy.TenancyController, ctx op_context.Context, id s
 
 	// find tenancy by login and role
 	filter := db.NewFilter()
-	filter.AddField("customer_login", customerLogin)
+	filter.AddField("customers.login", customerLogin)
 	filter.AddField("role", role)
 	filter.Limit = 1
 	tenancies, _, err := ctrl.List(ctx, filter)
