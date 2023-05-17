@@ -35,7 +35,7 @@ type Tenancy interface {
 }
 
 type WithPath struct {
-	PATH string `json:"path" gorm:"uniqueIndex" validate:"omitempty,alphanum_" vmessage:"Path must be alhanumeric" long:"path" description:"Path of tenancy resource in API service" required:"true"`
+	PATH string `json:"path" gorm:"uniqueIndex" validate:"omitempty,alphanum_" vmessage:"Path must be alhanumeric" long:"path" description:"Path of tenancy resource in API service"`
 }
 
 type WithRole struct {
