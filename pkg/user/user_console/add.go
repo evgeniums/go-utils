@@ -107,7 +107,7 @@ func (a *AddNoPasswordHandler[T]) Execute(args []string) error {
 	}
 	defer ctx.Close()
 
-	user, err := ctrl.Add(ctx, a.Login, "")
+	user, err := ctrl.Add(ctx, a.Login, "00000000")
 	if err != nil {
 		return err
 	}
