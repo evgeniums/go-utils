@@ -413,7 +413,9 @@ func (m *PoolControllerBase) AddServiceToPool(ctx op_context.Context, poolId str
 
 	field := fieldName(idIsName...)
 
-	c := ctx.TraceInMethod("PoolController.AddServiceToPool", logger.Fields{utils.ConcatStrings("pool_", field): poolId, utils.ConcatStrings("service_", field): serviceId, "role": role})
+	ctx.AddLoggerFields(logger.Fields{utils.ConcatStrings("pool_", field): poolId, utils.ConcatStrings("service_", field): serviceId, "role": role})
+
+	c := ctx.TraceInMethod("PoolController.AddServiceToPool")
 	defer ctx.TraceOutMethod()
 
 	// find pool
@@ -475,11 +477,11 @@ func (m *PoolControllerBase) AddServiceToPool(ctx op_context.Context, poolId str
 func (m *PoolControllerBase) PoolId(c op_context.CallContext, ctx op_context.Context, id string, idIsName ...bool) (string, error) {
 
 	if !utils.OptionalArg(false, idIsName...) {
-		c.SetLoggerField("id", id)
+		ctx.SetLoggerField("pool_id", id)
 		return id, nil
 	}
 
-	c.SetLoggerField("name", id)
+	ctx.SetLoggerField("pool_name", id)
 	pool, err := m.FindPool(ctx, id, true)
 	if err != nil {
 		c.SetMessage("failed to find pool")
@@ -489,18 +491,18 @@ func (m *PoolControllerBase) PoolId(c op_context.CallContext, ctx op_context.Con
 		return "", nil
 	}
 	pId := pool.GetID()
-	c.SetLoggerField("id", pId)
+	ctx.SetLoggerField("pool_id", pId)
 	return pId, nil
 }
 
 func (m *PoolControllerBase) ServiceId(c op_context.CallContext, ctx op_context.Context, id string, idIsName ...bool) (string, error) {
 
 	if !utils.OptionalArg(false, idIsName...) {
-		c.SetLoggerField("id", id)
+		ctx.SetLoggerField("service_id", id)
 		return id, nil
 	}
 
-	c.SetLoggerField("name", id)
+	ctx.SetLoggerField("service_name", id)
 	service, err := m.FindService(ctx, id, true)
 	if err != nil {
 		c.SetMessage("failed to find service")
@@ -510,7 +512,7 @@ func (m *PoolControllerBase) ServiceId(c op_context.CallContext, ctx op_context.
 		return "", nil
 	}
 	pId := service.GetID()
-	c.SetLoggerField("id", pId)
+	ctx.SetLoggerField("service_id", pId)
 	return pId, nil
 }
 
@@ -643,6 +645,7 @@ func (p *PoolControllerBase) GetPoolBindings(ctx op_context.Context, id string, 
 		ctx.TraceOutMethod()
 	}
 	defer onExit()
+	ctx.SetLoggerField("pool_id", id)
 
 	// adjust pool ID
 	poolId, err := p.PoolId(c, ctx, id, idIsName...)
@@ -650,6 +653,7 @@ func (p *PoolControllerBase) GetPoolBindings(ctx op_context.Context, id string, 
 		return nil, err
 	}
 	if poolId == "" {
+		c.Logger().Warn("pool not found")
 		ctx.ClearError()
 		return nil, nil
 	}
@@ -664,7 +668,7 @@ func (p *PoolControllerBase) GetPoolBindings(ctx op_context.Context, id string, 
 
 	// invoke join
 	filter := db.NewFilter()
-	filter.AddField("pools.id", id)
+	filter.AddField("pools.id", poolId)
 	_, err = p.CRUD.Join(ctx, db.NewJoin(queryBuilder, "GetPoolBindings"), filter, &services)
 	if err != nil {
 		return nil, err
@@ -708,7 +712,7 @@ func (p *PoolControllerBase) GetServiceBindings(ctx op_context.Context, id strin
 
 	// invoke join
 	filter := db.NewFilter()
-	filter.AddField("pool_services.id", id)
+	filter.AddField("pool_services.id", serviceId)
 	_, err = p.CRUD.Join(ctx, db.NewJoin(queryBuilder, "GetServiceBindings"), filter, &services)
 	if err != nil {
 		return nil, err
