@@ -159,5 +159,6 @@ func PostgresDbConnector() *DbConnector {
 	c.DsnBuilder = PostgresDsnBuilder
 	c.CheckDuplicateKeyError = PostgresCheckDuplicateKeyError
 	c.PartitionedMonthMigrator = PostgresPartitionedMonthMigrator
+	c.DbCreator = PostgresDbCreator
 	return c
 }
