@@ -16,7 +16,7 @@ type PoolId struct {
 }
 
 type WithRole struct {
-	ROLE string `gorm:"index;index:,unique,composite:u" json:"type" validate:"required,alphanum_" vmessage:"Role name can contain only digits and letters"`
+	ROLE string `gorm:"index;index:,unique,composite:u" json:"role" validate:"required,alphanum_" vmessage:"Role name can contain only digits and letters"`
 }
 
 type PoolServiceAssociationCmd struct {
