@@ -1,8 +1,6 @@
 package confirmation_control_server
 
 import (
-	"fmt"
-
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/noauth_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/pool_microservice/pool_misrocervice_client"
@@ -145,14 +143,6 @@ func (s *ExternalServer) ApiServer() api_server.Server {
 func (s *ExternalServer) BaseUrl() string {
 
 	poolService := s.server.ConfigPoolService()
-	publicUrl := poolService.PublicUrl()
-	if publicUrl == "" {
-		portStr := ""
-		if poolService.PublicPort() != 443 {
-			portStr = fmt.Sprintf(":%d", poolService.PublicPort())
-		}
-		publicUrl = fmt.Sprintf("https://%s%s%s/%s", poolService.PublicHost(), portStr, poolService.PathPrefix(), poolService.ApiVersion())
-	}
 
-	return publicUrl
+	return poolService.PublicUrl()
 }
