@@ -62,12 +62,12 @@ func (s *SecretsBase) Secret2() string {
 
 type ServiceConfigBase struct {
 	PROVIDER        string `gorm:"index;column:provider" json:"provider" long:"provider" description:"Service provider" required:"true"`
-	PUBLIC_HOST     string `gorm:"index" json:"public_host" long:"public-host" description:"Public host of the service (optional)"`
-	PUBLIC_PORT     uint16 `gorm:"index" json:"public_port" long:"public-port" description:"Public port of the service (optional)"`
-	PUBLIC_URL      string `gorm:"index" json:"public_url" long:"public-url" description:"Public url of the service (optional)" display:"Public URL"`
-	PRIVATE_HOST    string `gorm:"index" json:"private_host" long:"private-host" description:"Private host of the service (optional)"`
-	PRIVATE_PORT    uint16 `gorm:"index" json:"private_port" long:"private-port" description:"Private port of the service (optional)"`
-	PRIVATE_URL     string `gorm:"index" json:"private_url" long:"private-url" description:"Private URL of the service (optional)" display:"Private URL"`
+	PUBLIC_HOST     string `gorm:"index" json:"public_host" long:"public_host" description:"Public host of the service (optional)"`
+	PUBLIC_PORT     uint16 `gorm:"index" json:"public_port" long:"public_port" description:"Public port of the service (optional)"`
+	PUBLIC_URL      string `gorm:"index" json:"public_url" long:"public_url" description:"Public url of the service (optional)" display:"Public URL"`
+	PRIVATE_HOST    string `gorm:"index" json:"private_host" long:"private_host" description:"Private host of the service (optional)"`
+	PRIVATE_PORT    uint16 `gorm:"index" json:"private_port" long:"private_port" description:"Private port of the service (optional)"`
+	PRIVATE_URL     string `gorm:"index" json:"private_url" long:"private_url" description:"Private URL of the service (optional)" display:"Private URL"`
 	USER            string `gorm:"index" json:"user" long:"user" description:"User for login to the service (optional)"`
 	DB_NAME         string `gorm:"index;column:db_name" json:"db_name" long:"db_name" description:"Name of database (optional)" display:"Database"`
 	PARAMETER1      string `gorm:"index;column:parameter1" json:"parameter1" long:"parameter1" description:"Generic parameter1 of the service (optional)"`
@@ -76,9 +76,9 @@ type ServiceConfigBase struct {
 	PARAMETER1_NAME string `gorm:"index;column:parameter1_name" json:"parameter1_name" long:"parameter1_name" description:"Name of generic parameter1 of the service (optional)"`
 	PARAMETER2_NAME string `gorm:"index;column:parameter2_name" json:"parameter2_name" long:"parameter2_name" description:"Name of generic parameter2 of the service (optional)"`
 	PARAMETER3_NAME string `gorm:"index;column:parameter3_name" json:"parameter3_name" long:"parameter3_name" description:"Name of generic parameter3 of the service (optional)"`
-	IP_ADDRESS      string `gorm:"index" json:"ip_address" long:"ip" description:"IP address of the service (optional)"`
-	API_VERSION     string `gorm:"index" json:"api_version" long:"api-version" default:"1.0.0" description:"API version of the service (optional)"`
-	PATH_PREFIX     string `gorm:"index" json:"path_prefix" long:"path-prefix" default:"/api" description:"URL path prefix of the service (optional)"`
+	IP_ADDRESS      string `gorm:"index" json:"ip_address" long:"ip_address" description:"IP address of the service (optional)"`
+	API_VERSION     string `gorm:"index" json:"api_version" long:"api_version" default:"1.0.0" description:"API version of the service (optional)"`
+	PATH_PREFIX     string `gorm:"index" json:"path_prefix" long:"path_prefix" default:"/api" description:"URL path prefix of the service (optional)"`
 }
 
 func (s *ServiceConfigBase) User() string {
