@@ -190,6 +190,9 @@ func (u *TenancyContextBase) SetTenancy(tenancy Tenancy) {
 	if tenancy.Cache() != nil {
 		u.SetCache(tenancy.Cache())
 	}
+	if u.OplogHandler() != nil && u.OplogWriter() == nil {
+		u.SetOplogWriter(u.OplogHandler()(u))
+	}
 }
 
 func (u *TenancyContextBase) Db() db.DB {

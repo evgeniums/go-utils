@@ -99,6 +99,7 @@ type ContextBase struct {
 	errorAsWarn bool
 
 	oplogs       []oplog.Oplog
+	oplogWriter  oplog.OplogController
 	oplogHandler op_context.OplogHandler
 
 	origin        op_context.Origin
@@ -160,6 +161,18 @@ func (c *ContextBase) SetCache(cache cache.Cache) {
 
 func (c *ContextBase) SetOplogHandler(handler op_context.OplogHandler) {
 	c.oplogHandler = handler
+}
+
+func (c *ContextBase) OplogHandler() op_context.OplogHandler {
+	return c.oplogHandler
+}
+
+func (c *ContextBase) SetOplogWriter(writer oplog.OplogController) {
+	c.oplogWriter = writer
+}
+
+func (c *ContextBase) OplogWriter() oplog.OplogController {
+	return c.oplogWriter
 }
 
 func (c *ContextBase) SetErrorManager(manager generic_error.ErrorManager) {
@@ -307,21 +320,27 @@ func (c *ContextBase) DumpLog(successMessage ...string) {
 func (c *ContextBase) Close(successMessage ...string) {
 
 	// write oplog
-	if c.oplogHandler != nil {
-		oplog := c.oplogHandler(c)
-		for _, o := range c.oplogs {
-			o.InitObject()
-			o.SetContext(c.ID())
-			o.SetContextName(c.Name())
-			if c.origin != nil {
-				o.SetOriginApp(c.origin.App())
-				o.SetOriginName(c.origin.Name())
-				o.SetOriginSource(c.origin.Source())
-				o.SetUser(c.origin.User())
-				o.SetOriginClient(c.origin.SessionClient())
-				o.SetUserType(c.origin.UserType())
+	if len(c.oplogs) != 0 {
+		if c.oplogHandler != nil || c.oplogWriter != nil {
+			oplogWriter := c.oplogWriter
+			if oplogWriter == nil {
+				oplogWriter = c.oplogHandler(c)
 			}
-			oplog.Write(o)
+
+			for _, o := range c.oplogs {
+				o.InitObject()
+				o.SetContext(c.ID())
+				o.SetContextName(c.Name())
+				if c.origin != nil {
+					o.SetOriginApp(c.origin.App())
+					o.SetOriginName(c.origin.Name())
+					o.SetOriginSource(c.origin.Source())
+					o.SetUser(c.origin.User())
+					o.SetOriginClient(c.origin.SessionClient())
+					o.SetUserType(c.origin.UserType())
+				}
+				oplogWriter.Write(o)
+			}
 		}
 	}
 

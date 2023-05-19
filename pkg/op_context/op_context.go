@@ -89,6 +89,10 @@ type Context interface {
 	SetErrorAsWarn(enable bool)
 
 	Oplog(o oplog.Oplog)
+	SetOplogHandler(handler OplogHandler)
+	OplogHandler() OplogHandler
+	SetOplogWriter(writer oplog.OplogController)
+	OplogWriter() oplog.OplogController
 
 	SetOrigin(o Origin)
 	Origin() Origin

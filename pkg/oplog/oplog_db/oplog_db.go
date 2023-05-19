@@ -13,7 +13,7 @@ type OplogControllerDb struct {
 }
 
 func (o *OplogControllerDb) Write(op oplog.Oplog) error {
-	err := db.DB(o.Ctx.Db()).Create(o.Ctx, op)
+	err := op_context.DB(o.Ctx).Create(o.Ctx, op)
 	if err != nil {
 		o.Ctx.Logger().Error("failed to write oplog", err, logger.Fields{"oplog": utils.ObjectTypeName(op)})
 	}
@@ -21,7 +21,7 @@ func (o *OplogControllerDb) Write(op oplog.Oplog) error {
 }
 
 func (o *OplogControllerDb) Read(filter *db.Filter, docs interface{}) (int64, error) {
-	count, err := db.DB(o.Ctx.Db()).FindWithFilter(o.Ctx, filter, docs)
+	count, err := op_context.DB(o.Ctx).FindWithFilter(o.Ctx, filter, docs)
 	if err != nil {
 		o.Ctx.Logger().Error("failed to read oplog", err, logger.Fields{"oplog": utils.ObjectTypeName(docs)})
 	}
