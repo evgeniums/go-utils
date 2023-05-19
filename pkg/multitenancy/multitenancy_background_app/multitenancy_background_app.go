@@ -12,6 +12,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/app_with_multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/markphelps/optional"
 )
@@ -27,6 +28,8 @@ type RunnerConfig struct {
 	RunnerBuilder          BuildMainRunner
 	DefaultConfigFile      string
 	ForceDefaultConfigFlag bool
+	InitBaseApp            bool
+	InitBaseAppDb          bool
 }
 
 type Main struct {
@@ -60,7 +63,18 @@ func New(buildConfig *app_context.BuildConfig, tenancyDbModels *multitenancy.Ten
 
 	// init app context
 	app := app_with_multitenancy.NewApp(buildConfig, tenancyDbModels)
-	initOpCtx, err := app.InitWithArgs(configFile, flag.Args())
+	var initOpCtx op_context.Context
+	var err error
+	if runnerConfig.InitBaseApp {
+		err = app.Context.InitWithArgs(configFile, flag.Args())
+		if err != nil && runnerConfig.InitBaseAppDb {
+			err = app.Context.InitDB("db")
+		}
+		initOpCtx = default_op_context.NewAppInitContext(app)
+	} else {
+		initOpCtx, err = app.InitWithArgs(configFile, flag.Args())
+	}
+
 	if err != nil {
 		if initOpCtx != nil {
 			initOpCtx.Close()

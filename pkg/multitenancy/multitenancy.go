@@ -79,6 +79,13 @@ type Multitenancy interface {
 	Close()
 }
 
+func IsMultiTenancy(m Multitenancy) bool {
+	if m == nil {
+		return false
+	}
+	return m.IsMultiTenancy()
+}
+
 type PubsubNotification struct {
 	Tenancy   string `json:"tenancy"`
 	Operation string `json:"operation"`

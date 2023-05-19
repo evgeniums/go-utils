@@ -233,7 +233,7 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, tenancyManager mu
 
 	s.tenancies = tenancyManager
 
-	if s.tenancies.IsMultiTenancy() {
+	if multitenancy.IsMultiTenancy(s.tenancies) {
 		ctx.Logger().Info("REST API server: enabling multitenancy mode")
 		parent := api.NewResource(s.TENANCY_PARAMETER)
 		s.tenancyResource = api.NewResource(s.TENANCY_PARAMETER, api.ResourceConfig{HasId: true, Tenancy: true})
@@ -324,7 +324,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 
 		// extract tenancy if applicable
 		var tenancy multitenancy.Tenancy
-		if s.tenancies.IsMultiTenancy() && ep.Resource().IsInTenancy() {
+		if multitenancy.IsMultiTenancy(s.tenancies) && ep.Resource().IsInTenancy() {
 			tenancyInPath := request.GetResourceId(s.TENANCY_PARAMETER)
 			request.SetLoggerField("tenancy", tenancyInPath)
 			tenancy, err = s.tenancies.TenancyByPath(tenancyInPath)
@@ -392,7 +392,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 	}
 }
 
-func (s *Server) AddEndpoint(ep api_server.Endpoint, multitenancy ...bool) {
+func (s *Server) AddEndpoint(ep api_server.Endpoint, withMultitenancy ...bool) {
 
 	if ep.TestOnly() && !s.Testing() {
 		return
@@ -405,7 +405,7 @@ func (s *Server) AddEndpoint(ep api_server.Endpoint, multitenancy ...bool) {
 		panic(fmt.Sprintf("Invalid HTTP method in endpoint %s for access %d", ep.Name(), ep.AccessType()))
 	}
 
-	if s.tenancies.IsMultiTenancy() && utils.OptionalArg(false, multitenancy...) {
+	if multitenancy.IsMultiTenancy(s.tenancies) && utils.OptionalArg(false, withMultitenancy...) {
 		s.tenancyResource.AddChild(ep.Resource().ServiceResource())
 	}
 
