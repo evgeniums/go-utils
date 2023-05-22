@@ -41,7 +41,7 @@ type DBHandlers interface {
 	Exists(ctx logger.WithLogger, filter *Filter, doc interface{}) (bool, error)
 
 	Create(ctx logger.WithLogger, obj interface{}) error
-	CreateDup(ctx logger.WithLogger, obj interface{}) (bool, error)
+	CreateDup(ctx logger.WithLogger, obj interface{}, ignoreConflict ...bool) (bool, error)
 
 	Delete(ctx logger.WithLogger, obj common.Object) error
 	DeleteByField(ctx logger.WithLogger, field string, value interface{}, model interface{}) error

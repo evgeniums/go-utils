@@ -8,8 +8,10 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type baseDBConfig struct {
@@ -263,8 +265,12 @@ func (g *GormDB) Create(ctx logger.WithLogger, obj interface{}) error {
 	return result.Error
 }
 
-func (g *GormDB) CreateDup(ctx logger.WithLogger, obj interface{}) (bool, error) {
-	result := Create(g.db_(), obj)
+func (g *GormDB) CreateDup(ctx logger.WithLogger, obj interface{}, ignoreConflict ...bool) (bool, error) {
+	db := g.db_()
+	if utils.OptionalArg(false, ignoreConflict...) {
+		db = db.Clauses(clause.OnConflict{DoNothing: true})
+	}
+	result := Create(db, obj)
 	duplicate, err := g.dbConnector.CheckDuplicateKeyError(g.DB_PROVIDER, result)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to Create %v", ObjectTypeName(obj))
