@@ -13,6 +13,7 @@ const (
 	ErrorCodeExternalServiceUnavailable string = "external_service_unavailable"
 	ErrorCodeExternalServiceError       string = "external_service_error"
 	ErrorCodeUnsupported                string = "operation_unsupported"
+	ErrorCodeExpired                    string = "operation_expired"
 )
 
 var CommonErrorDescriptions = map[string]string{
@@ -26,6 +27,7 @@ var CommonErrorDescriptions = map[string]string{
 	ErrorCodeExternalServiceUnavailable: "External service is temporarily unavailable.",
 	ErrorCodeExternalServiceError:       "External service reported error.",
 	ErrorCodeUnsupported:                "Operation unsupported.",
+	ErrorCodeExpired:                    "Operation expired.",
 }
 
 var CommonErrorHttpCodes = map[string]int{

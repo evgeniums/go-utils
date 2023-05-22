@@ -106,6 +106,7 @@ func (e *PrepareCheckConfirmationEndpoint) HandleRequest(request api_server.Requ
 	resp := &confirmation_control_api.PrepareCheckConfirmationResponse{}
 	resp.FailedUrl = cacheToken.FailedUrl
 	resp.CodeInBody = e.service.CheckCode
+	resp.Parameters = cacheToken.Parameters
 	request.SetLoggerField("failed_url", resp.FailedUrl)
 	request.Response().SetMessage(resp)
 

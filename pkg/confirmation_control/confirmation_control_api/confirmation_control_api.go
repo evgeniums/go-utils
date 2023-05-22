@@ -26,9 +26,10 @@ func PrepareOperation() api.Operation {
 }
 
 type PrepareOperationCmd struct {
-	Id        string `json:"id" validate:"required,id" vmessage:"Operation ID must be specified"`
-	Recipient string `json:"recipient" validate:"required" vmessage:"Recipient must be specified"`
-	FailedUrl string `json:"failed_url" validate:"required,url" vmessage:"Invalid format of failed URL"`
+	Id         string                 `json:"id" validate:"required,id" vmessage:"Operation ID must be specified"`
+	Recipient  string                 `json:"recipient" validate:"required" vmessage:"Recipient must be specified"`
+	FailedUrl  string                 `json:"failed_url" validate:"required,url" vmessage:"Invalid format of failed URL"`
+	Parameters map[string]interface{} `json:"parameters"`
 }
 
 type PrepareOperationResponse struct {
@@ -47,14 +48,16 @@ type CheckConfirmationResponse struct {
 
 type PrepareCheckConfirmationResponse struct {
 	api.ResponseStub
-	CodeInBody bool   `json:"code_in_body"`
-	FailedUrl  string `json:"failed_url"`
+	CodeInBody bool                   `json:"code_in_body"`
+	FailedUrl  string                 `json:"failed_url"`
+	Parameters map[string]interface{} `json:"parameters"`
 }
 
 type OperationCacheToken struct {
-	Id        string `json:"id"`
-	Recipient string `json:"recipient"`
-	FailedUrl string `json:"failed_url"`
+	Id         string                 `json:"id"`
+	Recipient  string                 `json:"recipient"`
+	FailedUrl  string                 `json:"failed_url"`
+	Parameters map[string]interface{} `json:"parameters"`
 }
 
 const ConfirmationCacheKey = "confirmation_service"
@@ -78,12 +81,11 @@ func GetTokenFromCache(ctx auth.AuthContext) (*OperationCacheToken, error) {
 	if err != nil {
 		c.SetMessage("failed to get cache token")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
-		return nil, err
+		return nil, c.SetError(err)
 	}
 	if !found {
-		c.SetMessage("cache token not found")
-		ctx.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
-		return nil, err
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeExpired)
+		return nil, c.SetErrorStr("cache token not found")
 	}
 
 	// done

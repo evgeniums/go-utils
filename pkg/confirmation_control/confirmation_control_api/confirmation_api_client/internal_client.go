@@ -31,7 +31,7 @@ func NewConfirmationInternalClient(client api_client.Client) *ConfirmationIntern
 	return c
 }
 
-func (cl *ConfirmationInternalClient) SendConfirmation(ctx multitenancy.TenancyContext, operationId string, recipient string, failedUrl string) (string, error) {
+func (cl *ConfirmationInternalClient) SendConfirmation(ctx multitenancy.TenancyContext, operationId string, recipient string, failedUrl string, parameters ...map[string]interface{}) (string, error) {
 
 	// setup
 	c := ctx.TraceInMethod("ConfirmationInternalClient.SendConfirmation")
@@ -49,6 +49,9 @@ func (cl *ConfirmationInternalClient) SendConfirmation(ctx multitenancy.TenancyC
 		Id:        operationId,
 		Recipient: recipient,
 		FailedUrl: failedUrl,
+	}
+	if len(parameters) != 0 {
+		cmd.Parameters = parameters[0]
 	}
 	handler := api_client.NewHandlerInTenancy(cmd, &confirmation_control_api.PrepareOperationResponse{})
 	err = cl.prepare_operation.ExecInTenancy(ctx, api_client.MakeTenancyOperationHandler(cl.ApiClient(), handler))
