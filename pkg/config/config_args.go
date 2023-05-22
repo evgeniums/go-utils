@@ -93,7 +93,7 @@ func LoadArgs(cfg Config, args []string) error {
 	}
 
 	if len(args)%2 != 0 {
-		return fmt.Errorf("invalid number of configuration parameters in arguments: %d (mus be even)", len(args))
+		return fmt.Errorf("invalid number of configuration parameters in arguments: %d (must be even)", len(args))
 	}
 
 	i := 0

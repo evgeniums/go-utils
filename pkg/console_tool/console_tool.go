@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context/app_default"
@@ -26,6 +27,7 @@ type MainOptions struct {
 	DbSection    string `short:"d" long:"database-section" description:"Database section in configuration file" default:"db"`
 	InkokerName  string `short:"i" long:"invoker-name" description:"Name of the user who invoked this utility" default:"local_admin"`
 	Tenancy      string `short:"t" long:"tenancy" description:"Tenancy to invoke the command in. Can be either tenancy's ID or in the form of customer_name/role."`
+	Args         string `short:"a" long:"args" description:"Additional configuration arguments."`
 }
 
 type Dummy struct{}
@@ -71,6 +73,19 @@ func (c *ConsoleUtility) Close() {
 }
 
 func (c *ConsoleUtility) InitCommandContext(group string, command string) multitenancy.TenancyContext {
+
+	if c.Opts.Args != "" {
+		c.Args = []string{}
+		args := strings.Split(c.Opts.Args, " ")
+		for _, arg := range args {
+			pair := strings.Split(arg, "=")
+			if len(pair) != 2 {
+				app_context.AbortFatal(c.App, "invalid additional args", nil)
+			}
+			c.Args = append(c.Args, fmt.Sprintf("--%s", pair[0]))
+			c.Args = append(c.Args, pair[1])
+		}
+	}
 
 	if c.AppBuilder == nil || c.Opts.Setup && !c.AppBuilder.HasSetupApp() {
 
@@ -152,6 +167,11 @@ func (c *ConsoleUtility) InitCommandContext(group string, command string) multit
 func (c *ConsoleUtility) Parse() {
 	var err error
 	c.Args, err = c.Parser.Parse()
+	if len(c.Args) != 0 {
+		fmt.Printf("Additional args: %v\n", c.Args)
+	} else {
+		fmt.Printf("Without additional args\n")
+	}
 	if err != nil {
 		if err, ok := err.(*flags.Error); ok {
 			if err.Type == flags.ErrHelp {
