@@ -68,7 +68,7 @@ func (a *AuthBase) Init(cfg config.Config, log logger.Logger, vld validator.Vali
 func (a *AuthBase) HandleRequest(ctx AuthContext, path string, access access_control.AccessType) error {
 
 	// setup
-	c := ctx.TraceInMethod("AuthBase.Handle", logger.Fields{"path": path})
+	c := ctx.TraceInMethod("AuthBase.Handle", logger.Fields{"auth_path": path})
 	var err error
 	onExit := func() {
 		if err != nil {
@@ -86,7 +86,12 @@ func (a *AuthBase) HandleRequest(ctx AuthContext, path string, access access_con
 
 	// run handler
 	err = a.manager.Handle(ctx, schema)
-	return c.SetError(err)
+	if err != nil {
+		return err
+	}
+
+	// done
+	return nil
 }
 
 func (a *AuthBase) AttachToErrorManager(errManager generic_error.ErrorManager) {
