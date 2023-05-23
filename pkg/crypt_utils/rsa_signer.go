@@ -68,7 +68,7 @@ func (r *RsaSigner) Sign(data []byte, extraData ...string) ([]byte, error) {
 
 	hashed := H256(data, extraData...)
 
-	signature, err := rsa.SignPKCS1v15(rand.Reader, r.key, crypto.SHA256, hashed[:])
+	signature, err := rsa.SignPKCS1v15(rand.Reader, r.key, crypto.SHA256, hashed)
 	if err != nil {
 		return nil, err
 	}
@@ -84,4 +84,8 @@ func (r *RsaSigner) SignB64(data []byte, extraData ...string) (string, error) {
 	}
 
 	return utils.Base64Encode(signature), nil
+}
+
+func (r *RsaSigner) Key() *rsa.PrivateKey {
+	return r.key
 }
