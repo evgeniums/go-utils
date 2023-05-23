@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -180,4 +181,17 @@ func ParseRuTimeShort(str string) (time.Time, error) {
 
 	t, err := time.Parse("02.01.06 15:04:05", str)
 	return t, err
+}
+
+func DateConverter(str string) reflect.Value {
+	d, _ := StrToDate(str)
+	return reflect.ValueOf(d)
+}
+
+func DateReflectStr(val reflect.Value) string {
+	if !val.CanInt() {
+		return ""
+	}
+	d := Date(val.Int())
+	return d.String()
 }

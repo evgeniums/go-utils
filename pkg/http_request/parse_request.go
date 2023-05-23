@@ -2,10 +2,12 @@ package http_request
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/message"
 	"github.com/evgeniums/go-backend-helpers/pkg/message/message_json"
@@ -25,15 +27,19 @@ func ParseQuery(ctx op_context.Context, request *http.Request, cmd interface{}) 
 	vals, err := url.ParseQuery(request.URL.RawQuery)
 	if err != nil {
 		c.SetMessage("failed to parse query")
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeFormat)
 		return c.SetError(err)
 	}
 
 	decoder := schema.NewDecoder()
 	decoder.SetAliasTag("json")
+	decoder.RegisterConverter(utils.DateNil, utils.DateConverter)
 	decoder.IgnoreUnknownKeys(true)
 	err = decoder.Decode(cmd, vals)
 	if err != nil {
+		c.SetLoggerField("query_vals", fmt.Sprintf("%+v", vals))
 		c.SetMessage("failed to decode schema")
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeFormat)
 		return c.SetError(err)
 	}
 
@@ -58,6 +64,7 @@ func ParseBody(ctx op_context.Context, request *http.Request, cmd interface{}, s
 	err := s.ParseMessage(body, cmd)
 	if err != nil {
 		c.SetMessage("failed to parse body")
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeFormat)
 		return c.SetError(err)
 	}
 

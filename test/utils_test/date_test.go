@@ -87,4 +87,13 @@ func TestDate(t *testing.T) {
 	if d3 != d1 {
 		t.Fatalf("Invalid date of time: expected %s, got %s", d1.String(), d3.String())
 	}
+
+	d1, err = utils.StrToDate("2023-05-22")
+	if err != nil {
+		t.Fatalf("failed to parse date: %s", err)
+	}
+	expected = 20230522
+	if int(d1) != expected {
+		t.Fatalf("Invalid date: expected %d, got %d", expected, int(d1))
+	}
 }
