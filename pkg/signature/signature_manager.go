@@ -40,8 +40,8 @@ const (
 )
 
 var ErrorDescriptions = map[string]string{
-	ErrorCodeInvalidSignature: "Invalid signature.",
-	ErrorCodeInvalidKey:       "Invalid key.",
+	ErrorCodeInvalidSignature: "Invalid signature",
+	ErrorCodeInvalidKey:       "Invalid key",
 }
 
 var ErrorHttpCodes = map[string]int{

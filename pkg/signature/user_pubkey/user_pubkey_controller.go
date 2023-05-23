@@ -21,8 +21,8 @@ const (
 )
 
 var ErrorDescriptions = map[string]string{
-	ErrorCodeDuplicateKey:      "Duplicate key already loaded.",
-	ErrorCodeActiveKeyNotFound: "Active public key not found.",
+	ErrorCodeDuplicateKey:      "Duplicate key already loaded",
+	ErrorCodeActiveKeyNotFound: "Active public key not found",
 }
 
 var ErrorHttpCodes = map[string]int{
