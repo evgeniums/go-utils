@@ -84,3 +84,7 @@ func (p *ProxyLogger) PushFatalStack(message string, err error, fields ...Fields
 func (p *ProxyLogger) CheckFatalStack(logger Logger, message ...string) bool {
 	return p.logger.CheckFatalStack(logger, message...)
 }
+
+func (p *ProxyLogger) DumpRequests() bool {
+	return p.logger.DumpRequests()
+}

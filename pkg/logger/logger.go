@@ -49,6 +49,8 @@ type Logger interface {
 
 	PushFatalStack(message string, err error, fields ...Fields) error
 	CheckFatalStack(logger Logger, message ...string) bool
+
+	DumpRequests() bool
 }
 
 type WithLogger interface {

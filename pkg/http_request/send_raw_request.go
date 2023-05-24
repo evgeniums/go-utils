@@ -2,6 +2,7 @@ package http_request
 
 import (
 	"net/http"
+	"net/http/httputil"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
@@ -14,11 +15,27 @@ func SendRawRequest(ctx op_context.Context, request *http.Request, redirectHandl
 	c := ctx.TraceInMethod("http_request.Send", logger.Fields{"url": request.URL.Path, "method": request.Method})
 	defer ctx.TraceOutMethod()
 
+	// TODO use this flag for server
+	if ctx.Logger().DumpRequests() {
+		dump, _ := httputil.DumpRequestOut(request, true)
+		ctx.Logger().Debug("Dump HTTP request", logger.Fields{"http_request": string(dump)})
+	}
+
 	client := &http.Client{}
 	if len(redirectHandler) != 0 {
 		client.CheckRedirect = redirectHandler[0]
 	}
 	response, err := client.Do(request)
+
+	if ctx.Logger().DumpRequests() {
+		if response != nil {
+			dump, _ := httputil.DumpResponse(response, true)
+			ctx.Logger().Debug("Dump HTTP response", logger.Fields{"http_response": string(dump)})
+		} else {
+			ctx.Logger().Debug("Dump HTTP response", logger.Fields{"http_response": ""})
+		}
+	}
+
 	if err != nil {
 		return nil, c.SetError(err)
 	}

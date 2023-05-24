@@ -14,9 +14,10 @@ import (
 )
 
 type logrusConfig struct {
-	DESTINATION string `default:"stdout" validate:"oneof=stdout file" vmessage:"logger destination must be one of: stdout | file"`
-	FILE        string
-	LEVEL       string `validate:"omitempty,oneof=panic fatal error warn info debug trace" vmessage:"invalid log level, must be one of: panic | fatal | error | warn | info | debug | trace"`
+	DESTINATION   string `default:"stdout" validate:"oneof=stdout file" vmessage:"logger destination must be one of: stdout | file"`
+	FILE          string
+	LEVEL         string `validate:"omitempty,oneof=panic fatal error warn info debug trace" vmessage:"invalid log level, must be one of: panic | fatal | error | warn | info | debug | trace"`
+	DUMP_REQUESTS bool
 }
 
 type LogrusLogger struct {
@@ -50,6 +51,10 @@ func (l *LogrusLogger) Debug(message string, fields ...logger.Fields) {
 
 func (l *LogrusLogger) Trace(message string, fields ...logger.Fields) {
 	l.logRus.WithFields(logger.NewFields(fields...)).Trace(message)
+}
+
+func (l *LogrusLogger) DumpRequests() bool {
+	return l.DUMP_REQUESTS
 }
 
 func (l *LogrusLogger) Error(message string, err error, fields ...logger.Fields) error {

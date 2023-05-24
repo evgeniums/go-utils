@@ -115,3 +115,12 @@ func (t *TeeLogger) CheckFatalStack(logger Logger, message ...string) bool {
 	}
 	return yes
 }
+
+func (t *TeeLogger) DumpRequests() bool {
+	for _, logger := range t.loggers {
+		if logger.DumpRequests() {
+			return true
+		}
+	}
+	return false
+}
