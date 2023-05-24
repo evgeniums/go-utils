@@ -1,6 +1,8 @@
 package multitenancy
 
 import (
+	"fmt"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
@@ -49,7 +51,9 @@ func UpgradeTenancyDatabases(ctx op_context.Context, multitenancy Multitenancy, 
 	c := ctx.TraceInMethod("multitenancy.UpgradeTenancyDatabases")
 	defer ctx.TraceOutMethod()
 
+	fmt.Println("Upgrading tenancy databases...")
 	for _, tenancy := range multitenancy.Tenancies() {
+		fmt.Printf("Upgrading tenancy %s ...\n", TenancyDisplay(tenancy))
 		err := UpgradeTenancyDatabase(ctx, tenancy, dbModels)
 		if err != nil {
 			return c.SetError(err)
