@@ -180,7 +180,9 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 		token := &SmsToken{}
 		exists, err := a.Encryption.GetAuthParameter(ctx, a.Protocol(), TokenName, token)
 		if !exists {
-			c.SetMessage("SMS token not found")
+			if err == nil {
+				err = errors.New("SMS token not found")
+			}
 			ctx.SetGenericErrorCode(ErrorCodeSmsTokenRequired)
 			return false, err
 		}
@@ -190,7 +192,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 			return true, err
 		}
 		if token.Expired() {
-			c.SetMessage("token expired")
+			err = errors.New("token expired")
 			ctx.SetGenericErrorCode(ErrorCodeTokenExpired)
 			return true, err
 		}
@@ -205,7 +207,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 			return true, err
 		}
 		if !found {
-			c.SetMessage("cache token expired")
+			err = errors.New("cache token expired")
 			ctx.SetGenericErrorCode(ErrorCodeTokenExpired)
 			return true, err
 		}
