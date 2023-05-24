@@ -58,7 +58,7 @@ func (e *CheckConfirmationEndpoint) HandleRequest(request api_server.Request) er
 		err := request.ParseValidate(cmd)
 		if err != nil {
 			c.SetMessage("failed to parse/validate command")
-			return err
+			return c.SetError(err)
 		}
 		codeOrStatus = cmd.Code
 	} else {
