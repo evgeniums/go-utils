@@ -169,8 +169,6 @@ func (c *ConsoleUtility) Parse() {
 	c.Args, err = c.Parser.Parse()
 	if len(c.Args) != 0 {
 		fmt.Printf("Additional args: %v\n", c.Args)
-	} else {
-		fmt.Printf("Without additional args\n")
 	}
 	if err != nil {
 		if err, ok := err.(*flags.Error); ok {
