@@ -181,3 +181,14 @@ func (p *PoolStoreBase) Pools() []Pool {
 func (p *PoolStoreBase) PoolController() PoolController {
 	return p.poolController
 }
+
+func FindPool(store PoolStore, id string) (Pool, error) {
+	pool, err := store.Pool(id)
+	if err != nil {
+		pool, err = store.PoolByName(id)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return pool, nil
+}
