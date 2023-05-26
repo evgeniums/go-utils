@@ -123,12 +123,12 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	// load user
 	dbUser, err := l.users.AuthUserManager().FindAuthUser(ctx, login)
 	if err != nil {
-		c.SetMessage("failed to load user")
+		err = errors.New("failed to load user")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return true, err
 	}
 	if dbUser == nil {
-		c.SetMessage("user not found")
+		err = errors.New("user not found")
 		if phash == "" {
 			// forward client to second step anyway with fake salt
 			ctx.SetAuthParameter(l.Protocol(), SaltName, crypt_utils.GenerateString())
@@ -151,7 +151,7 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	// user must be of User interface
 	phashUser, ok := dbUser.(User)
 	if !ok {
-		c.SetMessage("user must be of UserWithPasswordHash interface")
+		err = errors.New("user must be of UserWithPasswordHash interface")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return true, err
 	}
@@ -181,7 +181,8 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	ctx.SetGenericErrorCode(ErrorCodeCredentialsRequired)
 
 	// done
-	return true, errors.New("credentials not provided")
+	err = errors.New("credentials not provided")
+	return true, err
 }
 
 func Phash(password string, salt string) string {

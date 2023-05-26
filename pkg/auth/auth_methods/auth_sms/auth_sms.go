@@ -162,7 +162,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 
 	// check if user authenticated
 	if ctx.AuthUser() == nil {
-		c.SetMessage("unknown user")
+		err = errors.New("unknown user")
 		ctx.SetGenericErrorCode(auth.ErrorCodeUnauthorized)
 		return true, err
 	}
@@ -303,7 +303,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 	// user must be of UserWithPhone interface
 	user, ok := ctx.AuthUser().(UserWithPhone)
 	if !ok {
-		c.SetMessage("user must be of UserWithPhone interface")
+		err = errors.New("user must be of UserWithPhone interface")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return true, err
 	}
@@ -311,7 +311,7 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 	// get user's phone number
 	phone := user.Phone()
 	if phone == "" {
-		c.SetMessage("unknown phone number")
+		err = errors.New("unknown phone number")
 		ctx.SetGenericErrorCode(ErrorCodeInvalidPhone)
 		return true, err
 	}

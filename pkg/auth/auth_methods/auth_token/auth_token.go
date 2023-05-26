@@ -138,7 +138,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	ctx.SetLoggerField("user", prev.UserDisplay)
 	ctx.SetLoggerField("session", prev.SessionId)
 	if prev.Expired() {
-		c.SetMessage("token expired")
+		err = errors.New("token expired")
 		if refresh {
 			ctx.SetGenericErrorCode(ErrorCodeSessionExpired)
 		} else {
@@ -185,7 +185,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		return true, err
 	}
 	if user == nil {
-		c.SetMessage("user not found")
+		err := errors.New("user not found")
 		ctx.SetGenericErrorCode(ErrorCodeUnknownUser)
 		return true, err
 	}

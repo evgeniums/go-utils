@@ -120,7 +120,7 @@ func (a *AuthCsrf) Handle(ctx auth.AuthContext) (bool, error) {
 		}
 
 		if prev.Expired() {
-			c.SetMessage("token expired")
+			err = errors.New("token expired")
 			ctx.SetGenericErrorCode(ErrorCodeTokenExpired)
 			return true, err
 		}

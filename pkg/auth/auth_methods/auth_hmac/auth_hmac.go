@@ -91,7 +91,7 @@ func (a *AuthHmac) Handle(ctx auth.AuthContext) (bool, error) {
 	// user must be of UserWithPasswordHash interface
 	user, ok := ctx.AuthUser().(UserWithHmacSecret)
 	if !ok {
-		c.SetMessage("user must be of UserWithHmacSecret interface")
+		err = errors.New("user must be of UserWithHmacSecret interface")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return true, err
 	}
