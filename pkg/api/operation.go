@@ -73,8 +73,10 @@ func (o *OperationBase) Exec(ctx op_context.Context, handler OperationHandler) e
 	defer ctx.TraceOutMethod()
 
 	err := handler(ctx, o)
-	c.SetError(err)
-	return err
+	if err != nil {
+		return c.SetError(err)
+	}
+	return nil
 }
 
 func (o *OperationBase) ExecInTenancy(ctx multitenancy.TenancyContext, handler TenancyOperationHandler) error {
@@ -83,6 +85,8 @@ func (o *OperationBase) ExecInTenancy(ctx multitenancy.TenancyContext, handler T
 	defer ctx.TraceOutMethod()
 
 	err := handler(ctx, o)
-	c.SetError(err)
-	return err
+	if err != nil {
+		return c.SetError(err)
+	}
+	return nil
 }
