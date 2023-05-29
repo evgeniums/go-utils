@@ -11,7 +11,7 @@ import (
 )
 
 type SessionController interface {
-	CreateSession(ctx auth.AuthContext, expiration time.Time) (Session, error)
+	CreateSession(ctx auth.ContextWithAuthUser, expiration time.Time) (Session, error)
 	FindSession(ctx op_context.Context, sessionId string) (Session, error)
 	UpdateSessionClient(ctx auth.AuthContext) error
 	UpdateSessionExpiration(ctx auth.AuthContext, session Session) error
@@ -58,7 +58,7 @@ func (s *SessionControllerBase) MakeSessionClient() SessionClient {
 	return s.sessionClientBuilder()
 }
 
-func (s *SessionControllerBase) CreateSession(ctx auth.AuthContext, expiration time.Time) (Session, error) {
+func (s *SessionControllerBase) CreateSession(ctx auth.ContextWithAuthUser, expiration time.Time) (Session, error) {
 
 	c := ctx.TraceInMethod("auth_session.CreateSession")
 	defer ctx.TraceOutMethod()

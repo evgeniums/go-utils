@@ -24,7 +24,7 @@ type Request interface {
 }
 
 type RequestBase struct {
-	auth.UserContextBase
+	auth.TenancyUserContext
 	auth.SessionBase
 	endpoint Endpoint
 }
