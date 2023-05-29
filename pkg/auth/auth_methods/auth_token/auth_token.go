@@ -21,12 +21,13 @@ const AccessTokenName = "access-token"
 const RefreshTokenName = "refresh-token"
 
 type AuthTokenHandlerConfig struct {
-	ACCESS_TOKEN_TTL_SECONDS  int    `default:"900" validate:"gt=0"`
-	REFRESH_TOKEN_TTL_SECONDS int    `default:"43200" validate:"gt=0"`
-	AUTO_PROLONGATE_ACCESS    bool   `default:"true"`
-	AUTO_PROLONGATE_REFRESH   bool   `default:"true"`
-	REFRESH_PATH              string `default:"/auth/refresh"`
-	LOGOUT_PATH               string `default:"/auth/logout"`
+	ACCESS_TOKEN_TTL_SECONDS        int    `default:"900" validate:"gt=0"`
+	REFRESH_TOKEN_TTL_SECONDS       int    `default:"43200" validate:"gt=0"`
+	ACCESS_TOKEN_GEN_BEFORE_SECONDS int    `default:"60" validate:"gt=0"`
+	AUTO_PROLONGATE_ACCESS          bool   `default:"true"`
+	AUTO_PROLONGATE_REFRESH         bool   `default:"true"`
+	REFRESH_PATH                    string `default:"/auth/refresh"`
+	LOGOUT_PATH                     string `default:"/auth/logout"`
 }
 
 type AuthTokenHandler struct {
@@ -43,6 +44,7 @@ type Token struct {
 	UserDisplay string `json:"user_display"`
 	SessionId   string `json:"session_id"`
 	Tenancy     string `json:"tenancy"`
+	Type        string `json:"type"`
 }
 
 func (a *AuthTokenHandler) Config() interface{} {
@@ -146,6 +148,12 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		}
 		return true, err
 	}
+	// check token type
+	if prev.Type != tokenName {
+		err = errors.New("token types mismatch")
+		ctx.SetGenericErrorCode(ErrorCodeInvalidToken)
+		return true, err
+	}
 
 	// check tenancy
 	if ctx.GetTenancy() != nil || prev.Tenancy != "" {
@@ -215,11 +223,20 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	if path != a.LOGOUT_PATH {
 
 		if refresh || !refresh && a.AUTO_PROLONGATE_ACCESS {
-			// generate access token
-			err = a.GenAccessToken(ctx)
-			if err != nil {
-				ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
-				return true, err
+
+			regenerateAccessToken := true
+			if !refresh {
+				tokenExpirationTime := now.Add(time.Second * time.Duration(a.ACCESS_TOKEN_GEN_BEFORE_SECONDS))
+				regenerateAccessToken = tokenExpirationTime.After(prev.Exp)
+			}
+
+			if regenerateAccessToken {
+				// generate access token
+				err = a.GenAccessToken(ctx)
+				if err != nil {
+					ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
+					return true, err
+				}
 			}
 		}
 
@@ -292,7 +309,7 @@ func (a *AuthTokenHandler) GenToken(ctx auth.AuthContext, paramName string, expi
 	if ctx.GetTenancy() != nil {
 		token.Tenancy = ctx.GetTenancy().GetID()
 	}
-
+	token.Type = paramName
 	token.SetTTL(expirationSeconds)
 	return c.SetError(a.encryption.SetAuthParameter(ctx, a.Protocol(), paramName, token))
 }

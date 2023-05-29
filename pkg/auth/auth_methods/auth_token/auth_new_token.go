@@ -1,11 +1,15 @@
 package auth_token
 
 import (
+	"time"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
@@ -102,4 +106,71 @@ func (a *AuthNewTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 
 	// done
 	return true, nil
+}
+
+func GenManualToken(ctx op_context.Context, cipher auth.AuthParameterEncryption, tenancyID string, user auth.User, sesisonID string, expirationSeconds int, tokenType string) (string, error) {
+
+	c := ctx.TraceInMethod("GenManualToken")
+	defer ctx.TraceOutMethod()
+
+	token := &Token{}
+	token.Id = utils.GenerateRand64()
+	token.SessionId = sesisonID
+	token.UserDisplay = user.Display()
+	token.UserId = user.GetID()
+	token.Tenancy = tenancyID
+	token.SetTTL(expirationSeconds)
+	token.Type = tokenType
+
+	tookenStr, err := cipher.Encrypt(ctx, token)
+	if err != nil {
+		c.SetMessage("failed to encrypt token")
+		return "", c.SetError(err)
+	}
+
+	// done
+	return tookenStr, nil
+}
+
+func AddManualSession(ctx op_context.Context, cipher auth.AuthParameterEncryption, tenancyID string, users auth_session.WithUserSessionManager, login string, ttlSeconds int, tokenName ...string) (auth_session.Session, string, error) {
+
+	// setup
+	tokenType := utils.OptionalArg(AccessTokenName, tokenName...)
+	loggerFields := logger.Fields{"tenancy": tenancyID, "login": login, "token-type": tokenType}
+	c := ctx.TraceInMethod("auth_token.AddManualSession", loggerFields)
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
+
+	// find user
+	user, err := users.AuthUserManager().FindAuthUser(ctx, login)
+	if err != nil {
+		c.SetMessage("failed to find user")
+		return nil, "", err
+	}
+
+	// create session
+	now := time.Now()
+	expiration := now.Add(time.Second * time.Duration(ttlSeconds))
+	userCtx := auth.NewUserContext(ctx)
+	userCtx.User = user
+	session, err := users.SessionManager().CreateSession(userCtx, expiration)
+	if err != nil {
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
+		return nil, "", err
+	}
+
+	// generate token
+	token, err := GenManualToken(ctx, cipher, tenancyID, user, session.GetID(), ttlSeconds, tokenType)
+	if err != nil {
+		return nil, "", err
+	}
+
+	// done
+	return session, token, nil
 }

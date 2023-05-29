@@ -9,11 +9,13 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/message"
 	"github.com/evgeniums/go-backend-helpers/pkg/message/message_json"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
 type AuthParameterEncryption interface {
+	Encrypt(ctx op_context.Context, obj interface{}) (string, error)
 	SetAuthParameter(ctx AuthContext, authMethodProtocol string, name string, obj interface{}) error
 	GetAuthParameter(ctx AuthContext, authMethodProtocol string, name string, obj interface{}) (bool, error)
 }
@@ -66,39 +68,12 @@ func (a *AuthParameterEncryptionBase) SetAuthParameter(ctx AuthContext, authMeth
 	}
 	defer onExit()
 
-	// serialize object to plaintext
-	plaintext, err := a.Serializer.SerializeMessage(obj)
-	if err != nil {
-		c.SetMessage("failed to serialize object")
-		return err
-	}
-
-	// generate salt
-	salt, err := crypt_utils.GenerateCryptoRand(a.SALT_SIZE)
-	if err != nil {
-		c.SetMessage("failed to generate salt")
-		return err
-	}
-
-	// create cipher
-	cipher, err := a.createCipher(salt)
-	if err != nil {
-		c.SetMessage("failed to create AEAD cipher")
-		return err
-	}
-
-	// encrypt data
-	ciphertext, err := cipher.Encrypt(plaintext)
-	if err != nil {
-		c.SetMessage("failed to encrypt data")
-		return err
-	}
-
-	// append salt to ciphertext
-	ciphertext = append(ciphertext, salt...)
-
 	// encode data to string
-	data := a.StringCoding.Encode(ciphertext)
+	data, err := a.Encrypt(ctx, obj)
+	if err != nil {
+		c.SetMessage("failed to encrypt")
+		return err
+	}
 
 	// write result to  auth parameter
 	ctx.SetAuthParameter(authMethodProtocol, name, data)
@@ -164,4 +139,55 @@ func (a *AuthParameterEncryptionBase) GetAuthParameter(ctx AuthContext, authMeth
 
 	// done
 	return true, nil
+}
+
+func (a *AuthParameterEncryptionBase) Encrypt(ctx op_context.Context, obj interface{}) (string, error) {
+
+	// setup
+	c := ctx.TraceInMethod("AuthParameterEncryptionBase.Encrypt")
+	var err error
+	onExit := func() {
+		if err != nil {
+			c.SetError(err)
+		}
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
+
+	// serialize object to plaintext
+	plaintext, err := a.Serializer.SerializeMessage(obj)
+	if err != nil {
+		c.SetMessage("failed to serialize object")
+		return "", err
+	}
+
+	// generate salt
+	salt, err := crypt_utils.GenerateCryptoRand(a.SALT_SIZE)
+	if err != nil {
+		c.SetMessage("failed to generate salt")
+		return "", err
+	}
+
+	// create cipher
+	cipher, err := a.createCipher(salt)
+	if err != nil {
+		c.SetMessage("failed to create AEAD cipher")
+		return "", err
+	}
+
+	// encrypt data
+	ciphertext, err := cipher.Encrypt(plaintext)
+	if err != nil {
+		c.SetMessage("failed to encrypt data")
+		return "", err
+	}
+
+	// append salt to ciphertext
+	ciphertext = append(ciphertext, salt...)
+
+	// encode data to string
+	data := a.StringCoding.Encode(ciphertext)
+
+	// done
+	return data, nil
 }
