@@ -60,7 +60,7 @@ func TestSignature(t *testing.T) {
 	// no pubkey for user
 	t.Logf("No pubkey")
 	resp = client.PostSigned(t, signer1, path, cmd1)
-	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: user_pubkey.ErrorCodeActiveKeyNotFound, Message: "Active public key not found."})
+	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: user_pubkey.ErrorCodeActiveKeyNotFound, Message: "Active public key not found"})
 
 	// add pubkey for user 1
 	pubKey1, err := os.ReadFile(pubkey1Path)
