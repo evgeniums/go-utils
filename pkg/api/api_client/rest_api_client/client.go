@@ -53,8 +53,10 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 	defer ctx.TraceOutMethod()
 
 	// find method for operation
+	// c.Logger().Debug("find method")
 	method, ok := cl.methods[operation.AccessType()]
 	if !ok {
+		// c.Logger().Debug("method not found")
 		c.SetLoggerField("access_type", operation.AccessType())
 		genericError := generic_error.NewFromMessage("access type not supported")
 		c.SetError(genericError)
@@ -75,6 +77,8 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 	var errr error
 	if cl.auth != nil {
 
+		// c.Logger().Debug("invoke with auth")
+
 		exec := func() {
 			// make auth headers
 			headers, err1 := cl.auth.MakeHeaders(ctx, operation, cmd)
@@ -88,31 +92,48 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 		}
 		exec()
 		if errr != nil {
+			// c.Logger().Debug("auth headers failed")
 			return c.SetError(errr)
 		}
 		if resp != nil && resp.Code() == http.StatusUnauthorized {
 			exec()
+			if errr != nil {
+				// c.Logger().Debug("second auth headers failed")
+				return c.SetError(errr)
+			}
 		}
 
 	} else {
 		// invoke method without auth headers
+		// c.Logger().Debug("invoke without auth")
 		resp, err = method(ctx, path, cmd, response)
 	}
+
+	// process generic error
+	if resp != nil {
+		// c.Logger().Debug("resp not nil")
+		genericError := api.ResponseGenericError(resp.Error())
+		if genericError != nil {
+			// c.Logger().Debug("resp is generic error")
+			c.SetLoggerField("response_code", genericError.Code())
+			c.SetLoggerField("response_message", genericError.Message())
+			c.SetLoggerField("response_details", genericError.Details())
+			c.SetMessage("server returned error")
+			ctx.SetGenericError(genericError, true)
+			return c.SetError(genericError)
+		}
+	} else {
+		// c.Logger().Debug("resp is nil")
+	}
+
+	// check error
 	if err != nil {
+		// c.Logger().Debug("exec failed")
 		c.SetMessage("failed to invoke HTTP method")
 		return c.SetError(err)
 	}
 
-	// process generic error
-	genericError := api.ResponseGenericError(resp.Error())
-	if genericError != nil {
-		c.SetLoggerField("response_code", genericError.Code())
-		c.SetLoggerField("response_message", genericError.Message())
-		c.SetLoggerField("response_details", genericError.Details())
-		c.SetMessage("server returned error")
-		return c.SetError(genericError)
-	}
-
 	// done
+	// c.Logger().Debug("exex ok")
 	return nil
 }

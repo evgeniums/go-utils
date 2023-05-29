@@ -52,20 +52,34 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 
 	// check last response
 	if lastResp == nil || lastResp.Error() == nil {
-		return lastResp, lastErr
+		// check last error
+		err = lastErr
+		if err != nil {
+			c.SetMessage("last error")
+			return lastResp, err
+		}
+		return lastResp, nil
 	}
 
 	// refresh CSRF token
 	if lastResp.Code() == http.StatusForbidden && auth_csrf.IsCsrfError(lastResp.Error().Code) {
 		resp, err := a.client.UpdateCsrfToken(ctx)
 		if !IsResponseOK(resp, err) {
+			c.SetMessage("failed to update CSRF")
 			return resp, err
 		}
-		return a.resend(ctx, send)
+		c.Logger().Debug("resending after CSRF")
+		resp, err = a.resend(ctx, send)
+		if err != nil {
+			c.SetMessage("failed to resend after CRSF")
+			return resp, err
+		}
+		return resp, nil
 	}
 
 	// only unauthorized errors can be processed
 	if lastResp.Code() != http.StatusUnauthorized {
+		c.SetMessage("last HTTP status is unauthorized")
 		err = errors.New(lastResp.Error().Message)
 		return lastResp, err
 	}
@@ -75,6 +89,7 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 
 		if a.inLogin {
 			err = errors.New(lastResp.Error().Message)
+			c.SetMessage("failed when in login")
 			return lastResp, err
 		}
 
@@ -99,21 +114,36 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 			return nil, err
 		}
 		a.handlers.SaveRefreshToken(ctx, a.client.RefreshToken)
-		return a.resend(ctx, send)
+		resp, err = a.resend(ctx, send)
+		if err != nil {
+			c.SetMessage("failed to resend after relogin")
+			return resp, err
+		}
+		return resp, nil
 	}
 
 	// refresh token
 	if a.client.AccessToken == "" || auth_token.RefreshRequired(lastResp.Error().Code) {
 		resp, err := a.client.RequestRefreshToken(ctx)
 		if !IsResponseOK(resp, err) {
+			c.SetMessage("failed to refresh auth token")
 			return resp, err
 		}
 		a.handlers.SaveRefreshToken(ctx, a.client.RefreshToken)
-		return a.resend(ctx, send)
+		if err != nil {
+			c.SetMessage("failed to resend after refreshing auth token")
+			return resp, err
+		}
+		return resp, nil
 	}
 
 	// done
-	return lastResp, lastErr
+	err = lastErr
+	if err != nil {
+		c.SetMessage("error response")
+		return lastResp, err
+	}
+	return lastResp, nil
 }
 
 func NewAutoReconnectRestApiClient(reconnectHandlers api_client.AutoReconnectHandlers) *RestApiClientWithConfig {

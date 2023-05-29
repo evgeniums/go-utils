@@ -195,7 +195,7 @@ func (r *RestApiClientBase) SendRequest(send DoRequest, ctx op_context.Context, 
 	// send request
 	resp, err := send(ctx, method, r.Url(path), cmd, hs)
 	if err != nil {
-		c.SetMessage("failed to send request")
+		c.SetMessage("failed to send")
 		return resp, c.SetError(err)
 	}
 	r.updateTokens(resp)
@@ -304,12 +304,13 @@ func (r *RestApiClientBase) RequestRefreshToken(ctx op_context.Context) (Respons
 	defer ctx.TraceOutMethod()
 
 	headers := map[string]string{"x-auth-refresh-token": r.RefreshToken}
+	r.RefreshToken = ""
 	resp, err := r.Post(ctx, path, nil, nil, headers)
 	if err != nil {
 		return nil, c.SetError(err)
 	}
 	if resp.Code() != http.StatusOK {
-		err = errors.New("failed to update CSRF")
+		err = errors.New("failed to refresh token")
 		c.SetLoggerField("error_code", resp.Error().Code)
 		return resp, err
 	}
@@ -353,7 +354,7 @@ func DefaultSendWithBody(ctx op_context.Context, method string, url string, cmd 
 	// send request
 	rawResp, err := http_request.SendRawRequest(ctx, req)
 	if err != nil {
-		c.SetMessage("failed to send request")
+		c.SetMessage("failed to send raw")
 		return nil, c.SetError(err)
 	}
 
@@ -400,7 +401,7 @@ func DefaultSendWithQuery(ctx op_context.Context, method string, url string, cmd
 	// send request
 	rawResp, err := http_request.SendRawRequest(ctx, req)
 	if err != nil {
-		c.SetMessage("failed to send request")
+		c.SetMessage("failed to send raw request")
 		return nil, c.SetError(err)
 	}
 

@@ -16,8 +16,10 @@ func (h *HandlerInTenancy[Cmd, Result]) Exec(client Client, ctx multitenancy.Ten
 	defer ctx.TraceOutMethod()
 
 	err := client.Exec(ctx, operation, h.Cmd, h.Result, multitenancy.ContextTenancyPath(ctx))
-	c.SetError(err)
-	return err
+	if err != nil {
+		return c.SetError(err)
+	}
+	return nil
 }
 
 func NewHandlerInTenancy[Cmd any, Result any](cmd *Cmd, result *Result) *HandlerInTenancy[Cmd, Result] {
@@ -35,8 +37,10 @@ func (h *HandlerInTenancyCmd[Cmd]) Exec(client Client, ctx multitenancy.TenancyC
 	defer ctx.TraceOutMethod()
 
 	err := client.Exec(ctx, operation, h.Cmd, nil, multitenancy.ContextTenancyPath(ctx))
-	c.SetError(err)
-	return err
+	if err != nil {
+		return c.SetError(err)
+	}
+	return nil
 }
 
 func NewHandlerInTenancyCmd[Cmd any](cmd *Cmd) *HandlerInTenancyCmd[Cmd] {
