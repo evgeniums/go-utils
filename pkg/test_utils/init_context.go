@@ -130,7 +130,7 @@ func SimpleOpContext(app app_context.Context, name string) op_context.Context {
 }
 
 func UserOpContext(app app_context.Context, name string, user auth.User, tenancy ...multitenancy.Tenancy) auth.UserContext {
-	ctx := &auth.UserContextBase{}
+	ctx := &auth.TenancyUserContext{}
 	baseCtx := default_op_context.NewContext()
 	baseCtx.Init(app, app.Logger(), app.Db())
 	ctx.Construct(baseCtx)
