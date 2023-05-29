@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
@@ -110,8 +111,31 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 	}
 	defer onExit()
 
+	if ctx.Logger().DumpRequests() {
+		dump, err1 := httputil.DumpRequestOut(r.NativeRequest, true)
+		if err1 != nil {
+			c.Logger().Error("Failed to dump HTTP request", err1)
+		} else {
+			c.Logger().Debug("Dump HTTP request", logger.Fields{"http_request": string(dump)})
+		}
+	}
+
 	client := &http.Client{Transport: r.Transport}
 	r.NativeResponse, err = client.Do(r.NativeRequest)
+
+	if ctx.Logger().DumpRequests() {
+		if r.NativeResponse != nil {
+			dump, err1 := httputil.DumpResponse(r.NativeResponse, true)
+			if err1 != nil {
+				c.Logger().Error("failed to dump HTTP response", err1)
+			} else {
+				c.Logger().Debug("Dump HTTP response", logger.Fields{"http_response": string(dump)})
+			}
+		} else {
+			c.Logger().Debug("Dump HTTP response", logger.Fields{"http_response": ""})
+		}
+	}
+
 	if err != nil {
 		c.SetMessage("failed to send request")
 		return err
@@ -163,8 +187,8 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 	return nil
 }
 
-func (r *Request) AddHeader(key string, value string) {
-	r.NativeRequest.Header.Add(key, value)
+func (r *Request) SetHeader(key string, value string) {
+	r.NativeRequest.Header.Set(key, value)
 }
 
 func (r *Request) SetAuthHeader(key string, value string) {

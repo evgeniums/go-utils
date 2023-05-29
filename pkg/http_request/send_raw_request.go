@@ -18,7 +18,7 @@ func SendRawRequest(ctx op_context.Context, request *http.Request, redirectHandl
 	// TODO use this flag for server
 	if ctx.Logger().DumpRequests() {
 		dump, _ := httputil.DumpRequestOut(request, true)
-		ctx.Logger().Debug("Dump HTTP request", logger.Fields{"http_request": string(dump)})
+		c.Logger().Debug("Dump HTTP request", logger.Fields{"http_request": string(dump)})
 	}
 
 	client := &http.Client{}
@@ -30,9 +30,9 @@ func SendRawRequest(ctx op_context.Context, request *http.Request, redirectHandl
 	if ctx.Logger().DumpRequests() {
 		if response != nil {
 			dump, _ := httputil.DumpResponse(response, true)
-			ctx.Logger().Debug("Dump HTTP response", logger.Fields{"http_response": string(dump)})
+			c.Logger().Debug("Dump HTTP response", logger.Fields{"http_response": string(dump)})
 		} else {
-			ctx.Logger().Debug("Dump HTTP response", logger.Fields{"http_response": ""})
+			c.Logger().Debug("Dump HTTP response", logger.Fields{"http_response": ""})
 		}
 	}
 

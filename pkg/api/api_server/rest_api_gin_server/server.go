@@ -319,7 +319,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		if s.VERBOSE {
 			dumpBody := ginCtx.Request.ContentLength > 0 && int(ginCtx.Request.ContentLength) <= s.VERBOSE_BODY_MAX_LENGTH
 			b, _ := httputil.DumpRequest(ginCtx.Request, dumpBody)
-			request.Logger().Debug("Dump HTTP request", logger.Fields{"request": string(b)})
+			c.Logger().Debug("Dump HTTP request", logger.Fields{"request": string(b)})
 		}
 
 		// extract tenancy if applicable
