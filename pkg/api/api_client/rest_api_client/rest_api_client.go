@@ -303,8 +303,8 @@ func (r *RestApiClientBase) RequestRefreshToken(ctx op_context.Context) (Respons
 	c := ctx.TraceInMethod("RestApiClientBase.RequestRefreshToken", logger.Fields{"path": path})
 	defer ctx.TraceOutMethod()
 
+	r.AccessToken = ""
 	headers := map[string]string{"x-auth-refresh-token": r.RefreshToken}
-	r.RefreshToken = ""
 	resp, err := r.Post(ctx, path, nil, nil, headers)
 	if err != nil {
 		return nil, c.SetError(err)
