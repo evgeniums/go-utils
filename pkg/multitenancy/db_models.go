@@ -7,7 +7,7 @@ type TenancyMeta struct {
 }
 
 func DbModels() []interface{} {
-	return []interface{}{&TenancyDb{}, &OpLogTenancy{}}
+	return []interface{}{&TenancyDb{}, &TenancyIpAddress{}, &OpLogTenancy{}}
 }
 
 func DbInternalModels() []interface{} {

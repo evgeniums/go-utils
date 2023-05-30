@@ -240,3 +240,17 @@ func NewInitContext(app app_context.Context, log logger.Logger, db db.DB) *Tenan
 	t := NewContext(c)
 	return t
 }
+
+type TenancyIpAddress struct {
+	common.ObjectBase
+	TenancyId string `gorm:"index" json:"tenancy_id"`
+	Address   string `gorm:"index" json:"address"`
+	Shadow    bool   `gorm:"index" json:"shadow"`
+}
+
+type TenancyIpAddressItem struct {
+	TenancyIpAddress `source:"tenancy_ip_addresses"`
+	PoolName         string `json:"pool_name" source:"pools.name" gorm:"index" display:"Pool"`
+	CustomerLogin    string `json:"customer_login" source:"customers.login" gorm:"index" display:"Customer"`
+	TenancyRole      string `json:"tenancy_role" source:"tenancies.role" gorm:"index" display:"Tenancy role"`
+}

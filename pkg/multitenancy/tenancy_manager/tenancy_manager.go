@@ -65,6 +65,9 @@ type TenancyManager struct {
 	poolTopicsSubscriptions map[string]string
 
 	tenancyDbModels *multitenancy.TenancyDbModels
+
+	tenancyIpAddresses       map[string]map[string]bool
+	tenancyShadowIpAddresses map[string]map[string]bool
 }
 
 func NewTenancyManager(pools pool.PoolStore, poolPubsub pool_pubsub.PoolPubsub, tenancyDbModels *multitenancy.TenancyDbModels) *TenancyManager {
@@ -73,6 +76,8 @@ func NewTenancyManager(pools pool.PoolStore, poolPubsub pool_pubsub.PoolPubsub, 
 	m.tenanciesById = make(map[string]multitenancy.Tenancy)
 	m.tenanciesByPath = make(map[string]multitenancy.Tenancy)
 	m.tenanciesByShadowPath = make(map[string]multitenancy.Tenancy)
+	m.tenancyIpAddresses = make(map[string]map[string]bool)
+	m.tenancyShadowIpAddresses = make(map[string]map[string]bool)
 	m.tenancyDbModels = tenancyDbModels
 	m.PoolPubsub = poolPubsub
 	m.PubsubTopic = &multitenancy.PubsubTopic{}
@@ -156,6 +161,8 @@ func (t *TenancyManager) Close() {
 	t.tenanciesById = make(map[string]multitenancy.Tenancy)
 	t.tenanciesByPath = make(map[string]multitenancy.Tenancy)
 	t.tenanciesByShadowPath = make(map[string]multitenancy.Tenancy)
+	t.tenancyIpAddresses = make(map[string]map[string]bool)
+	t.tenancyShadowIpAddresses = make(map[string]map[string]bool)
 
 	t.mutex.Unlock()
 
@@ -195,6 +202,23 @@ func (t *TenancyManager) TenancyByShadowPath(path string) (multitenancy.Tenancy,
 	return tenancy, nil
 }
 
+func (t *TenancyManager) HasIpAddressByPath(path string, ipAddress string, shadow bool) bool {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	var addresses map[string]bool
+	var ok bool
+	if shadow {
+		addresses, ok = t.tenancyShadowIpAddresses[path]
+	} else {
+		addresses, ok = t.tenancyIpAddresses[path]
+	}
+	if !ok {
+		return false
+	}
+	_, ok = addresses[ipAddress]
+	return ok
+}
+
 func (t *TenancyManager) Tenancies() []multitenancy.Tenancy {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
@@ -211,6 +235,8 @@ func (t *TenancyManager) UnloadTenancy(id string) {
 		delete(t.tenanciesById, id)
 		delete(t.tenanciesByPath, tenancy.Path())
 		delete(t.tenanciesByShadowPath, tenancy.ShadowPath())
+		delete(t.tenancyIpAddresses, tenancy.ShadowPath())
+		delete(t.tenancyShadowIpAddresses, tenancy.ShadowPath())
 	}
 }
 

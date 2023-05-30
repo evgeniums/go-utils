@@ -79,6 +79,9 @@ type Multitenancy interface {
 	// Get tenancy controller.
 	TenancyController() TenancyController
 
+	// Check if ip address is in the list of tenancy addresses.
+	HasIpAddressByPath(path string, ipAddress string, shadow bool) bool
+
 	// Close tenancies, e.g. close tenancy databases.
 	Close()
 }
@@ -122,3 +125,7 @@ type TenancyController interface {
 	Activate(ctx op_context.Context, id string, idIsDisplay ...bool) error
 	Deactivate(ctx op_context.Context, id string, idIsDisplay ...bool) error
 }
+
+// AddIpAddress
+// DeleteIpAddress
+// ListIpAddresses
