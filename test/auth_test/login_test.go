@@ -57,10 +57,22 @@ func TestLogin(t *testing.T) {
 	// unknown user
 	client.Login("someuser", password1, auth_login_phash.ErrorCodeLoginFailed)
 
+	// unknown user
+	client.Login("someuser", password1, auth_login_phash.ErrorCodeWaitRetry)
+
 	// invalid password
 	client.Login(login1, ";oiu'oij;lkj", auth_login_phash.ErrorCodeLoginFailed)
 
+	// invalid password
+	client.Login(login1, ";oiu'oij;lkj", auth_login_phash.ErrorCodeWaitRetry)
+
+	// invalid password with throttle
+	client.Sleep(3, "login throttle")
+	client.Login(login1, ";oiu'oij;lkj", auth_login_phash.ErrorCodeLoginFailed)
+	client.Login(login1, password1, auth_login_phash.ErrorCodeWaitRetry)
+
 	// good login
+	client.Sleep(3, "login throttle")
 	client.Login(login1, password1)
 
 	// re-login without headers when authenticated

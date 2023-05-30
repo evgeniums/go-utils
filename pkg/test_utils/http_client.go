@@ -119,6 +119,10 @@ func (c *HttpClient) Login(user string, password string, expectedErrorCode ...st
 	// first step
 	headers := map[string]string{"x-auth-login": user}
 	resp := c.Post(path, nil, headers)
+	if errorCode == auth_login_phash.ErrorCodeWaitRetry {
+		CheckResponse(c.T, resp, &Expected{HttpCode: http.StatusTooManyRequests, Error: auth_login_phash.ErrorCodeWaitRetry})
+		return
+	}
 	CheckResponse(c.T, resp, &Expected{HttpCode: http.StatusUnauthorized, Error: auth_login_phash.ErrorCodeCredentialsRequired})
 
 	salt := resp.Object.Header().Get("x-auth-login-salt")
@@ -270,6 +274,10 @@ func (c *HttpClient) Sleep(seconds int, message string) {
 }
 
 func (c *HttpClient) RequestRefreshToken(expectedErrorCode ...string) {
+
+	if c.RefreshToken == "" {
+		return
+	}
 
 	errorCode := utils.OptionalArg("", expectedErrorCode...)
 

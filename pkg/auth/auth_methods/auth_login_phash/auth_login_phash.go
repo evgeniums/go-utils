@@ -2,14 +2,19 @@ package auth_login_phash
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
+	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
+	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
+	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 )
 
@@ -17,6 +22,12 @@ const LoginProtocol = "login_phash"
 const LoginName = "login"
 const SaltName = "login-salt"
 const PasswordHashName = "login-phash"
+
+const DelayCacheKey = "login-delay"
+
+type LoginDelay struct {
+	common.CreatedAtBase
+}
 
 type User interface {
 	PasswordHash() string
@@ -47,8 +58,13 @@ func (u *UserBase) CheckPasswordHash(phash string) bool {
 	return crypt_utils.HashEqual(u.PASSWORD_HASH, phash)
 }
 
+type LoginHandlerConfig struct {
+	THROTTLE_DELAY_SECONDS int `default:"2" validate:"gt=0"`
+}
+
 // Auth handler for login processing. The AuthTokenHandler MUST ALWAYS follow this handler in session scheme with AND conjunction.
 type LoginHandler struct {
+	LoginHandlerConfig
 	auth.AuthHandlerBase
 	users auth_session.WithAuthUserManager
 }
@@ -59,20 +75,32 @@ func New(users auth_session.WithAuthUserManager) *LoginHandler {
 	return l
 }
 
+func (l *LoginHandler) Config() interface{} {
+	return &l.LoginHandlerConfig
+}
+
 func (l *LoginHandler) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
 	l.AuthHandlerBase.Init(LoginProtocol)
+
+	path := utils.OptionalArg("auth.methods.login_phash", configPath...)
+	err := object_config.LoadLogValidate(cfg, log, vld, l, path)
+	if err != nil {
+		return log.PushFatalStack("failed to load configuration of auth login_phash handler", err)
+	}
 
 	return nil
 }
 
 const ErrorCodeLoginFailed = "login_failed"
 const ErrorCodeCredentialsRequired = "login_credentials_required"
+const ErrorCodeWaitRetry = "wait_retry"
 
 func (l *LoginHandler) ErrorDescriptions() map[string]string {
 	m := map[string]string{
 		ErrorCodeLoginFailed:         "Invalid login or password",
 		ErrorCodeCredentialsRequired: "Credentials hash must be provided in request",
+		ErrorCodeWaitRetry:           "Retry later",
 	}
 	return m
 }
@@ -81,6 +109,7 @@ func (l *LoginHandler) ErrorProtocolCodes() map[string]int {
 	m := map[string]int{
 		ErrorCodeLoginFailed:         http.StatusUnauthorized,
 		ErrorCodeCredentialsRequired: http.StatusUnauthorized,
+		ErrorCodeWaitRetry:           http.StatusTooManyRequests,
 	}
 	return m
 }
@@ -120,6 +149,22 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		return true, err
 	}
 
+	// check delay expired
+	delayCacheKey := l.delayCacheKey(login)
+	delayItem := &LoginDelay{}
+	found, err := ctx.Cache().Get(delayCacheKey, delayItem)
+	if err != nil {
+		c.SetMessage("failed to get delay item from cache")
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
+		return true, err
+	}
+	if found {
+		// throttle login
+		err = errors.New("wait for delay")
+		ctx.SetGenericErrorCode(ErrorCodeWaitRetry)
+		return true, err
+	}
+
 	// load user
 	dbUser, err := l.users.AuthUserManager().FindAuthUser(ctx, login)
 	if err != nil {
@@ -134,6 +179,7 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 			ctx.SetAuthParameter(l.Protocol(), SaltName, crypt_utils.GenerateString())
 			ctx.SetGenericErrorCode(ErrorCodeCredentialsRequired)
 		} else {
+			l.setDelay(ctx, c, delayCacheKey, delayItem)
 			ctx.SetGenericErrorCode(ErrorCodeLoginFailed)
 		}
 
@@ -145,6 +191,7 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	if dbUser.IsBlocked() {
 		err = errors.New("user blocked")
 		ctx.SetGenericErrorCode(ErrorCodeLoginFailed)
+		l.setDelay(ctx, c, delayCacheKey, delayItem)
 		return true, err
 	}
 
@@ -166,6 +213,7 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		if !phashUser.CheckPasswordHash(phash) {
 			err = errors.New("invalid password hash")
 			ctx.SetGenericErrorCode(ErrorCodeLoginFailed)
+			l.setDelay(ctx, c, delayCacheKey, delayItem)
 			return true, err
 		}
 
@@ -183,6 +231,20 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	// done
 	err = errors.New("credentials not provided")
 	return true, err
+}
+
+func (l *LoginHandler) delayCacheKey(userId string) string {
+	return fmt.Sprintf("%s/%s", DelayCacheKey, userId)
+}
+
+func (l *LoginHandler) setDelay(ctx op_context.Context, c op_context.CallContext, delayCacheKey string, delayItem *LoginDelay) {
+	if l.THROTTLE_DELAY_SECONDS != 0 {
+		delayItem.InitCreatedAt()
+		err1 := ctx.Cache().Set(delayCacheKey, delayItem, l.THROTTLE_DELAY_SECONDS)
+		if err1 != nil {
+			c.Logger().Error("failed to save delay item in cache", err1)
+		}
+	}
 }
 
 func Phash(password string, salt string) string {
