@@ -502,6 +502,25 @@ func TestTenancySetters(t *testing.T) {
 	// try duplicate path
 	err = multiPoolCtx.RemoteTenancyController.SetPath(multiPoolCtx.ClientOp, tenancy1.GetID(), newPath)
 	test_utils.CheckGenericError(t, err, multitenancy.ErrorCodeTenancyConflictPath)
+	// try duplicate shadow path
+	err = multiPoolCtx.RemoteTenancyController.SetShadowPath(multiPoolCtx.ClientOp, tenancy1.GetID(), newPath)
+	test_utils.CheckGenericError(t, err, multitenancy.ErrorCodeTenancyConflictPath)
+
+	// change shadow path
+	shadowPath := "tenancy1shadowpath"
+	err = multiPoolCtx.RemoteTenancyController.SetShadowPath(multiPoolCtx.ClientOp, tenancy1.GetID(), shadowPath)
+	require.NoError(t, err)
+	singleAppTenancy, err = singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, singleAppTenancy)
+	assert.Equal(t, newPath, singleAppTenancy.Path())
+	assert.Equal(t, shadowPath, singleAppTenancy.ShadowPath())
+	// try duplicate path
+	err = multiPoolCtx.RemoteTenancyController.SetPath(multiPoolCtx.ClientOp, tenancy1.GetID(), shadowPath)
+	test_utils.CheckGenericError(t, err, multitenancy.ErrorCodeTenancyConflictPath)
+	// try duplicate shadow path
+	err = multiPoolCtx.RemoteTenancyController.SetShadowPath(multiPoolCtx.ClientOp, tenancy1.GetID(), shadowPath)
+	test_utils.CheckGenericError(t, err, multitenancy.ErrorCodeTenancyConflictPath)
 
 	// change role
 	newRole := "prod"

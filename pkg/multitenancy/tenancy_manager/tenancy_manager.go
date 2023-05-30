@@ -53,6 +53,7 @@ type TenancyManager struct {
 	mutex                      sync.Mutex
 	tenanciesById              map[string]multitenancy.Tenancy
 	tenanciesByPath            map[string]multitenancy.Tenancy
+	tenanciesByShadowPath      map[string]multitenancy.Tenancy
 	Controller                 multitenancy.TenancyController
 	Pools                      pool.PoolStore
 	Customers                  customer.CustomerController
@@ -71,6 +72,7 @@ func NewTenancyManager(pools pool.PoolStore, poolPubsub pool_pubsub.PoolPubsub, 
 	m.Pools = pools
 	m.tenanciesById = make(map[string]multitenancy.Tenancy)
 	m.tenanciesByPath = make(map[string]multitenancy.Tenancy)
+	m.tenanciesByShadowPath = make(map[string]multitenancy.Tenancy)
 	m.tenancyDbModels = tenancyDbModels
 	m.PoolPubsub = poolPubsub
 	m.PubsubTopic = &multitenancy.PubsubTopic{}
@@ -153,6 +155,7 @@ func (t *TenancyManager) Close() {
 	}
 	t.tenanciesById = make(map[string]multitenancy.Tenancy)
 	t.tenanciesByPath = make(map[string]multitenancy.Tenancy)
+	t.tenanciesByShadowPath = make(map[string]multitenancy.Tenancy)
 
 	t.mutex.Unlock()
 
@@ -182,6 +185,16 @@ func (t *TenancyManager) TenancyByPath(path string) (multitenancy.Tenancy, error
 	return tenancy, nil
 }
 
+func (t *TenancyManager) TenancyByShadowPath(path string) (multitenancy.Tenancy, error) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	tenancy, ok := t.tenanciesByShadowPath[path]
+	if !ok {
+		return nil, errors.New("tenancy not found")
+	}
+	return tenancy, nil
+}
+
 func (t *TenancyManager) Tenancies() []multitenancy.Tenancy {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
@@ -197,6 +210,7 @@ func (t *TenancyManager) UnloadTenancy(id string) {
 		tenancy.Db().Close()
 		delete(t.tenanciesById, id)
 		delete(t.tenanciesByPath, tenancy.Path())
+		delete(t.tenanciesByShadowPath, tenancy.ShadowPath())
 	}
 }
 
@@ -228,6 +242,7 @@ func (t *TenancyManager) LoadTenancyFromData(ctx op_context.Context, tenancyDb *
 	t.mutex.Lock()
 	t.tenanciesById[tenancy.GetID()] = tenancy
 	t.tenanciesByPath[tenancy.Path()] = tenancy
+	t.tenanciesByShadowPath[tenancy.ShadowPath()] = tenancy
 	t.mutex.Unlock()
 
 	// done
@@ -326,7 +341,7 @@ func (t *TenancyManager) CheckDuplicatePath(ctx op_context.Context, c op_context
 	fields := db.Fields{"pool_id": poolId, "path": path}
 	exists, err := t.Controller.Exists(ctx, fields)
 	if err != nil {
-		c.SetMessage("failed to check existence of tenancy")
+		c.SetMessage("failed to check existence of tenancy by path")
 		return err
 	}
 	if exists {
@@ -334,6 +349,19 @@ func (t *TenancyManager) CheckDuplicatePath(ctx op_context.Context, c op_context
 		ctx.SetGenericErrorCode(multitenancy.ErrorCodeTenancyConflictPath)
 		return err
 	}
+
+	fields = db.Fields{"pool_id": poolId, "shadow_path": path}
+	exists, err = t.Controller.Exists(ctx, fields)
+	if err != nil {
+		c.SetMessage("failed to check existence of tenancy by shadow path")
+		return err
+	}
+	if exists {
+		err = errors.New("tenancy already exists with such shadow path in that pool")
+		ctx.SetGenericErrorCode(multitenancy.ErrorCodeTenancyConflictPath)
+		return err
+	}
+
 	return nil
 }
 
@@ -383,6 +411,9 @@ func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenanc
 	if tenancy.PATH == "" {
 		tenancy.PATH = crypt_utils.GenerateString()
 	}
+	if tenancy.SHADOW_PATH == "" {
+		tenancy.SHADOW_PATH = crypt_utils.GenerateString()
+	}
 	if tenancy.DBNAME == "" {
 		tenancy.DBNAME = utils.ConcatStrings(t.DB_PREFIX, "_", customer.Login(), "_", data.ROLE)
 	}
@@ -390,6 +421,13 @@ func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenanc
 	// check if tenancy with such path in that pool
 	err = t.CheckDuplicatePath(ctx, c, data.POOL_ID, data.PATH)
 	if err != nil {
+		c.SetMessage("path conflict")
+		return nil, err
+	}
+	// check if tenancy with such shadow path in that pool
+	err = t.CheckDuplicatePath(ctx, c, data.POOL_ID, data.SHADOW_PATH)
+	if err != nil {
+		c.SetMessage("shadow path conflict")
 		return nil, err
 	}
 

@@ -37,3 +37,32 @@ func (t *TenancyClient) SetPath(ctx op_context.Context, id string, path string, 
 	return nil
 
 }
+
+func (t *TenancyClient) SetShadowPath(ctx op_context.Context, id string, path string, idIsDisplay ...bool) error {
+
+	// setup
+	c := ctx.TraceInMethod("TenancyClient.SetShadowPath")
+	defer ctx.TraceOutMethod()
+
+	// setup ID
+	tenancyId, _, err := tenancy_manager.TenancyId(t, ctx, id, idIsDisplay...)
+	if err != nil {
+		c.SetMessage("failed to get ID")
+		return c.SetError(err)
+	}
+
+	// create command
+	handler := api_client.NewHandlerCmd(&multitenancy.WithPath{SHADOW_PATH: path})
+
+	// prepare and exec handler
+	op := api.OperationAsResource(t.TenancyResource, "shadow-path", tenancyId, tenancy_api.SetShadowPath())
+	err = op.Exec(ctx, api_client.MakeOperationHandler(t.Client(), handler))
+	if err != nil {
+		c.SetMessage("failed to exec operation")
+		return c.SetError(err)
+	}
+
+	// done
+	return nil
+
+}

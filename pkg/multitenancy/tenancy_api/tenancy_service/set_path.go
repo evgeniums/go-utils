@@ -39,3 +39,37 @@ func SetPath(s *TenancyService) *SetPathEndpoint {
 	e.Construct(s, e, "path", tenancy_api.SetPath())
 	return e
 }
+
+type SetShadowPathEndpoint struct {
+	TenancyUpdateEndpoint
+}
+
+func (s *SetShadowPathEndpoint) HandleRequest(request api_server.Request) error {
+
+	// setup
+	c := request.TraceInMethod("tenancy.SetShadowPath")
+	defer request.TraceOutMethod()
+
+	// parse command
+	cmd := &multitenancy.WithPath{}
+	err := request.ParseValidate(cmd)
+	if err != nil {
+		c.SetMessage("failed to parse/validate command")
+		return err
+	}
+
+	// apply
+	err = s.service.Tenancies.SetShadowPath(request, request.GetResourceId(tenancy_api.TenancyResource), cmd.ShadowPath())
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	// done
+	return nil
+}
+
+func SetShadowPath(s *TenancyService) *SetShadowPathEndpoint {
+	e := &SetShadowPathEndpoint{}
+	e.Construct(s, e, "shadow-path", tenancy_api.SetShadowPath())
+	return e
+}

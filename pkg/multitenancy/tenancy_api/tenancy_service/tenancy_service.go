@@ -58,6 +58,7 @@ func NewTenancyService(tenancyController multitenancy.TenancyController) *Tenanc
 	s.TenancyResource.AddOperation(Delete(s))
 	s.TenancyResource.AddChildren(SetActive(s),
 		SetPath(s),
+		SetShadowPath(s),
 		SetRole(s),
 		SetCustomer(s),
 		ChangePoolOrDb(s),

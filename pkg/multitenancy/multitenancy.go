@@ -15,6 +15,7 @@ const (
 	OpActivate       string = "activate"
 	OpDeactivate     string = "deactivate"
 	OpSetPath        string = "set_path"
+	OpSetShadowPath  string = "set_shadow_path"
 	OpSetRole        string = "set_role"
 	OpSetCustomer    string = "set_customer"
 	OpChangePoolOrDb string = "change_pool_or_db"
@@ -62,6 +63,9 @@ type Multitenancy interface {
 
 	// Find tenancy by path.
 	TenancyByPath(path string) (Tenancy, error)
+
+	// Find tenancy by shadow path.
+	TenancyByShadowPath(path string) (Tenancy, error)
 
 	// Load tenancy.
 	LoadTenancy(ctx op_context.Context, id string) (Tenancy, error)
@@ -111,6 +115,7 @@ type TenancyController interface {
 	Delete(ctx op_context.Context, id string, withDb bool, idIsDisplay ...bool) error
 
 	SetPath(ctx op_context.Context, id string, path string, idIsDisplay ...bool) error
+	SetShadowPath(ctx op_context.Context, id string, path string, idIsDisplay ...bool) error
 	SetCustomer(ctx op_context.Context, id string, customerId string, idIsDisplay ...bool) error
 	SetRole(ctx op_context.Context, id string, role string, idIsDisplay ...bool) error
 	ChangePoolOrDb(ctx op_context.Context, id string, poolId string, dbName string, idIsDisplay ...bool) error

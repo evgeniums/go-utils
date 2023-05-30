@@ -129,6 +129,7 @@ func (p *TenancyCommands) LoadHandlers() {
 		Customer,
 		Role,
 		Path,
+		ShadowPath,
 		ChangePoolOrDb,
 		Delete,
 	)

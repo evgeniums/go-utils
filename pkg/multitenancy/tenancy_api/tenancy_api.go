@@ -27,6 +27,7 @@ var (
 	Delete         = func() api.Operation { return api.Delete("delete_tenancy") }
 	SetActive      = func() api.Operation { return api.Update("set_tenancy_active") }
 	SetPath        = func() api.Operation { return api.Update("set_tenancy_path") }
+	SetShadowPath  = func() api.Operation { return api.Update("set_tenancy_shadow_path") }
 	SetRole        = func() api.Operation { return api.Update("set_tenancy_role") }
 	SetCustomer    = func() api.Operation { return api.Update("set_tenancy_customer") }
 	ChangePoolOrDb = func() api.Operation { return api.UpdatePartial("change_tenancy_pool_or_db") }

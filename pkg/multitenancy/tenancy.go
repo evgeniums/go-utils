@@ -23,6 +23,7 @@ type Tenancy interface {
 	common.WithDescription
 
 	Path() string
+	ShadowPath() string
 	CustomerId() string
 	CustomerDisplay() string
 	Role() string
@@ -35,7 +36,8 @@ type Tenancy interface {
 }
 
 type WithPath struct {
-	PATH string `json:"path" gorm:"uniqueIndex" validate:"omitempty,alphanum_" vmessage:"Path must be alhanumeric" long:"path" description:"Path of tenancy resource in API service"`
+	PATH        string `json:"path" gorm:"uniqueIndex" validate:"omitempty,alphanum_" vmessage:"Path must be alhanumeric" long:"path" description:"Path of tenancy resource in API service"`
+	SHADOW_PATH string `json:"shadow_path" gorm:"index" validate:"omitempty,alphanum_" vmessage:"Shadow path must be alhanumeric" long:"shadow_path" description:"Shadow path of tenancy resource in API service"`
 }
 
 type WithRole struct {
@@ -73,6 +75,14 @@ func (t *WithPath) Path() string {
 
 func (t *WithPath) SetPath(path string) {
 	t.PATH = path
+}
+
+func (t *WithPath) ShadowPath() string {
+	return t.SHADOW_PATH
+}
+
+func (t *WithPath) SetShadowPath(path string) {
+	t.SHADOW_PATH = path
 }
 
 func (t *WithPoolAndDb) PoolId() string {
@@ -173,6 +183,13 @@ func ContextTenancyPath(ctx TenancyContext) string {
 		return ""
 	}
 	return ctx.GetTenancy().Path()
+}
+
+func ContextTenancyShadowPath(ctx TenancyContext) string {
+	if ctx.GetTenancy() == nil {
+		return ""
+	}
+	return ctx.GetTenancy().ShadowPath()
 }
 
 type TenancyContextBase struct {

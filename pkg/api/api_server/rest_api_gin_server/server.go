@@ -43,6 +43,7 @@ type ServerConfig struct {
 	VERBOSE_BODY_MAX_LENGTH  int `default:"2048"`
 	ALLOW_NOT_ACTIVE_TENANCY bool
 	AUTH_FROM_TENANCY_DB     bool `default:"true"`
+	SHADOW_TENANCY_PATH      bool
 
 	TENANCY_PARAMETER string `validate:"omitempty,alphanum"`
 }
@@ -327,7 +328,11 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		if multitenancy.IsMultiTenancy(s.tenancies) && ep.Resource().IsInTenancy() {
 			tenancyInPath := request.GetResourceId(s.TENANCY_PARAMETER)
 			request.SetLoggerField("tenancy", tenancyInPath)
-			tenancy, err = s.tenancies.TenancyByPath(tenancyInPath)
+			if s.SHADOW_TENANCY_PATH {
+				tenancy, err = s.tenancies.TenancyByShadowPath(tenancyInPath)
+			} else {
+				tenancy, err = s.tenancies.TenancyByPath(tenancyInPath)
+			}
 			if err != nil {
 				request.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
 				c.SetMessage("unknown tenancy")

@@ -151,7 +151,7 @@ func (t *TenancyController) Add(ctx op_context.Context, data *multitenancy.Tenan
 
 	// save oplog
 	t.OpLog(ctx, multitenancy.OpAdd, &multitenancy.OpLogTenancy{TenancyId: tenancy.GetID(),
-		Role: tenancy.Role(), Path: tenancy.Path(), DbName: tenancy.DbName(), Pool: tenancy.PoolName, Customer: tenancy.CustomerDisplay()})
+		Role: tenancy.Role(), ShadowPath: tenancy.ShadowPath(), Path: tenancy.Path(), DbName: tenancy.DbName(), Pool: tenancy.PoolName, Customer: tenancy.CustomerDisplay()})
 
 	// publish notification
 	t.PublishOp(tenancy, multitenancy.OpAdd)
@@ -223,10 +223,46 @@ func (t *TenancyController) SetPath(ctx op_context.Context, id string, path stri
 
 	// save oplog
 	t.OpLog(ctx, multitenancy.OpSetPath, &multitenancy.OpLogTenancy{TenancyId: tenancy.GetID(),
-		Role: tenancy.Role(), Path: tenancy.Path(), Customer: tenancy.CustomerDisplay()})
+		Role: tenancy.Role(), ShadowPath: tenancy.ShadowPath(), Path: tenancy.Path(), Customer: tenancy.CustomerDisplay()})
 
 	// publish notification
 	t.PublishOp(tenancy, multitenancy.OpSetPath)
+
+	// done
+	return nil
+}
+
+func (t *TenancyController) SetShadowPath(ctx op_context.Context, id string, path string, idIsDisplay ...bool) error {
+
+	// setup
+	c := ctx.TraceInMethod("TenancyController.SetShadowPath")
+	defer ctx.TraceOutMethod()
+
+	// find tenancy
+	tenancy, err := t.Find(ctx, id, idIsDisplay...)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	// check if tenancy with such path in that pool
+	err = t.Manager.CheckDuplicatePath(ctx, c, tenancy.PoolId(), path)
+	if err != nil {
+		return err
+	}
+
+	// update field
+	err = t.CRUD.Update(ctx, &tenancy.TenancyDb, db.Fields{"shadow_path": path})
+	if err != nil {
+		c.SetMessage("failed to update tenancy")
+		return c.SetError(err)
+	}
+
+	// save oplog
+	t.OpLog(ctx, multitenancy.OpSetShadowPath, &multitenancy.OpLogTenancy{TenancyId: tenancy.GetID(),
+		Role: tenancy.Role(), ShadowPath: tenancy.ShadowPath(), Path: tenancy.Path(), Customer: tenancy.CustomerDisplay()})
+
+	// publish notification
+	t.PublishOp(tenancy, multitenancy.OpSetShadowPath)
 
 	// done
 	return nil
@@ -396,6 +432,10 @@ func (t *TenancyController) ChangePoolOrDb(ctx op_context.Context, id string, po
 	// check if tenancy with such path in new pool exists
 	if p.GetID() != tenancy.PoolId() {
 		err = t.Manager.CheckDuplicatePath(ctx, c, p.GetID(), tenancy.Path())
+		if err != nil {
+			return err
+		}
+		err = t.Manager.CheckDuplicatePath(ctx, c, p.GetID(), tenancy.ShadowPath())
 		if err != nil {
 			return err
 		}
