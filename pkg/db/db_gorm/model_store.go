@@ -77,6 +77,7 @@ func (d *ModelDescriptor) ParseFields() error {
 		fd.Index = IsIndexField(field)
 
 		d.FieldsJson[fd.Json] = fd
+		d.FieldsJson[fd.FullDbName] = fd
 	}
 
 	// second run, find sources of embedded structs
