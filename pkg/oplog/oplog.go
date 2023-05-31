@@ -5,8 +5,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 )
 
-// TODO keep oplog database in holder
-
 type Oplog interface {
 	common.Object
 	Operation() string
