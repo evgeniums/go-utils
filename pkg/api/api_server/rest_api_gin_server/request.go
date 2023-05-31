@@ -25,6 +25,8 @@ type Request struct {
 
 	initialPath string
 	start       time.Time
+
+	clientIp string
 }
 
 func (r *Request) Init(s *Server, ginCtx *gin.Context, ep api_server.Endpoint, fields ...logger.Fields) {
@@ -40,6 +42,7 @@ func (r *Request) Init(s *Server, ginCtx *gin.Context, ep api_server.Endpoint, f
 	r.response.SetRequest(r)
 
 	r.initialPath = ginCtx.Request.URL.Path
+	r.clientIp = ginCtx.ClientIP()
 }
 
 func (r *Request) Server() api_server.Server {
@@ -63,7 +66,7 @@ func (r *Request) GetRequestMethod() string {
 }
 
 func (r *Request) GetRequestClientIp() string {
-	return r.ginCtx.ClientIP()
+	return r.clientIp
 }
 
 func (r *Request) GetRequestUserAgent() string {
