@@ -32,8 +32,9 @@ type TenancyService struct {
 	api_server.ServiceBase
 	Tenancies multitenancy.TenancyController
 
-	TenanciesResource api.Resource
-	TenancyResource   api.Resource
+	TenanciesResource   api.Resource
+	TenancyResource     api.Resource
+	IpAddressesResource api.Resource
 }
 
 func NewTenancyService(tenancyController multitenancy.TenancyController) *TenancyService {
@@ -62,10 +63,18 @@ func NewTenancyService(tenancyController multitenancy.TenancyController) *Tenanc
 		SetRole(s),
 		SetCustomer(s),
 		ChangePoolOrDb(s),
+		AddIpAddress(s),
+		DeleteIpAddress(s),
 	)
 
+	s.IpAddressesResource = api.NewResource(tenancy_api.IpAddressResource)
+	s.AddChild(s.IpAddressesResource)
+	listIpAddressesOp := ListIpAddresses(s)
+	s.IpAddressesResource.AddOperation(listIpAddressesOp)
+
 	tenancyTableConfig := &api_server.DynamicTableConfig{Model: &multitenancy.TenancyItem{}, Operation: listOp}
-	s.AddDynamicTables(tenancyTableConfig)
+	ipAddressesTableConfig := &api_server.DynamicTableConfig{Model: &multitenancy.TenancyIpAddressItem{}, Operation: listIpAddressesOp}
+	s.AddDynamicTables(tenancyTableConfig, ipAddressesTableConfig)
 
 	return s
 }

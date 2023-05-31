@@ -239,3 +239,80 @@ func TestTenancyAwareService(t *testing.T) {
 	multiPoolCtx.Close()
 	pubsub_factory.ResetSingletonInmemPubsub()
 }
+
+func TestServerIpList(t *testing.T) {
+
+	// prepare app with multiple pools and single pool
+	multiPoolCtx, singlePoolCtx := PrepareAppWithTenancies(t)
+
+	// add first tenancy to the same pool as single pool app, add via mutipool app
+	tenancyData1 := &multitenancy.TenancyData{}
+	tenancyData1.POOL_ID = "pool2"
+	tenancyData1.ROLE = "dev"
+	tenancyData1.DESCRIPTION = "tenancy for development"
+	tenancyData1.CUSTOMER_ID = "customer1"
+	addedTenancy1, err := multiPoolCtx.RemoteTenancyController.Add(multiPoolCtx.ClientOp, tenancyData1)
+	require.NoError(t, err)
+	require.NotNil(t, addedTenancy1)
+	err = multiPoolCtx.RemoteTenancyController.Activate(multiPoolCtx.ClientOp, addedTenancy1.GetID())
+	require.NoError(t, err)
+	loadedTenancy1, err := multiPoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, loadedTenancy1)
+
+	// add IP address to tenancy 1
+	err = multiPoolCtx.RemoteTenancyController.AddIpAddress(multiPoolCtx.ClientOp, addedTenancy1.GetID(), "127.0.0.1", "internal")
+	require.NoError(t, err)
+
+	// add second tenancy to the same pool as single pool app, add via mutipool app
+	tenancyData2 := tenancyData1
+	tenancyData2.CUSTOMER_ID = "customer2"
+	addedTenancy2, err := multiPoolCtx.RemoteTenancyController.Add(multiPoolCtx.ClientOp, tenancyData2)
+	require.NoError(t, err)
+	require.NotNil(t, addedTenancy2)
+	loadedTenancy2, err := multiPoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy2.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, loadedTenancy1)
+
+	// check IP filtering
+	multiPoolCtx1 := initContext(t, false, "filter_ip")
+	sampleService2 := NewSampleService()
+	api_server.AddServiceToServer(multiPoolCtx1.Server.ApiServer(), sampleService2)
+	sampleClient2 := NewSampleClient(multiPoolCtx1.RestApiClient)
+	tenancyResource2 := api.NamedResource("tenancy")
+	tenancyResource2.AddChild(sampleClient2)
+	tenancyResource2.SetId(loadedTenancy1.Path())
+
+	// good
+	_, err = sampleClient2.List(multiPoolCtx1.ClientOp)
+	assert.NoError(t, err)
+
+	// filter because no addresses
+	tenancyResource2.SetId(loadedTenancy2.Path())
+	_, err = sampleClient2.List(multiPoolCtx1.ClientOp)
+	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeForbidden)
+
+	// filter because good address but with other tag
+	err = multiPoolCtx1.RemoteTenancyController.AddIpAddress(multiPoolCtx1.ClientOp, addedTenancy2.GetID(), "127.0.0.1", "external")
+	require.NoError(t, err)
+	_, err = sampleClient2.List(multiPoolCtx1.ClientOp)
+	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeForbidden)
+
+	// filter because address with self tag not matching localhost
+	err = multiPoolCtx1.RemoteTenancyController.AddIpAddress(multiPoolCtx1.ClientOp, addedTenancy2.GetID(), "192.168.100.1", "internal")
+	require.NoError(t, err)
+	_, err = sampleClient2.List(multiPoolCtx1.ClientOp)
+	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeForbidden)
+
+	// good
+	err = multiPoolCtx1.RemoteTenancyController.AddIpAddress(multiPoolCtx1.ClientOp, addedTenancy2.GetID(), "127.0.0.1", "internal")
+	require.NoError(t, err)
+	_, err = sampleClient2.List(multiPoolCtx1.ClientOp)
+	assert.NoError(t, err)
+
+	// close apps
+	multiPoolCtx1.Close()
+	multiPoolCtx.Close()
+	singlePoolCtx.Close()
+	pubsub_factory.ResetSingletonInmemPubsub()
+}

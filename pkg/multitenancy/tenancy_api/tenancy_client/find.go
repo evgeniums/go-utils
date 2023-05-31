@@ -5,7 +5,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_api"
-	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_manager"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
@@ -23,7 +22,7 @@ func (t *TenancyClient) Find(ctx op_context.Context, id string, idIsDisplay ...b
 	defer onExit()
 
 	// adjust ID
-	tenancyId, tenancy, err := tenancy_manager.TenancyId(t, ctx, id, idIsDisplay...)
+	tenancyId, tenancy, err := multitenancy.TenancyId(t, ctx, id, idIsDisplay...)
 	if err != nil {
 		c.SetMessage("failed to get tenancy ID")
 		return nil, err

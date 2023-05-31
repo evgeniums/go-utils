@@ -660,3 +660,70 @@ func TestFindDelete(t *testing.T) {
 	singlePoolCtx.Close()
 	pubsub_factory.ResetSingletonInmemPubsub()
 }
+
+func TestIpAddresses(t *testing.T) {
+
+	// prepare app with multiple pools and single pool
+	multiPoolCtx, singlePoolCtx := PrepareAppWithTenancies(t)
+
+	// add tenancies
+	tenancy1, tenancy2 := AddTenancies(t, multiPoolCtx)
+
+	// add IP address to tenancy 1
+	ip1 := "192.168.0.1"
+	tag1 := "test"
+	err := multiPoolCtx.RemoteTenancyController.AddIpAddress(multiPoolCtx.ClientOp, tenancy1.GetID(), ip1, tag1)
+	require.NoError(t, err)
+
+	// list adresses
+	addresses, count, err := multiPoolCtx.RemoteTenancyController.ListIpAddresses(multiPoolCtx.ClientOp, nil)
+	test_utils.DumpObject(t, addresses, "Addresses 1")
+	test_utils.NoError(t, multiPoolCtx.ClientOp, err)
+	require.Equal(t, int64(1), count)
+	assert.Equal(t, tenancy1.GetID(), addresses[0].TenancyId)
+	assert.Equal(t, tenancy1.CustomerLogin, addresses[0].CustomerLogin)
+	assert.Equal(t, tenancy1.Role(), addresses[0].TenancyRole)
+	assert.Equal(t, ip1, addresses[0].Ip)
+	assert.Equal(t, tag1, addresses[0].Tag)
+
+	// add IP address to tenancy 2
+	ip2 := "192.168.0.2"
+	tag2 := "test2"
+	err = multiPoolCtx.RemoteTenancyController.AddIpAddress(multiPoolCtx.ClientOp, tenancy2.GetID(), ip2, tag2)
+	require.NoError(t, err)
+
+	// list adresses
+	addresses, count, err = multiPoolCtx.RemoteTenancyController.ListIpAddresses(multiPoolCtx.ClientOp, nil)
+	test_utils.DumpObject(t, addresses, "Addresses 2")
+	test_utils.NoError(t, multiPoolCtx.ClientOp, err)
+	require.Equal(t, int64(2), count)
+	assert.Equal(t, tenancy1.GetID(), addresses[0].TenancyId)
+	assert.Equal(t, tenancy1.CustomerLogin, addresses[0].CustomerLogin)
+	assert.Equal(t, tenancy1.Role(), addresses[0].TenancyRole)
+	assert.Equal(t, ip1, addresses[0].Ip)
+	assert.Equal(t, tag1, addresses[0].Tag)
+	assert.Equal(t, tenancy2.GetID(), addresses[1].TenancyId)
+	assert.Equal(t, tenancy2.CustomerLogin, addresses[1].CustomerLogin)
+	assert.Equal(t, tenancy2.Role(), addresses[1].TenancyRole)
+	assert.Equal(t, ip2, addresses[1].Ip)
+	assert.Equal(t, tag2, addresses[1].Tag)
+
+	// delete IP address from tenancy 2
+	err = multiPoolCtx.RemoteTenancyController.DeleteIpAddress(multiPoolCtx.ClientOp, tenancy2.GetID(), ip2, tag2)
+	require.NoError(t, err)
+	// list adresses
+	addresses, count, err = multiPoolCtx.RemoteTenancyController.ListIpAddresses(multiPoolCtx.ClientOp, nil)
+	test_utils.DumpObject(t, addresses, "Addresses 3")
+	test_utils.NoError(t, multiPoolCtx.ClientOp, err)
+	require.Equal(t, int64(1), count)
+	assert.Equal(t, tenancy1.GetID(), addresses[0].TenancyId)
+	assert.Equal(t, tenancy1.CustomerLogin, addresses[0].CustomerLogin)
+	assert.Equal(t, tenancy1.Role(), addresses[0].TenancyRole)
+	assert.Equal(t, ip1, addresses[0].Ip)
+	assert.Equal(t, tag1, addresses[0].Tag)
+
+	// close apps
+	multiPoolCtx.Close()
+	singlePoolCtx.Close()
+	pubsub_factory.ResetSingletonInmemPubsub()
+}

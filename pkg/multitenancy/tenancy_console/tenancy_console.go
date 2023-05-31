@@ -132,6 +132,9 @@ func (p *TenancyCommands) LoadHandlers() {
 		ShadowPath,
 		ChangePoolOrDb,
 		Delete,
+		AddIpAddress,
+		DeleteIpAddress,
+		ListIpAddresses,
 	)
 }
 

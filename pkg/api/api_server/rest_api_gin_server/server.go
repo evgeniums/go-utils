@@ -44,7 +44,9 @@ type ServerConfig struct {
 	ALLOW_NOT_ACTIVE_TENANCY bool
 	AUTH_FROM_TENANCY_DB     bool `default:"true"`
 	SHADOW_TENANCY_PATH      bool
-	TENANCY_WHITELIST_IP     bool
+
+	TENANCY_ALLOWED_IP_LIST_TAG string
+	TENANCY_ALLOWED_IP_LIST     bool
 
 	TENANCY_PARAMETER string `validate:"omitempty,alphanum"`
 }
@@ -348,8 +350,8 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 				}
 			}
 			if err == nil {
-				if s.TENANCY_WHITELIST_IP {
-					if !s.tenancies.HasIpAddressByPath(tenancyInPath, ginCtx.ClientIP(), s.SHADOW_TENANCY_PATH) {
+				if s.TENANCY_ALLOWED_IP_LIST {
+					if !s.tenancies.HasIpAddressByPath(tenancyInPath, request.clientIp, s.TENANCY_ALLOWED_IP_LIST_TAG) {
 						err = errors.New("IP address is not in whitelist")
 						request.SetGenericErrorCode(generic_error.ErrorCodeForbidden)
 					}

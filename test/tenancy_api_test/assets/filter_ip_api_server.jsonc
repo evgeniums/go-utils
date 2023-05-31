@@ -1,0 +1,25 @@
+{
+    // "include" : ["../../api_test/assets/api_server.jsonc"],
+
+    "extend" : {        
+        "path": "../../api_test/assets/api_server.jsonc",
+        "rules" : [
+            {
+                "mode":"direct"
+            }
+        ]        
+    },
+
+    "app_instance" : "tenancy_api_test",
+    "multitenancy" : {
+        "multitenancy" : true
+    },
+    "server": { 
+        "rest_api_server": {
+            "auth_from_tenancy_db" : false,
+            "allow_not_active_tenancy" : true,
+            "tenancy_allowed_ip_list": true,
+            "tenancy_allowed_ip_list_tag": "internal"
+        }
+    }
+}

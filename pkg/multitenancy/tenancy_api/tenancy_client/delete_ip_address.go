@@ -8,11 +8,11 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
-func (t *TenancyClient) Delete(ctx op_context.Context, id string, withDb bool, idIsDisplay ...bool) error {
+func (t *TenancyClient) DeleteIpAddress(ctx op_context.Context, id string, ipAddress string, tag string, idIsDisplay ...bool) error {
 
 	// setup
 	var err error
-	c := ctx.TraceInMethod("TenancyClient.Delete")
+	c := ctx.TraceInMethod("TenancyClient.AddIpAddress")
 	onExit := func() {
 		if err != nil {
 			c.SetError(err)
@@ -29,10 +29,12 @@ func (t *TenancyClient) Delete(ctx op_context.Context, id string, withDb bool, i
 	}
 
 	// prepare and exec handler
-	handler := api_client.NewHandlerCmd(&tenancy_api.DeleteTenancyCmd{WithDatabase: withDb})
-	op := api.NamedResourceOperation(t.TenancyResource,
-		tenancyId,
-		tenancy_api.Delete())
+	cmd := &tenancy_api.IpAddressCmd{
+		Ip:  ipAddress,
+		Tag: tag,
+	}
+	handler := api_client.NewHandlerCmd(cmd)
+	op := api.OperationAsResource(t.TenancyResource, tenancy_api.IpAddressResource, tenancyId, tenancy_api.DeleteIpAddress())
 	err = op.Exec(ctx, api_client.MakeOperationHandler(t.Client(), handler))
 	if err != nil {
 		c.SetMessage("failed to exec operation")

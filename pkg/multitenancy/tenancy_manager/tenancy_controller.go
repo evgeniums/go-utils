@@ -11,7 +11,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type TenancyController struct {
@@ -38,83 +37,6 @@ func DefaultTenancyController(manager *TenancyManager) *TenancyController {
 func (t *TenancyController) OpLog(ctx op_context.Context, operation string, oplog *multitenancy.OpLogTenancy) {
 	oplog.SetOperation(operation)
 	ctx.Oplog(oplog)
-}
-
-func TenancyId(ctrl multitenancy.TenancyController, ctx op_context.Context, id string, idIsDisplay ...bool) (string, *multitenancy.TenancyItem, error) {
-
-	useDisplay := utils.OptionalArg(false, idIsDisplay...)
-
-	// setup
-	c := ctx.TraceInMethod("TenancyController.TenancyId", logger.Fields{"tenancy": id, "use_display": useDisplay})
-	defer ctx.TraceOutMethod()
-
-	// return ID as is if it is not display format
-	if !useDisplay {
-		return id, nil, nil
-	}
-
-	// parse id
-	customerLogin, role, vErr := multitenancy.ParseTenancyDisplay(id)
-	if vErr != nil {
-		c.SetMessage("failed to parse display")
-		ctx.SetGenericError(vErr.GenericError())
-		c.SetError(vErr)
-		return "", nil, vErr.GenericError()
-	}
-
-	// find tenancy by login and role
-	filter := db.NewFilter()
-	filter.AddField("customers.login", customerLogin)
-	filter.AddField("role", role)
-	filter.Limit = 1
-	tenancies, _, err := ctrl.List(ctx, filter)
-	if err != nil {
-		c.SetMessage("failed to list tenancies")
-		return "", nil, c.SetError(err)
-	}
-	if len(tenancies) == 0 {
-		ctx.SetGenericErrorCode(multitenancy.ErrorCodeTenancyNotFound)
-		return "", nil, c.SetError(ctx.GenericError())
-	}
-	tenancy := tenancies[0]
-
-	// done
-	return tenancy.GetID(), tenancy, nil
-}
-
-func FindTenancy(ctrl multitenancy.TenancyController, ctx op_context.Context, id string, idIsDisplay ...bool) (*multitenancy.TenancyItem, error) {
-
-	// setup
-	c := ctx.TraceInMethod("TenancyController.Find")
-	defer ctx.TraceOutMethod()
-
-	// adjust ID
-	id, tenancy, err := TenancyId(ctrl, ctx, id, idIsDisplay...)
-	if err != nil {
-		return nil, c.SetError(err)
-	}
-
-	// maybe done
-	if tenancy != nil {
-		return tenancy, nil
-	}
-
-	// find tenancy
-	filter := db.NewFilter()
-	filter.AddField("tenancies.id", id)
-	filter.Limit = 1
-	tenancies, _, err := ctrl.List(ctx, filter)
-	if err != nil {
-		return nil, c.SetError(err)
-	}
-	if len(tenancies) == 0 {
-		ctx.SetGenericErrorCode(multitenancy.ErrorCodeTenancyNotFound)
-		return nil, c.SetError(ctx.GenericError())
-	}
-	tenancy = tenancies[0]
-
-	// done
-	return tenancy, nil
 }
 
 func (t *TenancyController) PublishOp(tenancy *multitenancy.TenancyItem, op string, poolIds ...string) {
@@ -161,7 +83,7 @@ func (t *TenancyController) Add(ctx op_context.Context, data *multitenancy.Tenan
 }
 
 func (t *TenancyController) Find(ctx op_context.Context, id string, idIsDisplay ...bool) (*multitenancy.TenancyItem, error) {
-	return FindTenancy(t, ctx, id, idIsDisplay...)
+	return multitenancy.FindTenancy(t, ctx, id, idIsDisplay...)
 }
 
 func (t *TenancyController) List(ctx op_context.Context, filter *db.Filter) ([]*multitenancy.TenancyItem, int64, error) {
@@ -514,6 +436,105 @@ func (t *TenancyController) Delete(ctx op_context.Context, id string, withDataba
 
 	// publish notification
 	t.PublishOp(tenancy, multitenancy.OpDelete)
+
+	// done
+	return nil
+}
+
+// func (t *TenancyController) AddIpAddress(ctx op_context.Context, id string) (*multitenancy.TenancyIpAddressItem, error) {
+
+// }
+
+func (t *TenancyController) ListIpAddresses(ctx op_context.Context, filter *db.Filter) ([]*multitenancy.TenancyIpAddressItem, int64, error) {
+
+	// setup
+	c := ctx.TraceInMethod("TenancyController.ListIpAddresses")
+	defer ctx.TraceOutMethod()
+
+	// construct join query
+	queryBuilder := func() (db.JoinQuery, error) {
+		return ctx.Db().Joiner().
+			Join(&multitenancy.TenancyIpAddress{}, "tenancy_id").On(&multitenancy.TenancyDb{}, "id").
+			Join(&multitenancy.TenancyDb{}, "customer_id").On(&customer.Customer{}, "id").
+			Join(&multitenancy.TenancyDb{}, "pool_id").On(&pool.PoolBase{}, "id").
+			Destination(&multitenancy.TenancyIpAddressItem{})
+	}
+
+	// invoke join
+	var addresses []*multitenancy.TenancyIpAddressItem
+	count, err := t.CRUD.Join(ctx, db.NewJoin(queryBuilder, "ListTenancyIpAddresses"), filter, &addresses)
+	if err != nil {
+		c.SetMessage("failed to find tenancy")
+		return nil, 0, c.SetError(err)
+	}
+
+	// done
+	return addresses, count, nil
+}
+
+func (t *TenancyController) DeleteIpAddress(ctx op_context.Context, id string, ipAddress string, tag string, idIsDisplay ...bool) error {
+
+	// setup
+	c := ctx.TraceInMethod("TenancyController.DeleteTenancyIpAddress")
+	defer ctx.TraceOutMethod()
+
+	// find
+	tenancy, err := multitenancy.FindTenancy(t, ctx, id, idIsDisplay...)
+	if err != nil {
+		c.SetMessage("failed to find tenancy")
+		return c.SetError(err)
+	}
+
+	// delete tenancy
+	fields := db.Fields{"tenancy_id": tenancy.GetID(), "ip": ipAddress, "tag": tag}
+	err = t.CRUD.DeleteByFields(ctx, fields, &multitenancy.TenancyIpAddress{})
+	if err != nil {
+		c.SetMessage("failed to delete tenancy IP address")
+		return c.SetError(err)
+	}
+
+	// save oplog
+	t.OpLog(ctx, multitenancy.OpDeleteIpAddress, &multitenancy.OpLogTenancy{TenancyId: tenancy.GetID(),
+		Role: tenancy.Role(), Customer: tenancy.CustomerDisplay(), IpAddressTag: tag})
+
+	// publish notification
+	t.PublishOp(tenancy, multitenancy.OpDeleteIpAddress)
+
+	// done
+	return nil
+}
+
+func (t *TenancyController) AddIpAddress(ctx op_context.Context, id string, ipAddress string, tag string, idIsDisplay ...bool) error {
+
+	// setup
+	c := ctx.TraceInMethod("TenancyController.AddIpAddress", logger.Fields{"id": id, "ip": ipAddress, "tag": tag})
+	defer ctx.TraceOutMethod()
+
+	// find
+	tenancy, err := multitenancy.FindTenancy(t, ctx, id, idIsDisplay...)
+	if err != nil {
+		c.SetMessage("failed to find tenancy")
+		return c.SetError(err)
+	}
+
+	// delete tenancy
+	obj := &multitenancy.TenancyIpAddress{}
+	obj.InitObject()
+	obj.TenancyId = tenancy.GetID()
+	obj.Tag = tag
+	obj.Ip = ipAddress
+	_, err = t.CRUD.CreateDup(ctx, obj, true)
+	if err != nil {
+		c.SetMessage("failed to add IP address")
+		return c.SetError(err)
+	}
+
+	// save oplog
+	t.OpLog(ctx, multitenancy.OpAddIpAddress, &multitenancy.OpLogTenancy{TenancyId: tenancy.GetID(),
+		Role: tenancy.Role(), Customer: tenancy.CustomerDisplay(), IpAddressTag: tag, IpAddress: ipAddress})
+
+	// publish notification
+	t.PublishOp(tenancy, multitenancy.OpAddIpAddress)
 
 	// done
 	return nil

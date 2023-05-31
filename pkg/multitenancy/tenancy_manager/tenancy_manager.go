@@ -50,7 +50,7 @@ func (t *TenancyManagerConfig) IsMultiTenancy() bool {
 
 type TenancyManager struct {
 	TenancyManagerConfig
-	mutex                      sync.Mutex
+	mutex                      sync.RWMutex
 	tenanciesById              map[string]multitenancy.Tenancy
 	tenanciesByPath            map[string]multitenancy.Tenancy
 	tenanciesByShadowPath      map[string]multitenancy.Tenancy
@@ -66,8 +66,7 @@ type TenancyManager struct {
 
 	tenancyDbModels *multitenancy.TenancyDbModels
 
-	tenancyIpAddresses       map[string]map[string]bool
-	tenancyShadowIpAddresses map[string]map[string]bool
+	tenancyIpAddresses map[string]map[string]map[string]bool
 }
 
 func NewTenancyManager(pools pool.PoolStore, poolPubsub pool_pubsub.PoolPubsub, tenancyDbModels *multitenancy.TenancyDbModels) *TenancyManager {
@@ -76,8 +75,7 @@ func NewTenancyManager(pools pool.PoolStore, poolPubsub pool_pubsub.PoolPubsub, 
 	m.tenanciesById = make(map[string]multitenancy.Tenancy)
 	m.tenanciesByPath = make(map[string]multitenancy.Tenancy)
 	m.tenanciesByShadowPath = make(map[string]multitenancy.Tenancy)
-	m.tenancyIpAddresses = make(map[string]map[string]bool)
-	m.tenancyShadowIpAddresses = make(map[string]map[string]bool)
+	m.tenancyIpAddresses = make(map[string]map[string]map[string]bool)
 	m.tenancyDbModels = tenancyDbModels
 	m.PoolPubsub = poolPubsub
 	m.PubsubTopic = &multitenancy.PubsubTopic{}
@@ -161,8 +159,7 @@ func (t *TenancyManager) Close() {
 	t.tenanciesById = make(map[string]multitenancy.Tenancy)
 	t.tenanciesByPath = make(map[string]multitenancy.Tenancy)
 	t.tenanciesByShadowPath = make(map[string]multitenancy.Tenancy)
-	t.tenancyIpAddresses = make(map[string]map[string]bool)
-	t.tenancyShadowIpAddresses = make(map[string]map[string]bool)
+	t.tenancyIpAddresses = make(map[string]map[string]map[string]bool)
 
 	t.mutex.Unlock()
 
@@ -173,8 +170,8 @@ func (t *TenancyManager) Close() {
 }
 
 func (t *TenancyManager) Tenancy(id string) (multitenancy.Tenancy, error) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
 	tenancy, ok := t.tenanciesById[id]
 	if !ok {
 		return nil, errors.New("unknown tenancy")
@@ -183,8 +180,8 @@ func (t *TenancyManager) Tenancy(id string) (multitenancy.Tenancy, error) {
 }
 
 func (t *TenancyManager) TenancyByPath(path string) (multitenancy.Tenancy, error) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
 	tenancy, ok := t.tenanciesByPath[path]
 	if !ok {
 		return nil, errors.New("tenancy not found")
@@ -193,8 +190,8 @@ func (t *TenancyManager) TenancyByPath(path string) (multitenancy.Tenancy, error
 }
 
 func (t *TenancyManager) TenancyByShadowPath(path string) (multitenancy.Tenancy, error) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
 	tenancy, ok := t.tenanciesByShadowPath[path]
 	if !ok {
 		return nil, errors.New("tenancy not found")
@@ -202,26 +199,27 @@ func (t *TenancyManager) TenancyByShadowPath(path string) (multitenancy.Tenancy,
 	return tenancy, nil
 }
 
-func (t *TenancyManager) HasIpAddressByPath(path string, ipAddress string, shadow bool) bool {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
-	var addresses map[string]bool
-	var ok bool
-	if shadow {
-		addresses, ok = t.tenancyShadowIpAddresses[path]
-	} else {
-		addresses, ok = t.tenancyIpAddresses[path]
-	}
+func (t *TenancyManager) HasIpAddressByPath(path string, ipAddress string, tag string) bool {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	tenancyAddresses, ok := t.tenancyIpAddresses[path]
 	if !ok {
 		return false
 	}
-	_, ok = addresses[ipAddress]
+
+	tagAddresses, ok := tenancyAddresses[tag]
+	if !ok {
+		return false
+	}
+
+	_, ok = tagAddresses[ipAddress]
 	return ok
 }
 
 func (t *TenancyManager) Tenancies() []multitenancy.Tenancy {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
 	tenancies := utils.AllMapValues(t.tenanciesById)
 	return tenancies
 }
@@ -235,8 +233,8 @@ func (t *TenancyManager) UnloadTenancy(id string) {
 		delete(t.tenanciesById, id)
 		delete(t.tenanciesByPath, tenancy.Path())
 		delete(t.tenanciesByShadowPath, tenancy.ShadowPath())
+		delete(t.tenancyIpAddresses, tenancy.Path())
 		delete(t.tenancyIpAddresses, tenancy.ShadowPath())
-		delete(t.tenancyShadowIpAddresses, tenancy.ShadowPath())
 	}
 }
 
@@ -264,11 +262,29 @@ func (t *TenancyManager) LoadTenancyFromData(ctx op_context.Context, tenancyDb *
 		return nil, nil
 	}
 
+	addresses, _, err := multitenancy.ListTenancyIpAddresses(t.Controller, ctx, tenancyDb.GetID(), nil)
+	if err != nil {
+		c.SetMessage("failed to list tenancy IP addresses")
+	}
+
 	// keep it
 	t.mutex.Lock()
 	t.tenanciesById[tenancy.GetID()] = tenancy
 	t.tenanciesByPath[tenancy.Path()] = tenancy
 	t.tenanciesByShadowPath[tenancy.ShadowPath()] = tenancy
+	if len(addresses) != 0 {
+		tags := make(map[string]map[string]bool)
+		for _, address := range addresses {
+			tagAddresses, ok := tags[address.Tag]
+			if !ok {
+				tagAddresses = make(map[string]bool)
+			}
+			tagAddresses[address.Ip] = true
+			tags[address.Tag] = tagAddresses
+		}
+		t.tenancyIpAddresses[tenancy.Path()] = tags
+		t.tenancyIpAddresses[tenancy.ShadowPath()] = tags
+	}
 	t.mutex.Unlock()
 
 	// done

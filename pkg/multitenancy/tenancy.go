@@ -241,11 +241,16 @@ func NewInitContext(app app_context.Context, log logger.Logger, db db.DB) *Tenan
 	return t
 }
 
+type IpAddressCmd struct {
+	Ip  string `json:"ip" validate:"required,ip" vmessage:"Invalid IP address" long:"ip" description:"IP address" required:"true"`
+	Tag string `json:"tag" validate:"required,alphanum_" vmessage:"Invalid tag" long:"tag" description:"Tag for IP address group" required:"true"`
+}
+
 type TenancyIpAddress struct {
 	common.ObjectBase
 	TenancyId string `gorm:"index" json:"tenancy_id"`
-	Address   string `gorm:"index" json:"address"`
-	Shadow    bool   `gorm:"index" json:"shadow"`
+	Ip        string `gorm:"index" json:"ip"`
+	Tag       string `gorm:"index" json:"tag"`
 }
 
 type TenancyIpAddressItem struct {

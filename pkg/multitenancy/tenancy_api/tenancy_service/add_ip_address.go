@@ -1,0 +1,37 @@
+package tenancy_service
+
+import (
+	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_api"
+)
+
+type AddIpAddressEndpoint struct {
+	TenancyUpdateEndpoint
+}
+
+func (s *AddIpAddressEndpoint) HandleRequest(request api_server.Request) error {
+
+	c := request.TraceInMethod("tenancy.AddIpAddress")
+	defer request.TraceOutMethod()
+
+	// parse command
+	cmd := &tenancy_api.IpAddressCmd{}
+	err := request.ParseValidate(cmd)
+	if err != nil {
+		c.SetMessage("failed to parse/validate command")
+		return err
+	}
+
+	err = s.service.Tenancies.AddIpAddress(request, request.GetResourceId(tenancy_api.TenancyResource), cmd.Ip, cmd.Tag)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	return nil
+}
+
+func AddIpAddress(s *TenancyService) *AddIpAddressEndpoint {
+	e := &AddIpAddressEndpoint{}
+	e.Construct(s, e, tenancy_api.IpAddressResource, tenancy_api.AddIpAddress())
+	return e
+}

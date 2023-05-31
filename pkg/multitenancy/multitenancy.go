@@ -5,20 +5,24 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
+	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_subscriber"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 const (
-	OpAdd            string = "add"
-	OpDelete         string = "delete"
-	OpActivate       string = "activate"
-	OpDeactivate     string = "deactivate"
-	OpSetPath        string = "set_path"
-	OpSetShadowPath  string = "set_shadow_path"
-	OpSetRole        string = "set_role"
-	OpSetCustomer    string = "set_customer"
-	OpChangePoolOrDb string = "change_pool_or_db"
+	OpAdd             string = "add"
+	OpDelete          string = "delete"
+	OpActivate        string = "activate"
+	OpDeactivate      string = "deactivate"
+	OpSetPath         string = "set_path"
+	OpSetShadowPath   string = "set_shadow_path"
+	OpSetRole         string = "set_role"
+	OpSetCustomer     string = "set_customer"
+	OpChangePoolOrDb  string = "change_pool_or_db"
+	OpAddIpAddress    string = "add_ip_address"
+	OpDeleteIpAddress string = "delete_ip_address"
 )
 
 const (
@@ -80,7 +84,7 @@ type Multitenancy interface {
 	TenancyController() TenancyController
 
 	// Check if ip address is in the list of tenancy addresses.
-	HasIpAddressByPath(path string, ipAddress string, shadow bool) bool
+	HasIpAddressByPath(path string, ipAddress string, tag string) bool
 
 	// Close tenancies, e.g. close tenancy databases.
 	Close()
@@ -124,8 +128,116 @@ type TenancyController interface {
 	ChangePoolOrDb(ctx op_context.Context, id string, poolId string, dbName string, idIsDisplay ...bool) error
 	Activate(ctx op_context.Context, id string, idIsDisplay ...bool) error
 	Deactivate(ctx op_context.Context, id string, idIsDisplay ...bool) error
+
+	ListIpAddresses(ctx op_context.Context, filter *db.Filter) ([]*TenancyIpAddressItem, int64, error)
+	DeleteIpAddress(ctx op_context.Context, id string, ipAddress string, tag string, idIsDisplay ...bool) error
+	AddIpAddress(ctx op_context.Context, id string, ipAddress string, tag string, idIsDisplay ...bool) error
 }
 
-// AddIpAddress
-// DeleteIpAddress
-// ListIpAddresses
+func TenancyId(ctrl TenancyController, ctx op_context.Context, id string, idIsDisplay ...bool) (string, *TenancyItem, error) {
+
+	useDisplay := utils.OptionalArg(false, idIsDisplay...)
+
+	// setup
+	c := ctx.TraceInMethod("TenancyId", logger.Fields{"tenancy": id, "use_display": useDisplay})
+	defer ctx.TraceOutMethod()
+
+	// return ID as is if it is not display format
+	if !useDisplay {
+		return id, nil, nil
+	}
+
+	// parse id
+	customerLogin, role, vErr := ParseTenancyDisplay(id)
+	if vErr != nil {
+		c.SetMessage("failed to parse display")
+		ctx.SetGenericError(vErr.GenericError())
+		c.SetError(vErr)
+		return "", nil, vErr.GenericError()
+	}
+
+	// find tenancy by login and role
+	filter := db.NewFilter()
+	filter.AddField("customers.login", customerLogin)
+	filter.AddField("role", role)
+	filter.Limit = 1
+	tenancies, _, err := ctrl.List(ctx, filter)
+	if err != nil {
+		c.SetMessage("failed to list tenancies")
+		return "", nil, c.SetError(err)
+	}
+	if len(tenancies) == 0 {
+		ctx.SetGenericErrorCode(ErrorCodeTenancyNotFound)
+		return "", nil, c.SetError(ctx.GenericError())
+	}
+	tenancy := tenancies[0]
+
+	// done
+	return tenancy.GetID(), tenancy, nil
+}
+
+func FindTenancy(ctrl TenancyController, ctx op_context.Context, id string, idIsDisplay ...bool) (*TenancyItem, error) {
+
+	// setup
+	c := ctx.TraceInMethod("FindTenancy")
+	defer ctx.TraceOutMethod()
+
+	// adjust ID
+	id, tenancy, err := TenancyId(ctrl, ctx, id, idIsDisplay...)
+	if err != nil {
+		return nil, c.SetError(err)
+	}
+
+	// maybe done
+	if tenancy != nil {
+		return tenancy, nil
+	}
+
+	// find tenancy
+	filter := db.NewFilter()
+	filter.AddField("tenancies.id", id)
+	filter.Limit = 1
+	tenancies, _, err := ctrl.List(ctx, filter)
+	if err != nil {
+		return nil, c.SetError(err)
+	}
+	if len(tenancies) == 0 {
+		ctx.SetGenericErrorCode(ErrorCodeTenancyNotFound)
+		return nil, c.SetError(ctx.GenericError())
+	}
+	tenancy = tenancies[0]
+
+	// done
+	return tenancy, nil
+}
+
+func ListTenancyIpAddresses(ctrl TenancyController, ctx op_context.Context, id string, filter *db.Filter, idIsDisplay ...bool) ([]*TenancyIpAddressItem, int64, error) {
+
+	// setup
+	c := ctx.TraceInMethod("ListTenancyIpAddresses")
+	defer ctx.TraceOutMethod()
+
+	// find out tenancy ID
+	tenancyId, _, err := TenancyId(ctrl, ctx, id, idIsDisplay...)
+	if err != nil {
+		c.SetMessage("failed to find out tenancy ID")
+		return nil, 0, c.SetError(err)
+	}
+
+	// prepare filter
+	f := filter
+	if f == nil {
+		f = db.NewFilter()
+	} else {
+		defer delete(filter.Fields, "tenancies.id")
+	}
+	f.AddField("tenancies.id", tenancyId)
+	items, count, err := ctrl.ListIpAddresses(ctx, f)
+	if err != nil {
+		c.SetMessage("failed to list IP addresses")
+		return nil, 0, c.SetError(err)
+	}
+
+	// done
+	return items, count, nil
+}
