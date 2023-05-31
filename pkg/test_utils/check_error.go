@@ -1,12 +1,14 @@
 package test_utils
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -43,4 +45,15 @@ func NoErrorApp(t *testing.T, app app_context.Context, err error) {
 		app.Logger().CheckFatalStack(app.Logger())
 	}
 	require.NoError(t, err)
+}
+
+func DumpObject(t *testing.T, obj interface{}, message ...string) {
+	result, err := json.MarshalIndent(obj, " ", " ")
+	require.NoError(t, err)
+	msg := utils.OptionalString("", message...)
+	if msg != "" {
+		t.Logf("%s:\n%s\n", msg, string(result))
+	} else {
+		t.Logf("\n%s\n", string(result))
+	}
 }
