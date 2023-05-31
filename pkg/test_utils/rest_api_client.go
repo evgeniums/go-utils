@@ -86,6 +86,7 @@ func HttptestSendWithBody(t *testing.T, g *gin.Engine, method string, url string
 	require.NoErrorf(t, err, "failed to create HTTP request")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
+	req.RemoteAddr = "127.0.0.1:80"
 	http_request.HttpHeadersSet(req, headers...)
 
 	// send request
@@ -112,6 +113,7 @@ func HttptestSendWithQuery(t *testing.T, g *gin.Engine, method string, url strin
 	}
 	req.Header.Set("Accept", "application/json")
 	http_request.HttpHeadersSet(req, headers...)
+	req.RemoteAddr = "127.0.0.1:80"
 
 	// send request
 	httprec := httptest.NewRecorder()
