@@ -129,6 +129,7 @@ func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPa
 		return err
 	}
 
+	// TODO support logrotate
 	// setup output
 	if l.DESTINATION == "file" {
 		writer := &utils.FileWriteReopen{Path: l.FILE}
