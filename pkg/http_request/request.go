@@ -16,6 +16,8 @@ import (
 	"github.com/gorilla/schema"
 )
 
+const MaxDumpSize int = 2048
+
 type Request struct {
 	NativeRequest   *http.Request
 	NativeResponse  *http.Response
@@ -25,6 +27,7 @@ type Request struct {
 	BadResponse     interface{}
 	Serializer      message.Serializer
 	Transport       http.RoundTripper
+	ParsingFailed   bool
 }
 
 func NewPost(ctx op_context.Context, url string, msg interface{}, serializer ...message.Serializer) (*Request, error) {
@@ -129,7 +132,9 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 			if err1 != nil {
 				c.Logger().Error("failed to dump HTTP response", err1)
 			} else {
-				c.Logger().Debug("Dump HTTP response", logger.Fields{"http_response": string(dump)})
+				// TODO make it singleton
+				text := utils.Substr(string(dump), 0, MaxDumpSize)
+				c.Logger().Debug("Dump HTTP response", logger.Fields{"http_response": text})
 			}
 		} else {
 			c.Logger().Debug("Dump HTTP response", logger.Fields{"http_response": ""})
@@ -154,6 +159,9 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 					r.Serializer = message_json.Serializer
 				}
 				err = r.Serializer.ParseMessage(body, obj)
+				if err != nil {
+					r.ParsingFailed = true
+				}
 			}
 
 			if r.ResponseStatus < http.StatusBadRequest {
@@ -177,7 +185,7 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 			}
 
 			if err != nil {
-				c.LoggerFields()["response_content"] = r.ResponseContent
+				c.LoggerFields()["response_content"] = utils.Substr(r.ResponseContent, 0, MaxDumpSize)
 				c.LoggerFields()["response_status"] = r.ResponseStatus
 				return err
 			}
