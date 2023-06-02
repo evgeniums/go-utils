@@ -133,7 +133,11 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 				c.Logger().Error("failed to dump HTTP response", err1)
 			} else {
 				// TODO make it singleton
+				dumpStr := string(dump)
 				text := utils.Substr(string(dump), 0, MaxDumpSize)
+				if len(text) < len(dumpStr) {
+					text = utils.ConcatStrings(text, "...")
+				}
 				c.Logger().Debug("Dump HTTP response", logger.Fields{"http_response": text})
 			}
 		} else {
@@ -185,7 +189,13 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 			}
 
 			if err != nil {
-				c.LoggerFields()["response_content"] = utils.Substr(r.ResponseContent, 0, MaxDumpSize)
+				if !ctx.Logger().DumpRequests() {
+					text := utils.Substr(r.ResponseContent, 0, MaxDumpSize)
+					if len(text) < len(r.ResponseContent) {
+						text = utils.ConcatStrings(text, "...")
+					}
+					c.LoggerFields()["response_content"] = text
+				}
 				c.LoggerFields()["response_status"] = r.ResponseStatus
 				return err
 			}
