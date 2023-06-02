@@ -21,7 +21,7 @@ func (f *FileWriteReopen) Write(p []byte) (n int, err error) {
 		if f.File != nil {
 			f.File.Close()
 		}
-		f.File, err = os.OpenFile(f.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		f.File, err = os.OpenFile(f.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err != nil {
 			return 0, err
 		}

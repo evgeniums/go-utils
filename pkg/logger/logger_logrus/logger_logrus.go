@@ -103,24 +103,6 @@ func (l *LogrusLogger) Fatal(message string, err error, fields ...logger.Fields)
 	return e
 }
 
-// func (l *LogrusLogger) Fatal(message string, err error, fields ...logger.Fields) error {
-// 	e := err
-// 	if e == nil {
-// 		if message != "" {
-// 			e = errors.New(message)
-// 		} else {
-// 			e = errors.New("unknown error")
-// 		}
-// 	}
-// 	f := logger.AppendFieldsNew(logger.Fields{"error": e}, fields...)
-// 	if message != "" && err != nil {
-// 		l.logRus.WithFields(f).Log(logrus.FatalLevel, message)
-// 	} else {
-// 		l.logRus.WithFields(f).Log(logrus.FatalLevel)
-// 	}
-// 	return e
-// }
-
 func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPath ...string) error {
 
 	// load configuration
@@ -129,15 +111,14 @@ func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPa
 		return err
 	}
 
-	// TODO support logrotate
 	// setup output
 	if l.DESTINATION == "file" {
 		writer := &utils.FileWriteReopen{Path: l.FILE}
-		writer.File, err = os.OpenFile(l.FILE, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		writer.File, err = os.OpenFile(l.FILE, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err == nil {
 			l.logRus.Out = writer
 			logrus.SetOutput(writer)
-			fmt.Printf("Using log file %v\n", l.FILE)
+			fmt.Printf("Using log file %s\n", l.FILE)
 		} else {
 			fmt.Println("failed to log to file, using default console")
 		}
@@ -150,9 +131,9 @@ func (l *LogrusLogger) Init(cfg config.Config, vld validator.Validator, configPa
 	if l.LEVEL != "" {
 		logLevel, err := logrus.ParseLevel(l.LEVEL)
 		if err != nil {
-			fmt.Printf("Invalid log level %v\n", err.Error())
+			fmt.Printf("Invalid log level %s\n", err.Error())
 		} else {
-			fmt.Printf("Using log level %v\n", logLevel)
+			fmt.Printf("Using log level %d\n", logLevel)
 			l.logRus.SetLevel(logLevel)
 			logrus.SetLevel(logLevel)
 		}
