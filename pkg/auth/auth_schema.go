@@ -136,15 +136,14 @@ func (a *AuthSchema) Handle(ctx AuthContext) (bool, error) {
 			if a.config.AGGREGATION == Or {
 				continue
 			}
-			err := errors.New("auth method not found in request")
-			ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeUnauthorized))
+			ctx.SetGenericErrorCode(ErrorCodeUnauthorized)
 			if err == nil {
-				err = ctx.GenericError()
+				err = errors.New("auth method not found in request")
 			}
 			return false, err
 		}
 		if err != nil {
-			ctx.SetGenericError(ctx.MakeGenericError(ErrorCodeUnauthorized))
+			ctx.SetGenericErrorCode(ErrorCodeUnauthorized)
 			return true, err
 		}
 		if a.config.AGGREGATION == Or {
