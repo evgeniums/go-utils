@@ -63,7 +63,7 @@ func ValidateMap(v Validator, m map[string]interface{}, sampleStruct interface{}
 
 	// create new decoder
 	meta := &mapstructure.Metadata{}
-	config := &mapstructure.DecoderConfig{Metadata: meta, TagName: "json", Result: sampleStruct, ErrorUnused: true, Squash: true}
+	config := &mapstructure.DecoderConfig{Metadata: meta, TagName: "json", Result: sampleStruct, ErrorUnused: true, Squash: true, WeaklyTypedInput: true}
 	dec, err := mapstructure.NewDecoder(config)
 	if err != nil {
 		panic(fmt.Errorf("failed to create decoder: %s", err))
