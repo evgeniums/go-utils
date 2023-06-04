@@ -178,7 +178,8 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 
 		// extract and check token from request
 		token := &SmsToken{}
-		exists, err := a.Encryption.GetAuthParameter(ctx, a.Protocol(), TokenName, token)
+		var exists bool
+		exists, err = a.Encryption.GetAuthParameter(ctx, a.Protocol(), TokenName, token)
 		if !exists {
 			if err == nil {
 				err = errors.New("SMS token not found")
@@ -200,7 +201,8 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 		// find corresponding cache token
 		cacheToken := &SmsCacheToken{}
 		oldCacheKey := a.smsTokenCacheKey(token.GetID())
-		found, err := ctx.Cache().Get(oldCacheKey, cacheToken)
+		var found bool
+		found, err = ctx.Cache().Get(oldCacheKey, cacheToken)
 		if err != nil {
 			c.SetMessage("failed to get cache token")
 			ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
@@ -224,6 +226,11 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 		h := a.hmacOfRequest(ctx, userId)
 		err = h.CheckStr(cacheToken.Checksum)
 		if err != nil {
+			c.SetLoggerField("hash_cache_checksum", cacheToken.Checksum)
+			c.SetLoggerField("hash_actual_checksum", h.SumStr())
+			c.SetLoggerField("hash_path", ctx.GetRequestPath())
+			c.SetLoggerField("hash_method", ctx.GetRequestMethod())
+			c.SetLoggerField("hash_content_len", len(ctx.GetRequestContent()))
 			c.SetMessage("invalid request checksum")
 			ctx.SetGenericErrorCode(ErrorCodeContentMismatch)
 			return false, err
@@ -325,6 +332,13 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 	cacheToken.Try = 1
 	h := a.hmacOfRequest(ctx, userId)
 	cacheToken.Checksum = h.SumStr()
+
+	// ctx.SetLoggerField("hash_cache_checksum", cacheToken.Checksum)
+	// ctx.SetLoggerField("hash_actual_checksum", h.SumStr())
+	// ctx.SetLoggerField("hash_path", ctx.GetRequestPath())
+	// ctx.SetLoggerField("hash_method", ctx.GetRequestMethod())
+	// ctx.SetLoggerField("hash_content_len", len(ctx.GetRequestContent()))
+
 	if a.TESTING {
 		LastSmsCode = cacheToken.Code
 	}

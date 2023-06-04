@@ -21,14 +21,18 @@ func (h *Hmac) Sum() []byte {
 
 func (h *Hmac) Calc(data ...[]byte) []byte {
 	for _, block := range data {
-		h.Hash.Write(block)
+		if data != nil {
+			h.Hash.Write(block)
+		}
 	}
 	return h.Hash.Sum(nil)
 }
 
 func (h *Hmac) CalcStrings(data ...string) []byte {
 	for _, block := range data {
-		h.Hash.Write([]byte(block))
+		if block != "" {
+			h.Hash.Write([]byte(block))
+		}
 	}
 	return h.Hash.Sum(nil)
 }
