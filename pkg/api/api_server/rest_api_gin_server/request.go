@@ -75,17 +75,22 @@ func (r *Request) GetRequestUserAgent() string {
 
 func (r *Request) Close(successMessage ...string) {
 	var reponseBody interface{}
+	redirect := false
+	if r.response.RedirectPath() != "" {
+		r.ginCtx.Redirect(http.StatusFound, r.response.RedirectPath())
+		redirect = true
+	}
 	if r.GenericError() == nil {
-		if r.response.RedirectPath() != "" {
-			r.ginCtx.Redirect(http.StatusFound, r.response.RedirectPath())
-		} else if r.response.Text() != "" {
-			r.ginCtx.String(r.response.httpCode, r.response.Text())
-		} else {
-			if r.response.Message() != nil {
-				reponseBody = r.response.Message()
-				r.ginCtx.JSON(r.response.httpCode, r.response.Message())
+		if !redirect {
+			if r.response.Text() != "" {
+				r.ginCtx.String(r.response.httpCode, r.response.Text())
 			} else {
-				r.ginCtx.Status(r.response.httpCode)
+				if r.response.Message() != nil {
+					reponseBody = r.response.Message()
+					r.ginCtx.JSON(r.response.httpCode, r.response.Message())
+				} else {
+					r.ginCtx.Status(r.response.httpCode)
+				}
 			}
 		}
 
@@ -97,7 +102,11 @@ func (r *Request) Close(successMessage ...string) {
 		}
 		reponseBody = err
 		r.SetLoggerField("status", err.Code)
-		r.ginCtx.JSON(code, reponseBody)
+
+		if !redirect {
+			r.ginCtx.JSON(code, reponseBody)
+
+		}
 	}
 
 	if r.server.VERBOSE {
