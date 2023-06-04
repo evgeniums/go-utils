@@ -75,7 +75,7 @@ func (s *ExternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, ctx
 	}
 
 	// init SMS manager
-	if s.smsManager == nil && s.smsProviders != nil {
+	if s.smsManager == nil && s.smsProviders != nil && app.Cfg().IsSet("sms") {
 		smsManager := sms.NewSmsManager()
 		err := smsManager.Init(app.Cfg(), app.Logger(), app.Validator(), s.smsProviders, "sms")
 		if err != nil {
