@@ -124,12 +124,12 @@ func (s *Server) SetConfigFromPoolService(service pool.PoolService, public ...bo
 
 	if pub {
 		if s.HOST == "" {
-			service.PublicHost()
+			s.HOST = service.PublicHost()
 		}
 		s.PORT = service.PublicPort()
 	} else {
 		if s.HOST == "" {
-			service.PrivateHost()
+			s.HOST = service.PrivateHost()
 		}
 		s.PORT = service.PrivatePort()
 	}
