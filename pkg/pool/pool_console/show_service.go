@@ -16,7 +16,7 @@ func ShowService() Handler {
 }
 
 type ShowServiceData struct {
-	Service string `long:"pool" description:"Short name of the service" required:"true"`
+	Service string `long:"service" description:"Short name of the service" required:"true"`
 }
 
 type ShowServiceHandler struct {
@@ -35,7 +35,7 @@ func (a *ShowServiceHandler) Execute(args []string) error {
 		return err
 	}
 	defer ctx.Close()
-	service, err := controller.FindPool(ctx, a.Service, true)
+	service, err := controller.FindService(ctx, a.Service, true)
 	if err == nil {
 		if service != nil {
 			fmt.Printf("Service:\n\n%s\n\n", utils.DumpPrettyJson(service))
