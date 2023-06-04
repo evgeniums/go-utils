@@ -9,20 +9,32 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/sms/providers/smsru"
 )
 
-type DefaultFactory struct{}
+type Builder func() sms.Provider
+
+type DefaultFactory struct {
+	builders map[string]Builder
+}
+
+func NewDefaultFactory() *DefaultFactory {
+	f := &DefaultFactory{}
+	f.AddBuilder(gatewayapi.Protocol, func() sms.Provider { return gatewayapi.New() })
+	f.AddBuilder(smsru.Protocol, func() sms.Provider { return smsru.New() })
+	f.AddBuilder(sms_mock.Protocol, func() sms.Provider { return sms_mock.New() })
+	return f
+}
+
+func (f *DefaultFactory) AddBuilder(protocol string, builder Builder) {
+	f.builders[protocol] = builder
+}
 
 func (f *DefaultFactory) Create(protocol string) (sms.Provider, error) {
 
-	switch protocol {
-	case gatewayapi.Protocol:
-		return gatewayapi.New(), nil
-	case smsru.Protocol:
-		return smsru.New(), nil
-	case sms_mock.Protocol:
-		return sms_mock.New(), nil
+	builder, ok := f.builders[protocol]
+	if !ok {
+		return nil, errors.New("unknown SMS provider")
 	}
 
-	return nil, errors.New("unknown SMS provider")
+	return builder(), nil
 }
 
 type MockFactory struct{}
