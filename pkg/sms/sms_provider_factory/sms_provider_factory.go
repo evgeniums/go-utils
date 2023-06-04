@@ -17,6 +17,7 @@ type DefaultFactory struct {
 
 func NewDefaultFactory() *DefaultFactory {
 	f := &DefaultFactory{}
+	f.builders = make(map[string]Builder)
 	f.AddBuilder(gatewayapi.Protocol, func() sms.Provider { return gatewayapi.New() })
 	f.AddBuilder(smsru.Protocol, func() sms.Provider { return smsru.New() })
 	f.AddBuilder(sms_mock.Protocol, func() sms.Provider { return sms_mock.New() })
