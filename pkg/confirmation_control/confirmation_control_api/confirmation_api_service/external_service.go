@@ -108,6 +108,8 @@ func (e *PrepareCheckConfirmationEndpoint) HandleRequest(request api_server.Requ
 	resp.CodeInBody = e.service.CheckCode
 	resp.Parameters = cacheToken.Parameters
 	request.SetLoggerField("failed_url", resp.FailedUrl)
+	request.SetLoggerField("code_in_body", resp.CodeInBody)
+	request.SetLoggerField("parameters", resp.Parameters)
 	request.Response().SetMessage(resp)
 
 	// done
