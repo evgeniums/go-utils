@@ -1,6 +1,7 @@
 package pool_console
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
@@ -24,6 +25,9 @@ type AddServiceData struct {
 	LongName    string `long:"long-name" description:"Long name of the service"`
 	Description string `long:"description" description:"Service description"`
 	Active      string `long:"active" description:"Service is active" default:"true"`
+
+	Pool string `long:"pool" description:"Short name of the pool where to add service to"`
+	Role string `long:"role" description:"Role of the service in the pool, must be unique per the pool and alphanumeric"`
 }
 
 type AddServiceHandler struct {
@@ -51,10 +55,27 @@ func (a *AddServiceHandler) Execute(args []string) error {
 	s.SecretsBase = a.SecretsBase
 	s.SetActive(a.Active == "true")
 
-	// TODO check secret1 and secret2
 	addedService, err := controller.AddService(ctx, s)
-	if err == nil {
-		fmt.Printf("Added service:\n%s\n", utils.DumpPrettyJson(addedService))
+	if err != nil {
+		return err
 	}
-	return err
+
+	fmt.Printf("Added service:\n%s\n", utils.DumpPrettyJson(addedService))
+
+	// add service to pool
+	if a.Pool != "" {
+		if a.Role == "" {
+			err = errors.New("role must be specified")
+			return err
+		}
+
+		err = controller.AddServiceToPool(ctx, a.Pool, a.Name, a.Role, true)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("Service added to pool")
+	}
+
+	return nil
 }
