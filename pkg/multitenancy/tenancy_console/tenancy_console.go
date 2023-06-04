@@ -14,6 +14,8 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/pool/app_with_pools"
 )
 
+// TODO refactor tenancy commands with compund ID
+
 type MultitenancyAppBuilder struct {
 	Models   *multitenancy.TenancyDbModels
 	Config   app_with_multitenancy.AppConfigI
