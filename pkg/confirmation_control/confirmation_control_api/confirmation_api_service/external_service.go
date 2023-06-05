@@ -43,6 +43,33 @@ type CheckConfirmationEndpoint struct {
 	ExternalEndpoint
 }
 
+func (e *CheckConfirmationEndpoint) PrecheckRequestBeforeAuth(request api_server.Request, smsMessage *string) error {
+
+	// setup
+	c := request.TraceInMethod("ConfirmationExternalService.PrecheckRequestBeforeAuth")
+	defer request.TraceOutMethod()
+
+	// get token from cache
+	cacheToken, err := confirmation_control_api.GetTokenFromCache(request)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	// get SMS message from parameters
+	if len(cacheToken.Parameters) != 0 {
+		smsMsgIf, ok := cacheToken.Parameters["sms"]
+		if ok {
+			smsMsg, ok := smsMsgIf.(string)
+			if ok {
+				*smsMessage = smsMsg
+			}
+		}
+	}
+
+	// done
+	return nil
+}
+
 func (e *CheckConfirmationEndpoint) HandleRequest(request api_server.Request) error {
 
 	// setup
@@ -107,6 +134,7 @@ func (e *PrepareCheckConfirmationEndpoint) HandleRequest(request api_server.Requ
 	resp.FailedUrl = cacheToken.FailedUrl
 	resp.CodeInBody = e.service.CheckCode
 	resp.Parameters = cacheToken.Parameters
+	delete(resp.Parameters, "sms")
 	request.SetLoggerField("failed_url", resp.FailedUrl)
 	request.SetLoggerField("code_in_body", resp.CodeInBody)
 	request.SetLoggerField("parameters", resp.Parameters)
