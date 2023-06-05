@@ -262,7 +262,7 @@ func (s *SmsManagerBase) Send(ctx auth.UserContext, message string, recipient st
 	}
 
 	// send SMS
-	resp, err := provider.Send(ctx, message, recipient)
+	resp, err := provider.Send(ctx, message, recipient, sms.GetID())
 	if resp != nil {
 		sms.RawResponse = resp.RawContent
 		sms.ForeignId = resp.ProviderMessageID
