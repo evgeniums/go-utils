@@ -30,6 +30,14 @@ func NewTenancy(manager *TenancyManager) *TenancyBase {
 	return t
 }
 
+func NewContextPathOnly(tenancyPath string, fromCtx ...op_context.Context) *multitenancy.TenancyContextBase {
+	c := multitenancy.NewContext(fromCtx...)
+	tenancy := &TenancyBase{}
+	tenancy.SetPath(tenancyPath)
+	c.SetTenancy(tenancy)
+	return c
+}
+
 func (d *TenancyBase) IsActive() bool {
 	return d.TenancyDb.IsActive() && !d.Customer.IsBlocked() && d.TenancyBaseData.Pool.IsActive()
 }
