@@ -165,7 +165,7 @@ func (h *HandlerBase[T]) HandlerDescription() string {
 func (h *HandlerBase[T]) Context(opData interface{}) (multitenancy.TenancyContext, error) {
 	ctx := h.HandlerBaseHolder.CtxBuilder(h.Group.Name(), h.HandlerBaseHolder.Name)
 	if h.Group.InvokeInTenancy() && ctx.GetTenancy() == nil {
-		return ctx, errors.New("this command must be invoked in tenancy")
+		return ctx, errors.New("!!!THIS COMMAND MUST BE INVOKED IN TENANCY!!!")
 	}
 	err := ctx.App().Validator().Validate(opData)
 	return ctx, err
