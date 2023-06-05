@@ -2,11 +2,13 @@ package http_request
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/message"
@@ -84,6 +86,11 @@ func NewGet(ctx op_context.Context, uRL string, msg interface{}) (*Request, erro
 
 	var err error
 
+	if strings.Contains(uRL, "?") {
+		err = errors.New("URL must not contain query string, encode query in msg object")
+		return nil, err
+	}
+
 	r.NativeRequest, err = http.NewRequest(http.MethodGet, uRL, nil)
 	if err != nil {
 		c.SetMessage("failed to create request")
@@ -119,7 +126,7 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 		if err1 != nil {
 			c.Logger().Error("Failed to dump HTTP request", err1)
 		} else {
-			c.Logger().Debug("Dump HTTP request", logger.Fields{"http_request": string(dump)})
+			c.Logger().Debug("Client dump HTTP request", logger.Fields{"http_request": string(dump)})
 		}
 	}
 
@@ -138,10 +145,10 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 				if len(text) < len(dumpStr) {
 					text = utils.ConcatStrings(text, "...")
 				}
-				c.Logger().Debug("Dump HTTP response", logger.Fields{"http_response": text})
+				c.Logger().Debug("Client dump HTTP response", logger.Fields{"http_response": text})
 			}
 		} else {
-			c.Logger().Debug("Dump HTTP response", logger.Fields{"http_response": ""})
+			c.Logger().Debug("Client dump HTTP response", logger.Fields{"http_response": ""})
 		}
 	}
 
@@ -149,6 +156,7 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 		c.SetMessage("failed to send request")
 		return err
 	}
+
 	if r.NativeResponse != nil {
 		r.ResponseStatus = r.NativeResponse.StatusCode
 		if r.NativeResponse.Body != nil {
@@ -189,14 +197,15 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 			}
 
 			if err != nil {
+				// set logger fields only if parsing fails
 				if !ctx.Logger().DumpRequests() {
 					text := utils.Substr(r.ResponseContent, 0, MaxDumpSize)
 					if len(text) < len(r.ResponseContent) {
 						text = utils.ConcatStrings(text, "...")
 					}
-					c.LoggerFields()["response_content"] = text
+					c.SetLoggerField("response_content", text)
 				}
-				c.LoggerFields()["response_status"] = r.ResponseStatus
+				c.SetLoggerField("response_status", r.ResponseStatus)
 				return err
 			}
 		}
