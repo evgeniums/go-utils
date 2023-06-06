@@ -164,11 +164,6 @@ func FloatAlmostEqual[T Float](a, b T) bool {
 	return math.Abs(float64(a)-float64(b)) <= float64EqualityThreshold
 }
 
-func List(vals ...interface{}) []interface{} {
-	l := make([]interface{}, 0, len(vals))
-	return append(l, vals...)
-}
-
 func MapToStruct(in interface{}, out interface{}, tag ...string) error {
 
 	t := OptionalArg("json", tag...)
@@ -189,11 +184,4 @@ func MapToStruct(in interface{}, out interface{}, tag ...string) error {
 
 	// done
 	return nil
-}
-
-func Min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
