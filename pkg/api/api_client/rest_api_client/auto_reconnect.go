@@ -3,18 +3,21 @@ package rest_api_client
 import (
 	"errors"
 	"net/http"
+	"sync"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_csrf"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_token"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type autoReconnect struct {
 	client   *RestApiClientBase
 	handlers api_client.AutoReconnectHandlers
 
+	mutex   sync.RWMutex
 	inLogin bool
 }
 
@@ -31,13 +34,13 @@ func (a *autoReconnect) init() {
 	}
 }
 
-func (a *autoReconnect) resend(ctx op_context.Context, send func(opCtx op_context.Context) (Response, error)) (Response, error) {
+func (a *autoReconnect) resend(ctx op_context.Context, send func(opCtx op_context.Context) (Response, error), tries int) (Response, error) {
 	ctx.ClearError()
 	resp, err := send(ctx)
-	return a.checkResponse(ctx, send, resp, err)
+	return a.checkResponse(ctx, send, resp, err, tries-1)
 }
 
-func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op_context.Context) (Response, error), lastResp Response, lastErr error) (Response, error) {
+func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op_context.Context) (Response, error), lastResp Response, lastErr error, resendTries int) (Response, error) {
 
 	// setup
 	var err error
@@ -61,6 +64,16 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 		return lastResp, nil
 	}
 
+	// check resending tries
+	if resendTries < 0 {
+		err = lastErr
+		if err != nil {
+			c.SetMessage("error response")
+			return lastResp, err
+		}
+		return lastResp, nil
+	}
+
 	// refresh CSRF token
 	if lastResp.Code() == http.StatusForbidden && auth_csrf.IsCsrfError(lastResp.Error().Code) {
 		resp, err := a.client.UpdateCsrfToken(ctx)
@@ -69,7 +82,7 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 			return resp, err
 		}
 		c.Logger().Debug("resending after CSRF")
-		resp, err = a.resend(ctx, send)
+		resp, err = a.resend(ctx, send, utils.Min(resendTries, 2))
 		if err != nil {
 			c.SetMessage("failed to resend after CRSF")
 			return resp, err
@@ -87,7 +100,10 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 	// login
 	if a.client.RefreshToken == "" || auth_token.ReloginRequired(lastResp.Error().Code) || lastResp.Error().Code == auth_login_phash.ErrorCodeLoginFailed {
 
-		if a.inLogin {
+		a.mutex.RLock()
+		inLogin := a.inLogin
+		a.mutex.RUnlock()
+		if inLogin {
 			err = errors.New(lastResp.Error().Message)
 			c.SetMessage("failed when in login")
 			return lastResp, err
@@ -102,9 +118,17 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 			err = errors.New("login must be specified in client credentials")
 			return lastResp, err
 		}
+
+		a.mutex.Lock()
 		a.inLogin = true
+		a.mutex.Unlock()
+
 		resp, err := a.client.Login(ctx, login, password)
+
+		a.mutex.Lock()
 		a.inLogin = false
+		a.mutex.Unlock()
+
 		if err != nil {
 			c.SetMessage("failed to login")
 			return resp, err
@@ -114,7 +138,7 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 			return nil, err
 		}
 		a.handlers.SaveRefreshToken(ctx, a.client.RefreshToken)
-		resp, err = a.resend(ctx, send)
+		resp, err = a.resend(ctx, send, utils.Min(resendTries, 1))
 		if err != nil {
 			c.SetMessage("failed to resend after relogin")
 			return resp, err
@@ -124,13 +148,32 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 
 	// refresh token
 	if a.client.AccessToken == "" || auth_token.RefreshRequired(lastResp.Error().Code) {
+
+		a.mutex.RLock()
+		inLogin := a.inLogin
+		a.mutex.RUnlock()
+		if inLogin {
+			err = errors.New(lastResp.Error().Message)
+			c.SetMessage("failed when in login")
+			return lastResp, err
+		}
+
+		a.mutex.Lock()
+		a.inLogin = true
+		a.mutex.Unlock()
+
 		resp, err := a.client.RequestRefreshToken(ctx)
+
+		a.mutex.Lock()
+		a.inLogin = false
+		a.mutex.Unlock()
+
 		if !IsResponseOK(resp, err) {
 			c.SetMessage("failed to refresh auth token")
 			return resp, err
 		}
 		a.handlers.SaveRefreshToken(ctx, a.client.RefreshToken)
-		resp, err = a.resend(ctx, send)
+		resp, err = a.resend(ctx, send, utils.Min(resendTries, 1))
 		if err != nil {
 			c.SetMessage("failed to resend after refreshing auth token")
 			return resp, err
@@ -159,14 +202,14 @@ func NewAutoReconnectRestApiClient(reconnectHandlers api_client.AutoReconnectHan
 		}
 		hs := client.addTokens(headers...)
 		resp, err := DefaultSendWithBody(ctx, method, url, cmd, hs)
-		return reconnect.checkResponse(ctx, send, resp, err)
+		return reconnect.checkResponse(ctx, send, resp, err, 5)
 	}
 	sendWithQuery := func(ctx op_context.Context, method string, url string, cmd interface{}, headers ...map[string]string) (Response, error) {
 		send := func(opCtx op_context.Context) (Response, error) {
 			return DefaultSendWithQuery(opCtx, method, url, cmd, headers...)
 		}
 		resp, err := DefaultSendWithQuery(ctx, method, url, cmd, headers...)
-		return reconnect.checkResponse(ctx, send, resp, err)
+		return reconnect.checkResponse(ctx, send, resp, err, 5)
 	}
 
 	client = NewRestApiClientWithConfig(sendWithBody, sendWithQuery)
