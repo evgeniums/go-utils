@@ -33,6 +33,11 @@ func (a *ShadowPathHandler) Execute(args []string) error {
 	}
 	defer ctx.Close()
 
+	path := a.SHADOW_PATH
+	if path == "" {
+		path = a.PATH
+	}
+
 	id, idIsDisplay := PrepareId(a.Id, a.Customer, a.Role)
 	return controller.SetShadowPath(ctx, id, a.SHADOW_PATH, idIsDisplay)
 }

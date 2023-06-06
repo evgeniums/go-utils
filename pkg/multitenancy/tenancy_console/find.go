@@ -37,6 +37,9 @@ func PrepareId(id string, customer string, role string) (string, bool) {
 	if iD == "" {
 		iD = multitenancy.TenancySelector(customer, role)
 		idIsDisplay = true
+	} else {
+		_, _, err := multitenancy.ParseTenancyDisplay(iD)
+		idIsDisplay = err == nil
 	}
 	return iD, idIsDisplay
 }
