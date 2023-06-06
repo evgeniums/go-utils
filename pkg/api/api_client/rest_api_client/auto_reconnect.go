@@ -130,6 +130,7 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 			return resp, err
 		}
 		a.handlers.SaveRefreshToken(ctx, a.client.RefreshToken)
+		resp, err = a.resend(ctx, send)
 		if err != nil {
 			c.SetMessage("failed to resend after refreshing auth token")
 			return resp, err
