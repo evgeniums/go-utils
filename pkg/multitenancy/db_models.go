@@ -18,3 +18,7 @@ type TenancyDbModels struct {
 	DbModels            []interface{}
 	PartitionedDbModels []interface{}
 }
+
+func QueryDbModels() []interface{} {
+	return []interface{}{&TenancyItem{}, &OpLogTenancy{}}
+}

@@ -27,3 +27,7 @@ type OpLogPubKey struct {
 func DbModels() []interface{} {
 	return []interface{}{&MessageSignature{}, &OpLogPubKey{}}
 }
+
+func QueryDbModels() []interface{} {
+	return []interface{}{&OpLogPubKey{}, &MessageSignature{}}
+}
