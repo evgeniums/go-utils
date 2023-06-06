@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
 	"golang.org/x/exp/constraints"
 )
 
@@ -166,4 +167,33 @@ func FloatAlmostEqual[T Float](a, b T) bool {
 func List(vals ...interface{}) []interface{} {
 	l := make([]interface{}, 0, len(vals))
 	return append(l, vals...)
+}
+
+func MapToStruct(in interface{}, out interface{}, tag ...string) error {
+
+	t := OptionalArg("json", tag...)
+
+	// create new map decoder
+	meta := &mapstructure.Metadata{}
+	config := &mapstructure.DecoderConfig{Metadata: meta, TagName: t, Result: out, Squash: true, WeaklyTypedInput: true}
+	dec, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	// fill out object with data from input
+	err = dec.Decode(in)
+	if err != nil {
+		return err
+	}
+
+	// done
+	return nil
+}
+
+func Min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
