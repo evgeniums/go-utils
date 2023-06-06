@@ -192,3 +192,11 @@ func FindPool(store PoolStore, id string) (Pool, error) {
 	}
 	return pool, nil
 }
+
+func SelfPoolName(store PoolStore) string {
+	selfPool, err := store.SelfPool()
+	if err != nil {
+		return selfPool.Name()
+	}
+	return ""
+}
