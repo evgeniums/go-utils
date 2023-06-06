@@ -31,7 +31,6 @@ func (a *PasswordHandler[T]) Execute(args []string) error {
 	}
 	defer ctx.Close()
 
-	password := ReadPassword()
-
+	password := console_tool.ReadPassword()
 	return ctrl.SetPassword(ctx, a.Login, password, true)
 }

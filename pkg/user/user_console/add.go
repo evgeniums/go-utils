@@ -3,11 +3,9 @@ package user_console
 import (
 	"encoding/json"
 	"fmt"
-	"syscall"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/console_tool"
 	"github.com/evgeniums/go-backend-helpers/pkg/user"
-	"golang.org/x/term"
 )
 
 const AddCmd string = "add"
@@ -39,15 +37,6 @@ type WithEmailData struct {
 	EmailData
 }
 
-func ReadPassword() string {
-	fmt.Println("Please, enter new password:")
-	password, err := term.ReadPassword(int(syscall.Stdin))
-	if err != nil {
-		panic(fmt.Sprintf("failed to enter password: %s", err))
-	}
-	return string(password)
-}
-
 //----------------------------------------
 
 func Add[T user.User]() console_tool.Handler[*UserCommands[T]] {
@@ -73,8 +62,7 @@ func (a *AddHandler[T]) Execute(args []string) error {
 	}
 	defer ctx.Close()
 
-	password := ReadPassword()
-
+	password := console_tool.ReadPassword()
 	user, err := ctrl.Add(ctx, a.Login, password)
 	if err != nil {
 		return err
@@ -139,9 +127,8 @@ func (a *AddWithPhoneHandler[T]) Execute(args []string) error {
 	}
 	defer ctx.Close()
 
-	password := ReadPassword()
-
-	user, err := ctrl.Add(ctx, a.Login, string(password), user.Phone[T](a.Phone))
+	password := console_tool.ReadPassword()
+	user, err := ctrl.Add(ctx, a.Login, password, user.Phone[T](a.Phone))
 	if err != nil {
 		return err
 	}
@@ -173,9 +160,8 @@ func (a *AddWithEmailHandler[T]) Execute(args []string) error {
 	}
 	defer ctx.Close()
 
-	password := ReadPassword()
-
-	user, err := ctrl.Add(ctx, a.Login, string(password), user.Email[T](a.Email))
+	password := console_tool.ReadPassword()
+	user, err := ctrl.Add(ctx, a.Login, password, user.Email[T](a.Email))
 	if err != nil {
 		return err
 	}

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/console_tool"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
@@ -52,6 +53,8 @@ func (a *UpdateServiceHandler) Execute(args []string) error {
 			return err
 		}
 		fields[field] = val
+	} else if field == "secret1" || field == "secret2" {
+		fields[field] = console_tool.ReadPassword("Please, enter secret/password for this acquirer terminal at bank side:")
 	} else {
 		fields[field] = a.Value
 	}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/evgeniums/go-backend-helpers/pkg/console_tool"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
@@ -46,6 +47,14 @@ func (a *AddServiceHandler) Execute(args []string) error {
 		return err
 	}
 	defer ctx.Close()
+
+	if a.SECRET1 != "" {
+		a.SECRET1 = console_tool.ReadPassword("Please, enter secret 1:")
+	}
+	if a.SECRET2 != "" {
+		a.SECRET2 = console_tool.ReadPassword("Please, enter secret 2:")
+	}
+
 	s := pool.NewService()
 	s.SetName(a.Name)
 	s.SetDescription(a.Description)
