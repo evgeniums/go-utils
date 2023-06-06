@@ -2,8 +2,10 @@ package default_op_context
 
 import (
 	"errors"
+	"net/http"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/background_worker"
 	"github.com/evgeniums/go-backend-helpers/pkg/cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
@@ -110,6 +112,12 @@ type ContextBase struct {
 
 func NewContext() *ContextBase {
 	return &ContextBase{}
+}
+
+func NewInitContext(app app_context.Context, log logger.Logger, db db.DB) *ContextBase {
+	c := NewContext()
+	c.Init(app, log, db)
+	return c
 }
 
 func (c *ContextBase) BaseContext() *ContextBase {
@@ -491,4 +499,17 @@ func (o *Origin) SetUserType(val string) {
 
 func (o *Origin) UserType() string {
 	return o.OriginHolder.UserType
+}
+
+func BackgroundOpContext(app app_context.Context, name string) *ContextBase {
+	opCtx := NewInitContext(app, app.Logger(), app.Db())
+	opCtx.SetName(name)
+	errManager := &generic_error.ErrorManagerBase{}
+	errManager.Init(http.StatusInternalServerError)
+	opCtx.SetErrorManager(errManager)
+	origin := NewOrigin(app)
+	origin.SetUser(background_worker.ContextUser)
+	origin.SetUserType(op_context.AutoUserType)
+	opCtx.SetOrigin(origin)
+	return opCtx
 }
