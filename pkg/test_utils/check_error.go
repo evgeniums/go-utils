@@ -28,7 +28,7 @@ func ObjectEqual(t *testing.T, left common.Object, right common.Object) {
 		right.SetCreatedAt(left.GetCreatedAt())
 	}
 	if left.GetUpdatedAt().Equal(right.GetUpdatedAt()) {
-		right.SetUpDatedAt(left.GetCreatedAt())
+		right.SetUpDatedAt(left.GetUpdatedAt())
 	}
 	assert.Equal(t, left, right)
 }
