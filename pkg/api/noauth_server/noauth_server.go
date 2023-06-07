@@ -3,11 +3,13 @@ package noauth_server
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server/rest_api_gin_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/app_with_multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
+	"github.com/evgeniums/go-backend-helpers/pkg/pool/app_with_pools"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
@@ -16,10 +18,32 @@ type Server interface {
 	Auth() auth.Auth
 }
 
-type NoAuthServerConfig struct {
+type PoolServiceConfigI interface {
+	NameOrRole() string
+	Type() string
+	IsPublic() bool
+}
+
+type PoolServiceConfig struct {
 	POOL_SERVICE_NAME   string
 	POOL_SERVICE_TYPE   string
 	PUBLIC_POOL_SERVICE bool
+}
+
+func (p *PoolServiceConfig) NameOrRole() string {
+	return p.POOL_SERVICE_NAME
+}
+
+func (p *PoolServiceConfig) Type() string {
+	return p.POOL_SERVICE_TYPE
+}
+
+func (p *PoolServiceConfig) IsPublic() bool {
+	return p.PUBLIC_POOL_SERVICE
+}
+
+type NoAuthServerConfig struct {
+	PoolServiceConfig
 }
 
 type NoAuthServer struct {
@@ -70,6 +94,45 @@ func (s *NoAuthServer) Construct(config ...Config) {
 	}
 }
 
+func InitFromPoolService(app app_context.Context, restApiServer *rest_api_gin_server.Server, cfg PoolServiceConfigI) error {
+
+	if cfg.NameOrRole() != "" {
+
+		poolApp, ok := app.(app_with_pools.AppWithPools)
+		if !ok {
+			return app.Logger().PushFatalStack("invalid application type, must be pool app", nil)
+		}
+
+		// check if app with self pool
+		selfPool, err := poolApp.Pools().SelfPool()
+		if err != nil {
+			return app.Logger().PushFatalStack("self pool must be specified for API server", err)
+		}
+
+		// find service by name
+		service, err := selfPool.ServiceByName(cfg.NameOrRole())
+		if err != nil {
+			service, err = selfPool.Service(cfg.NameOrRole())
+			if err != nil {
+				return app.Logger().PushFatalStack("failed to find service with specified name/tole", err, logger.Fields{"name/role": cfg.NameOrRole()})
+			}
+		}
+
+		if service.TypeName() != cfg.Type() {
+			return app.Logger().PushFatalStack("invalid service type", err, logger.Fields{"name": cfg.NameOrRole(), "service_type": cfg.Type(), "pool_service_type": service.TypeName()})
+		}
+
+		if service.Provider() != app.Application() {
+			return app.Logger().PushFatalStack("invalid service provider", err, logger.Fields{"name": cfg.NameOrRole(), "application": app.Application(), "pool_service_provider": service.Provider()})
+		}
+
+		// load server configuration from service
+		restApiServer.SetConfigFromPoolService(service, cfg.IsPublic())
+	}
+
+	return nil
+}
+
 func (s *NoAuthServer) Init(app app_with_multitenancy.AppWithMultitenancy, configPath ...string) error {
 
 	path := utils.OptionalArg("server", configPath...)
@@ -82,26 +145,9 @@ func (s *NoAuthServer) Init(app app_with_multitenancy.AppWithMultitenancy, confi
 	// init REST API server
 	if s.restApiServer != nil {
 
-		if s.config.POOL_SERVICE_NAME != "" {
-
-			app.Logger().Info("Using configuration of pool service", logger.Fields{"service_name": s.config.POOL_SERVICE_NAME})
-
-			// find service by name
-			service, err := app.Pools().SelfPoolServiceByName(s.config.POOL_SERVICE_NAME)
-			if err != nil {
-				return app.Logger().PushFatalStack("failed to find service with specified name", err, logger.Fields{"name": s.config.POOL_SERVICE_NAME})
-			}
-
-			// check service config
-			if service.TypeName() != s.config.POOL_SERVICE_TYPE {
-				return app.Logger().PushFatalStack("invalid service type", err, logger.Fields{"name": s.config.POOL_SERVICE_NAME, "service_type": s.config.POOL_SERVICE_TYPE, "pool_service_type": service.TypeName()})
-			}
-			if service.Provider() != app.Application() {
-				return app.Logger().PushFatalStack("invalid service provider", err, logger.Fields{"name": s.config.POOL_SERVICE_NAME, "application": app.Application(), "pool_service_provider": service.Provider()})
-			}
-
-			// load server configuration from service
-			s.restApiServer.SetConfigFromPoolService(service, s.config.PUBLIC_POOL_SERVICE)
+		err = InitFromPoolService(app, s.restApiServer, &s.config)
+		if err != nil {
+			return err
 		}
 
 		serverPath := object_config.Key(path, "rest_api_server")

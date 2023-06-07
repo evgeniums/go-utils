@@ -3,15 +3,14 @@ package bare_bones_server
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server/rest_api_gin_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/api/noauth_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_factory"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_service"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
-	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
-	"github.com/evgeniums/go-backend-helpers/pkg/pool/app_with_pools"
 	"github.com/evgeniums/go-backend-helpers/pkg/signature"
 	"github.com/evgeniums/go-backend-helpers/pkg/sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
@@ -51,9 +50,7 @@ type pimpl struct {
 }
 
 type BareBonesServerBaseConfig struct {
-	POOL_SERVICE_NAME   string
-	POOL_SERVICE_TYPE   string
-	PUBLIC_POOL_SERVICE bool
+	noauth_server.PoolServiceConfig
 }
 
 type BareBonesServerBase struct {
@@ -159,39 +156,7 @@ func (s *BareBonesServerBase) Init(app app_context.Context, tenancyManager multi
 }
 
 func (s *BareBonesServerBase) initFromPoolService(app app_context.Context, restApiServer *rest_api_gin_server.Server) error {
-
-	if s.config.POOL_SERVICE_NAME != "" {
-
-		poolApp, ok := app.(app_with_pools.AppWithPools)
-		if !ok {
-			return app.Logger().PushFatalStack("invalid application type, must be pool app", nil)
-		}
-
-		// check if app with self pool
-		selfPool, err := poolApp.Pools().SelfPool()
-		if err != nil {
-			return app.Logger().PushFatalStack("self pool must be specified for API server", err)
-		}
-
-		// find service by name
-		service, err := selfPool.ServiceByName(s.config.POOL_SERVICE_NAME)
-		if err != nil {
-			return app.Logger().PushFatalStack("failed to find service with specified name", err, logger.Fields{"name": s.config.POOL_SERVICE_NAME})
-		}
-
-		if service.TypeName() != s.config.POOL_SERVICE_TYPE {
-			return app.Logger().PushFatalStack("invalid service type", err, logger.Fields{"name": s.config.POOL_SERVICE_NAME, "service_type": s.config.POOL_SERVICE_TYPE, "pool_service_type": service.TypeName()})
-		}
-
-		if service.Provider() != app.Application() {
-			return app.Logger().PushFatalStack("invalid service provider", err, logger.Fields{"name": s.config.POOL_SERVICE_NAME, "application": app.Application(), "pool_service_provider": service.Provider()})
-		}
-
-		// load server configuration from service
-		restApiServer.SetConfigFromPoolService(service, s.config.PUBLIC_POOL_SERVICE)
-	}
-
-	return nil
+	return noauth_server.InitFromPoolService(app, restApiServer, &s.config)
 }
 
 func (s *BareBonesServerBase) Auth() auth.Auth {
