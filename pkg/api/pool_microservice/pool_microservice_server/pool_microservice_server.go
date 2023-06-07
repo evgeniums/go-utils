@@ -39,3 +39,5 @@ func (s *PoolMicroserviceServer) Init(app app_with_multitenancy.AppWithMultitena
 	}
 	return s.NoAuthServer.Init(app, configPath...)
 }
+
+// TODO propagate context between microservices
