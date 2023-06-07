@@ -52,11 +52,11 @@ func FloatToStr2Hyphen[T Float](val T) string {
 	return str
 }
 
-func MoneyToInteger(dollars float64) int {
-	return int(math.Round(float64(dollars) * 100.00))
+func MoneyToInteger(dollars float64) int64 {
+	return int64(math.Round(float64(dollars) * 100.00))
 }
 
-func MoneyToDecimal(cents int) float64 {
+func MoneyToDecimal(cents int64) float64 {
 	v := float64(cents) / 100.00
 	return float64(v)
 }
