@@ -39,6 +39,9 @@ func SetAppHandlers(builder AppBuilder, initializer AppInitializer) {
 }
 
 func InitDefaultAppContextNoDb(t *testing.T, testDir string, config ...string) app_context.Context {
+
+	SetTesting(t)
+
 	configFile := utils.OptionalArg(AssetsFilePath(testDir, "test_config.json"), config...)
 	if !utils.FileExists(configFile) {
 		configFile = AssetsFilePath(testDir, configFile)
@@ -51,6 +54,9 @@ func InitDefaultAppContextNoDb(t *testing.T, testDir string, config ...string) a
 }
 
 func InitAppContextNoDb(t *testing.T, testDir string, config ...string) app_context.Context {
+
+	SetTesting(t)
+
 	configFile := utils.OptionalArg(AssetsFilePath(testDir, "test_config.json"), config...)
 	if !utils.FileExists(configFile) {
 		configFile = AssetsFilePath(testDir, configFile)
@@ -90,6 +96,8 @@ func InitDbModels(t *testing.T, testDir string, dbModels []interface{}, config .
 }
 
 func InitAppContext(t *testing.T, testDir string, dbModels []interface{}, config string, newDb ...bool) app_context.Context {
+
+	SetTesting(t)
 
 	if utils.OptionalArg(true, newDb...) {
 		InitDbModels(t, testDir, dbModels, config)
