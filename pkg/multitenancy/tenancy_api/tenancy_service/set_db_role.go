@@ -1,0 +1,41 @@
+package tenancy_service
+
+import (
+	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_api"
+)
+
+type SetDbRoleEndpoint struct {
+	TenancyUpdateEndpoint
+}
+
+func (s *SetDbRoleEndpoint) HandleRequest(request api_server.Request) error {
+
+	// setup
+	c := request.TraceInMethod("tenancy.SetDbRole")
+	defer request.TraceOutMethod()
+
+	// parse command
+	cmd := &multitenancy.WithRole{}
+	err := request.ParseValidate(cmd)
+	if err != nil {
+		c.SetMessage("failed to parse/validate command")
+		return err
+	}
+
+	// apply
+	err = s.service.Tenancies.SetDbRole(request, request.GetResourceId(tenancy_api.TenancyResource), cmd.Role())
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	// done
+	return nil
+}
+
+func SetDbRole(s *TenancyService) *SetDbRoleEndpoint {
+	e := &SetDbRoleEndpoint{}
+	e.Construct(s, e, "db_role", tenancy_api.SetDbRole())
+	return e
+}

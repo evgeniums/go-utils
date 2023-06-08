@@ -125,7 +125,11 @@ func (t *TenancyBase) ConnectDatabase(ctx op_context.Context, newDb ...bool) err
 	defer onExit()
 
 	// connect to database
-	db, err := pool.ConnectDatabaseService(ctx, t.Pool(), multitenancy.TENANCY_DATABASE_ROLE, t.DbName(), newDb...)
+	dbRole := t.DbRole()
+	if dbRole == "" {
+		dbRole = multitenancy.TENANCY_DATABASE_ROLE
+	}
+	db, err := pool.ConnectDatabaseService(ctx, t.Pool(), dbRole, t.DbName(), newDb...)
 	if err != nil {
 		return err
 	}

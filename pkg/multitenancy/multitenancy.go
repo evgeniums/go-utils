@@ -23,6 +23,7 @@ const (
 	OpChangePoolOrDb  string = "change_pool_or_db"
 	OpAddIpAddress    string = "add_ip_address"
 	OpDeleteIpAddress string = "delete_ip_address"
+	OpSetDbRole       string = "set_db_role"
 )
 
 const (
@@ -128,6 +129,7 @@ type TenancyController interface {
 	ChangePoolOrDb(ctx op_context.Context, id string, poolId string, dbName string, idIsDisplay ...bool) error
 	Activate(ctx op_context.Context, id string, idIsDisplay ...bool) error
 	Deactivate(ctx op_context.Context, id string, idIsDisplay ...bool) error
+	SetDbRole(ctx op_context.Context, id string, dbRole string, idIsDisplay ...bool) error
 
 	ListIpAddresses(ctx op_context.Context, filter *db.Filter) ([]*TenancyIpAddressItem, int64, error)
 	DeleteIpAddress(ctx op_context.Context, id string, ipAddress string, tag string, idIsDisplay ...bool) error

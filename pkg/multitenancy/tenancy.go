@@ -28,6 +28,7 @@ type Tenancy interface {
 	CustomerDisplay() string
 	Role() string
 	DbName() string
+	DbRole() string
 	PoolId() string
 
 	Db() db.DB
@@ -50,7 +51,11 @@ type WithCustomerId struct {
 
 type WithPoolAndDb struct {
 	POOL_ID string `json:"pool_id" gorm:"index" validate:"omitempty,alphanum" vmessage:"Pool ID must be alhanumeric" long:"pool" description:"Name or ID of a pool this tenancy belongs to" display:"Pool ID"`
-	DBNAME  string `json:"dbname" gorm:"index;column:dbname" validate:"omitempty,alphanum_" vmessage:"Database name must be alhanumeric" long:"dbname" description:"Name of tenancy's database, if empty then will be generated automatically" display:"Database"`
+	DBNAME  string `json:"dbname" gorm:"index;column:dbname" validate:"omitempty,alphanum_" vmessage:"Database name must be alhanumeric" long:"dbname" description:"Name of tenancy's database, if empty then will be generated automatically" display:"Database name"`
+}
+
+type WithDbRole struct {
+	DB_ROLE string `json:"db_role" gorm:"index;column:db_role" validate:"omitempty,alphanum_" vmessage:"Database role must be alhanumeric" long:"db_role" description:"Role of database service in the pool" display:"Database service role"`
 }
 
 type TenancyData struct {
@@ -59,6 +64,7 @@ type TenancyData struct {
 	WithRole
 	WithCustomerId
 	WithPoolAndDb
+	WithDbRole
 }
 
 func (t *WithCustomerId) CustomerId() string {
@@ -91,6 +97,14 @@ func (t *WithPoolAndDb) PoolId() string {
 
 func (t *WithPoolAndDb) DbName() string {
 	return t.DBNAME
+}
+
+func (t *WithDbRole) DbRole() string {
+	return t.DB_ROLE
+}
+
+func (t *WithDbRole) SetDbRole(role string) {
+	t.DB_ROLE = role
 }
 
 func TenancyDisplay(t Tenancy) string {

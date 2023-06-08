@@ -406,6 +406,53 @@ func (t *TenancyController) ChangePoolOrDb(ctx op_context.Context, id string, po
 	return nil
 }
 
+func (t *TenancyController) SetDbRole(ctx op_context.Context, id string, dbRole string, idIsDisplay ...bool) error {
+
+	// setup
+	c := ctx.TraceInMethod("TenancyController.SetDbRole")
+	defer ctx.TraceOutMethod()
+
+	// find tenancy
+	tenancy, err := t.Find(ctx, id, idIsDisplay...)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	// check database
+	tenancy.DB_ROLE = dbRole
+	checkTenancy := NewTenancy(t.Manager)
+	skip, err := checkTenancy.Init(ctx, &tenancy.TenancyDb)
+	if checkTenancy.Db() != nil {
+		checkTenancy.Db().Close()
+	}
+	if err != nil {
+		c.SetMessage("failed to init tenancy with new parameters")
+		return c.SetError(err)
+	}
+	if skip {
+		ctx.SetGenericErrorCode(pool.ErrorCodePoolNotActive)
+		err = errors.New("failed to check tenancy database as the pool is not active")
+		return c.SetError(err)
+	}
+
+	// update fields
+	err = t.CRUD.Update(ctx, &tenancy.TenancyDb, db.Fields{"db_role": dbRole})
+	if err != nil {
+		c.SetMessage("failed to update tenancy")
+		return c.SetError(err)
+	}
+
+	// save oplog
+	t.OpLog(ctx, multitenancy.OpSetDbRole, &multitenancy.OpLogTenancy{TenancyId: tenancy.GetID(),
+		Role: tenancy.Role(), Customer: tenancy.CustomerDisplay(), DbRole: dbRole})
+
+	// publish notification
+	t.PublishOp(tenancy, multitenancy.OpSetDbRole)
+
+	// done
+	return nil
+}
+
 func (t *TenancyController) Delete(ctx op_context.Context, id string, withDatabase bool, idIsDisplay ...bool) error {
 
 	// setup
@@ -440,10 +487,6 @@ func (t *TenancyController) Delete(ctx op_context.Context, id string, withDataba
 	// done
 	return nil
 }
-
-// func (t *TenancyController) AddIpAddress(ctx op_context.Context, id string) (*multitenancy.TenancyIpAddressItem, error) {
-
-// }
 
 func (t *TenancyController) ListIpAddresses(ctx op_context.Context, filter *db.Filter) ([]*multitenancy.TenancyIpAddressItem, int64, error) {
 

@@ -13,4 +13,5 @@ type OpLogTenancy struct {
 	Pool         string `gorm:"index" json:"pool"`
 	IpAddress    string `gorm:"index" json:"ip_address"`
 	IpAddressTag string `gorm:"index" json:"ip_address_tag"`
+	DbRole       string `gorm:"index" json:"db_role"`
 }
