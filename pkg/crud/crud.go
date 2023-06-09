@@ -376,3 +376,22 @@ func Exists(crud CRUD, ctx op_context.Context, methodName string, filter *db.Fil
 
 	return exists, nil
 }
+
+func FindOne[T common.Object](crud CRUD, ctx op_context.Context, filter *db.Filter, model T) (T, error) {
+
+	c := ctx.TraceInMethod("crud.FindOne")
+	defer ctx.TraceOutMethod()
+
+	var objects []T
+
+	count, err := crud.List(ctx, filter, &objects)
+	if err != nil {
+		return *new(T), c.SetError(err)
+	}
+
+	if count == 0 {
+		return *new(T), nil
+	}
+
+	return objects[0], nil
+}
