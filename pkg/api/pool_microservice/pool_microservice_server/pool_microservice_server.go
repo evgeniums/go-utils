@@ -37,7 +37,21 @@ func (s *PoolMicroserviceServer) Init(app app_with_multitenancy.AppWithMultitena
 	if err != nil {
 		return app.Logger().PushFatalStack("failed to load microservice server configuration", err)
 	}
-	return s.NoAuthServer.Init(app, configPath...)
+	err = s.NoAuthServer.Init(app, configPath...)
+	if err != nil {
+		return err
+	}
+
+	s.SetPropagateContextId(true)
+	s.SetPropagateAuthUser(true)
+
+	return nil
 }
 
-// TODO propagate context between microservices
+func (s *PoolMicroserviceServer) SetPropagateContextId(val bool) {
+	s.NoAuthServer.SetPropagateContextId(val)
+}
+
+func (s *PoolMicroserviceServer) SetPropagateAuthUser(val bool) {
+	s.NoAuthServer.SetPropagateAuthUser(val)
+}

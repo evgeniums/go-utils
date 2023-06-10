@@ -71,5 +71,6 @@ func (r *RestApiPoolServiceClient) InitForPoolService(service *pool.PoolServiceB
 	}
 
 	r.Client = rest_api_client.New(rest_api_client.DefaultRestApiClient(url, clientAgent...))
+
 	return nil
 }

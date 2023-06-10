@@ -120,6 +120,10 @@ func NewInitContext(app app_context.Context, log logger.Logger, db db.DB) *Conte
 	return c
 }
 
+func (c *ContextBase) SetID(id string) {
+	c.id = id
+}
+
 func (c *ContextBase) BaseContext() *ContextBase {
 	return c
 }

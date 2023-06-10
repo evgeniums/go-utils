@@ -70,6 +70,7 @@ type Context interface {
 
 	MakeGenericError(code string) generic_error.Error
 
+	SetID(id string)
 	ID() string
 
 	TraceInMethod(methodName string, fields ...logger.Fields) CallContext

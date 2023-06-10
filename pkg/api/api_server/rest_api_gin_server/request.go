@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
+	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/http_request"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
@@ -36,6 +37,14 @@ func (r *Request) Init(s *Server, ginCtx *gin.Context, ep api_server.Endpoint, f
 
 	r.RequestBase.Init(s.App(), s.App().Logger(), s.App().Db(), ep, fields...)
 	r.RequestBase.SetErrorManager(s)
+
+	if s.propagateContextId {
+		ctxId := ginCtx.GetHeader(api.ForwardContext)
+		if ctxId != "" {
+			r.SetID(ctxId)
+			r.SetLoggerField("context", ctxId)
+		}
+	}
 
 	r.ginCtx = ginCtx
 	r.response = &Response{httpCode: http.StatusOK}
@@ -118,11 +127,11 @@ func (r *Request) Close(successMessage ...string) {
 				body = string(b)
 			}
 		}
-		r.Logger().Debug("Dump HTTP response", logger.Fields{"response_header": h, "response_body": body})
+		r.Logger().Debug("Dump server HTTP response", logger.Fields{"response_header": h, "response_body": body, "server_name": r.server.Name()})
 	}
 
 	r.RequestBase.Close("")
-	r.server.logGinRequest(r.Logger(), r.initialPath, r.start, r.ginCtx)
+	r.server.logGinRequest(r.Logger(), r.initialPath, r.start, r.ginCtx, r.LoggerFields())
 }
 
 func (r *Request) GetRequestContent() []byte {

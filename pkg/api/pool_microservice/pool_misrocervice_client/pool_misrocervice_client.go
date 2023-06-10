@@ -72,6 +72,9 @@ func (p *PoolMicroserviceClient) Init(app app_with_pools.AppWithPools, configPat
 		return app.Logger().PushFatalStack("failed to init microservice api client with pool service configuration", err)
 	}
 
+	p.SetPropagateAuthUser(true)
+	p.SetPropagateContextId(true)
+
 	// done
 	return nil
 }
@@ -90,4 +93,12 @@ func (p *PoolMicroserviceClient) SetService(ctx op_context.Context, service *poo
 
 	// done
 	return nil
+}
+
+func (p *PoolMicroserviceClient) SetPropagateAuthUser(val bool) {
+	p.PoolServiceClient.SetPropagateAuthUser(val)
+}
+
+func (p *PoolMicroserviceClient) SetPropagateContextId(val bool) {
+	p.PoolServiceClient.SetPropagateContextId(val)
 }

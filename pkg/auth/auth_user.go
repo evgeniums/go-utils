@@ -4,6 +4,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type User interface {
@@ -34,6 +35,20 @@ func (u *UserBase) Login() string {
 
 func (u *UserBase) IsBlocked() bool {
 	return u.UserBlocked
+}
+
+func NewAuthUser(id string, login string, display string, blocked ...bool) *UserBase {
+
+	userLogin := login
+	if userLogin == "" {
+		userLogin = id
+	}
+	userDisplay := display
+	if userDisplay == "" {
+		userDisplay = userLogin
+	}
+
+	return &UserBase{UserId: id, UserLogin: userLogin, UserDisplay: userDisplay, UserBlocked: utils.OptionalArg(false, blocked...)}
 }
 
 type WithUser interface {

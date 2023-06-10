@@ -75,6 +75,11 @@ type Server struct {
 	tenancyResource api.Resource
 
 	dynamicTables api_server.DynamicTables
+
+	propagateContextId bool
+	propagateAuthUser  bool
+
+	logPrefix string
 }
 
 func getHttpHeader(g *gin.Context, name string) string {
@@ -109,6 +114,14 @@ func NewServer() *Server {
 
 func (s *Server) ConfigPoolService() pool.PoolService {
 	return s.configPoolService
+}
+
+func (s *Server) SetPropagateContextId(val bool) {
+	s.propagateContextId = val
+}
+
+func (s *Server) SetPropagateAuthUser(val bool) {
+	s.propagateAuthUser = val
 }
 
 func (s *Server) SetConfigFromPoolService(service pool.PoolService, public ...bool) {
@@ -171,7 +184,6 @@ func (s *Server) logGinRequest(log logger.Logger, path string, start time.Time, 
 		dataLength = 0
 	}
 
-	msg := "HTTP request"
 	fields := logger.Fields{
 		"hostname":    s.hostname,
 		"http_code":   statusCode,
@@ -186,14 +198,14 @@ func (s *Server) logGinRequest(log logger.Logger, path string, start time.Time, 
 	logger.AppendFields(fields, extraFields...)
 
 	if len(ginCtx.Errors) > 0 {
-		log.Error(msg, errors.New(ginCtx.Errors.ByType(gin.ErrorTypePrivate).String()), fields)
+		log.Error(s.logPrefix, errors.New(ginCtx.Errors.ByType(gin.ErrorTypePrivate).String()), fields)
 	} else {
 		if statusCode >= http.StatusInternalServerError {
-			log.Error(msg, errors.New("internal server error"), fields)
+			log.Error(s.logPrefix, errors.New("internal server error"), fields)
 		} else if statusCode >= http.StatusBadRequest {
-			log.Warn(msg, fields)
+			log.Warn(s.logPrefix, fields)
 		} else {
-			log.Info(msg, fields)
+			log.Info(s.logPrefix, fields)
 		}
 	}
 
@@ -288,6 +300,16 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, tenancyManager mu
 	s.notFoundError = &api.ResponseError{Code: "not_found", Message: "Requested resource was not found."}
 	s.ginEngine.NoRoute(s.NoRoute())
 
+	name := s.Name()
+	if name == "" {
+		name = ctx.AppInstance()
+		if name == "" {
+			name = ctx.Application()
+		}
+		s.SetName(name)
+	}
+	s.logPrefix = fmt.Sprintf("HTTP request to %s", name)
+
 	// done
 	return nil
 }
@@ -327,7 +349,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		if s.VERBOSE {
 			dumpBody := ginCtx.Request.ContentLength > 0 && int(ginCtx.Request.ContentLength) <= s.VERBOSE_BODY_MAX_LENGTH
 			b, _ := httputil.DumpRequest(ginCtx.Request, dumpBody)
-			c.Logger().Debug("Dump HTTP request", logger.Fields{"request": string(b)})
+			c.Logger().Debug("Dump server HTTP request", logger.Fields{"request": string(b), "server_name": s.Name()})
 		}
 
 		// extract tenancy if applicable
@@ -377,6 +399,18 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 				request.SetGenericErrorCode(auth.ErrorCodeUnauthorized)
 			}
 		}
+		if request.AuthUser() == nil {
+			if s.propagateAuthUser {
+				userId := ginCtx.GetHeader(api.ForwardUserId)
+				userLogin := ginCtx.GetHeader(api.ForwardUserLogin)
+				userDisplay := ginCtx.GetHeader(api.ForwardUserDisplay)
+				if userId != "" || userLogin != "" || userDisplay != "" {
+					authUser := auth.NewAuthUser(userId, userLogin, userDisplay)
+					request.SetAuthUser(authUser)
+				}
+			}
+		}
+
 		origin := default_op_context.NewOrigin(s.App())
 		if request.AuthUser() != nil {
 			origin.SetUser(request.AuthUser().Display())

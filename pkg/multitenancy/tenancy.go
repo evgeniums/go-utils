@@ -199,6 +199,13 @@ func ContextTenancyPath(ctx TenancyContext) string {
 	return ctx.GetTenancy().Path()
 }
 
+func ContextTenancyDispplay(ctx TenancyContext) string {
+	if ctx.GetTenancy() == nil {
+		return ""
+	}
+	return TenancyDisplay(ctx.GetTenancy())
+}
+
 func ContextTenancyShadowPath(ctx TenancyContext) string {
 	if ctx.GetTenancy() == nil {
 		return ""

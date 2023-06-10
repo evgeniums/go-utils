@@ -218,6 +218,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return true, err
 	}
+	ctx.SetLoggerField("s_client", ctx.GetClientId())
 
 	// add tokens if applicable
 	if path != a.LOGOUT_PATH {

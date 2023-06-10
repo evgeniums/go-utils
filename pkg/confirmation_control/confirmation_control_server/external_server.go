@@ -126,6 +126,7 @@ func (s *ExternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, ctx
 		c.SetMessage("failed to init callback client")
 		return err
 	}
+	callbackTransport.SetPropagateAuthUser(false)
 	callbackClient := confirmation_api_client.NewConfirmationCallbackClient(callbackTransport)
 
 	// add services

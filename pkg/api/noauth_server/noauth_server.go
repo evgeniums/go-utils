@@ -167,6 +167,14 @@ func (s *NoAuthServer) SetConfigFromPoolService(service pool.PoolService, public
 	}
 }
 
+func (s *NoAuthServer) SetPropagateContextId(val bool) {
+	s.restApiServer.SetPropagateContextId(val)
+}
+
+func (s *NoAuthServer) SetPropagateAuthUser(val bool) {
+	s.restApiServer.SetPropagateAuthUser(val)
+}
+
 func (s *NoAuthServer) Auth() auth.Auth {
 	return s.auth
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
@@ -18,9 +19,11 @@ type Auth interface {
 type RestApiMethod func(ctx op_context.Context, path string, cmd interface{}, response interface{}, headers ...map[string]string) (Response, error)
 
 type Client struct {
-	RestApiClient RestApiClient
-	methods       map[access_control.AccessType]RestApiMethod
-	auth          Auth
+	RestApiClient      RestApiClient
+	methods            map[access_control.AccessType]RestApiMethod
+	auth               Auth
+	propagateAuthUser  bool
+	propagateContextId bool
 }
 
 func New(restApiClient RestApiClient, auth ...Auth) *Client {
@@ -44,6 +47,14 @@ func (cl *Client) Transport() interface{} {
 	return cl.RestApiClient
 }
 
+func (cl *Client) SetPropagateAuthUser(val bool) {
+	cl.propagateAuthUser = true
+}
+
+func (cl *Client) SetPropagateContextId(val bool) {
+	cl.propagateContextId = true
+}
+
 func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd interface{}, response interface{}, tenancyPath ...string) error {
 
 	// TODO support hateoas links of resource
@@ -52,11 +63,31 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 	c := ctx.TraceInMethod("Client.Exec")
 	defer ctx.TraceOutMethod()
 
+	var forwardHeaders map[string]string
+
+	if cl.propagateContextId {
+		forwardHeaders = make(map[string]string)
+		forwardHeaders[api.ForwardContext] = ctx.ID()
+	}
+
+	if cl.propagateAuthUser {
+		authUserCtx, ok := ctx.(auth.ContextWithAuthUser)
+		if ok {
+			authUser := authUserCtx.AuthUser()
+			if authUser != nil {
+				if forwardHeaders == nil {
+					forwardHeaders = make(map[string]string)
+				}
+				forwardHeaders[api.ForwardUserLogin] = authUser.Login()
+				forwardHeaders[api.ForwardUserDisplay] = authUser.Display()
+				forwardHeaders[api.ForwardUserId] = authUser.GetID()
+			}
+		}
+	}
+
 	// find method for operation
-	// c.Logger().Debug("find method")
 	method, ok := cl.methods[operation.AccessType()]
 	if !ok {
-		// c.Logger().Debug("method not found")
 		c.SetLoggerField("access_type", operation.AccessType())
 		genericError := generic_error.NewFromMessage("access type not supported")
 		c.SetError(genericError)
@@ -86,6 +117,9 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 				c.SetMessage("failed to make auth headers")
 				errr = err1
 			}
+			if forwardHeaders != nil {
+				utils.AppendMap(headers, forwardHeaders)
+			}
 			// invoke method with auth headers
 			resp, err = method(ctx, path, cmd, response, headers)
 			cl.auth.HandleResponse(resp)
@@ -103,9 +137,11 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 			}
 		}
 
+	} else if forwardHeaders != nil {
+		// invoke method with context auth user
+		resp, err = method(ctx, path, cmd, response, forwardHeaders)
 	} else {
 		// invoke method without auth headers
-		// c.Logger().Debug("invoke without auth")
 		resp, err = method(ctx, path, cmd, response)
 	}
 
