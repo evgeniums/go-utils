@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/user"
 	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
@@ -25,7 +26,6 @@ type MainOptions struct {
 	NoInitDb     bool   `short:"w" long:"without-database" description:"Don't initialize database"`
 	Setup        bool   `short:"s" long:"setup" description:"Use minimal application features for initial setup"`
 	DbSection    string `short:"d" long:"database-section" description:"Database section in configuration file" default:"db"`
-	InkokerName  string `short:"i" long:"invoker-name" description:"Name of the user who invoked this utility" default:"local_admin"`
 	Tenancy      string `short:"t" long:"tenancy" description:"Tenancy to invoke the command in. Can be either tenancy's ID or in the form of customer_name/role."`
 	Args         string `short:"a" long:"args" description:"Additional configuration arguments."`
 }
@@ -148,8 +148,16 @@ func (c *ConsoleUtility) InitCommandContext(group string, command string) multit
 	errManager.Init(http.StatusBadRequest)
 	opCtx.SetErrorManager(errManager)
 
+	userName := "unknown"
+	u, e := user.Current()
+	if e != nil || u == nil {
+		fmt.Printf("failed to get OS user information: %s\n", e)
+	} else {
+		userName = u.Username
+	}
+
 	origin := default_op_context.NewOrigin(c.App)
-	origin.SetUser(c.Opts.InkokerName)
+	origin.SetUser(userName)
 	origin.SetUserType("console")
 	opCtx.SetOrigin(origin)
 
