@@ -196,7 +196,7 @@ func FindPool(store PoolStore, id string) (Pool, error) {
 func SelfPoolName(store PoolStore) string {
 	selfPool, err := store.SelfPool()
 	if err != nil {
-		return selfPool.Name()
+		return ""
 	}
-	return ""
+	return selfPool.Name()
 }
