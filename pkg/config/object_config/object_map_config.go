@@ -137,7 +137,17 @@ func LoadLogStringMapPlain[T any](cfg config.Config, log logger.Logger, configPa
 }
 
 func LoadLogStringMapInt(cfg config.Config, log logger.Logger, configPath string, loggerFields ...logger.Fields) (map[string]int, error) {
-	return LoadLogStringMapPlain[int](cfg, log, configPath, loggerFields...)
+	f64, err := LoadLogStringMapPlain[float64](cfg, log, configPath, loggerFields...)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make(map[string]int)
+	for key, val := range f64 {
+		res[key] = int(val)
+	}
+
+	return res, nil
 }
 
 func LoadLogStringMapString(cfg config.Config, log logger.Logger, configPath string, loggerFields ...logger.Fields) (map[string]string, error) {
