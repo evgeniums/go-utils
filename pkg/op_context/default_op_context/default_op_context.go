@@ -354,6 +354,7 @@ func (c *ContextBase) Close(successMessage ...string) {
 				oplogWriter.Write(o)
 			}
 		}
+		c.oplogs = make([]oplog.Oplog, 0)
 	}
 
 	c.DumpLog(successMessage...)
