@@ -39,6 +39,7 @@ func NewCustomerCommands(managerBuilder ...func(app app_context.Context) user.Us
 		ManagerBuilder: utils.OptionalArg(DefaultCustomerManager, managerBuilder...),
 	}
 
+	// TODO refactor adding with field setters
 	return NewCommands(config, user_console.AddNoPassword[*customer.Customer],
 		user_console.Password[*customer.Customer],
 		user_console.Phone[*customer.Customer],
