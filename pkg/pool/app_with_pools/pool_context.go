@@ -48,3 +48,11 @@ func NewInitOpContext(app app_context.Context, log logger.Logger, db db.DB) *Con
 	t := NewOpContext(c)
 	return t
 }
+
+func ContextSelfPool(ctx Context) string {
+	app, ok := ctx.App().(AppWithPools)
+	if !ok {
+		return ""
+	}
+	return pool.SelfPoolName(app.Pools())
+}
