@@ -38,7 +38,7 @@ func logObject(log logger.Logger, configPath string, obj reflect.Value, logLevel
 
 		if field.Type.Kind() == reflect.Struct && field.Anonymous {
 			logObject(log, configPath, value.Addr(), logLevel...)
-		} else {
+		} else if field.Type.Kind() != reflect.Map {
 			keyPath := Key(configPath, field.Name)
 			formatValue := func() string {
 

@@ -153,3 +153,27 @@ func LoadLogStringMapInt(cfg config.Config, log logger.Logger, configPath string
 func LoadLogStringMapString(cfg config.Config, log logger.Logger, configPath string, loggerFields ...logger.Fields) (map[string]string, error) {
 	return LoadLogStringMapPlain[string](cfg, log, configPath, loggerFields...)
 }
+
+func LoadLogStringMapSlice[T any](cfg config.Config, log logger.Logger, configPath string, loggerFields ...logger.Fields) (map[string][]T, error) {
+
+	mapIf, err := LoadLogStringMapPlain[[]interface{}](cfg, log, configPath, loggerFields...)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make(map[string][]T)
+	for key, sl := range mapIf {
+		arr := make([]T, 0)
+		for i, valIf := range sl {
+			val, ok := valIf.(T)
+			if !ok {
+				fullKey := Key(configPath, key)
+				return nil, log.PushFatalStack("invalid value type in slice configuration", nil, logger.Fields{"key": fullKey, "index": i})
+			}
+			arr = append(arr, val)
+		}
+		res[key] = arr
+	}
+
+	return res, nil
+}
