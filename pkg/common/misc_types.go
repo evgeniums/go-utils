@@ -6,7 +6,7 @@ type WithDescription interface {
 }
 
 type WithDescriptionBase struct {
-	DESCRIPTION string `json:"description" gorm:"column:description" long:"description" description:"Additional description"`
+	DESCRIPTION string `json:"description,omitempty" gorm:"column:description" long:"description" description:"Additional description"`
 }
 
 func (d *WithDescriptionBase) Description() string {
@@ -83,7 +83,7 @@ type WithLongName interface {
 }
 
 type WithLongNameBase struct {
-	LONG_NAME string `json:"long_name"`
+	LONG_NAME string `json:"long_name,omitempty"`
 }
 
 func (t *WithLongNameBase) LongName() string {

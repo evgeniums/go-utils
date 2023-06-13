@@ -32,11 +32,11 @@ type User interface {
 // TODO Configure somewhere unique indexes for phone and login if required
 
 type UserPhone struct {
-	PHONE string `gorm:"index" json:"phone" validate:"omitempty,phone" vmessage:"Invalid phone format"`
+	PHONE string `gorm:"index" json:"phone,omitempty" validate:"omitempty,phone" vmessage:"Invalid phone format"`
 }
 
 type UserEmail struct {
-	EMAIL string `gorm:"index" json:"email" validate:"omitempty,email" vmessage:"Invalid email format"`
+	EMAIL string `gorm:"index" json:"email,omitempty" validate:"omitempty,email" vmessage:"Invalid email format"`
 }
 
 type UserBlocked struct {
