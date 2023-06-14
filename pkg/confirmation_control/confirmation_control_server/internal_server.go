@@ -1,6 +1,8 @@
 package confirmation_control_server
 
 import (
+	"errors"
+
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/pool_microservice/pool_microservice_server"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
@@ -59,6 +61,10 @@ func (s *InternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, ctx
 	err = s.PoolMicroserviceServer.Init(app, path)
 	if err != nil {
 		c.SetMessage("to init microservice server for internal server")
+		return err
+	}
+	if s.basePublicUrl == "" {
+		err = errors.New("public URL must be not empty")
 		return err
 	}
 
