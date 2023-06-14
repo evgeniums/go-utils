@@ -7,7 +7,28 @@ import (
 )
 
 type Fields = map[string]interface{}
-type Level int
+type Level uint32
+
+func (level Level) String() string {
+	switch level {
+	case TraceLevel:
+		return "trace"
+	case DebugLevel:
+		return "debug"
+	case InfoLevel:
+		return "info"
+	case WarnLevel:
+		return "warning"
+	case ErrorLevel:
+		return "error"
+	case FatalLevel:
+		return "fatal"
+	case PanicLevel:
+		return "panic"
+	}
+
+	return utils.NumToStr(level)
+}
 
 const (
 	// PanicLevel level, highest level of severity. Logs and then calls panic with the
@@ -51,6 +72,9 @@ type Logger interface {
 	CheckFatalStack(logger Logger, message ...string) bool
 
 	DumpRequests() bool
+
+	SetLevel(level Level)
+	GetLevel() Level
 }
 
 type WithLogger interface {

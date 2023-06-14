@@ -156,3 +156,11 @@ func (l *LogrusLogger) ErrorMessage(message string, fields ...logger.Fields) {
 	err := errors.New(message)
 	l.ErrorNative(err, fields...)
 }
+
+func (l *LogrusLogger) SetLevel(level logger.Level) {
+	l.logRus.SetLevel(logrus.Level(level))
+}
+
+func (l *LogrusLogger) GetLevel() logger.Level {
+	return logger.Level(l.logRus.GetLevel())
+}

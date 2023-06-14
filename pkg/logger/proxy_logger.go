@@ -88,3 +88,11 @@ func (p *ProxyLogger) CheckFatalStack(logger Logger, message ...string) bool {
 func (p *ProxyLogger) DumpRequests() bool {
 	return p.logger.DumpRequests()
 }
+
+func (p *ProxyLogger) SetLevel(level Level) {
+	p.logger.SetLevel(level)
+}
+
+func (p *ProxyLogger) GetLevel() Level {
+	return p.logger.GetLevel()
+}

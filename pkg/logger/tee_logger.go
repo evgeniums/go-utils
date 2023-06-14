@@ -124,3 +124,16 @@ func (t *TeeLogger) DumpRequests() bool {
 	}
 	return false
 }
+
+func (t *TeeLogger) SetLevel(level Level) {
+	for _, logger := range t.loggers {
+		logger.SetLevel(level)
+	}
+}
+
+func (t *TeeLogger) GetLevel() Level {
+	for _, logger := range t.loggers {
+		return logger.GetLevel()
+	}
+	return InfoLevel
+}
