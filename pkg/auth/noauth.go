@@ -27,9 +27,9 @@ func (n *NoAuthMethod) Handle(ctx AuthContext) (bool, error) {
 	defer ctx.TraceOutMethod()
 
 	user := &UserBase{}
-	user.UserId = "0"
-	user.UserDisplay = "_none_"
-	user.UserLogin = "_noauth_"
+	user.UserId = ""
+	user.UserDisplay = ""
+	user.UserLogin = ""
 	ctx.SetAuthUser(user)
 
 	return true, nil

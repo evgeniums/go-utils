@@ -27,7 +27,8 @@ type Request struct {
 	initialPath string
 	start       time.Time
 
-	clientIp string
+	clientIp    string
+	forwardedIp string
 }
 
 func (r *Request) Init(s *Server, ginCtx *gin.Context, ep api_server.Endpoint, fields ...logger.Fields) {
@@ -38,11 +39,17 @@ func (r *Request) Init(s *Server, ginCtx *gin.Context, ep api_server.Endpoint, f
 	r.RequestBase.Init(s.App(), s.App().Logger(), s.App().Db(), ep, fields...)
 	r.RequestBase.SetErrorManager(s)
 
+	r.clientIp = ginCtx.ClientIP()
 	if s.propagateContextId {
 		ctxId := ginCtx.GetHeader(api.ForwardContext)
 		if ctxId != "" {
 			r.SetID(ctxId)
 			r.SetLoggerField("context", ctxId)
+		}
+		forwardedIp := ginCtx.GetHeader(api.ForwardClientIp)
+		if forwardedIp != "" {
+			r.forwardedIp = forwardedIp
+			r.SetLoggerField("forwarded_ip", forwardedIp)
 		}
 	}
 
@@ -51,7 +58,6 @@ func (r *Request) Init(s *Server, ginCtx *gin.Context, ep api_server.Endpoint, f
 	r.response.SetRequest(r)
 
 	r.initialPath = ginCtx.Request.URL.Path
-	r.clientIp = ginCtx.ClientIP()
 }
 
 func (r *Request) Server() api_server.Server {
@@ -127,7 +133,7 @@ func (r *Request) Close(successMessage ...string) {
 				body = string(b)
 			}
 		}
-		r.Logger().Debug("Dump server HTTP response", logger.Fields{"response_header": h, "response_body": body, "server_name": r.server.Name()})
+		r.Logger().Debug("Dump server HTTP response", logger.Fields{"response_header": h, "response_body": body})
 	}
 
 	r.RequestBase.Close("")

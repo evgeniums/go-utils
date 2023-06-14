@@ -145,6 +145,7 @@ func (u *TenancyUserContext) AuthUser() User {
 
 func (u *TenancyUserContext) SetAuthUser(user User) {
 	u.User = user
+	u.SetLoggerField("user", AuthUserDisplay(u))
 }
 
 type UserContextBase struct {
@@ -168,9 +169,10 @@ func (u *UserContextBase) AuthUser() User {
 
 func (u *UserContextBase) SetAuthUser(user User) {
 	u.User = user
+	u.SetLoggerField("user", AuthUserDisplay(u))
 }
 
-func AuthUserDisplay(ctx UserContext) string {
+func AuthUserDisplay(ctx WithAuthUser) string {
 	if ctx != nil {
 		u := ctx.AuthUser()
 		if u != nil {

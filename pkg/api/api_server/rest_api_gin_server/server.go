@@ -187,13 +187,16 @@ func (s *Server) logGinRequest(log logger.Logger, path string, start time.Time, 
 	fields := logger.Fields{
 		"hostname":    s.hostname,
 		"http_code":   statusCode,
-		"latency":     latency, // time to process
+		"latency":     latency,
 		"client_ip":   clientIP,
 		"method":      ginCtx.Request.Method,
 		"path":        path,
-		"referer":     referer,
 		"data_length": dataLength,
 		"user_agent":  clientUserAgent,
+		"server_name": s.Name(),
+	}
+	if referer != "" {
+		fields["referer"] = referer
 	}
 	logger.AppendFields(fields, extraFields...)
 
@@ -308,7 +311,7 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, tenancyManager mu
 		}
 		s.SetName(name)
 	}
-	s.logPrefix = fmt.Sprintf("HTTP request to %s", name)
+	s.logPrefix = "Served HTTP"
 
 	// done
 	return nil
@@ -341,7 +344,8 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		// create and init request
 		request := &Request{}
 		request.Init(s, ginCtx, ep)
-		request.SetName(ep.Name())
+		epName := ep.Name()
+		request.SetName(epName)
 
 		c := request.TraceInMethod("Server.RequestHandler")
 
@@ -349,7 +353,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		if s.VERBOSE {
 			dumpBody := ginCtx.Request.ContentLength > 0 && int(ginCtx.Request.ContentLength) <= s.VERBOSE_BODY_MAX_LENGTH
 			b, _ := httputil.DumpRequest(ginCtx.Request, dumpBody)
-			c.Logger().Debug("Dump server HTTP request", logger.Fields{"request": string(b), "server_name": s.Name()})
+			c.Logger().Debug("Dump server HTTP request", logger.Fields{"request": string(b)})
 		}
 
 		// extract tenancy if applicable
@@ -399,23 +403,34 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 				request.SetGenericErrorCode(auth.ErrorCodeUnauthorized)
 			}
 		}
-		if request.AuthUser() == nil {
-			if s.propagateAuthUser {
-				userId := ginCtx.GetHeader(api.ForwardUserId)
-				userLogin := ginCtx.GetHeader(api.ForwardUserLogin)
-				userDisplay := ginCtx.GetHeader(api.ForwardUserDisplay)
-				if userId != "" || userLogin != "" || userDisplay != "" {
-					authUser := auth.NewAuthUser(userId, userLogin, userDisplay)
-					request.SetAuthUser(authUser)
-				}
+		if s.propagateAuthUser && (request.AuthUser() == nil || request.AuthUser().GetID() == "") {
+			userId := ginCtx.GetHeader(api.ForwardUserId)
+			userLogin := ginCtx.GetHeader(api.ForwardUserLogin)
+			userDisplay := ginCtx.GetHeader(api.ForwardUserDisplay)
+			if userId != "" || userLogin != "" || userDisplay != "" {
+				authUser := auth.NewAuthUser(userId, userLogin, userDisplay)
+				request.SetAuthUser(authUser)
+			}
+			sessionClient := ginCtx.GetHeader(api.ForwardSessionClient)
+			if sessionClient != "" {
+				request.SetClientId(sessionClient)
 			}
 		}
 
 		origin := default_op_context.NewOrigin(s.App())
-		if request.AuthUser() != nil {
-			origin.SetUser(request.AuthUser().Display())
+		if origin.Name() != "" {
+			origin.SetName(utils.ConcatStrings(origin.Name(), "/", s.Name()))
+		} else {
+			origin.SetName(s.Name())
 		}
-		origin.SetSource(ginCtx.ClientIP())
+		if request.AuthUser() != nil {
+			origin.SetUser(auth.AuthUserDisplay(request))
+		}
+		originIp := request.clientIp
+		if request.forwardedIp != "" {
+			originIp = request.forwardedIp
+		}
+		origin.SetSource(originIp)
 		origin.SetSessionClient(request.GetClientId())
 		origin.SetUserType(s.OPLOG_USER_TYPE)
 		request.SetOrigin(origin)

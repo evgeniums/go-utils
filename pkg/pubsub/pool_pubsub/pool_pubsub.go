@@ -181,7 +181,7 @@ func (p *PoolPubsubBase) PublishPools(topicName string, msg interface{}, poolIds
 
 func (p *PoolPubsubBase) SubscribeSelfPool(ctx op_context.Context, topic pubsub_subscriber.Topic) (string, error) {
 
-	c := ctx.TraceInMethod("PoolPubsub.SubscribeSelfPool", logger.Fields{"topic": topic.Name(), "app": ctx.App().AppInstance()})
+	c := ctx.TraceInMethod("PoolPubsub.SubscribeSelfPool", logger.Fields{"topic": topic.Name(), "app": ctx.App().Application(), "app_instance": ctx.App().AppInstance()})
 	defer ctx.TraceOutMethod()
 
 	if p.selfPoolSubscriber == nil {
@@ -204,7 +204,7 @@ func (p *PoolPubsubBase) UnsubscribeSelfPool(topicName string) {
 
 func (p *PoolPubsubBase) SubscribePools(ctx op_context.Context, topic pubsub_subscriber.Topic, poolIds ...string) (map[string]string, error) {
 
-	c := ctx.TraceInMethod("PoolPubsub.SubscribePools", logger.Fields{"topic": topic.Name(), "app": ctx.App().AppInstance()})
+	c := ctx.TraceInMethod("PoolPubsub.SubscribePools", logger.Fields{"topic": topic.Name(), "app": ctx.App().Application(), "app_instance": ctx.App().AppInstance()})
 	defer ctx.TraceOutMethod()
 
 	poolSubscriptions := make(map[string]string)
