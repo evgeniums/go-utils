@@ -169,3 +169,21 @@ func (u *UserContextBase) AuthUser() User {
 func (u *UserContextBase) SetAuthUser(user User) {
 	u.User = user
 }
+
+func AuthUserDisplay(ctx UserContext) string {
+	if ctx != nil {
+		u := ctx.AuthUser()
+		if u != nil {
+			if u.Display() != "" {
+				return u.Display()
+			}
+			if u.Login() != "" {
+				return u.Login()
+			}
+			if u.GetID() != "" {
+				return u.GetID()
+			}
+		}
+	}
+	return ""
+}
