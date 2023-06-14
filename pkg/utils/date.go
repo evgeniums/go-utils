@@ -150,7 +150,7 @@ func Yesterday() Date {
 
 func DateOfTime(t time.Time) Date {
 	var d Date
-	d.SetTime(BeginningOfDay(t))
+	d.SetTime(t)
 	return d
 }
 
