@@ -438,12 +438,12 @@ func (c *ContextBase) SetOrigin(o op_context.Origin) {
 }
 
 type OriginHolder struct {
-	App           string
-	Name          string
-	Source        string
-	SessionClient string
-	User          string
-	UserType      string
+	App           string `json:"origin_app" gorm:"index;column:origin_app"`
+	Name          string `json:"origin_name" gorm:"index;column:origin_name"`
+	Source        string `json:"origin_source" gorm:"index;column:origin_source"`
+	SessionClient string `json:"origin_session_client" gorm:"index;column:origin_session_client"`
+	User          string `json:"origin_user" gorm:"index;column:origin_user"`
+	UserType      string `json:"origin_user_type" gorm:"index;column:origin_user_type"`
 }
 
 type Origin struct {
@@ -504,6 +504,18 @@ func (o *Origin) SetUserType(val string) {
 
 func (o *Origin) UserType() string {
 	return o.OriginHolder.UserType
+}
+
+func (o *Origin) CopyOrigin(other op_context.Origin) {
+	if other == nil {
+		return
+	}
+	o.SetApp(other.App())
+	o.SetName(other.Name())
+	o.SetSessionClient(other.SessionClient())
+	o.SetSource(other.Source())
+	o.SetUser(other.User())
+	o.SetUserType(other.UserType())
 }
 
 func BackgroundOpContext(app app_context.Context, name string) *ContextBase {
