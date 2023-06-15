@@ -92,7 +92,6 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 
 	// only unauthorized errors can be processed
 	if lastResp.Code() != http.StatusUnauthorized {
-		c.SetMessage("last HTTP status is unauthorized")
 		err = errors.New(lastResp.Error().Message)
 		return lastResp, err
 	}
@@ -137,10 +136,11 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 			err = errors.New("nil login response")
 			return nil, err
 		}
+		ctx.ClearError()
+
 		a.handlers.SaveRefreshToken(ctx, a.client.RefreshToken)
 		resp, err = a.resend(ctx, send, utils.Min(resendTries, 1))
 		if err != nil {
-			c.SetMessage("failed to resend after relogin")
 			return resp, err
 		}
 		return resp, nil
