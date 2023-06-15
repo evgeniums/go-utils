@@ -3,6 +3,8 @@ package db
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
@@ -263,9 +265,15 @@ func ParseQuery(db DB, query string, model interface{}, parserName string, valid
 	}
 
 	q := &Query{}
-	err := json.Unmarshal([]byte(query), q)
-	if err != nil {
-		return nil, err
+
+	dec := json.NewDecoder(strings.NewReader(query))
+	dec.DisallowUnknownFields()
+	for {
+		if err := dec.Decode(q); err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, err
+		}
 	}
 
 	return db.ParseFilterDirect(q, model, parserName, validator...)
