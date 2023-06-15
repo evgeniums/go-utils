@@ -60,6 +60,12 @@ func (d *ModelDescriptor) ParseFields() error {
 		}
 		if fd.Json == "" {
 			fd.Json = field.DBName
+		} else {
+			parts := strings.Split(fd.Json, ",")
+			if len(parts) == 2 {
+				// remove "omitempty" property
+				fd.Json = parts[0]
+			}
 		}
 		fd.FullDbName = field.Tag.Get("source")
 		if fd.FullDbName == "" {
