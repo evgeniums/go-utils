@@ -117,7 +117,7 @@ func (w *WithDBBase) Init(db DB) {
 func Update(db DBHandlers, ctx logger.WithLogger, obj common.Object, fields Fields) error {
 	f := utils.CopyMap(fields)
 	f["updated_at"] = time.Now()
-	return db.Update(ctx, obj, Fields{"id": obj.GetID()}, f)
+	return db.Update(ctx, obj, nil, f)
 }
 
 func UpdateMulti(db DBHandlers, ctx logger.WithLogger, obj interface{}, filter Fields, fields Fields) error {
