@@ -120,7 +120,6 @@ func (r *Request) Close(successMessage ...string) {
 
 		if !redirect {
 			r.ginCtx.JSON(code, reponseBody)
-
 		}
 	}
 
