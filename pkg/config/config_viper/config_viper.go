@@ -244,6 +244,9 @@ func (c *ConfigViper) LoadFile(configFile string, configType ...string) error {
 	// load includes
 	includes := c.Viper.GetStringSlice("include")
 	for _, include := range includes {
+
+		// TODO support nested includes
+
 		path, err := MakeIncludePath(configFile, include)
 		if err != nil {
 			return err
