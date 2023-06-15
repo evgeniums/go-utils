@@ -346,6 +346,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		request.Init(s, ginCtx, ep)
 		epName := ep.Name()
 		request.SetName(epName)
+		request.SetLoggerField("endpoint", ep.Resource().ServicePathPrototype())
 
 		c := request.TraceInMethod("Server.RequestHandler")
 
