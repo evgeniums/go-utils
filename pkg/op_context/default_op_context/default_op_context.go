@@ -315,7 +315,6 @@ func (c *ContextBase) DumpLog(successMessage ...string) {
 			loggerFields["error"] = err
 			deepestLogger.Warn(msg, loggerFields)
 		}
-		// c.stack = []op_context.CallContext{}
 	} else {
 		// log success
 		if c.writeCloseLog {
