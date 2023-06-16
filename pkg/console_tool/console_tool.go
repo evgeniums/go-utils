@@ -169,6 +169,14 @@ func (c *ConsoleUtility) InitCommandContext(group string, command string) multit
 		opCtx.SetTenancy(tenancy)
 	}
 
+	c.App.Logger().Info("Console command context", logger.Fields{"user": userName,
+		"app":          origin.App,
+		"app_instance": origin.Name,
+		"source":       origin.Source,
+		"name":         opCtx.Name(),
+		"context":      opCtx.ID(),
+	})
+
 	return opCtx
 }
 
