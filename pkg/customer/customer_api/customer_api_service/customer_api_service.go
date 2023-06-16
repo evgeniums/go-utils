@@ -22,11 +22,10 @@ func NewService[T customer.User](users user.Users[T], userTypeName ...string) *S
 func NewServiceExtended[T customer.User](users user.Users[T], setterBuilder func() user.UserFieldsSetter[T], userTypeName ...string) *Service[T] {
 
 	c := &Service[T]{}
-	c.Users = users
 	c.UserService = user_service.NewUserService(users,
 		setterBuilder,
 		utils.OptionalArg("customer", userTypeName...))
-
+	c.Users = users
 	c.UserService.UserResource().AddChildren(SetName(c), SetDescription(c))
 
 	return c
