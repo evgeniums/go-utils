@@ -485,7 +485,7 @@ func (s *Server) AddEndpoint(ep api_server.Endpoint, withMultitenancy ...bool) {
 }
 
 func (s *Server) MakeResponseError(gerr generic_error.Error) (int, *api.ResponseError) {
-	err := &api.ResponseError{Code: gerr.Code(), Message: gerr.Message(), Details: gerr.Details()}
+	err := &api.ResponseError{Code: gerr.Code(), Message: gerr.Message(), Details: gerr.Details(), Data: gerr.Data()}
 	code := s.ErrorProtocolCode(gerr.Code())
 	return code, err
 }

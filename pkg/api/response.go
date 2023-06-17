@@ -11,10 +11,12 @@ const (
 	TargetChild  = "parent"
 )
 
+// TODO alias to generic error
 type ResponseError struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-	Details string `json:"details"`
+	Code    string      `json:"code"`
+	Message string      `json:"message"`
+	Details string      `json:"details"`
+	Data    interface{} `json:"data,omitempty"`
 }
 
 func ResponseGenericError(responseError *ResponseError) generic_error.Error {
@@ -23,6 +25,7 @@ func ResponseGenericError(responseError *ResponseError) generic_error.Error {
 	}
 	e := generic_error.New(responseError.Code, responseError.Message)
 	e.SetDetails(responseError.Details)
+	e.SetData(responseError.Data)
 	return e
 }
 

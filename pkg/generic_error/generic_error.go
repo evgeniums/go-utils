@@ -13,24 +13,32 @@ type Error interface {
 	Message() string
 	Details() string
 	Original() error
+	Data() interface{}
 
 	SetMessage(msg string)
 	SetDetails(details string)
 	SetOriginal(err error)
+
+	SetData(data interface{})
+}
+
+type ErrorHolder struct {
+	Code     string      `json:"code"`
+	Message  string      `json:"message"`
+	Details  string      `json:"details,omitempty"`
+	Original error       `json:"-"`
+	Data     interface{} `json:"data"`
 }
 
 type ErrorBase struct {
-	code     string
-	message  string
-	details  string
-	original error
+	ErrorHolder
 }
 
 // Create new error from code and message.
 func New(code string, message ...string) *ErrorBase {
-	e := &ErrorBase{code: code}
+	e := &ErrorBase{ErrorHolder{Code: code}}
 	if len(message) > 0 {
-		e.message = message[0]
+		e.ErrorHolder.Message = message[0]
 	}
 	return e
 }
@@ -42,57 +50,57 @@ func NewFromErr(err error, code ...string) *ErrorBase {
 
 // Create new error from code, message and some other "original error" with keeping native error.
 func NewFromOriginal(code string, message string, original error) *ErrorBase {
-	e := &ErrorBase{code: code, message: message, original: original}
+	e := &ErrorBase{ErrorHolder{Code: code, Message: message, Original: original}}
 	return e
 }
 
 // Create new error from message.
 func NewFromMessage(message string) *ErrorBase {
-	e := &ErrorBase{code: ErrorCodeUnknown, message: message}
+	e := &ErrorBase{ErrorHolder{Code: ErrorCodeUnknown, Message: message}}
 	return e
 }
 
 // Convert error to string for error interface.
 func (e *ErrorBase) Error() string {
-	if e.original != nil {
-		return fmt.Sprintf("%s: %s", e.message, e.original)
+	if e.ErrorHolder.Original != nil {
+		return fmt.Sprintf("%s: %s", e.ErrorHolder.Message, e.ErrorHolder.Original)
 	}
-	return e.message
+	return e.ErrorHolder.Message
 }
 
 // Get error code.
 func (e *ErrorBase) Code() string {
-	return e.code
+	return e.ErrorHolder.Code
 }
 
 // Convert error message.
 func (e *ErrorBase) Message() string {
-	return e.message
+	return e.ErrorHolder.Message
 }
 
 // Set error message.
 func (e *ErrorBase) SetMessage(message string) {
-	e.message = message
+	e.ErrorHolder.Message = message
 }
 
 // Get error details.
 func (e *ErrorBase) Details() string {
-	return e.details
+	return e.ErrorHolder.Details
 }
 
 // Set error details.
 func (e *ErrorBase) SetDetails(details string) {
-	e.details = details
+	e.ErrorHolder.Details = details
 }
 
 // Get original error.
 func (e *ErrorBase) Original() error {
-	return e.original
+	return e.ErrorHolder.Original
 }
 
 // Set original error.
 func (e *ErrorBase) SetOriginal(err error) {
-	e.original = err
+	e.ErrorHolder.Original = err
 }
 
 // Extract code from the error. If error is not of Error type then code is unknown_error.
@@ -141,4 +149,14 @@ func Original(e error) error {
 		return err
 	}
 	return err.Original()
+}
+
+// Set error data.
+func (e *ErrorBase) SetData(data interface{}) {
+	e.ErrorHolder.Data = data
+}
+
+// Get error data.
+func (e *ErrorBase) Data() interface{} {
+	return e.ErrorHolder.Data
 }

@@ -23,6 +23,15 @@ func CheckGenericError(t *testing.T, err error, expectedCode string, expectedMes
 	}
 }
 
+func DumpError(t *testing.T, err error, message ...string) {
+	gErr, ok := err.(generic_error.Error)
+	if ok {
+		DumpObject(t, gErr, message...)
+	} else {
+		t.Logf("%s: %s", utils.OptionalArg("Error", message...), err)
+	}
+}
+
 func ObjectEqual(t *testing.T, left common.Object, right common.Object) {
 	if left.GetCreatedAt().Equal(right.GetCreatedAt()) {
 		right.SetCreatedAt(left.GetCreatedAt())
