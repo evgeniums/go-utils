@@ -160,3 +160,14 @@ func (e *ErrorBase) SetData(data interface{}) {
 func (e *ErrorBase) Data() interface{} {
 	return e.ErrorHolder.Data
 }
+
+func MapErrorData(e Error, obj interface{}) error {
+	respMap, ok := e.Data().(map[string]interface{})
+	if ok {
+		err := utils.MapToStruct(respMap, obj)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
