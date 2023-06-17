@@ -24,6 +24,8 @@ type PoolMicroserviceClientConfig struct {
 type PoolMicroserviceClient struct {
 	PoolMicroserviceClientConfig
 	PoolServiceClient
+
+	overridePoolName string
 }
 
 func NewPoolMicroserviceClient(defaultRole string, client ...PoolServiceClient) *PoolMicroserviceClient {
@@ -46,6 +48,10 @@ func AppUserAgent(app app_context.Context) string {
 	return userAgent
 }
 
+func (p *PoolMicroserviceClient) SetOverridePool(poolName string) {
+	p.overridePoolName = poolName
+}
+
 func (p *PoolMicroserviceClient) Init(app app_with_pools.AppWithPools, configPath ...string) error {
 
 	// load config
@@ -54,14 +60,22 @@ func (p *PoolMicroserviceClient) Init(app app_with_pools.AppWithPools, configPat
 		return app.Logger().PushFatalStack("failed to load configuration of microservice api client", err)
 	}
 
-	// check if app with self pool
-	selfPool, err := app.Pools().SelfPool()
-	if err != nil {
-		return app.Logger().PushFatalStack("self pool must be specified for microservice api client", err)
+	// find pool
+	var poool pool.Pool
+	if p.overridePoolName != "" {
+		poool, err = app.Pools().PoolByName(p.overridePoolName)
+		if err != nil {
+			return app.Logger().PushFatalStack("pool not found for microservice api client", err, logger.Fields{"pool": p.overridePoolName})
+		}
+	} else {
+		poool, err = app.Pools().SelfPool()
+		if err != nil {
+			return app.Logger().PushFatalStack("self pool must be specified for microservice api client", err)
+		}
 	}
 
 	// find service for role
-	service, err := selfPool.Service(p.POOL_SERVICE_ROLE)
+	service, err := poool.Service(p.POOL_SERVICE_ROLE)
 	if err != nil {
 		return app.Logger().PushFatalStack("failed to find service with specified role", err, logger.Fields{"role": p.POOL_SERVICE_ROLE})
 	}
