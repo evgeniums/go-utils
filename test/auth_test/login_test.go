@@ -27,6 +27,16 @@ func initOpTest(t *testing.T, config ...string) (app_context.Context, *user_sess
 	return app, users, server, ctx
 }
 
+func TestPHash(t *testing.T) {
+
+	password := "khjliuhsd"
+	salt := "aitldk"
+
+	result := auth_login_phash.Phash(password, salt)
+	t.Logf("Result: %s", result)
+
+}
+
 func TestLogin(t *testing.T) {
 	app, users, server, opCtx := initOpTest(t)
 	defer app.Close()
