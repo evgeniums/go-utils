@@ -74,7 +74,7 @@ func (d *DynamicTablesGorm) Table(request api_server.Request, path string) (*api
 		}
 
 		// fill field's enum list
-		if field.EnumGetter != nil {
+		if len(field.Enum) == 0 && field.EnumGetter != nil {
 			enum, err := field.EnumGetter(request)
 			if err != nil {
 				c.Logger().Warn("failed to translate field", db.Fields{"field": field.Field})
@@ -165,6 +165,9 @@ func (d *DynamicTablesGorm) AddTable(table *api_server.DynamicTableConfig) error
 
 		// set type
 		tableField.Type = string(field.DataType)
+
+		// set enum
+		tableField.Enum = table.Enums[tableField.Field]
 
 		// set enum getter
 		tableField.EnumGetter = table.EnumGetters[tableField.Field]

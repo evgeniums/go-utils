@@ -7,6 +7,24 @@ type EnumEntry struct {
 	Display string `json:"display"`
 }
 
+type FieldEnums = map[string][]*EnumEntry
+
+func EnumMap(enumMap map[string]string) []*EnumEntry {
+	enums := make([]*EnumEntry, 0, len(enumMap))
+	for value, display := range enumMap {
+		enums = append(enums, &EnumEntry{value, display})
+	}
+	return enums
+}
+
+func EnumList(enumList []string) []*EnumEntry {
+	enums := make([]*EnumEntry, 0, len(enumList))
+	for _, value := range enumList {
+		enums = append(enums, &EnumEntry{value, value})
+	}
+	return enums
+}
+
 type EnumGetter func(request Request) ([]*EnumEntry, error)
 
 type DynamicTableField struct {
@@ -37,6 +55,7 @@ type DynamicTableConfig struct {
 	DefaultSortField     string
 	DefaultSortDirection string
 	EnumGetters          map[string]EnumGetter
+	Enums                FieldEnums
 }
 
 type DynamicFieldTranslator interface {
