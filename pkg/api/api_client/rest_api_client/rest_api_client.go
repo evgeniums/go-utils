@@ -124,7 +124,7 @@ func (r *RestApiClientBase) Login(ctx op_context.Context, user string, password 
 	}
 	if resp.Code() != http.StatusOK {
 		err = errors.New("login failed")
-		c.SetLoggerField("error_code", resp.Error().Code)
+		c.SetLoggerField("error_code", resp.Error().Code())
 		return resp, err
 	}
 
@@ -272,7 +272,7 @@ func (r *RestApiClientBase) UpdateCsrfToken(ctx op_context.Context) (Response, e
 	}
 	if resp.Code() != http.StatusOK {
 		err = errors.New("failed to update CSRF")
-		c.SetLoggerField("error_code", resp.Error().Code)
+		c.SetLoggerField("error_code", resp.Error().Code())
 		return resp, err
 	}
 	return resp, nil
@@ -311,7 +311,7 @@ func (r *RestApiClientBase) RequestRefreshToken(ctx op_context.Context) (Respons
 	}
 	if resp.Code() != http.StatusOK {
 		err = errors.New("failed to refresh token")
-		c.SetLoggerField("error_code", resp.Error().Code)
+		c.SetLoggerField("error_code", resp.Error().Code())
 		return resp, err
 	}
 	return resp, nil

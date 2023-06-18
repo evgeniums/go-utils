@@ -229,7 +229,7 @@ func (s *Server) ginDefaultLogger() gin.HandlerFunc {
 			return
 		}
 
-		s.logGinRequest(s.App().Logger(), path, start, ginCtx, logger.Fields{"status": s.notFoundError.Code})
+		s.logGinRequest(s.App().Logger(), path, start, ginCtx, logger.Fields{"status": s.notFoundError.Code()})
 	}
 }
 

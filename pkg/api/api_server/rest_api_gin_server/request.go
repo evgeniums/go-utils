@@ -116,7 +116,7 @@ func (r *Request) Close(successMessage ...string) {
 			r.SetErrorAsWarn(true)
 		}
 		reponseBody = err
-		r.SetLoggerField("status", err.Code)
+		r.SetLoggerField("status", err.Code())
 
 		if !redirect {
 			r.ginCtx.JSON(code, reponseBody)
