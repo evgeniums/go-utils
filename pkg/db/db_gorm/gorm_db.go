@@ -194,7 +194,7 @@ func (g *GormDB) FindByField(ctx logger.WithLogger, field string, value interfac
 	found, err := FindByField(g.db_(), field, value, obj, dest...)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to FindByField %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"field": field, "value": value, "error": err})
+		ctx.Logger().Error("GormDB", e, logger.Fields{"field": field, "value": value, "error": err.Error()})
 	}
 	return found, err
 }
@@ -203,7 +203,7 @@ func (g *GormDB) FindByFields(ctx logger.WithLogger, fields db.Fields, obj inter
 	found, err := FindByFields(g.db_(), fields, obj, dest...)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to FindByFields %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
+		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err.Error()})
 	}
 	return found, err
 }
@@ -212,7 +212,7 @@ func (g *GormDB) FindForUpdate(ctx logger.WithLogger, fields db.Fields, obj inte
 	found, err := FindForUpdate(g.db_(), fields, obj)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to FindForUpdate %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
+		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err.Error()})
 	}
 	return found, err
 }
@@ -221,7 +221,7 @@ func (g *GormDB) FindForShare(ctx logger.WithLogger, fields db.Fields, obj inter
 	found, err := FindForUpdate(g.db_(), fields, obj)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to FindForShare %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
+		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err.Error()})
 	}
 	return found, err
 }
@@ -233,7 +233,7 @@ func (g *GormDB) RowsByFields(ctx logger.WithLogger, fields db.Fields, obj inter
 	rows, err := RowsByFields(g.db_(), fields, obj)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to RowsByFields %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
+		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err.Error()})
 	}
 	cursor.rows = rows
 	cursor.sql = rows
@@ -248,7 +248,7 @@ func (g *GormDB) AllRows(ctx logger.WithLogger, obj interface{}) (db.Cursor, err
 	rows, err := AllRows(g.db_(), obj)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to AllRows %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+		ctx.Logger().Error("GormDB", e, logger.FieldsWithError(err))
 	}
 	cursor.rows = rows
 	cursor.sql = rows
@@ -274,7 +274,7 @@ func (g *GormDB) CreateDup(ctx logger.WithLogger, obj interface{}, ignoreConflic
 	duplicate, err := g.dbConnector.CheckDuplicateKeyError(g.DB_PROVIDER, result)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to Create %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+		ctx.Logger().Error("GormDB", e, logger.FieldsWithError(err))
 	}
 	return duplicate, err
 }
@@ -283,7 +283,7 @@ func (g *GormDB) DeleteByField(ctx logger.WithLogger, field string, value interf
 	err := DeleteByField(g.db_(), field, value, model)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to DeleteByField %v", ObjectTypeName(model))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"field": field, "value": value, "error": err})
+		ctx.Logger().Error("GormDB", e, logger.Fields{"field": field, "value": value, "error": err.Error()})
 	}
 	return err
 }
@@ -292,7 +292,7 @@ func (g *GormDB) Delete(ctx logger.WithLogger, obj common.Object) error {
 	err := Delete(g.db_(), obj)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to Delete %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"id": obj.GetID(), "error": err})
+		ctx.Logger().Error("GormDB", e, logger.Fields{"id": obj.GetID(), "error": err.Error()})
 	}
 	return err
 }
@@ -301,7 +301,7 @@ func (g *GormDB) DeleteByFields(ctx logger.WithLogger, fields db.Fields, obj int
 	err := DeleteAllByFields(g.db_(), fields, obj)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to DeleteByFields %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err})
+		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err.Error()})
 	}
 	return err
 }
@@ -324,7 +324,7 @@ func (g *GormDB) RowsWithFilter(ctx logger.WithLogger, filter *Filter, obj inter
 	rows, err := RowsWithFilter(g.db_(), filter, g.paginator, obj)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to RowsWithFilter %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+		ctx.Logger().Error("GormDB", e, logger.FieldsWithError(err))
 	}
 	cursor.rows = rows
 	cursor.sql = rows
@@ -336,7 +336,7 @@ func (g *GormDB) FindWithFilter(ctx logger.WithLogger, filter *Filter, obj inter
 	count, err := FindWithFilter(g.db_(), filter, g.paginator, obj, dest...)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to FindWithFilter %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+		ctx.Logger().Error("GormDB", e, logger.FieldsWithError(err))
 	}
 	return count, err
 }
@@ -345,7 +345,7 @@ func (g *GormDB) Update(ctx logger.WithLogger, obj interface{}, filter db.Fields
 	err := UpdateFielsdMulti(g.db_(), filter, obj, newFields)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to UpdateFieldsWithFilter %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+		ctx.Logger().Error("GormDB", e, logger.FieldsWithError(err))
 	}
 	return err
 }
@@ -354,7 +354,7 @@ func (g *GormDB) UpdateWithFilter(ctx logger.WithLogger, obj interface{}, filter
 	err := UpdateWithFilter(g.db_(), filter, obj, newFields)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to UpdateWithFilter %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+		ctx.Logger().Error("GormDB", e, logger.FieldsWithError(err))
 	}
 	return err
 }
@@ -363,7 +363,7 @@ func (g *GormDB) UpdateAll(ctx logger.WithLogger, obj interface{}, newFields db.
 	err := UpdateFieldsAll(g.db_(), obj, newFields)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to UpdateAll %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+		ctx.Logger().Error("GormDB", e, logger.FieldsWithError(err))
 	}
 	return err
 }
@@ -372,7 +372,7 @@ func (g *GormDB) Exists(ctx logger.WithLogger, filter *Filter, obj interface{}) 
 	exists, err := Exists(g.db_(), filter, obj)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to Exists %v", ObjectTypeName(obj))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+		ctx.Logger().Error("GormDB", e, logger.FieldsWithError(err))
 	}
 	return exists, err
 }
@@ -381,7 +381,7 @@ func (g *GormDB) CreateDatabase(ctx logger.WithLogger, dbName string) error {
 	err := g.dbConnector.DbCreator(g.DB_PROVIDER, g.db_(), dbName)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to CreateDatabase %v", dbName)
-		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+		ctx.Logger().Error("GormDB", e, logger.FieldsWithError(err))
 	}
 	return err
 }
@@ -394,7 +394,7 @@ func (g *GormDB) Sum(ctx logger.WithLogger, groupFields []string, sumFields []st
 	count, err := Sum(g.db_(), g.paginator, groupFields, sumFields, filter, model, dest...)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to Sum %v", ObjectTypeName(model))
-		ctx.Logger().Error("GormDB", e, logger.Fields{"error": err})
+		ctx.Logger().Error("GormDB", e, logger.FieldsWithError(err))
 	}
 	return count, err
 }

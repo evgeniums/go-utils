@@ -312,7 +312,7 @@ func (c *ContextBase) DumpLog(successMessage ...string) {
 		if !c.errorAsWarn {
 			deepestLogger.Error(msg, err, loggerFields)
 		} else {
-			loggerFields["error"] = err
+			loggerFields["error"] = err.Error()
 			deepestLogger.Warn(msg, loggerFields)
 		}
 	} else {

@@ -7,6 +7,17 @@ import (
 )
 
 type Fields = map[string]interface{}
+
+func FieldsWithError(err error, f ...Fields) Fields {
+	ff := utils.OptionalArg(Fields{}, f...)
+	if err != nil {
+		ff["error"] = err.Error()
+	} else {
+		ff["error"] = ""
+	}
+	return ff
+}
+
 type Level uint32
 
 func (level Level) String() string {

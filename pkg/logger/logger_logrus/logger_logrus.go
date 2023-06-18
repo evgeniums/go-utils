@@ -148,7 +148,7 @@ func (l *LogrusLogger) Native() interface{} {
 }
 
 func (l *LogrusLogger) ErrorNative(err error, fields ...logger.Fields) {
-	f := logger.AppendFieldsNew(logger.Fields{"error": err}, fields...)
+	f := logger.AppendFieldsNew(logger.FieldsWithError(err), fields...)
 	l.logRus.WithFields(f).Error()
 }
 

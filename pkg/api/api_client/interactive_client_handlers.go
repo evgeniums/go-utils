@@ -10,7 +10,7 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
-	"github.com/evgeniums/go-backend-helpers/pkg/db"
+	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"golang.org/x/term"
 )
@@ -48,14 +48,14 @@ func (e *InteractiveClientHandlers) GetRefreshToken() string {
 
 	content, err := os.ReadFile(e.TOKEN_FILE_NAME)
 	if err != nil || content == nil {
-		e.App().Logger().Warn("failed to read refresh token from file", db.Fields{"error": err})
+		e.App().Logger().Warn("failed to read refresh token from file", logger.FieldsWithError(err))
 		return ""
 	}
 
 	tokenKeeper := &TokenKeeper{}
 	err = json.Unmarshal(content, tokenKeeper)
 	if err != nil {
-		e.App().Logger().Warn("failed to unarshal refresh token from file", db.Fields{"error": err})
+		e.App().Logger().Warn("failed to unmarshal refresh token from file", logger.FieldsWithError(err))
 		return ""
 	}
 
