@@ -152,7 +152,7 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 	// process generic error
 	if resp != nil {
 		// c.Logger().Debug("resp not nil")
-		genericError := api.ResponseGenericError(resp.Error())
+		genericError := resp.Error()
 		if genericError != nil {
 			// c.Logger().Debug("resp is generic error")
 			c.SetLoggerField("response_code", genericError.Code())

@@ -75,7 +75,7 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 	}
 
 	// refresh CSRF token
-	if lastResp.Code() == http.StatusForbidden && auth_csrf.IsCsrfError(lastResp.Error().Code) {
+	if lastResp.Code() == http.StatusForbidden && auth_csrf.IsCsrfError(lastResp.Error().Code()) {
 		resp, err := a.client.UpdateCsrfToken(ctx)
 		if !IsResponseOK(resp, err) {
 			c.SetMessage("failed to update CSRF")
@@ -92,18 +92,18 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 
 	// only unauthorized errors can be processed
 	if lastResp.Code() != http.StatusUnauthorized {
-		err = errors.New(lastResp.Error().Message)
+		err = errors.New(lastResp.Error().Message())
 		return lastResp, err
 	}
 
 	// login
-	if a.client.RefreshToken == "" || auth_token.ReloginRequired(lastResp.Error().Code) || lastResp.Error().Code == auth_login_phash.ErrorCodeLoginFailed {
+	if a.client.RefreshToken == "" || auth_token.ReloginRequired(lastResp.Error().Code()) || lastResp.Error().Code() == auth_login_phash.ErrorCodeLoginFailed {
 
 		a.mutex.RLock()
 		inLogin := a.inLogin
 		a.mutex.RUnlock()
 		if inLogin {
-			err = errors.New(lastResp.Error().Message)
+			err = errors.New(lastResp.Error().Message())
 			c.SetMessage("failed when in login")
 			return lastResp, err
 		}
@@ -147,13 +147,13 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 	}
 
 	// refresh token
-	if a.client.AccessToken == "" || auth_token.RefreshRequired(lastResp.Error().Code) {
+	if a.client.AccessToken == "" || auth_token.RefreshRequired(lastResp.Error().Code()) {
 
 		a.mutex.RLock()
 		inLogin := a.inLogin
 		a.mutex.RUnlock()
 		if inLogin {
-			err = errors.New(lastResp.Error().Message)
+			err = errors.New(lastResp.Error().Message())
 			c.SetMessage("failed when in login")
 			return lastResp, err
 		}

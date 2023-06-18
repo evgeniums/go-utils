@@ -65,7 +65,7 @@ type Server struct {
 	configPoolService pool.PoolService
 
 	ginEngine     *gin.Engine
-	notFoundError *api.ResponseError
+	notFoundError generic_error.Error
 	hostname      string
 
 	authParamsGetters map[string]AuthParameterGetter
@@ -300,7 +300,8 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, tenancyManager mu
 	s.ginEngine.Use(s.ginDefaultLogger(), gin.Recovery())
 
 	// set noroute
-	s.notFoundError = &api.ResponseError{Code: "not_found", Message: "Requested resource was not found."}
+	e := generic_error.New("not_found", "Requested resource was not found")
+	s.notFoundError = e
 	s.ginEngine.NoRoute(s.NoRoute())
 
 	name := s.Name()
@@ -484,10 +485,9 @@ func (s *Server) AddEndpoint(ep api_server.Endpoint, withMultitenancy ...bool) {
 	s.ginEngine.Handle(method, path, requestHandler(s, ep))
 }
 
-func (s *Server) MakeResponseError(gerr generic_error.Error) (int, *api.ResponseError) {
-	err := &api.ResponseError{Code: gerr.Code(), Message: gerr.Message(), Details: gerr.Details(), Data: gerr.Data()}
+func (s *Server) MakeResponseError(gerr generic_error.Error) (int, generic_error.Error) {
 	code := s.ErrorProtocolCode(gerr.Code())
-	return code, err
+	return code, gerr
 }
 
 func (s *Server) AuthParameterGetter(authMethodProtocol string) AuthParameterGetter {

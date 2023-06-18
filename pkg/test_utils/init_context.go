@@ -113,7 +113,7 @@ func InitAppContext(t *testing.T, testDir string, dbModels []interface{}, config
 	a, ok := app.(app_default.WithInitGormDb)
 	require.True(t, ok)
 	require.NoErrorf(t, a.InitDB("db"), "failed to init database")
-	app.Db().EnableDebug(true)
+	// app.Db().EnableDebug(true)
 
 	return app
 }

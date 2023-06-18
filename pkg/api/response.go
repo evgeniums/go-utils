@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
-	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 )
 
 const (
@@ -10,24 +9,6 @@ const (
 	TargetParent = "parent"
 	TargetChild  = "parent"
 )
-
-// TODO alias to generic error
-type ResponseError struct {
-	Code    string      `json:"code"`
-	Message string      `json:"message"`
-	Details string      `json:"details"`
-	Data    interface{} `json:"data,omitempty"`
-}
-
-func ResponseGenericError(responseError *ResponseError) generic_error.Error {
-	if responseError == nil {
-		return nil
-	}
-	e := generic_error.New(responseError.Code, responseError.Message)
-	e.SetDetails(responseError.Details)
-	e.SetData(responseError.Data)
-	return e
-}
 
 type Response interface {
 	WithHateoasLinks

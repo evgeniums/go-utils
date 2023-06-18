@@ -27,11 +27,15 @@ type ErrorHolder struct {
 	Message  string      `json:"message"`
 	Details  string      `json:"details,omitempty"`
 	Original error       `json:"-"`
-	Data     interface{} `json:"data"`
+	Data     interface{} `json:"data,omitempty"`
 }
 
 type ErrorBase struct {
 	ErrorHolder
+}
+
+func NewEmpty() *ErrorBase {
+	return &ErrorBase{}
 }
 
 // Create new error from code and message.

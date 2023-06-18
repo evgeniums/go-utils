@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_sms"
 	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -33,9 +33,9 @@ type HttpResponse struct {
 
 func ResponseErrorCode(t *testing.T, resp *HttpResponse) string {
 	if resp.Message != "" {
-		errResp := &api.ResponseError{}
+		errResp := generic_error.NewEmpty()
 		require.NoError(t, json.Unmarshal([]byte(resp.Message), errResp))
-		return errResp.Code
+		return errResp.Code()
 	}
 	return ""
 }
@@ -51,14 +51,14 @@ func CheckResponse(t *testing.T, resp *HttpResponse, expected *Expected) {
 		if expected.Error != "" {
 			assert.NotEmpty(t, resp.Message)
 			if len(resp.Message) != 0 {
-				errResp := &api.ResponseError{}
+				errResp := generic_error.NewEmpty()
 				require.NoError(t, json.Unmarshal([]byte(resp.Message), errResp))
-				assert.Equal(t, expected.Error, errResp.Code)
+				assert.Equal(t, expected.Error, errResp.Code())
 				if expected.Details != "" {
-					assert.Equal(t, expected.Details, errResp.Details)
+					assert.Equal(t, expected.Details, errResp.Details())
 				}
 				if expected.Message != "" {
-					assert.Equal(t, expected.Message, errResp.Message)
+					assert.Equal(t, expected.Message, errResp.Message())
 				}
 			}
 		} else {

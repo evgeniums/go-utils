@@ -19,7 +19,7 @@ func TestCsrf(t *testing.T) {
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{
 		Error:    "not_found",
 		HttpCode: http.StatusNotFound,
-		Message:  "Requested resource was not found."})
+		Message:  "Requested resource was not found"})
 	assert.Empty(t, client.CsrfToken)
 	assert.Empty(t, client.AccessToken)
 	assert.Empty(t, client.RefreshToken)

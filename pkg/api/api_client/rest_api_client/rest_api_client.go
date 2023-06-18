@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/http_request"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
@@ -106,7 +106,7 @@ func (r *RestApiClientBase) Login(ctx op_context.Context, user string, password 
 	headers := map[string]string{"x-auth-login": user}
 	resp, err := r.Post(ctx, path, nil, nil, headers)
 	if err != nil {
-		if resp.Error().Code != auth_login_phash.ErrorCodeCredentialsRequired {
+		if resp.Error().Code() != auth_login_phash.ErrorCodeCredentialsRequired {
 			c.SetMessage("failed to send first request")
 			return resp, err
 		}
@@ -215,7 +215,7 @@ func (r *RestApiClientBase) SendRequest(send DoRequest, ctx op_context.Context, 
 			}
 		}
 	} else if resp.Error() != nil {
-		ctx.SetGenericError(api.ResponseGenericError(resp.Error()))
+		ctx.SetGenericError(resp.Error())
 	}
 
 	// done
@@ -425,7 +425,7 @@ func DefaultRestApiClient(baseUrl string, userAgent ...string) *RestApiClientBas
 func fillResponseError(resp Response) error {
 	b := resp.Body()
 	if b != nil {
-		errResp := &api.ResponseError{}
+		errResp := generic_error.NewEmpty()
 		err := json.Unmarshal(b, errResp)
 		if err != nil {
 			return err

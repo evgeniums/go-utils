@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 )
 
 type Response interface {
@@ -13,14 +13,14 @@ type Response interface {
 	Body() []byte
 	Message() string
 
-	Error() *api.ResponseError
-	SetError(err *api.ResponseError)
+	Error() generic_error.Error
+	SetError(err generic_error.Error)
 }
 
 type HttpResponse struct {
 	Raw         *http.Response
 	body        []byte
-	serverError *api.ResponseError
+	serverError generic_error.Error
 }
 
 func NewResponse(raw *http.Response) (*HttpResponse, error) {
@@ -56,11 +56,11 @@ func (r *HttpResponse) Message() string {
 	return string(r.Body())
 }
 
-func (r *HttpResponse) Error() *api.ResponseError {
+func (r *HttpResponse) Error() generic_error.Error {
 	return r.serverError
 }
 
-func (r *HttpResponse) SetError(err *api.ResponseError) {
+func (r *HttpResponse) SetError(err generic_error.Error) {
 	r.serverError = err
 }
 

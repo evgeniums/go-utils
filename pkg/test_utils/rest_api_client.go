@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client/rest_api_client"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/http_request"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
@@ -20,7 +20,7 @@ import (
 type RestApiTestResponse struct {
 	Raw         *httptest.ResponseRecorder
 	body        []byte
-	serverError *api.ResponseError
+	serverError generic_error.Error
 }
 
 func NewRestApiTestResponse(raw *httptest.ResponseRecorder) (*RestApiTestResponse, error) {
@@ -37,7 +37,7 @@ func NewRestApiTestResponse(raw *httptest.ResponseRecorder) (*RestApiTestRespons
 func fillResponseError(resp *RestApiTestResponse) error {
 	b := resp.Body()
 	if b != nil {
-		errResp := &api.ResponseError{}
+		errResp := generic_error.NewEmpty()
 		err := json.Unmarshal(b, errResp)
 		if err != nil {
 			return err
@@ -67,11 +67,11 @@ func (r *RestApiTestResponse) Message() string {
 	return string(r.Body())
 }
 
-func (r *RestApiTestResponse) Error() *api.ResponseError {
+func (r *RestApiTestResponse) Error() generic_error.Error {
 	return r.serverError
 }
 
-func (r *RestApiTestResponse) SetError(err *api.ResponseError) {
+func (r *RestApiTestResponse) SetError(err generic_error.Error) {
 	r.serverError = err
 }
 
