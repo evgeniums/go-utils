@@ -386,7 +386,9 @@ func (c *ContextBase) MakeGenericError(code string) generic_error.Error {
 }
 
 func (c *ContextBase) SetGenericErrorCode(code string, override ...bool) {
-	c.SetGenericError(c.MakeGenericError(code), override...)
+	if c.genericError == nil || utils.OptionalArg(false, override...) {
+		c.SetGenericError(c.MakeGenericError(code), override...)
+	}
 }
 
 func (c *ContextBase) Cache() cache.Cache {
