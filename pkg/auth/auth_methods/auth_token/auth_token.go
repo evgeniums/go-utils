@@ -28,6 +28,7 @@ type AuthTokenHandlerConfig struct {
 	AUTO_PROLONGATE_REFRESH         bool   `default:"true"`
 	REFRESH_PATH                    string `default:"/auth/refresh"`
 	LOGOUT_PATH                     string `default:"/auth/logout"`
+	DISABLE_SAME_TENANCY_CHECK      bool
 }
 
 type AuthTokenHandler struct {
@@ -156,12 +157,14 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	}
 
 	// check tenancy
-	if ctx.GetTenancy() != nil || prev.Tenancy != "" {
-		if ctx.GetTenancy() == nil || prev.Tenancy != ctx.GetTenancy().GetID() {
-			err = errors.New("invalid tenancy")
-			c.LoggerFields()["token_tenancy"] = prev.Tenancy
-			ctx.SetGenericErrorCode(ErrorCodeSessionExpired)
-			return true, err
+	if !a.DISABLE_SAME_TENANCY_CHECK {
+		if ctx.GetTenancy() != nil || prev.Tenancy != "" {
+			if ctx.GetTenancy() == nil || prev.Tenancy != ctx.GetTenancy().GetID() {
+				err = errors.New("tenancy not the same")
+				c.LoggerFields()["token_tenancy"] = prev.Tenancy
+				ctx.SetGenericErrorCode(ErrorCodeSessionExpired)
+				return true, err
+			}
 		}
 	}
 
