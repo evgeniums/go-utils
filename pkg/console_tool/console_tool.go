@@ -170,9 +170,9 @@ func (c *ConsoleUtility) InitCommandContext(group string, command string) multit
 	}
 
 	c.App.Logger().Info("Console command context", logger.Fields{"user": userName,
-		"app":          origin.App,
-		"app_instance": origin.Name,
-		"source":       origin.Source,
+		"app":          origin.App(),
+		"app_instance": origin.Name(),
+		"source":       origin.Source(),
 		"name":         opCtx.Name(),
 		"context":      opCtx.ID(),
 	})
@@ -184,6 +184,7 @@ func (c *ConsoleUtility) Parse() {
 	var err error
 	c.Args, err = c.Parser.Parse()
 	if len(c.Args) != 0 {
+		// TODO fix additional args from last arg
 		fmt.Printf("Additional args: %v\n", c.Args)
 	}
 	if err != nil {
