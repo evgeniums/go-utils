@@ -456,7 +456,10 @@ func TestJoinSum(t *testing.T) {
 
 func TestQueryFilter(t *testing.T) {
 
-	store := db_gorm.NewModelStore(true)
+	store := db.GlobalModelStore()
+	if store == nil {
+		store = db_gorm.NewModelStore(true)
+	}
 	store.RegisterModel(&common.ObjectBase{})
 	fmanager := db_gorm.NewFilterManager()
 
