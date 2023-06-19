@@ -7,6 +7,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/crud"
 	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
+	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 )
 
@@ -85,6 +86,7 @@ func (s *SessionControllerBase) FindSession(ctx op_context.Context, sessionId st
 	session := s.MakeSession()
 	_, err := s.crud.ReadByField(ctx, "id", sessionId, session)
 	if err != nil {
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return nil, c.SetError(err)
 	}
 
@@ -116,6 +118,7 @@ func (s *SessionControllerBase) UpdateSessionClient(ctx auth.AuthContext) error 
 	fields := db.Fields{"session_id": ctx.GetSessionId(), "client_hash": clientHash}
 	found, err := s.crud.Read(ctx, fields, client)
 	if err != nil {
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		c.SetMessage("failed to find client in database")
 		return err
 	}
@@ -139,6 +142,7 @@ func (s *SessionControllerBase) UpdateSessionClient(ctx auth.AuthContext) error 
 	if tryUpdate {
 		err = s.crud.Update(ctx, client, db.Fields{"updated_at": time.Now()})
 		if err != nil {
+			ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 			c.SetMessage("failed to update client in database")
 			return err
 		}
@@ -156,6 +160,7 @@ func (s *SessionControllerBase) UpdateSessionExpiration(ctx auth.AuthContext, se
 
 	err := s.crud.Update(ctx, session, db.Fields{"expiration": session.GetExpiration()})
 	if err != nil {
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return c.SetError(err)
 	}
 	return nil
@@ -168,6 +173,7 @@ func (s *SessionControllerBase) InvalidateSession(ctx op_context.Context, userId
 
 	err := s.crud.UpdateMulti(ctx, s.MakeSession(), db.Fields{"id": sessionId, "user_id": userId}, db.Fields{"valid": false, "updated_at": time.Now()})
 	if err != nil {
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return c.SetError(err)
 	}
 	return nil
@@ -180,6 +186,7 @@ func (s *SessionControllerBase) InvalidateUserSessions(ctx op_context.Context, u
 
 	err := s.crud.UpdateMulti(ctx, s.MakeSession(), db.Fields{"user_id": userId}, db.Fields{"valid": false, "updated_at": time.Now()})
 	if err != nil {
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return c.SetError(err)
 	}
 	return nil
@@ -191,6 +198,7 @@ func (s *SessionControllerBase) InvalidateAllSessions(ctx op_context.Context) er
 
 	err := s.crud.UpdateMulti(ctx, s.MakeSession(), nil, db.Fields{"valid": false, "updated_at": time.Now()})
 	if err != nil {
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return c.SetError(err)
 	}
 	return nil
@@ -203,6 +211,7 @@ func (s *SessionControllerBase) GetSessions(ctx op_context.Context, filter *db.F
 	defer ctx.TraceOutMethod()
 	count, err := s.crud.List(ctx, filter, sessions)
 	if err != nil {
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return 0, c.SetError(err)
 	}
 	return count, nil
@@ -215,6 +224,7 @@ func (s *SessionControllerBase) GetSessionClients(ctx op_context.Context, filter
 	defer ctx.TraceOutMethod()
 	count, err := s.crud.List(ctx, filter, sessions)
 	if err != nil {
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return 0, c.SetError(err)
 	}
 	return count, nil
