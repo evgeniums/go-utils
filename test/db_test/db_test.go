@@ -9,6 +9,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/crud"
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
+	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -451,4 +452,22 @@ func TestJoinSum(t *testing.T) {
 	assert.Equal(t, 1, items4[1].Amount1)
 	assert.Equal(t, 10, items4[1].Amount2)
 	assert.InEpsilon(t, 100.00, items4[1].Amount3, 0.001)
+}
+
+func TestQueryFilter(t *testing.T) {
+
+	store := db_gorm.NewModelStore(true)
+	store.RegisterModel(&common.ObjectBase{})
+	fmanager := db_gorm.NewFilterManager()
+
+	qStr := `{"limit":2,"intervals":{"created_at":{"from":"2023-06-19"}}}`
+	q := &db.Query{}
+	err := json.Unmarshal([]byte(qStr), q)
+	require.NoError(t, err)
+
+	f, err := fmanager.ParseFilterDirect(q, &common.ObjectBase{}, "")
+	require.NoError(t, err)
+	require.NotNil(t, f)
+
+	test_utils.DumpObject(t, f, "Filter")
 }

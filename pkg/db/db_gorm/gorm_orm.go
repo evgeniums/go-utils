@@ -99,7 +99,7 @@ func prepareInterval(db *gorm.DB, name string, interval *Interval) *gorm.DB {
 		if interval.From == interval.To {
 			h = h.Where(fmt.Sprintf("\"%v\" = ?", name), interval.From)
 		} else {
-			h = h.Where(fmt.Sprintf("\"%v\" %s ? AND \"%v\" %s ? ", name, compareOp(interval.FromOpen, ">"), compareOp(interval.ToOpen, "<"), name), interval.From, interval.To)
+			h = h.Where(fmt.Sprintf("\"%v\" %s ? AND \"%v\" %s ? ", name, compareOp(interval.FromOpen, ">"), name, compareOp(interval.ToOpen, "<")), interval.From, interval.To)
 		}
 	} else if interval.From != nil {
 		h = h.Where(fmt.Sprintf("\"%v\" %s ? ", name, compareOp(interval.FromOpen, ">")), interval.From)

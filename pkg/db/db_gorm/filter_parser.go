@@ -60,6 +60,13 @@ func convertValue(field *schema.Field, value string) (interface{}, error) {
 
 func (f *FilterParser) ParseValidateField(name string, value string, onlyName ...bool) (string, interface{}, error) {
 
+	fieldName := func(dscr *FieldDescriptor) string {
+		if f.Validator != nil && f.Validator.PlainFieldNames {
+			return dscr.DbField
+		}
+		return dscr.FullDbName
+	}
+
 	// find field by json name
 	field, err := f.Destination.FindJsonField(name)
 	if err != nil {
@@ -73,7 +80,7 @@ func (f *FilterParser) ParseValidateField(name string, value string, onlyName ..
 
 	// break if only field name validation required
 	if utils.OptionalArg(false, onlyName...) {
-		return field.FullDbName, value, nil
+		return fieldName(field), value, nil
 	}
 
 	// convert string value to desired type
@@ -102,7 +109,7 @@ func (f *FilterParser) ParseValidateField(name string, value string, onlyName ..
 	}
 
 	// done
-	return field.FullDbName, result, nil
+	return fieldName(field), result, nil
 }
 
 func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
@@ -168,7 +175,7 @@ func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 		filter.FieldsNotIn[field] = arr
 	}
 
-	extractOptional := func(field string, opt *optional.String) (string, bool, error) {
+	extractOptional := func(field string, opt optional.String) (string, bool, error) {
 		if !opt.Present() {
 			return "", false, nil
 		}

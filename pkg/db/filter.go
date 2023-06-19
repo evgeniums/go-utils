@@ -173,8 +173,8 @@ func (f *Filter) ToQuery() *Query {
 		q.Intervals = make(map[string]QueryInterval)
 	}
 	for key, interval := range f.Intervals {
-		to := &optional.String{}
-		from := &optional.String{}
+		to := optional.String{}
+		from := optional.String{}
 		if interval.From != nil {
 			from.Set(filterValueToString(interval.From))
 		}
@@ -213,10 +213,10 @@ func (f *Filter) ToQueryString() string {
 }
 
 type QueryInterval struct {
-	From     *optional.String `json:"from,omitempty"`
-	To       *optional.String `json:"to,omitempty"`
-	FromOpen bool             `json:"from_open,omitempty"`
-	ToOpen   bool             `json:"to_open,omitempty"`
+	From     optional.String `json:"from,omitempty"`
+	To       optional.String `json:"to,omitempty"`
+	FromOpen bool            `json:"from_open,omitempty"`
+	ToOpen   bool            `json:"to_open,omitempty"`
 }
 
 type QueryBetweenFields struct {
@@ -254,8 +254,9 @@ type FilterParser interface {
 }
 
 type FilterValidator struct {
-	Validator validator.Validator
-	Rules     map[string]string
+	Validator       validator.Validator
+	Rules           map[string]string
+	PlainFieldNames bool
 }
 
 func ParseQuery(db DB, query string, model interface{}, parserName string, validator ...*FilterValidator) (*Filter, error) {
