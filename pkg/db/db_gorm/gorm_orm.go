@@ -211,18 +211,14 @@ func find(g *gorm.DB, filter *Filter, paginator *Paginator, dest interface{}) (i
 	if filter != nil {
 		h = SetFilter(g, filter, paginator, nil, !filter.Count)
 		if filter.Count {
-			counter := g.Session(&gorm.Session{})
+			counter := h.Session(&gorm.Session{})
 			result := counter.Count(&count)
 			if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				return 0, result.Error
 			}
-			h = paginator.Paginate(g, filter)
+			h = paginator.Paginate(h, filter)
 		}
 	}
-
-	// stmt := h.Session(&gorm.Session{DryRun: true}).Find(dest).Statement
-	// fmt.Printf("Query: %s\n", stmt.SQL.String())
-	// return 0, nil
 
 	result := h.Find(dest)
 	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -231,11 +227,6 @@ func find(g *gorm.DB, filter *Filter, paginator *Paginator, dest interface{}) (i
 	if result.RowsAffected > count {
 		count = result.RowsAffected
 	}
-
-	/*
-		b, _ := json.MarshalIndent(dest, "", "  ")
-		fmt.Printf("Result:\n\n%s\n\n", string(b))
-	*/
 
 	return count, nil
 }
