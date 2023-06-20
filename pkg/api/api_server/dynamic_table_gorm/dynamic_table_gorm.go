@@ -145,6 +145,11 @@ func (d *DynamicTablesGorm) AddTable(table *api_server.DynamicTableConfig) error
 		return fmt.Errorf("invalid model: %s", err)
 	}
 
+	visibleFields := make(map[string]bool)
+	for _, visibleField := range table.VisibleColumns {
+		visibleFields[visibleField] = true
+	}
+
 	// process fields
 	defaultOrder := make([]string, 0, len(s.Fields))
 	fields := make(map[string]*api_server.DynamicTableField)
@@ -156,6 +161,9 @@ func (d *DynamicTablesGorm) AddTable(table *api_server.DynamicTableConfig) error
 		if tableField.Field == "" {
 			tableField.Field = field.DBName
 		}
+
+		// set field visible
+		tableField.Visible = len(visibleFields) == 0 || visibleFields[tableField.Field]
 
 		// set field display
 		tableField.Display = FieldDisplay(field, table.Displays)

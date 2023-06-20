@@ -33,6 +33,7 @@ type DynamicTableField struct {
 	Index      bool         `json:"index"`
 	Display    string       `json:"display"`
 	Enum       []*EnumEntry `json:"enum,omitempty"`
+	Visible    bool         `json:"visible"`
 	EnumGetter EnumGetter   `json:"-"`
 }
 
@@ -56,6 +57,7 @@ type DynamicTableConfig struct {
 	DefaultSortDirection string
 	EnumGetters          map[string]EnumGetter
 	Enums                FieldEnums
+	VisibleColumns       []string
 }
 
 type DynamicFieldTranslator interface {
