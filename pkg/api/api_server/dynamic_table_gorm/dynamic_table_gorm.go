@@ -88,13 +88,7 @@ func (d *DynamicTablesGorm) Table(request api_server.Request, path string) (*api
 	return result, nil
 }
 
-func FieldDisplay(field *schema.Field, explicits map[string]string) string {
-
-	// extract field name
-	name := field.Tag.Get("json")
-	if name == "" {
-		name = field.DBName
-	}
+func FieldDisplay(field *schema.Field, name string, explicits map[string]string) string {
 
 	// check if there is a tag for display
 	display := field.Tag.Get("display")
@@ -161,12 +155,13 @@ func (d *DynamicTablesGorm) AddTable(table *api_server.DynamicTableConfig) error
 		if tableField.Field == "" {
 			tableField.Field = field.DBName
 		}
+		tableField.Field = strings.Replace(tableField.Field, ",omitempty", "", -1)
 
 		// set field visible
 		tableField.Visible = len(visibleFields) == 0 || visibleFields[tableField.Field]
 
 		// set field display
-		tableField.Display = FieldDisplay(field, table.Displays)
+		tableField.Display = FieldDisplay(field, tableField.Field, table.Displays)
 
 		// set index flag
 		tableField.Index = db_gorm.IsIndexField(field)
