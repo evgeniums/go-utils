@@ -172,7 +172,14 @@ func (d *DynamicTablesGorm) AddTable(table *api_server.DynamicTableConfig) error
 		tableField.Index = db_gorm.IsIndexField(field)
 
 		// set type
-		tableField.Type = string(field.DataType)
+		reflectType := field.FieldType.String()
+		if reflectType == "utils.Date" {
+			tableField.Type = "date"
+		} else if reflectType == "utils.Month" {
+			tableField.Type = "month"
+		} else {
+			tableField.Type = string(field.DataType)
+		}
 
 		// set enum
 		tableField.Enum = table.Enums[tableField.Field]

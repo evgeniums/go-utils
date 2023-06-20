@@ -6,10 +6,16 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm/schema"
 )
+
+type TestStruct struct {
+	DateField  utils.Date
+	MonthField utils.Month
+}
 
 func TestModelDescriptor(t *testing.T) {
 
@@ -21,4 +27,20 @@ func TestModelDescriptor(t *testing.T) {
 
 	err := descr.ParseFields()
 	assert.NoError(t, err)
+}
+
+func TestModelDateMonth(t *testing.T) {
+
+	cache := &sync.Map{}
+	namer := &schema.NamingStrategy{}
+
+	descr := db_gorm.NewModelDescriptor(&TestStruct{}, cache, namer)
+	require.NotNil(t, descr)
+
+	err := descr.ParseFields()
+	require.NoError(t, err)
+
+	for _, field := range descr.Schema.Fields {
+		t.Logf("field %s type %s", field.Name, field.FieldType)
+	}
 }
