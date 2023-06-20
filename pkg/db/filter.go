@@ -32,9 +32,9 @@ func (i *Interval) IsNull() bool {
 
 type FilterConfig struct {
 	SortField     string `json:"sort_field,omitempty"`
-	SortDirection string `json:"sort_direction,omitempty" validate:"omitempty,oneof=asc desc"`
-	Offset        int    `json:"offset,omitempty" validate:"gte=0"`
-	Limit         int    `json:"limit,omitempty" validate:"gte=0"`
+	SortDirection string `json:"sort_direction,omitempty" validate:"omitempty,oneof=ASC DESC" vmessage:"Sort direction can be either ASC or DESC"`
+	Offset        int    `json:"offset,omitempty" validate:"gte=0" vmessage:"Offset can not be negative"`
+	Limit         int    `json:"limit,omitempty" validate:"gte=0" vmessage:"Limit can not be negative"`
 	Count         bool   `json:"count,omitempty"`
 }
 

@@ -121,6 +121,12 @@ func (f *FilterParser) Parse(query *db.Query) (*db.Filter, error) {
 	}
 	filter := &db.Filter{}
 	filter.FilterConfig = query.FilterConfig
+	if f.Validator != nil {
+		err = f.Validator.Validator.Validate(filter.FilterConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	// sort field
 	if query.SortField != "" {
