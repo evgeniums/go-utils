@@ -79,7 +79,10 @@ func (d *DbCRUD) Create(ctx op_context.Context, object common.Object) error {
 }
 
 func (d *DbCRUD) CreateDup(ctx op_context.Context, object common.Object, ignoreConflict ...bool) (bool, error) {
-	c := ctx.TraceInMethod("CRUD.Create")
+
+	// TODO clear everywhere error if dup is ok
+
+	c := ctx.TraceInMethod("CRUD.CreateDup")
 	defer ctx.TraceOutMethod()
 
 	duplicate, err := op_context.DB(ctx, d.ForceMainDb).CreateDup(ctx, object, ignoreConflict...)
