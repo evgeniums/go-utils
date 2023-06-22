@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/stretchr/testify/require"
 )
 
 type withDate struct {
@@ -96,4 +97,12 @@ func TestDate(t *testing.T) {
 	if int(d1) != expected {
 		t.Fatalf("Invalid date: expected %d, got %d", expected, int(d1))
 	}
+}
+
+func TestTimezone(t *testing.T) {
+
+	IANA_TIME_ZONE := "Europe/Moscow"
+	_, err := time.LoadLocation(IANA_TIME_ZONE)
+	require.NoError(t, err)
+
 }
