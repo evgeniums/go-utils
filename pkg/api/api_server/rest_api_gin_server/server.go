@@ -428,11 +428,11 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 		if request.AuthUser() != nil {
 			origin.SetUser(auth.AuthUserDisplay(request))
 		}
-		originIp := request.clientIp
-		if request.forwardedIp != "" {
-			originIp = request.forwardedIp
+		originSource := request.clientIp
+		if request.forwardedOpSource != "" {
+			originSource = request.forwardedOpSource
 		}
-		origin.SetSource(originIp)
+		origin.SetSource(originSource)
 		origin.SetSessionClient(request.GetClientId())
 		origin.SetUserType(s.OPLOG_USER_TYPE)
 		request.SetOrigin(origin)

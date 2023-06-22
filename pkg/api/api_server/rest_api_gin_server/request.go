@@ -27,8 +27,8 @@ type Request struct {
 	initialPath string
 	start       time.Time
 
-	clientIp    string
-	forwardedIp string
+	clientIp          string
+	forwardedOpSource string
 }
 
 func (r *Request) Init(s *Server, ginCtx *gin.Context, ep api_server.Endpoint, fields ...logger.Fields) {
@@ -46,10 +46,10 @@ func (r *Request) Init(s *Server, ginCtx *gin.Context, ep api_server.Endpoint, f
 			r.SetID(ctxId)
 			r.SetLoggerField("context", ctxId)
 		}
-		forwardedIp := ginCtx.GetHeader(api.ForwardClientIp)
-		if forwardedIp != "" {
-			r.forwardedIp = forwardedIp
-			r.SetLoggerField("forwarded_ip", forwardedIp)
+		forwardedOpSource := ginCtx.GetHeader(api.ForwardOpSource)
+		if forwardedOpSource != "" {
+			r.forwardedOpSource = forwardedOpSource
+			r.SetLoggerField("forwarded_op_source", forwardedOpSource)
 		}
 	}
 

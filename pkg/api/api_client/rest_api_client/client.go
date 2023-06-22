@@ -69,7 +69,7 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 		forwardHeaders = make(map[string]string)
 		forwardHeaders[api.ForwardContext] = ctx.ID()
 		if ctx.Origin() != nil {
-			forwardHeaders[api.ForwardClientIp] = ctx.Origin().Source()
+			forwardHeaders[api.ForwardOpSource] = ctx.Origin().Source()
 			forwardHeaders[api.ForwardSessionClient] = ctx.Origin().SessionClient()
 		}
 	}
