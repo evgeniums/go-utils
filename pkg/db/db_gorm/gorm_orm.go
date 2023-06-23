@@ -194,10 +194,12 @@ func (p *Paginator) Paginate(g *gorm.DB, filter *Filter, paginate ...bool) *gorm
 
 		if filter.Limit > 0 {
 			limit := filter.Limit
-			if limit > p.MaxLimit && p.MaxLimit > 0 {
+			if !filter.NoLimit && limit > p.MaxLimit && p.MaxLimit > 0 {
 				limit = p.MaxLimit
 			}
 			h = h.Limit(limit)
+		} else if !filter.NoLimit && p.MaxLimit > 0 {
+			h = h.Limit(p.MaxLimit)
 		}
 	}
 	return h

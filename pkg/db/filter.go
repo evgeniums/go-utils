@@ -53,6 +53,8 @@ type Filter struct {
 	OrFields      []*OrFields
 
 	PresetFields []Fields
+
+	NoLimit bool
 }
 
 func NewFilter() *Filter {
