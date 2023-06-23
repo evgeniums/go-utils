@@ -108,6 +108,12 @@ func StrToDate(s string) (Date, error) {
 	if s == "" {
 		return DateNil, nil
 	}
+
+	iDate, err := StrToUint32(s)
+	if err == nil {
+		return Date(iDate), nil
+	}
+
 	t, err := strDateToTime(s)
 	if t == TimeNil {
 		return DateNil, err
