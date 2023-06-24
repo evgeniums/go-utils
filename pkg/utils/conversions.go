@@ -86,6 +86,11 @@ func RoundMoney(value float64) float64 {
 }
 
 func TimeToStr(t time.Time) string {
+	str := fmt.Sprintf("%04d-%02d-%02d %02d:%02d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute())
+	return str
+}
+
+func TimeToStrRu(t time.Time) string {
 	str := fmt.Sprintf("%02d.%02d.%04d %02d:%02d", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute())
 	return str
 }
