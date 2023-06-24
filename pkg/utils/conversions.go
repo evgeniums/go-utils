@@ -62,6 +62,14 @@ func MoneyToDecimal(cents int64) float64 {
 	return float64(v)
 }
 
+func MoneyToDecimalStr(cents int64, comma ...bool) string {
+	m := MoneyToDecimal(cents)
+	if OptionalArg(false, comma...) {
+		return FloatToStr2Comma(m)
+	}
+	return FloatToStr2(m)
+}
+
 func RoundMoneyUp(value float64) float64 {
 	r := math.Ceil(float64(value)*100) / 100
 	return float64(r)
