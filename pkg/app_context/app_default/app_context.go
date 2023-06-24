@@ -117,6 +117,10 @@ type AppConfigI interface {
 
 func New(buildConfig *app_context.BuildConfig, appConfig ...AppConfigI) *Context {
 
+	if app_context.TimeLocationOs == nil {
+		app_context.TimeLocationOs = time.Local
+	}
+
 	if buildConfig != nil {
 		Version = buildConfig.Version
 		Time = buildConfig.Time

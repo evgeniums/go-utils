@@ -38,6 +38,7 @@ type Context interface {
 }
 
 var Timezone = "UTC"
+var TimeLocationOs *time.Location
 
 func SetTimeZone(timezone ...string) error {
 
@@ -49,5 +50,6 @@ func SetTimeZone(timezone ...string) error {
 	}
 	time.Local = loc
 	Timezone = tz
+
 	return nil
 }
