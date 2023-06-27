@@ -153,7 +153,7 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 	}
 
 	if err != nil {
-		c.SetMessage("failed to send request")
+		c.SetMessage("failed to client.Do")
 		return err
 	}
 
