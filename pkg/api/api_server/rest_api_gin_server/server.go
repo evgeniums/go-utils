@@ -80,6 +80,8 @@ type Server struct {
 	propagateAuthUser  bool
 
 	logPrefix string
+
+	crashed bool
 }
 
 func getHttpHeader(g *gin.Context, name string) string {
@@ -229,7 +231,22 @@ func (s *Server) ginDefaultLogger() gin.HandlerFunc {
 			return
 		}
 
-		s.logGinRequest(s.App().Logger(), path, start, ginCtx, logger.Fields{"status": s.notFoundError.Code()})
+		if s.crashed {
+			s.crashed = false
+			s.logGinRequest(s.App().Logger(), path, start, ginCtx, logger.Fields{"status": "app_crashed"})
+		} else {
+			s.logGinRequest(s.App().Logger(), path, start, ginCtx, logger.Fields{"status": s.notFoundError.Code()})
+		}
+	}
+}
+
+func (s *Server) crashRecovery() gin.HandlerFunc {
+	return func(ginCtx *gin.Context) {
+
+		s.crashed = true
+
+		handler := gin.Recovery()
+		handler(ginCtx)
 	}
 }
 
@@ -297,7 +314,7 @@ func (s *Server) Init(ctx app_context.Context, auth auth.Auth, tenancyManager mu
 	// trusted proxies are needed for correct logging of client IP address
 	s.ginEngine.SetTrustedProxies(s.TRUSTED_PROXIES)
 	// use default logger for unhandled paths, use recovery middleware to catch panic failures
-	s.ginEngine.Use(s.ginDefaultLogger(), gin.Recovery())
+	s.ginEngine.Use(s.ginDefaultLogger(), s.crashRecovery())
 
 	// set noroute
 	e := generic_error.New("not_found", "Requested resource was not found")
