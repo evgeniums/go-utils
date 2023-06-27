@@ -57,6 +57,10 @@ func MoneyToInteger(dollars float64) int64 {
 	return int64(math.Round(float64(dollars) * 100.00))
 }
 
+func MoneyToIntegerUp(dollars float64) int64 {
+	return int64(math.Ceil(float64(dollars) * 100.00))
+}
+
 func MoneyToDecimal(cents int64) float64 {
 	v := float64(cents) / 100.00
 	return float64(v)
@@ -68,6 +72,13 @@ func MoneyToDecimalStr(cents int64, comma ...bool) string {
 		return FloatToStr2Comma(m)
 	}
 	return FloatToStr2(m)
+}
+
+func FloatToStr2Variant[T Float](val T, comma ...bool) string {
+	if OptionalArg(false, comma...) {
+		return FloatToStr2Comma(val)
+	}
+	return FloatToStr2(val)
 }
 
 func RoundMoneyUp(value float64) float64 {
