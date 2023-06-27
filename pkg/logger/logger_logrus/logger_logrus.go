@@ -34,6 +34,10 @@ func New() *LogrusLogger {
 	l := &LogrusLogger{}
 	l.logRus = logrus.New()
 	l.LoggerBase.Init()
+
+	// TODO make configurable
+	// l.logRus.SetFormatter(&logrus.JSONFormatter{})
+
 	return l
 }
 
