@@ -72,6 +72,19 @@ func LoadLogValidate(cfg config.Config, log logger.Logger, vld validator.Validat
 	return nil
 }
 
+func LogValidate(log logger.Logger, vld validator.Validator, obj Object, defaultPath string, optionalPath ...string) error {
+
+	path := utils.OptionalArg(defaultPath, optionalPath...)
+
+	Info(log, obj, path)
+	err := vld.Validate(obj.Config())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func loadConfiguration(cfg config.Config, configPath string, obj Object) (skippedKeys []string, err error) {
 	objectValue := reflect.ValueOf(obj.Config())
 	return loadValue(cfg, configPath, objectValue)
