@@ -46,6 +46,13 @@ func (d *DynamicTablesGorm) SetTranslator(translator api_server.DynamicFieldTran
 	d.translator = translator
 }
 
+func (d *DynamicTablesGorm) FindTable(path string) (*Table, bool) {
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
+	t, ok := d.tables[path]
+	return t, ok
+}
+
 func (d *DynamicTablesGorm) Table(request api_server.Request, path string) (*api_server.DynamicTable, error) {
 
 	// setup
@@ -53,9 +60,7 @@ func (d *DynamicTablesGorm) Table(request api_server.Request, path string) (*api
 	request.TraceOutMethod()
 
 	// find table
-	d.mutex.RLock()
-	t, ok := d.tables[path]
-	d.mutex.RUnlock()
+	t, ok := d.FindTable(path)
 	if !ok {
 		return nil, c.SetErrorStr("unknown table")
 	}

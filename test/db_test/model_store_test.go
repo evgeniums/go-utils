@@ -15,6 +15,7 @@ import (
 type TestStruct struct {
 	DateField  utils.Date
 	MonthField utils.Month
+	Amount     int `money:"true" json:"amount"`
 }
 
 func TestModelDescriptor(t *testing.T) {
@@ -41,6 +42,6 @@ func TestModelDateMonth(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, field := range descr.Schema.Fields {
-		t.Logf("field %s type %s", field.Name, field.FieldType)
+		t.Logf("field %s type %s, money=%v", field.Name, field.FieldType, field.Tag.Get("money") != "")
 	}
 }
