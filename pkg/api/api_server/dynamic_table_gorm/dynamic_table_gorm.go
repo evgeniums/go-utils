@@ -176,6 +176,9 @@ func (d *DynamicTablesGorm) AddTable(table *api_server.DynamicTableConfig) error
 			tableField.Type = string(field.DataType)
 		}
 
+		// set money type
+		tableField.Money = field.Tag.Get("money") != ""
+
 		// set enum
 		tableField.Enum = table.Enums[tableField.Field]
 

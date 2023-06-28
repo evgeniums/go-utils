@@ -34,6 +34,7 @@ type DynamicTableField struct {
 	Display    string       `json:"display"`
 	Enum       []*EnumEntry `json:"enum,omitempty"`
 	Visible    bool         `json:"visible"`
+	Money      bool         `json:"money"`
 	EnumGetter EnumGetter   `json:"-"`
 }
 
