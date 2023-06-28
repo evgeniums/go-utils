@@ -38,7 +38,10 @@ func MonthFromString(str string) (Month, error) {
 
 	t, err := time.Parse("2006-01", str)
 	if err != nil {
-		return 0, err
+		t, err = time.Parse("200601", str)
+		if err != nil {
+			return 0, err
+		}
 	}
 	var m Month
 	m.SetTime(t)
