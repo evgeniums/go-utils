@@ -101,6 +101,10 @@ func TimeToStr(t time.Time) string {
 	return str
 }
 
+func TimeRFC3339(t time.Time) string {
+	return t.Format(time.RFC3339)
+}
+
 func TimeToStrRu(t time.Time) string {
 	str := fmt.Sprintf("%02d.%02d.%04d %02d:%02d", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute())
 	return str
