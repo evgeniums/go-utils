@@ -56,6 +56,8 @@ func (e *PrepareOperationEndpoint) HandleRequest(request api_server.Request) err
 		return err
 	}
 
+	request.SetLoggerField("confirmation_id", cmd.Id)
+
 	// save data in cache
 	cacheToken := &confirmation_control_api.OperationCacheToken{Id: cmd.Id, Recipient: cmd.Recipient, FailedUrl: cmd.FailedUrl, Parameters: cmd.Parameters}
 	cacheKey := confirmation_control_api.OperationIdCacheKey(cmd.Id)

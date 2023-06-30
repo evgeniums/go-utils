@@ -82,6 +82,9 @@ func (e *CheckConfirmationEndpoint) HandleRequest(request api_server.Request) er
 	c := request.TraceInMethod("ConfirmationExternalService.CheckConfirmation")
 	defer request.TraceOutMethod()
 
+	confirmationId := request.GetResourceId(confirmation_control_api.OperationResource)
+	request.SetLoggerField("confirmation_id", confirmationId)
+
 	// fill code or status
 	var result = &confirmation_control.ConfirmationResult{}
 	if e.service.CheckCode {
@@ -99,7 +102,7 @@ func (e *CheckConfirmationEndpoint) HandleRequest(request api_server.Request) er
 
 	// invoke callback
 	resp := &confirmation_control_api.CheckConfirmationResponse{}
-	resp.RedirectUrl, err = e.service.ConfirmationCallbackHandler.ConfirmationCallback(request, request.GetResourceId(confirmation_control_api.OperationResource), result)
+	resp.RedirectUrl, err = e.service.ConfirmationCallbackHandler.ConfirmationCallback(request, confirmationId, result)
 	if err != nil {
 		c.SetMessage("failed to invoke callback")
 		return c.SetError(err)
@@ -166,6 +169,9 @@ func (e *FailedConfirmationEndpoint) HandleRequest(request api_server.Request) e
 	c := request.TraceInMethod("ConfirmationExternalService.FailedConfirmation")
 	defer request.TraceOutMethod()
 
+	confirmationId := request.GetResourceId(confirmation_control_api.OperationResource)
+	request.SetLoggerField("confirmation_id", confirmationId)
+
 	// parse command
 	result := &confirmation_control.ConfirmationResult{}
 	err = request.ParseValidate(result)
@@ -178,7 +184,7 @@ func (e *FailedConfirmationEndpoint) HandleRequest(request api_server.Request) e
 
 	// invoke callback
 	resp := &confirmation_control_api.CheckConfirmationResponse{}
-	resp.RedirectUrl, err = e.service.ConfirmationCallbackHandler.ConfirmationCallback(request, request.GetResourceId(confirmation_control_api.OperationResource), result)
+	resp.RedirectUrl, err = e.service.ConfirmationCallbackHandler.ConfirmationCallback(request, confirmationId, result)
 	if err != nil {
 		c.SetMessage("failed to invoke callback")
 		return c.SetError(err)

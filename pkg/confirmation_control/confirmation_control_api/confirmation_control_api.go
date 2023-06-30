@@ -76,7 +76,7 @@ func GetTokenFromCache(ctx auth.AuthContext) (*OperationCacheToken, error) {
 
 	// get token from cache
 	operationId := ctx.GetResourceId(OperationResource)
-	ctx.SetLoggerField("cache_operation_id", operationId)
+	ctx.SetLoggerField("confirmation_id", operationId)
 	cacheToken := &OperationCacheToken{}
 	cacheKey := OperationIdCacheKey(operationId)
 	found, err := ctx.Cache().Get(cacheKey, cacheToken)

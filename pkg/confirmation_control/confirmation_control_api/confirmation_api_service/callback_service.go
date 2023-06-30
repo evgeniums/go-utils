@@ -53,6 +53,8 @@ func (e *CallbackConfirmationEndpoint) HandleRequest(request api_server.Request)
 		return err
 	}
 
+	request.SetLoggerField("confirmation_id", cmd.Id)
+
 	// invoke callback
 	resp := &confirmation_control_api.CallbackConfirmationResponse{}
 	resp.Url, err = e.service.ConfirmationCallbackHandler.ConfirmationCallback(request, cmd.Id, &cmd.ConfirmationResult)
