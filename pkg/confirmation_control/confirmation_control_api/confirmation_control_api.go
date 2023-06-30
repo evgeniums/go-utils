@@ -5,6 +5,7 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
+	"github.com/evgeniums/go-backend-helpers/pkg/confirmation_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 )
 
@@ -12,6 +13,7 @@ const ServiceName string = "confirmation"
 
 const OperationResource string = "operation"
 const CallbackResource string = "callback"
+const FailedResource string = "failed"
 
 func CheckConfirmation() api.Operation {
 	return api.Post("check_confirmation")
@@ -25,6 +27,10 @@ func PrepareOperation() api.Operation {
 	return api.Post("prepare_operation")
 }
 
+func FailedConfirmation() api.Operation {
+	return api.Post("failed_confirmation")
+}
+
 type PrepareOperationCmd struct {
 	Id         string                 `json:"id" validate:"required,id" vmessage:"Operation ID must be specified"`
 	Recipient  string                 `json:"recipient" validate:"required" vmessage:"Recipient must be specified"`
@@ -35,10 +41,6 @@ type PrepareOperationCmd struct {
 type PrepareOperationResponse struct {
 	api.ResponseStub
 	Url string `json:"url"`
-}
-
-type CheckConfirmationCmd struct {
-	Code string `json:"code" validate:"required" vmessage:"Code must be specified"`
 }
 
 type CheckConfirmationResponse struct {
@@ -97,8 +99,8 @@ func CallbackConfirmation() api.Operation {
 }
 
 type CallbackConfirmationCmd struct {
-	Id           string `json:"operation_id" validate:"required,id" vmessage:"Invalid operation ID"`
-	CodeOrStatus string `json:"code_status" validate:"required" vmessage:"Code or status must be specified"`
+	Id string `json:"operation_id" validate:"required,id" vmessage:"Invalid operation ID"`
+	confirmation_control.ConfirmationResult
 }
 
 type CallbackConfirmationResponse struct {

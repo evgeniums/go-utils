@@ -22,6 +22,7 @@ type ConfirmationExternalService struct {
 	ConfirmationCallbackHandler confirmation_control.ConfirmationCallbackHandler
 
 	OperationResource api.Resource
+	FailedResource    api.Resource
 
 	CheckCode bool
 }
@@ -35,6 +36,10 @@ func NewConfirmationExternalService(confirmationCallbackHandler confirmation_con
 	s.OperationResource = api.NamedResource(confirmation_control_api.OperationResource)
 	s.AddChild(s.OperationResource.Parent())
 	s.OperationResource.AddOperations(CheckConfirmation(s), PrepareCheckConfirmation(s))
+
+	s.FailedResource = api.NewResource(confirmation_control_api.FailedResource)
+	s.OperationResource.AddChild(s.FailedResource)
+	s.FailedResource.AddOperation(FailedConfirmation(s))
 
 	return s
 }
@@ -78,23 +83,23 @@ func (e *CheckConfirmationEndpoint) HandleRequest(request api_server.Request) er
 	defer request.TraceOutMethod()
 
 	// fill code or status
-	var codeOrStatus string
+	var result = &confirmation_control.ConfirmationResult{}
 	if e.service.CheckCode {
 		// parse command
-		cmd := &confirmation_control_api.CheckConfirmationCmd{}
+		cmd := &confirmation_control.ConfirmationResult{}
 		err := request.ParseValidate(cmd)
 		if err != nil {
 			c.SetMessage("failed to parse/validate command")
 			return c.SetError(err)
 		}
-		codeOrStatus = cmd.Code
+		result.Code = cmd.Code
 	} else {
-		codeOrStatus = confirmation_control.StatusSuccess
+		result.Status = confirmation_control.StatusSuccess
 	}
 
 	// invoke callback
 	resp := &confirmation_control_api.CheckConfirmationResponse{}
-	resp.RedirectUrl, err = e.service.ConfirmationCallbackHandler.ConfirmationCallback(request, request.GetResourceId(confirmation_control_api.OperationResource), codeOrStatus)
+	resp.RedirectUrl, err = e.service.ConfirmationCallbackHandler.ConfirmationCallback(request, request.GetResourceId(confirmation_control_api.OperationResource), result)
 	if err != nil {
 		c.SetMessage("failed to invoke callback")
 		return c.SetError(err)
@@ -147,5 +152,47 @@ func (e *PrepareCheckConfirmationEndpoint) HandleRequest(request api_server.Requ
 func PrepareCheckConfirmation(s *ConfirmationExternalService) *PrepareCheckConfirmationEndpoint {
 	e := &PrepareCheckConfirmationEndpoint{}
 	e.Construct(s, confirmation_control_api.PrepareCheckConfirmation())
+	return e
+}
+
+type FailedConfirmationEndpoint struct {
+	ExternalEndpoint
+}
+
+func (e *FailedConfirmationEndpoint) HandleRequest(request api_server.Request) error {
+
+	// setup
+	var err error
+	c := request.TraceInMethod("ConfirmationExternalService.FailedConfirmation")
+	defer request.TraceOutMethod()
+
+	// parse command
+	result := &confirmation_control.ConfirmationResult{}
+	err = request.ParseValidate(result)
+	if err != nil {
+		c.SetMessage("failed to parse/validate command")
+		return c.SetError(err)
+	}
+	// fill failed status
+	result.Status = confirmation_control.StatusFailed
+
+	// invoke callback
+	resp := &confirmation_control_api.CheckConfirmationResponse{}
+	resp.RedirectUrl, err = e.service.ConfirmationCallbackHandler.ConfirmationCallback(request, request.GetResourceId(confirmation_control_api.OperationResource), result)
+	if err != nil {
+		c.SetMessage("failed to invoke callback")
+		return c.SetError(err)
+	}
+
+	// set response
+	request.Response().SetMessage(resp)
+
+	// done
+	return nil
+}
+
+func FailedConfirmation(s *ConfirmationExternalService) *FailedConfirmationEndpoint {
+	e := &FailedConfirmationEndpoint{}
+	e.Construct(s, confirmation_control_api.FailedConfirmation())
 	return e
 }

@@ -55,7 +55,7 @@ func (e *CallbackConfirmationEndpoint) HandleRequest(request api_server.Request)
 
 	// invoke callback
 	resp := &confirmation_control_api.CallbackConfirmationResponse{}
-	resp.Url, err = e.service.ConfirmationCallbackHandler.ConfirmationCallback(request, cmd.Id, cmd.CodeOrStatus)
+	resp.Url, err = e.service.ConfirmationCallbackHandler.ConfirmationCallback(request, cmd.Id, &cmd.ConfirmationResult)
 	if err != nil {
 		c.SetMessage("failed to invoke callback")
 		return c.SetError(err)

@@ -3,6 +3,7 @@ package confirmation_api_client
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
+	"github.com/evgeniums/go-backend-helpers/pkg/confirmation_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/confirmation_control/confirmation_control_api"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 )
@@ -25,7 +26,7 @@ func NewConfirmationExternalClient(client api_client.Client) *ConfirmationExtern
 	return c
 }
 
-func (cl *ConfirmationExternalClient) CheckConfirmation(ctx multitenancy.TenancyContext, operationId string, code string) (string, error) {
+func (cl *ConfirmationExternalClient) CheckConfirmation(ctx multitenancy.TenancyContext, operationId string, result *confirmation_control.ConfirmationResult) (string, error) {
 
 	// setup
 	c := ctx.TraceInMethod("ConfirmationExternalClient.CheckConfirmation")
@@ -39,9 +40,7 @@ func (cl *ConfirmationExternalClient) CheckConfirmation(ctx multitenancy.Tenancy
 	defer onExit()
 
 	// prepare and exec handler
-	cmd := &confirmation_control_api.CheckConfirmationCmd{
-		Code: code,
-	}
+	cmd := result
 	handler := api_client.NewHandlerInTenancy(cmd, &confirmation_control_api.CheckConfirmationResponse{})
 	op := api.NamedResourceOperation(cl.OperationResource, operationId, confirmation_control_api.CheckConfirmation())
 	err = op.ExecInTenancy(ctx, api_client.MakeTenancyOperationHandler(cl.ApiClient(), handler))

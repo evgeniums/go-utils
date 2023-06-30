@@ -3,6 +3,7 @@ package confirmation_api_client
 import (
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
+	"github.com/evgeniums/go-backend-helpers/pkg/confirmation_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/confirmation_control/confirmation_control_api"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 )
@@ -31,7 +32,7 @@ func NewConfirmationCallbackClient(client api_client.Client) *ConfirmationCallba
 	return c
 }
 
-func (cl *ConfirmationCallbackClient) ConfirmationCallback(ctx multitenancy.TenancyContext, operationId string, codeOrStatus string) (string, error) {
+func (cl *ConfirmationCallbackClient) ConfirmationCallback(ctx multitenancy.TenancyContext, operationId string, result *confirmation_control.ConfirmationResult) (string, error) {
 
 	// setup
 	c := ctx.TraceInMethod("ConfirmationCallbackClient.ConfirmationCallback")
@@ -46,8 +47,8 @@ func (cl *ConfirmationCallbackClient) ConfirmationCallback(ctx multitenancy.Tena
 
 	// prepare and exec handler
 	cmd := &confirmation_control_api.CallbackConfirmationCmd{
-		Id:           operationId,
-		CodeOrStatus: codeOrStatus,
+		Id:                 operationId,
+		ConfirmationResult: *result,
 	}
 	handler := api_client.NewHandlerInTenancy(cmd, &confirmation_control_api.CallbackConfirmationResponse{})
 	err = cl.callback_confirmation.ExecInTenancy(ctx, api_client.MakeTenancyOperationHandler(cl.ApiClient(), handler))
