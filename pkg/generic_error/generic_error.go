@@ -23,7 +23,7 @@ type Error interface {
 }
 
 type ErrorHolder struct {
-	Code     string      `json:"code"`
+	Code     string      `json:"code" validate:"omitempty,alphanum_,max=64" vmessage:"Invalid error code"`
 	Message  string      `json:"message"`
 	Details  string      `json:"details,omitempty"`
 	Original error       `json:"-"`
