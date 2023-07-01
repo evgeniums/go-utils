@@ -7,6 +7,7 @@ import (
 
 const StatusSuccess string = "success"
 const StatusFailed string = "failed"
+const StatusCancelled string = "cancelled"
 
 type ConfirmationSender interface {
 	SendConfirmation(ctx multitenancy.TenancyContext, operationId string, recipient string, failedUrl string, parameters ...map[string]interface{}) (redirectUrl string, err error)

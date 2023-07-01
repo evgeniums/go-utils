@@ -180,7 +180,9 @@ func (e *FailedConfirmationEndpoint) HandleRequest(request api_server.Request) e
 		return c.SetError(err)
 	}
 	// fill failed status
-	result.Status = confirmation_control.StatusFailed
+	if result.Status != confirmation_control.StatusCancelled {
+		result.Status = confirmation_control.StatusFailed
+	}
 
 	// invoke callback
 	resp := &confirmation_control_api.CheckConfirmationResponse{}
