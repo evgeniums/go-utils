@@ -12,7 +12,7 @@ type RedisCache struct {
 	pubsub_redis.RedisClient
 }
 
-func New() *RedisCache {
+func NewCache() *RedisCache {
 	r := &RedisCache{}
 	return r
 }

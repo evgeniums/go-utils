@@ -18,7 +18,7 @@ require (
 	github.com/markphelps/optional v0.10.0
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/redis/go-redis/v9 v9.0.2
+	github.com/redis/go-redis/v9 v9.0.3
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.8.2
 	github.com/tidwall/jsonc v0.3.2
@@ -33,6 +33,7 @@ require (
 )
 
 require (
+	github.com/bsm/redislock v0.9.3 // indirect
 	github.com/bytedance/sonic v1.8.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
