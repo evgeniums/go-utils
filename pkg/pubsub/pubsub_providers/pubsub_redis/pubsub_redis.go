@@ -87,6 +87,14 @@ func (r *RedisClient) Shutdown(ctx context.Context) error {
 	return nil
 }
 
+func (r *RedisClient) NativeHandler() *redis.Client {
+	return r.redisClient
+}
+
+func (r *RedisClient) Context() context.Context {
+	return r.context
+}
+
 //---------------------------------------
 
 type Publisher struct {
