@@ -34,7 +34,7 @@ func (r *RedisLock) NotObtained() bool {
 }
 
 func NewLocker(redisCache *RedisCache) *RedisLocker {
-	l := &RedisLocker{}
+	l := &RedisLocker{RedisCache: redisCache}
 	l.locker = redislock.New(redisCache.NativeHandler())
 	return l
 }
