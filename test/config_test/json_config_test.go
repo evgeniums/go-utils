@@ -121,3 +121,26 @@ func TestJsonExtendAdvanced(t *testing.T) {
 	assert.Equal(t, "subitem1", arrayParameter[0])
 	assert.Equal(t, "item3", arrayParameter[1])
 }
+
+func TestSetDefault(t *testing.T) {
+
+	configFile := test_utils.AssetsFilePath(testDir, "main.jsonc")
+	app := app_default.New(nil)
+	require.NoErrorf(t, app.Init(configFile), "failed to init application context")
+	defer app.Close()
+
+	app.Cfg().SetDefault("default_field1", "field1")
+	assert.True(t, app.Cfg().IsSet("default_field1"))
+
+	slice1 := []string{"sub1", "sub2", "sub3"}
+	app.Cfg().Set("slice_field1", slice1)
+	t.Logf("Slice 1 before set: %v", slice1)
+
+	app.Cfg().Set("default_field1.1", "sub2_2")
+	readSlice1 := app.Cfg().Get("default_field1")
+	t.Logf("Slice 1 after set: %v", readSlice1)
+
+	app.Cfg().SetDefault("default_field2.1", "sub2_2_2")
+	readSlice2 := app.Cfg().Get("default_field2")
+	t.Logf("Slice 2 after set: %v", readSlice2)
+}
