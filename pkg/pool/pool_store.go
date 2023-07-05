@@ -200,3 +200,11 @@ func SelfPoolName(store PoolStore) string {
 	}
 	return selfPool.Name()
 }
+
+func SelfPoolId(store PoolStore) string {
+	selfPool, err := store.SelfPool()
+	if err != nil {
+		return ""
+	}
+	return selfPool.GetID()
+}
