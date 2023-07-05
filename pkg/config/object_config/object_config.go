@@ -54,6 +54,7 @@ func LoadLogValidateApp(app app_context.Context, obj Object, defaultPath string,
 	return LoadLogValidate(app.Cfg(), app.Logger(), app.Validator(), obj, defaultPath, optionalPath...)
 }
 
+// Load, print to log and validate oject. Known bug: default values do not work poperly within arrays.
 func LoadLogValidate(cfg config.Config, log logger.Logger, vld validator.Validator, obj Object, defaultPath string, optionalPath ...string) error {
 
 	path := utils.OptionalArg(defaultPath, optionalPath...)
@@ -114,6 +115,7 @@ func loadValue(cfg config.Config, configPath string, objectValue reflect.Value) 
 
 		// Set the default value if the field is zero-valued.
 		if fieldValue.IsZero() {
+			// TODO does not work within arrays
 			defaultTag, ok := field.Tag.Lookup("default")
 			if ok {
 				cfg.SetDefault(fieldConfigPath, defaultTag)
