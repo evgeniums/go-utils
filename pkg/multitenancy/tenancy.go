@@ -199,6 +199,7 @@ func ContextTenancyPath(ctx TenancyContext) string {
 	return ctx.GetTenancy().Path()
 }
 
+// TODO fix typo
 func ContextTenancyDispplay(ctx TenancyContext) string {
 	if ctx.GetTenancy() == nil {
 		return ""
