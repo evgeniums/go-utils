@@ -96,22 +96,32 @@ const ErrorCodeLoginFailed = "login_failed"
 const ErrorCodeCredentialsRequired = "login_credentials_required"
 const ErrorCodeWaitRetry = "wait_retry"
 
+var ErrorDescriptions = map[string]string{
+	ErrorCodeLoginFailed:         "Invalid login or password",
+	ErrorCodeCredentialsRequired: "Credentials hash must be provided in request",
+	ErrorCodeWaitRetry:           "Retry later",
+}
+
+var ErrorProtocolCodes = map[string]int{
+	ErrorCodeLoginFailed:         http.StatusUnauthorized,
+	ErrorCodeCredentialsRequired: http.StatusUnauthorized,
+	ErrorCodeWaitRetry:           http.StatusTooManyRequests,
+}
+
 func (l *LoginHandler) ErrorDescriptions() map[string]string {
-	m := map[string]string{
-		ErrorCodeLoginFailed:         "Invalid login or password",
-		ErrorCodeCredentialsRequired: "Credentials hash must be provided in request",
-		ErrorCodeWaitRetry:           "Retry later",
-	}
-	return m
+	return ErrorDescriptions
 }
 
 func (l *LoginHandler) ErrorProtocolCodes() map[string]int {
-	m := map[string]int{
-		ErrorCodeLoginFailed:         http.StatusUnauthorized,
-		ErrorCodeCredentialsRequired: http.StatusUnauthorized,
-		ErrorCodeWaitRetry:           http.StatusTooManyRequests,
+	return ErrorProtocolCodes
+}
+
+func IsLoginError(err generic_error.Error) bool {
+	if err == nil {
+		return false
 	}
-	return m
+	_, found := ErrorDescriptions[err.Code()]
+	return found
 }
 
 func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {

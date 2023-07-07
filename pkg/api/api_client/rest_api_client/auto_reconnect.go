@@ -19,6 +19,9 @@ type autoReconnect struct {
 
 	mutex   sync.RWMutex
 	inLogin bool
+
+	lastLogin    string
+	lastPassword string
 }
 
 func newAutoReconnectHelper(handlers api_client.AutoReconnectHandlers) *autoReconnect {
@@ -101,6 +104,8 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 
 		a.mutex.RLock()
 		inLogin := a.inLogin
+		lastLogin := a.lastLogin
+		lastPassword := a.lastPassword
 		a.mutex.RUnlock()
 		if inLogin {
 			err = errors.New(lastResp.Error().Message())
@@ -117,9 +122,17 @@ func (a *autoReconnect) checkResponse(ctx op_context.Context, send func(opCtx op
 			err = errors.New("login must be specified in client credentials")
 			return lastResp, err
 		}
+		if lastResp.Error().Code() == auth_login_phash.ErrorCodeLoginFailed && login == lastLogin && password == lastPassword {
+			// relogin won't help
+			err = lastResp.Error()
+			c.SetMessage("login failed, credentials the same")
+			return lastResp, err
+		}
 
 		a.mutex.Lock()
 		a.inLogin = true
+		a.lastLogin = login
+		a.lastPassword = password
 		a.mutex.Unlock()
 
 		resp, err := a.client.Login(ctx, login, password)

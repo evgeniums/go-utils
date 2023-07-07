@@ -6,6 +6,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
 	"github.com/evgeniums/go-backend-helpers/pkg/api"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth"
+	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
@@ -133,7 +134,7 @@ func (cl *Client) Exec(ctx op_context.Context, operation api.Operation, cmd inte
 			// c.Logger().Debug("auth headers failed")
 			return c.SetError(errr)
 		}
-		if resp != nil && resp.Code() == http.StatusUnauthorized {
+		if resp != nil && resp.Code() == http.StatusUnauthorized && !auth_login_phash.IsLoginError(resp.Error()) {
 			exec()
 			if errr != nil {
 				// c.Logger().Debug("second auth headers failed")
