@@ -52,7 +52,7 @@ func logObject(log logger.Logger, configPath string, obj reflect.Value, logLevel
 
 				return val
 			}
-			logParameter(log, keyPath, formatValue(), level)
+			LogParameter(log, keyPath, formatValue(), level)
 		}
 	}
 }
@@ -61,6 +61,6 @@ func Log(log logger.Logger, configPath string, obj Object, logLevel ...logger.Le
 	logObject(log, configPath, reflect.ValueOf(obj.Config()), logLevel...)
 }
 
-func logParameter(log logger.Logger, key string, value string, logLevel logger.Level) {
+func LogParameter(log logger.Logger, key string, value string, logLevel logger.Level) {
 	log.Log(logLevel, "Configuration", logger.Fields{"key": key, "value": value})
 }

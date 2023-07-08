@@ -130,7 +130,7 @@ func LoadLogStringMapPlain[T any](cfg config.Config, log logger.Logger, configPa
 		}
 		m[key] = val
 
-		logParameter(log, fullKey, fmt.Sprintf("%v", val), logger.InfoLevel)
+		LogParameter(log, fullKey, fmt.Sprintf("%v", val), logger.InfoLevel)
 	}
 
 	return m, nil
