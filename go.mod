@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/dchest/uniuri v1.2.0
 	github.com/evgeniums/go-condchan v0.0.0-20210623094011-3f4a45786e20
-	github.com/evgeniums/go-finish-service v0.0.0-20230108111731-b6307469e51d
+	github.com/evgeniums/go-finish-service v0.0.0-20230710172925-6f222f893152
 	github.com/evgeniums/viper v0.0.0-20230408104246-ba679b16578b
 	github.com/gin-gonic/gin v1.9.0
 	github.com/go-playground/validator/v10 v10.11.2

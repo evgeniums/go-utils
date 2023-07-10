@@ -84,6 +84,8 @@ github.com/evgeniums/go-condchan v0.0.0-20210623094011-3f4a45786e20 h1:Jjsst0EuQ
 github.com/evgeniums/go-condchan v0.0.0-20210623094011-3f4a45786e20/go.mod h1:L2V4V0gUkEZOZK8/B9HZt3kQflAioTSm7jmrc4LXJuI=
 github.com/evgeniums/go-finish-service v0.0.0-20230108111731-b6307469e51d h1:Q2HUqSRk1i48rHSinn4kaUelm2KZTcrtSzE2o394txg=
 github.com/evgeniums/go-finish-service v0.0.0-20230108111731-b6307469e51d/go.mod h1:ciz7835vOw1ztWsU0JqvCPsDyTEEZnPtpKSXR16eLTQ=
+github.com/evgeniums/go-finish-service v0.0.0-20230710172925-6f222f893152 h1:SZcI5w5X3Yua4g8MavSquwUDLIsho3KDj/zoRk/dhUY=
+github.com/evgeniums/go-finish-service v0.0.0-20230710172925-6f222f893152/go.mod h1:ciz7835vOw1ztWsU0JqvCPsDyTEEZnPtpKSXR16eLTQ=
 github.com/evgeniums/viper v0.0.0-20230408104246-ba679b16578b h1:M8ZZQ6gQejB+9uDakaVDclQQL58WTl+LwmHiSOV+PFM=
 github.com/evgeniums/viper v0.0.0-20230408104246-ba679b16578b/go.mod h1:MGBD/g24IgNRChaehKAgXpoWyQa9zpP1o2HYZjk7/UQ=
 github.com/frankban/quicktest v1.14.3 h1:FJKSZTDHjyhriyC81FLQ0LY93eSai0ZyR/ZIkd3ZUKE=
