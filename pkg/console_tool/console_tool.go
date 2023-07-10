@@ -10,6 +10,7 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context/app_default"
+	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger/logger_logrus"
@@ -70,6 +71,7 @@ func (c *ConsoleUtility) Close() {
 	if c.App != nil {
 		c.App.Close()
 	}
+	db.Databases().CloseAll()
 }
 
 func (c *ConsoleUtility) InitCommandContext(group string, command string) multitenancy.TenancyContext {

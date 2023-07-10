@@ -81,6 +81,7 @@ type Cursor interface {
 type DB interface {
 	WithFilterParser
 
+	ID() string
 	Clone() DB
 
 	InitWithConfig(ctx logger.WithLogger, vld validator.Validator, cfg *DBConfig) error
@@ -136,4 +137,33 @@ func UpdateWithFilter(db DBHandlers, ctx logger.WithLogger, obj interface{}, fil
 	f := utils.CopyMap(fields)
 	f["updated_at"] = time.Now()
 	return db.UpdateWithFilter(ctx, obj, filter, f)
+}
+
+type AllDatabases struct {
+	databases map[string]DB
+}
+
+var all *AllDatabases
+
+func Databases() *AllDatabases {
+	if all == nil {
+		all = &AllDatabases{}
+		all.databases = make(map[string]DB)
+	}
+	return all
+}
+
+func (a *AllDatabases) Register(db DB) {
+	a.databases[db.ID()] = db
+}
+
+func (a *AllDatabases) Unregister(db DB) {
+	delete(a.databases, db.ID())
+}
+
+func (a *AllDatabases) CloseAll() {
+	databases := utils.AllMapValues(a.databases)
+	for _, db := range databases {
+		db.Close()
+	}
 }

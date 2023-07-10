@@ -40,12 +40,18 @@ type DbState struct {
 	joinQueries   *db.JoinQueries
 	filterManager *FilterManager
 	paginator     *Paginator
+
+	id string
 }
 
 type GormDB struct {
 	db *gorm.DB
 
 	DbState
+}
+
+func (g *GormDB) ID() string {
+	return g.id
 }
 
 func (g *GormDB) Config() interface{} {
@@ -56,6 +62,8 @@ var DefaultDbConnector = PostgresDbConnector
 
 func New(dbConnector ...*DbConnector) *GormDB {
 	g := &GormDB{}
+
+	g.id = utils.GenerateID()
 
 	g.filterManager = NewFilterManager()
 	g.joinQueries = db.NewJoinQueries()
@@ -165,6 +173,8 @@ func (g *GormDB) Connect(ctx logger.WithLogger) error {
 		return ctx.Logger().PushFatalStack("failed to connect to database", err)
 	}
 
+	db.Databases().Register(g)
+
 	// done
 	return nil
 }
@@ -176,6 +186,7 @@ func (g *GormDB) Close() {
 			db.Close()
 		}
 	}
+	db.Databases().Unregister(g)
 }
 
 func (g *GormDB) AutoMigrate(ctx logger.WithLogger, models []interface{}) error {
