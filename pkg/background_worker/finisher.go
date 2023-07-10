@@ -54,6 +54,7 @@ type Finisher interface {
 	AddRunner(runner Runner, config ...*RunnerConfig)
 	Wait()
 	Shutdown(ctx context.Context) error
+	RemoveRunner(name string)
 }
 
 type finisherLogger struct {
@@ -120,4 +121,8 @@ func (f *FinisherBase) Shutdown(ctx context.Context) error {
 
 func (f *FinisherBase) Wait() {
 	f.finisher.Wait()
+}
+
+func (f *FinisherBase) RemoveRunner(name string) {
+	f.finisher.Remove(name)
 }
