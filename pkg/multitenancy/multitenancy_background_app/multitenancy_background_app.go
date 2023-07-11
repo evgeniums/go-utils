@@ -8,6 +8,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context/app_default"
 	"github.com/evgeniums/go-backend-helpers/pkg/background_worker"
+	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/app_with_multitenancy"
@@ -118,5 +119,6 @@ func (m *Main) Exec() {
 	finishedMsg := fmt.Sprintf("%s finished", m.App.Application())
 	m.App.Logger().Info(finishedMsg)
 	m.App.Close()
+	db.Databases().CloseAll()
 	fmt.Println(finishedMsg)
 }
