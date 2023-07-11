@@ -212,7 +212,28 @@ func toTimeHookFunc() mapstructure.DecodeHookFunc {
 		default:
 			return data, nil
 		}
-		// Convert it by parsing
+	}
+}
+
+func toDateHookFunc() mapstructure.DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{}) (interface{}, error) {
+
+		var d Date
+		if t != reflect.TypeOf(d) {
+			return data, nil
+		}
+
+		switch f.Kind() {
+		case reflect.String:
+			return StrToDate(data.(string))
+		case reflect.Int:
+			return Date(data.(int)), nil
+		default:
+			return data, nil
+		}
 	}
 }
 
@@ -222,7 +243,7 @@ func MapToStruct(in interface{}, out interface{}, tag ...string) error {
 
 	// create new map decoder
 	meta := &mapstructure.Metadata{}
-	config := &mapstructure.DecoderConfig{Metadata: meta, TagName: t, Result: out, Squash: true, WeaklyTypedInput: true, DecodeHook: mapstructure.ComposeDecodeHookFunc(toTimeHookFunc())}
+	config := &mapstructure.DecoderConfig{Metadata: meta, TagName: t, Result: out, Squash: true, WeaklyTypedInput: true, DecodeHook: mapstructure.ComposeDecodeHookFunc(toTimeHookFunc(), toDateHookFunc())}
 	dec, err := mapstructure.NewDecoder(config)
 	if err != nil {
 		return err
