@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_providers/pubsub_redis"
-	"github.com/jellydator/ttlcache/v3"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -19,12 +18,15 @@ func NewCache() *RedisCache {
 
 func (r *RedisCache) Set(key string, value string, ttlSeconds ...int) error {
 
-	ttl := ttlcache.NoTTL
+	var err error
+
 	if len(ttlSeconds) > 0 {
-		ttl = time.Second * time.Duration(ttlSeconds[0])
+		ttl := time.Second * time.Duration(ttlSeconds[0])
+		r.NativeHandler().SetEx(r.Context(), key, value, ttl).Err()
+	} else {
+		r.NativeHandler().Set(r.Context(), key, value, 0).Err()
 	}
 
-	err := r.NativeHandler().SetEx(r.Context(), key, value, ttl).Err()
 	if err != nil {
 		return err
 	}
