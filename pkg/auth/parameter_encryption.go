@@ -16,8 +16,8 @@ import (
 
 type AuthParameterEncryption interface {
 	Encrypt(ctx op_context.Context, obj interface{}) (string, error)
-	SetAuthParameter(ctx AuthContext, authMethodProtocol string, name string, obj interface{}) error
-	GetAuthParameter(ctx AuthContext, authMethodProtocol string, name string, obj interface{}) (bool, error)
+	SetAuthParameter(ctx AuthContext, authMethodProtocol string, name string, obj interface{}, directKeyName ...bool) error
+	GetAuthParameter(ctx AuthContext, authMethodProtocol string, name string, obj interface{}, directKeyName ...bool) (bool, error)
 }
 
 type AuthParameterEncryptionBaseConfig struct {
@@ -55,7 +55,7 @@ func (a *AuthParameterEncryptionBase) createCipher(salt []byte) (*crypt_utils.AE
 	return cipher, err
 }
 
-func (a *AuthParameterEncryptionBase) SetAuthParameter(ctx AuthContext, authMethodProtocol string, name string, obj interface{}) error {
+func (a *AuthParameterEncryptionBase) SetAuthParameter(ctx AuthContext, authMethodProtocol string, name string, obj interface{}, directKeyName ...bool) error {
 
 	// setup
 	c := ctx.TraceInMethod("AuthParameterEncryptionBase.SetAuthParameter", logger.Fields{"name": name})
@@ -76,13 +76,13 @@ func (a *AuthParameterEncryptionBase) SetAuthParameter(ctx AuthContext, authMeth
 	}
 
 	// write result to  auth parameter
-	ctx.SetAuthParameter(authMethodProtocol, name, data)
+	ctx.SetAuthParameter(authMethodProtocol, name, data, directKeyName...)
 
 	// done
 	return nil
 }
 
-func (a *AuthParameterEncryptionBase) GetAuthParameter(ctx AuthContext, authMethodProtocol string, name string, obj interface{}) (bool, error) {
+func (a *AuthParameterEncryptionBase) GetAuthParameter(ctx AuthContext, authMethodProtocol string, name string, obj interface{}, directKeyName ...bool) (bool, error) {
 
 	// setup
 	c := ctx.TraceInMethod("AuthParameterEncryptionBase.GetAuthParameter", logger.Fields{"name": name})
@@ -96,7 +96,7 @@ func (a *AuthParameterEncryptionBase) GetAuthParameter(ctx AuthContext, authMeth
 	defer onExit()
 
 	// read auth parameter
-	data := ctx.GetAuthParameter(authMethodProtocol, name)
+	data := ctx.GetAuthParameter(authMethodProtocol, name, directKeyName...)
 	if data == "" {
 		return false, nil
 	}

@@ -26,8 +26,8 @@ type AuthContext interface {
 	GetRequestClientIp() string
 	GetRequestUserAgent() string
 
-	SetAuthParameter(authMethodProtocol string, key string, value string)
-	GetAuthParameter(authMethodProtocol string, key string) string
+	SetAuthParameter(authMethodProtocol string, key string, value string, directKeyName ...bool)
+	GetAuthParameter(authMethodProtocol string, key string, directKeyName ...bool) string
 }
 
 type AuthHandler interface {

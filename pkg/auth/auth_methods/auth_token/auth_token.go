@@ -28,6 +28,9 @@ type AuthTokenHandlerConfig struct {
 	AUTO_PROLONGATE_REFRESH         bool   `default:"true"`
 	REFRESH_PATH                    string `default:"/auth/refresh"`
 	LOGOUT_PATH                     string `default:"/auth/logout"`
+
+	ACCESS_TOKEN_NAME string `default:"access-token"`
+	DIRECT_TOKEN_NAME bool
 }
 
 type AuthTokenHandler struct {
@@ -119,7 +122,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	// chek if it is REFRESH token request or normal access
 	path := ctx.GetRequestPath()
 	refresh := path == a.REFRESH_PATH
-	tokenName := AccessTokenName
+	tokenName := a.ACCESS_TOKEN_NAME
 	if refresh {
 		tokenName = RefreshTokenName
 	}
@@ -127,7 +130,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 
 	// check token in request
 	prev := &Token{}
-	exists, err := a.encryption.GetAuthParameter(ctx, a.Protocol(), tokenName, prev)
+	exists, err := a.encryption.GetAuthParameter(ctx, a.Protocol(), tokenName, prev, a.DIRECT_TOKEN_NAME)
 	if !exists {
 		return false, err
 	}
@@ -272,7 +275,7 @@ func (a *AuthTokenHandler) GenAccessToken(ctx auth.AuthContext) error {
 	c := ctx.TraceInMethod("AuthTokenHandler.GenAccessToken")
 	defer ctx.TraceOutMethod()
 
-	return c.SetError(a.GenToken(ctx, AccessTokenName, a.ACCESS_TOKEN_TTL_SECONDS))
+	return c.SetError(a.GenToken(ctx, a.ACCESS_TOKEN_NAME, a.ACCESS_TOKEN_TTL_SECONDS))
 }
 
 func (a *AuthTokenHandler) GenRefreshToken(ctx auth.AuthContext, session auth_session.Session) error {
@@ -312,7 +315,7 @@ func (a *AuthTokenHandler) GenToken(ctx auth.AuthContext, paramName string, expi
 	}
 	token.Type = paramName
 	token.SetTTL(expirationSeconds)
-	return c.SetError(a.encryption.SetAuthParameter(ctx, a.Protocol(), paramName, token))
+	return c.SetError(a.encryption.SetAuthParameter(ctx, a.Protocol(), paramName, token, a.DIRECT_TOKEN_NAME))
 }
 
 func (a *AuthTokenHandler) SessionExpiration() time.Time {

@@ -148,25 +148,28 @@ func (r *Request) GetRequestContent() []byte {
 	return nil
 }
 
-func AuthKey(key string) string {
+func AuthKey(key string, directKeyName ...bool) string {
+	if utils.OptionalArg(false, directKeyName...) {
+		return key
+	}
 	return utils.ConcatStrings("x-auth-", key)
 }
 
-func (r *Request) SetAuthParameter(authMethodProtocol string, key string, value string) {
+func (r *Request) SetAuthParameter(authMethodProtocol string, key string, value string, directKeyName ...bool) {
 	handler := r.server.AuthParameterSetter(authMethodProtocol)
 	if handler != nil {
 		handler(r, key, value)
 		return
 	}
-	r.ginCtx.Header(AuthKey(key), value)
+	r.ginCtx.Header(AuthKey(key, directKeyName...), value)
 }
 
-func (r *Request) GetAuthParameter(authMethodProtocol string, key string) string {
+func (r *Request) GetAuthParameter(authMethodProtocol string, key string, directKeyName ...bool) string {
 	handler := r.server.AuthParameterGetter(authMethodProtocol)
 	if handler != nil {
 		return handler(r, key)
 	}
-	return getHttpHeader(r.ginCtx, AuthKey(key))
+	return getHttpHeader(r.ginCtx, AuthKey(key, directKeyName...))
 }
 
 func (r *Request) CheckRequestContent(smsMessage *string) error {
