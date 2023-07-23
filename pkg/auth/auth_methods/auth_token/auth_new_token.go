@@ -37,10 +37,10 @@ func (a *AuthNewTokenHandler) Init(cfg config.Config, log logger.Logger, vld val
 	return nil
 }
 
-func (a *AuthNewTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
+func (a *AuthNewTokenHandler) Process(ctx auth.AuthContext) (bool, *Token, error) {
 
 	// setup
-	c := ctx.TraceInMethod("AuthNewTokenHandler.Handle")
+	c := ctx.TraceInMethod("AuthNewTokenHandler.Process")
 	var err error
 	onExit := func() {
 		if err != nil {
@@ -52,7 +52,7 @@ func (a *AuthNewTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 
 	// check if user was already authenticated
 	if ctx.AuthUser() == nil {
-		return false, nil
+		return false, nil, nil
 	}
 
 	// user was authenticated, just create or update session client and add tokens
@@ -64,7 +64,7 @@ func (a *AuthNewTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		session, err = a.users.SessionManager().CreateSession(ctx, a.SessionExpiration())
 		if err != nil {
 			ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
-			return true, err
+			return true, nil, err
 		}
 		ctx.SetSessionId(session.GetID())
 	} else {
@@ -72,7 +72,7 @@ func (a *AuthNewTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		session, err = a.users.SessionManager().FindSession(ctx, sessionId)
 		if err != nil {
 			ctx.SetGenericErrorCode(ErrorCodeSessionExpired)
-			return true, err
+			return true, nil, err
 		}
 	}
 
@@ -80,32 +80,32 @@ func (a *AuthNewTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	err = a.users.SessionManager().UpdateSessionClient(ctx)
 	if err != nil {
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
-		return true, err
+		return true, nil, err
 	}
 
 	// generate refresh token
-	err = a.GenRefreshToken(ctx, session)
+	_, err = a.GenRefreshToken(ctx, session)
 	if err != nil {
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
-		return true, err
+		return true, nil, err
 	}
 
 	// generate access token
-	err = a.GenAccessToken(ctx)
+	token, err := a.GenAccessToken(ctx)
 	if err != nil {
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
-		return true, err
-	}
-
-	// generate refresh token
-	err = a.GenRefreshToken(ctx, session)
-	if err != nil {
-		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
-		return true, err
+		return true, nil, err
 	}
 
 	// done
-	return true, nil
+	return true, token, nil
+}
+
+func (a *AuthNewTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
+	c := ctx.TraceInMethod("AuthNewTokenHandler.Handle")
+	defer ctx.TraceOutMethod()
+	found, _, err := a.Process(ctx)
+	return found, c.SetError(err)
 }
 
 func GenManualToken(ctx op_context.Context, cipher auth.AuthParameterEncryption, tenancyID string, user auth.User, sesisonID string, expirationSeconds int, tokenType string) (string, error) {

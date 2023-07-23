@@ -249,7 +249,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 
 			if regenerateAccessToken {
 				// generate access token
-				err = a.GenAccessToken(ctx)
+				_, err = a.GenAccessToken(ctx)
 				if err != nil {
 					ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 					return true, err
@@ -261,7 +261,7 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 		regenerateRefreshToken := a.AUTO_PROLONGATE_REFRESH && (refresh || tokenExpirationTime.After(session.GetExpiration()))
 		if regenerateRefreshToken {
 			// generate refresh token
-			err = a.GenRefreshToken(ctx, session)
+			_, err = a.GenRefreshToken(ctx, session)
 			if err != nil {
 				ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 				return true, err
@@ -284,17 +284,20 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	return true, nil
 }
 
-func (a *AuthTokenHandler) GenAccessToken(ctx auth.AuthContext) error {
+func (a *AuthTokenHandler) GenAccessToken(ctx auth.AuthContext) (*Token, error) {
 	c := ctx.TraceInMethod("AuthTokenHandler.GenAccessToken")
 	defer ctx.TraceOutMethod()
-
-	return c.SetError(a.GenToken(ctx, a.ACCESS_TOKEN_NAME, a.ACCESS_TOKEN_TTL_SECONDS))
+	token, err := a.GenToken(ctx, a.ACCESS_TOKEN_NAME, a.ACCESS_TOKEN_TTL_SECONDS)
+	if err != nil {
+		return nil, c.SetError(err)
+	}
+	return token, nil
 }
 
-func (a *AuthTokenHandler) GenRefreshToken(ctx auth.AuthContext, session auth_session.Session) error {
+func (a *AuthTokenHandler) GenRefreshToken(ctx auth.AuthContext, session auth_session.Session) (*Token, error) {
 
 	if a.DISABLE_REFRESH {
-		return nil
+		return nil, nil
 	}
 
 	c := ctx.TraceInMethod("AuthTokenHandler.GenRefreshToken")
@@ -312,13 +315,16 @@ func (a *AuthTokenHandler) GenRefreshToken(ctx auth.AuthContext, session auth_se
 	err = a.users.SessionManager().UpdateSessionExpiration(ctx, session)
 	if err != nil {
 		c.SetMessage("failed to update session expiration")
-		return err
+		return nil, err
 	}
-	err = a.GenToken(ctx, RefreshTokenName, expirationSeconds)
-	return err
+	token, err := a.GenToken(ctx, RefreshTokenName, expirationSeconds)
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
 }
 
-func (a *AuthTokenHandler) GenToken(ctx auth.AuthContext, paramName string, expirationSeconds int) error {
+func (a *AuthTokenHandler) GenToken(ctx auth.AuthContext, paramName string, expirationSeconds int) (*Token, error) {
 
 	c := ctx.TraceInMethod("AuthTokenHandler.GenToken")
 	defer ctx.TraceOutMethod()
@@ -333,7 +339,12 @@ func (a *AuthTokenHandler) GenToken(ctx auth.AuthContext, paramName string, expi
 	}
 	token.Type = paramName
 	token.SetTTL(expirationSeconds)
-	return c.SetError(a.encryption.SetAuthParameter(ctx, a.Protocol(), paramName, token, a.DIRECT_TOKEN_NAME))
+
+	err := a.encryption.SetAuthParameter(ctx, a.Protocol(), paramName, token, a.DIRECT_TOKEN_NAME)
+	if err != nil {
+		return nil, c.SetError(err)
+	}
+	return token, nil
 }
 
 func (a *AuthTokenHandler) SessionExpiration() time.Time {
