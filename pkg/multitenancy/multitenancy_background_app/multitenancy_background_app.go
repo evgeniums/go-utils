@@ -3,7 +3,6 @@ package multitenancy_background_app
 import (
 	"flag"
 	"fmt"
-	"path/filepath"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context/app_default"
@@ -14,7 +13,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/app_with_multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/markphelps/optional"
 )
 
@@ -40,15 +38,7 @@ type Main struct {
 }
 
 func ConfigFile(defaultConfigFile ...string) string {
-	appPath := app_default.Application()
-	configPath := fmt.Sprintf("%s.jsonc", appPath[:len(appPath)-len(filepath.Ext(appPath))])
-	configPath = utils.OptionalString(configPath, defaultConfigFile...)
-
-	configFile := flag.String("config", configPath, "Configuration file")
-	flag.Parse()
-	fmt.Printf("Using config file %v\n", *configFile)
-
-	return *configFile
+	return app_default.ConfigFile(defaultConfigFile...)
 }
 
 func New(buildConfig *app_context.BuildConfig, tenancyDbModels *multitenancy.TenancyDbModels, runnerConfig *RunnerConfig, appConfig ...app_with_multitenancy.AppConfigI) *Main {

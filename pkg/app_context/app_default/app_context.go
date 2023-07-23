@@ -2,6 +2,7 @@ package app_default
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"math/rand"
 	"os"
@@ -18,6 +19,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger/logger_logrus"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator/validator_playground"
 )
@@ -253,4 +255,16 @@ func (c *Context) Hostname() string {
 		hostname = "unknow"
 	}
 	return hostname
+}
+
+func ConfigFile(defaultConfigFile ...string) string {
+	appPath := Application()
+	configPath := fmt.Sprintf("%s.jsonc", appPath[:len(appPath)-len(filepath.Ext(appPath))])
+	configPath = utils.OptionalString(configPath, defaultConfigFile...)
+
+	configFile := flag.String("config", configPath, "Configuration file")
+	flag.Parse()
+	fmt.Printf("Using config file %v\n", *configFile)
+
+	return *configFile
 }
