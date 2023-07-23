@@ -31,6 +31,8 @@ type AuthTokenHandlerConfig struct {
 
 	ACCESS_TOKEN_NAME string `default:"access-token"`
 	DIRECT_TOKEN_NAME bool
+
+	DISABLE_REFRESH bool
 }
 
 type AuthTokenHandler struct {
@@ -86,22 +88,26 @@ const ErrorCodeInvalidToken = "auth_token_invalid"
 const ErrorCodeSessionExpired = "session_expired"
 const ErrorCodeUnknownUser = "unknown_user"
 
+const ErrorCodeRefreshDisabled = "refresh_disabled"
+
 func (a *AuthTokenHandler) ErrorDescriptions() map[string]string {
 	m := map[string]string{
-		ErrorCodeTokenExpired:   "Provided authentication token expired.",
-		ErrorCodeInvalidToken:   "Invalid authentication token token.",
-		ErrorCodeSessionExpired: "Session expired.",
-		ErrorCodeUnknownUser:    "Unknown user.",
+		ErrorCodeTokenExpired:    "Provided authentication token expired",
+		ErrorCodeInvalidToken:    "Invalid authentication token token",
+		ErrorCodeSessionExpired:  "Session expired",
+		ErrorCodeUnknownUser:     "Unknown user",
+		ErrorCodeRefreshDisabled: "Refresh disabled",
 	}
 	return m
 }
 
 func (a *AuthTokenHandler) ErrorProtocolCodes() map[string]int {
 	m := map[string]int{
-		ErrorCodeTokenExpired:   http.StatusUnauthorized,
-		ErrorCodeInvalidToken:   http.StatusUnauthorized,
-		ErrorCodeSessionExpired: http.StatusUnauthorized,
-		ErrorCodeUnknownUser:    http.StatusUnauthorized,
+		ErrorCodeTokenExpired:    http.StatusUnauthorized,
+		ErrorCodeInvalidToken:    http.StatusUnauthorized,
+		ErrorCodeSessionExpired:  http.StatusUnauthorized,
+		ErrorCodeUnknownUser:     http.StatusUnauthorized,
+		ErrorCodeRefreshDisabled: http.StatusUnauthorized,
 	}
 	return m
 }
@@ -124,6 +130,13 @@ func (a *AuthTokenHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	refresh := path == a.REFRESH_PATH
 	tokenName := a.ACCESS_TOKEN_NAME
 	if refresh {
+
+		if a.DISABLE_REFRESH {
+			err = errors.New("refresh disabled")
+			ctx.SetGenericErrorCode(ErrorCodeRefreshDisabled)
+			return true, err
+		}
+
 		tokenName = RefreshTokenName
 	}
 	c.LoggerFields()["refresh"] = refresh
@@ -279,6 +292,11 @@ func (a *AuthTokenHandler) GenAccessToken(ctx auth.AuthContext) error {
 }
 
 func (a *AuthTokenHandler) GenRefreshToken(ctx auth.AuthContext, session auth_session.Session) error {
+
+	if a.DISABLE_REFRESH {
+		return nil
+	}
+
 	c := ctx.TraceInMethod("AuthTokenHandler.GenRefreshToken")
 	var err error
 	onExit := func() {
