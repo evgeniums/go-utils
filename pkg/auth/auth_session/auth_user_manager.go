@@ -23,7 +23,11 @@ type WithAuthUserManager interface {
 	AuthUserManager() AuthUserManager
 }
 
+type WithSessionManager interface {
+	SessionManager() SessionController
+}
+
 type WithUserSessionManager interface {
 	WithAuthUserManager
-	SessionManager() SessionController
+	WithSessionManager
 }
