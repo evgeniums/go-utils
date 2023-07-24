@@ -134,3 +134,12 @@ func DecryptStrings(secret string, salt string, ciphertext string, additionalStr
 
 	return Decrypt(secret, []byte(salt), cipherdata, additionalData...)
 }
+
+func AeadEncryptB64(a *AEAD, plaintext []byte, additionalData ...[]byte) (string, error) {
+	b, err := a.Encrypt(plaintext, additionalData...)
+	if err != nil {
+		return "", err
+	}
+	c := utils.Base64StringCoding{}
+	return c.Encode(b), nil
+}
