@@ -242,10 +242,11 @@ func (s *Server) ginDefaultLogger() gin.HandlerFunc {
 
 func (s *Server) crashRecovery() gin.HandlerFunc {
 	return func(ginCtx *gin.Context) {
-
-		s.crashed = true
-
-		handler := gin.Recovery()
+		handle := func(c *gin.Context, err any) {
+			s.crashed = true
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
+		handler := gin.CustomRecovery(handle)
 		handler(ginCtx)
 	}
 }
