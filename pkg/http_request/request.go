@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -229,4 +230,62 @@ func HttpHeadersSet(req *http.Request, headers ...map[string]string) {
 			req.Header.Set(k, v)
 		}
 	}
+}
+
+func NewMultipart(ctx op_context.Context, url string, files map[string]io.Reader, fields map[string]string, filesField ...string) (*Request, error) {
+
+	// prepare
+	filesFieldName := utils.OptionalArg("files", filesField...)
+	r := &Request{}
+	c := ctx.TraceInMethod("http_request.NewMultipart", logger.Fields{"url": url})
+	defer ctx.TraceOutMethod()
+
+	// write files
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	for key, r := range files {
+		fw, err := w.CreateFormFile(filesFieldName, key)
+		if err != nil {
+			c.SetLoggerField("file", key)
+			c.SetMessage("failed to create form file")
+			return nil, c.SetError(err)
+		}
+		_, err = io.Copy(fw, r)
+		if err != nil {
+			c.SetLoggerField("file", key)
+			c.SetMessage("failed to read file")
+			return nil, c.SetError(err)
+		}
+	}
+	w.Close()
+
+	// write other fields
+	for key, r := range fields {
+		fw, err := w.CreateFormField(key)
+		if err != nil {
+			c.SetLoggerField("field", key)
+			c.SetMessage("failed to create form field")
+			return nil, c.SetError(err)
+		}
+		_, err = io.WriteString(fw, r)
+		if err != nil {
+			c.SetLoggerField("field", key)
+			c.SetMessage("failed to write form field")
+			return nil, c.SetError(err)
+		}
+	}
+
+	// create request
+	var err error
+	r.NativeRequest, err = http.NewRequest(http.MethodPost, url, &b)
+	if err != nil {
+		c.SetMessage("failed to create request")
+		return nil, c.SetError(err)
+	}
+
+	// set content type
+	r.NativeRequest.Header.Set("Content-Type", w.FormDataContentType())
+
+	// done
+	return r, nil
 }
