@@ -37,6 +37,15 @@ func (h *Hmac) CalcStrings(data ...string) []byte {
 	return h.Hash.Sum(nil)
 }
 
+func (h *Hmac) CalcStringsStr(data ...string) string {
+	for _, block := range data {
+		if block != "" {
+			h.Hash.Write([]byte(block))
+		}
+	}
+	return h.StringCoding.Encode(h.Hash.Sum(nil))
+}
+
 func (h *Hmac) CalcStr(data []byte) string {
 	return h.StringCoding.Encode(h.Calc(data))
 }
@@ -74,5 +83,13 @@ func NewHmac(secret string, digestBuilder ...DigestBuilder) *Hmac {
 	hm := hmac.New(builder, []byte(secret))
 	h := &Hmac{Hash: hm}
 	h.StringCoding = &utils.Base64StringCoding{}
+	return h
+}
+
+func NewHmacCoding(secret string, val utils.StringCoding, digestBuilder ...DigestBuilder) *Hmac {
+	var builder = utils.OptionalArg(sha256.New, digestBuilder...)
+	hm := hmac.New(builder, []byte(secret))
+	h := &Hmac{Hash: hm}
+	h.StringCoding = val
 	return h
 }
