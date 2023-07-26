@@ -25,6 +25,7 @@ type Request struct {
 	NativeRequest   *http.Request
 	NativeResponse  *http.Response
 	ResponseStatus  int
+	Body            []byte
 	ResponseContent string
 	GoodResponse    interface{}
 	BadResponse     interface{}
@@ -50,6 +51,7 @@ func NewPost(ctx op_context.Context, url string, msg interface{}, serializer ...
 		return nil, c.SetError(err)
 	}
 
+	r.Body = cmdByte
 	r.NativeRequest, err = http.NewRequest(http.MethodPost, url, bytes.NewBuffer(cmdByte))
 	if err != nil {
 		c.SetMessage("failed to create request")
