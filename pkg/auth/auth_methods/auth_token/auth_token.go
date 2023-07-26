@@ -76,7 +76,7 @@ func (a *AuthTokenHandler) Init(cfg config.Config, log logger.Logger, vld valida
 	encryption := &auth.AuthParameterEncryptionBase{}
 	err = encryption.Init(cfg, log, vld, path)
 	if err != nil {
-		return log.PushFatalStack("failed to load configuration of CSRF encryption", err)
+		return log.PushFatalStack("failed to load configuration of auth token encryption", err)
 	}
 	a.encryption = encryption
 
