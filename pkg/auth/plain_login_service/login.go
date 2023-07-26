@@ -15,7 +15,7 @@ type UserWithPlainPassword interface {
 }
 
 type LoginCmd struct {
-	Login    string `json:"login" validate:"required,alphanum_" vmessage:"Invalid login"`
+	Username string `json:"username" validate:"required,alphanum_" vmessage:"Invalid login"`
 	Password string `json:"password" validate:"omitempty,max=64" vmessage:"Password too big"`
 }
 
@@ -55,7 +55,7 @@ func (e *LoginEndpoint) HandleRequest(request api_server.Request) error {
 	}
 
 	// find user
-	user, err := e.service.users.AuthUserManager().FindAuthUser(request, cmd.Login)
+	user, err := e.service.users.AuthUserManager().FindAuthUser(request, cmd.Username)
 	if err != nil {
 		c.SetMessage("user not found")
 		request.SetGenericErrorCode(auth_login_phash.ErrorCodeLoginFailed)
