@@ -242,9 +242,20 @@ func NewMultipart(ctx op_context.Context, url string, files map[string]io.Reader
 	c := ctx.TraceInMethod("http_request.NewMultipart", logger.Fields{"url": url})
 	defer ctx.TraceOutMethod()
 
-	// write files
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
+
+	// write other fields
+	for key, r := range fields {
+		err := w.WriteField(key, r)
+		if err != nil {
+			c.SetLoggerField("field", key)
+			c.SetMessage("failed to create form field")
+			return nil, c.SetError(err)
+		}
+	}
+
+	// write files
 	for key, r := range files {
 		fw, err := w.CreateFormFile(filesFieldName, key)
 		if err != nil {
@@ -260,22 +271,6 @@ func NewMultipart(ctx op_context.Context, url string, files map[string]io.Reader
 		}
 	}
 	w.Close()
-
-	// write other fields
-	for key, r := range fields {
-		fw, err := w.CreateFormField(key)
-		if err != nil {
-			c.SetLoggerField("field", key)
-			c.SetMessage("failed to create form field")
-			return nil, c.SetError(err)
-		}
-		_, err = io.WriteString(fw, r)
-		if err != nil {
-			c.SetLoggerField("field", key)
-			c.SetMessage("failed to write form field")
-			return nil, c.SetError(err)
-		}
-	}
 
 	// create request
 	var err error
