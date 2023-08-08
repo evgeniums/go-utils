@@ -110,7 +110,6 @@ func (t *WithDbRole) SetDbRole(role string) {
 func TenancyDisplay(t Tenancy) string {
 
 	if t.CustomerDisplay() != "" {
-
 		return utils.ConcatStrings(t.CustomerDisplay(), "/", t.Role())
 	}
 
@@ -199,8 +198,7 @@ func ContextTenancyPath(ctx TenancyContext) string {
 	return ctx.GetTenancy().Path()
 }
 
-// TODO fix typo
-func ContextTenancyDispplay(ctx TenancyContext) string {
+func ContextTenancyDisplay(ctx TenancyContext) string {
 	if ctx.GetTenancy() == nil {
 		return ""
 	}
