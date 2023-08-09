@@ -37,6 +37,7 @@ type WithCRUD interface {
 
 type DbCRUD struct {
 	ForceMainDb bool
+	DryRun      bool
 }
 
 type WithCRUDBase struct {
@@ -62,11 +63,31 @@ func (w *WithCRUDBase) SetForceMainDb(enable bool) {
 	}
 }
 
+func (w *WithCRUDBase) SetDryRun(enable bool) {
+	dbCrud, ok := w.crud.(*DbCRUD)
+	if ok {
+		dbCrud.DryRun = enable
+	}
+}
+
+func (w *WithCRUDBase) IsDryRun() bool {
+	dbCrud, ok := w.crud.(*DbCRUD)
+	if ok {
+		return dbCrud.DryRun
+	}
+	return false
+}
+
 func (d *DbCRUD) Db(ctx op_context.Context) db.DBHandlers {
 	return op_context.DB(ctx, d.ForceMainDb)
 }
 
 func (d *DbCRUD) Create(ctx op_context.Context, object common.Object) error {
+
+	if d.DryRun {
+		return nil
+	}
+
 	c := ctx.TraceInMethod("CRUD.Create")
 	defer ctx.TraceOutMethod()
 
@@ -79,6 +100,10 @@ func (d *DbCRUD) Create(ctx op_context.Context, object common.Object) error {
 }
 
 func (d *DbCRUD) CreateDup(ctx op_context.Context, object common.Object, ignoreConflict ...bool) (bool, error) {
+
+	if d.DryRun {
+		return false, nil
+	}
 
 	c := ctx.TraceInMethod("CRUD.CreateDup")
 	defer ctx.TraceOutMethod()
@@ -144,6 +169,11 @@ func (d *DbCRUD) ReadByField(ctx op_context.Context, fieldName string, fieldValu
 }
 
 func (d *DbCRUD) Update(ctx op_context.Context, obj common.Object, fields db.Fields) error {
+
+	if d.DryRun {
+		return nil
+	}
+
 	c := ctx.TraceInMethod("CRUD.Update")
 	defer ctx.TraceOutMethod()
 
@@ -156,6 +186,11 @@ func (d *DbCRUD) Update(ctx op_context.Context, obj common.Object, fields db.Fie
 }
 
 func (d *DbCRUD) UpdateMonthObject(ctx op_context.Context, obj common.ObjectWithMonth, fields db.Fields) error {
+
+	if d.DryRun {
+		return nil
+	}
+
 	c := ctx.TraceInMethod("CRUD.UpdateMonthObject")
 	defer ctx.TraceOutMethod()
 
@@ -168,6 +203,11 @@ func (d *DbCRUD) UpdateMonthObject(ctx op_context.Context, obj common.ObjectWith
 }
 
 func (d *DbCRUD) UpdateMulti(ctx op_context.Context, model interface{}, filter db.Fields, fields db.Fields) error {
+
+	if d.DryRun {
+		return nil
+	}
+
 	c := ctx.TraceInMethod("CRUD.UpdateMulti")
 	defer ctx.TraceOutMethod()
 
@@ -185,6 +225,11 @@ func (d *DbCRUD) UpdateMulti(ctx op_context.Context, model interface{}, filter d
 }
 
 func (d *DbCRUD) UpdateWithFilter(ctx op_context.Context, model interface{}, filter *db.Filter, fields db.Fields) error {
+
+	if d.DryRun {
+		return nil
+	}
+
 	c := ctx.TraceInMethod("CRUD.UpdateWithFilter")
 	defer ctx.TraceOutMethod()
 
@@ -197,6 +242,11 @@ func (d *DbCRUD) UpdateWithFilter(ctx op_context.Context, model interface{}, fil
 }
 
 func (d *DbCRUD) Delete(ctx op_context.Context, object common.Object) error {
+
+	if d.DryRun {
+		return nil
+	}
+
 	c := ctx.TraceInMethod("CRUD.Delete")
 	defer ctx.TraceOutMethod()
 
@@ -209,6 +259,11 @@ func (d *DbCRUD) Delete(ctx op_context.Context, object common.Object) error {
 }
 
 func (d *DbCRUD) DeleteByFields(ctx op_context.Context, fields db.Fields, object common.Object) error {
+
+	if d.DryRun {
+		return nil
+	}
+
 	c := ctx.TraceInMethod("CRUD.DeleteByFields")
 	defer ctx.TraceOutMethod()
 
