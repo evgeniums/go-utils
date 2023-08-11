@@ -137,6 +137,17 @@ func SimpleOpContext(app app_context.Context, name string) op_context.Context {
 	return ctx
 }
 
+func MultitenancyOpContext(app app_context.Context, name string) multitenancy.TenancyContext {
+	ctx := multitenancy.NewInitContext(app, app.Logger(), app.Db())
+	prepareOpContext(ctx, name)
+
+	origin := default_op_context.NewOrigin(app)
+	origin.SetUserType("multitenancy_op_context")
+	ctx.SetOrigin(origin)
+
+	return ctx
+}
+
 func UserOpContext(app app_context.Context, name string, user auth.User, tenancy ...multitenancy.Tenancy) auth.UserContext {
 	ctx := &auth.TenancyUserContext{}
 	baseCtx := default_op_context.NewContext()
