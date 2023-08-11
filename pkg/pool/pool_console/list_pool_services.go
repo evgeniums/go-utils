@@ -16,7 +16,7 @@ func ListPoolServices() Handler {
 }
 
 type ListPoolServicesData struct {
-	Name string `long:"name" description:"Short name of the pool" required:"true"`
+	Pool string `long:"pool" description:"Short name of the pool" required:"true"`
 }
 
 type ListPoolServicesHandler struct {
@@ -35,7 +35,7 @@ func (a *ListPoolServicesHandler) Execute(args []string) error {
 		return err
 	}
 	defer ctx.Close()
-	services, err := controller.GetPoolBindings(ctx, a.Name, true)
+	services, err := controller.GetPoolBindings(ctx, a.Pool, true)
 	if err == nil {
 		fmt.Printf("Services:\n\n%s\n\n", utils.DumpPrettyJson(services))
 	}
