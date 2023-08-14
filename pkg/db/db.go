@@ -64,6 +64,7 @@ type DBHandlers interface {
 	Sum(ctx logger.WithLogger, groupFields []string, sumFields []string, filter *Filter, model interface{}, dest ...interface{}) (int64, error)
 
 	Transaction(handler TransactionHandler) error
+	EnableDebug(bool)
 }
 
 type Transaction interface {
@@ -88,11 +89,11 @@ type DB interface {
 
 	DBHandlers
 
-	EnableDebug(bool)
 	EnableVerboseErrors(bool)
 
 	AutoMigrate(ctx logger.WithLogger, models []interface{}) error
 	PartitionedMonthAutoMigrate(ctx logger.WithLogger, models []interface{}) error
+	MigrateDropIndex(ctx logger.WithLogger, model interface{}, indexName string) error
 
 	NativeHandler() interface{}
 

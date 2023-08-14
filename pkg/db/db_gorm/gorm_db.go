@@ -197,6 +197,16 @@ func (g *GormDB) AutoMigrate(ctx logger.WithLogger, models []interface{}) error 
 	return nil
 }
 
+func (g *GormDB) MigrateDropIndex(ctx logger.WithLogger, model interface{}, indexName string) error {
+	if g.db_().Migrator().HasIndex(model, indexName) {
+		err := g.db_().Migrator().DropIndex(model, indexName)
+		if err != nil {
+			return ctx.Logger().PushFatalStack("failed to drop index", err)
+		}
+	}
+	return nil
+}
+
 func (g *GormDB) PartitionedMonthAutoMigrate(ctx logger.WithLogger, models []interface{}) error {
 	return g.dbConnector.PartitionedMonthMigrator(g.DB_PROVIDER, ctx, g.db_(), models...)
 }
