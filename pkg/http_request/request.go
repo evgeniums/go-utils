@@ -10,6 +10,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/message"
@@ -31,6 +32,7 @@ type Request struct {
 	BadResponse     interface{}
 	Serializer      message.Serializer
 	Transport       http.RoundTripper
+	Timeout         int
 	ParsingFailed   bool
 }
 
@@ -135,6 +137,9 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 	}
 
 	client := &http.Client{Transport: r.Transport}
+	if r.Timeout != 0 {
+		client.Timeout = time.Second * time.Duration(r.Timeout)
+	}
 	r.NativeResponse, err = client.Do(r.NativeRequest)
 
 	if ctx.Logger().DumpRequests() {
