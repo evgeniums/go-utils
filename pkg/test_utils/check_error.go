@@ -43,8 +43,15 @@ func ObjectEqual(t *testing.T, left common.Object, right common.Object) {
 }
 
 func NoError(t *testing.T, ctx op_context.Context, err error) {
-	if err != nil && ctx != nil {
+	if err == nil {
+		return
+	}
+	if ctx != nil {
 		ctx.Close()
+		gErr := ctx.GenericError()
+		if gErr != nil {
+			DumpObject(t, gErr, "Generic error")
+		}
 	}
 	require.NoError(t, err)
 }
