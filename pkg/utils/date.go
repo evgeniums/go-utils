@@ -204,3 +204,23 @@ func DateReflectStr(val reflect.Value) string {
 	d := Date(val.Int())
 	return d.String()
 }
+
+func IsTime(obj reflect.Value) bool {
+	_, ok := obj.Interface().(time.Time)
+	return ok
+}
+
+func TimeReflectStr(val reflect.Value) string {
+
+	t, ok := val.Interface().(time.Time)
+	if !ok {
+		return ""
+	}
+
+	return TimeRFC3339(t)
+}
+
+func TimeConverter(str string) reflect.Value {
+	t, _ := ParseTime(str)
+	return reflect.ValueOf(t)
+}

@@ -70,6 +70,7 @@ func UrlEncode(msg interface{}) (string, error) {
 		encoder := schema.NewEncoder()
 		encoder.SetAliasTag("json")
 		encoder.RegisterEncoder(utils.DateNil, utils.DateReflectStr)
+		encoder.RegisterEncoder(utils.TimeNil, utils.TimeReflectStr)
 		v := url.Values{}
 		err := encoder.Encode(msg, v)
 		if err != nil {
