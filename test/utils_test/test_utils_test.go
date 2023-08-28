@@ -6,6 +6,7 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGlobalTestVars(t *testing.T) {
@@ -22,4 +23,10 @@ func TestRoundMoneyUp(t *testing.T) {
 	a := 7108466.85
 	r := utils.RoundMoneyUp(a)
 	t.Logf("Rounded 7108466.85: %s", utils.FloatToStr(r))
+}
+
+func TestConcatStrings(t *testing.T) {
+	str := utils.ConcatStrings("a", "b", "c", "", "d", " ", "hello")
+	t.Logf("String: %s", str)
+	assert.Equal(t, "abcd hello", str)
 }
