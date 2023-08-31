@@ -9,6 +9,9 @@ type JsonSerializer struct {
 }
 
 func (j *JsonSerializer) ParseMessage(data []byte, message interface{}) error {
+	if len(data) == 0 {
+		return nil
+	}
 	return json.Unmarshal(data, message)
 }
 
