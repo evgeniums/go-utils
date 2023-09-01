@@ -108,6 +108,7 @@ func PostgresPartitionedMonthAutoMigrate(ctx logger.WithLogger, db *gorm.DB, mod
 	schemaNamer := &schema.NamingStrategy{}
 
 	currentMonth := utils.CurrentMonth()
+	currentMonth = currentMonth.Prev()
 
 	for _, model := range models {
 
