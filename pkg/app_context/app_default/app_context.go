@@ -12,6 +12,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/cache/inmem_cache"
+	"github.com/evgeniums/go-backend-helpers/pkg/cache/redis_cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/config_viper"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
@@ -48,6 +49,7 @@ type Context struct {
 	validator    *validator_playground.PlaygroundValdator
 	cache        cache.Cache
 	inmemCache   *inmem_cache.InmemCache[string]
+	redisCache   *redis_cache.RedisCache
 	logrusLogger *logger_logrus.LogrusLogger
 
 	contextConfig
@@ -138,12 +140,6 @@ func New(buildConfig *app_context.BuildConfig, appConfig ...AppConfigI) *Context
 		c.cache = appConfig[0].GetCache()
 	}
 
-	if c.cache == nil {
-		c.inmemCache = inmem_cache.New[string]()
-		c.cache = cache.New(c.inmemCache)
-		c.inmemCache.Start()
-	}
-
 	c.logrusLogger = logger_logrus.New()
 	c.WithLoggerBase.Init(c.logrusLogger)
 
@@ -198,6 +194,23 @@ func (c *Context) InitWithArgs(configFile string, args []string, configType ...s
 		c.testValues = make(map[string]interface{})
 	}
 
+	// init cache
+	if c.cache == nil {
+		redisCacheConfigPath := "redis_cache"
+		if c.Cfg().IsSet(redisCacheConfigPath) {
+			c.redisCache = redis_cache.NewCache()
+			err = c.redisCache.Init(c.Cfg(), c.Logger(), c.Validator(), redisCacheConfigPath)
+			if err != nil {
+				return log.PushFatalStack("failed to init redis cache", err)
+			}
+			c.cache = cache.New(c.redisCache)
+		} else {
+			c.inmemCache = inmem_cache.New[string]()
+			c.cache = cache.New(c.inmemCache)
+			c.inmemCache.Start()
+		}
+	}
+
 	// done
 	c.initialized = true
 	return nil
@@ -213,6 +226,9 @@ func (c *Context) Close() {
 	}
 	if c.inmemCache != nil {
 		c.inmemCache.Stop()
+	}
+	if c.redisCache != nil {
+		c.redisCache.Stop()
 	}
 }
 
