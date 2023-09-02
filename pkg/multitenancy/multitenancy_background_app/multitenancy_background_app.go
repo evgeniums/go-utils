@@ -53,7 +53,7 @@ func New(buildConfig *app_context.BuildConfig, tenancyDbModels *multitenancy.Ten
 	db_gorm.NewModelStore(true)
 
 	// init app context
-	app := app_with_multitenancy.NewApp(buildConfig, tenancyDbModels)
+	app := app_with_multitenancy.NewApp(buildConfig, tenancyDbModels, appConfig...)
 	var initOpCtx op_context.Context
 	var err error
 	if runnerConfig.InitBaseApp {
