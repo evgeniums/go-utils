@@ -239,7 +239,7 @@ func (g *GormDB) FindForUpdate(ctx logger.WithLogger, fields db.Fields, obj inte
 }
 
 func (g *GormDB) FindForShare(ctx logger.WithLogger, fields db.Fields, obj interface{}) (bool, error) {
-	found, err := FindForUpdate(g.db_(), fields, obj)
+	found, err := FindForShare(g.db_(), fields, obj)
 	if err != nil && g.VERBOSE_ERRORS {
 		e := fmt.Errorf("failed to FindForShare %v", ObjectTypeName(obj))
 		ctx.Logger().Error("GormDB", e, logger.Fields{"fields": fields, "error": err.Error()})
