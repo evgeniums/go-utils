@@ -34,7 +34,7 @@ type RestApiClient interface {
 	SendSmsConfirmation(send DoRequest, ctx op_context.Context, resp Response, code string, method string, url string, cmd interface{}, headers ...map[string]string) (Response, error)
 }
 
-type DoRequest = func(ctx op_context.Context, method string, path string, cmd interface{}, headers ...map[string]string) (Response, error)
+type DoRequest = func(ctx op_context.Context, httpClient *http_request.HttpClient, method string, path string, cmd interface{}, headers ...map[string]string) (Response, error)
 
 type TenancyAuth struct {
 	TenancyPath string
@@ -52,6 +52,8 @@ type RestApiClientBase struct {
 
 	SendWithBody  DoRequest
 	SendWithQuery DoRequest
+
+	HttpClient *http_request.HttpClient
 }
 
 func NewRestApiClientBase(withBodySender DoRequest, withQuerySender DoRequest) *RestApiClientBase {
@@ -60,9 +62,10 @@ func NewRestApiClientBase(withBodySender DoRequest, withQuerySender DoRequest) *
 	return r
 }
 
-func (r *RestApiClientBase) Init(baseUrl string, userAgent string, tenancy ...*TenancyAuth) {
+func (r *RestApiClientBase) Init(httpClient *http_request.HttpClient, baseUrl string, userAgent string, tenancy ...*TenancyAuth) {
 	r.BaseUrl = baseUrl
 	r.UserAgent = userAgent
+	r.HttpClient = httpClient
 	if len(tenancy) != 0 {
 		r.Tenancy = tenancy[0]
 	}
@@ -193,7 +196,7 @@ func (r *RestApiClientBase) SendRequest(send DoRequest, ctx op_context.Context, 
 	}
 
 	// send request
-	resp, err := send(ctx, method, r.Url(path), cmd, hs)
+	resp, err := send(ctx, r.HttpClient, method, r.Url(path), cmd, hs)
 	if err != nil {
 		c.SetMessage("failed to send")
 		return resp, c.SetError(err)
@@ -321,7 +324,7 @@ func (r *RestApiClientBase) Prepare(ctx op_context.Context) (Response, error) {
 	return r.UpdateCsrfToken(ctx)
 }
 
-func DefaultSendWithBody(ctx op_context.Context, method string, url string, cmd interface{}, headers ...map[string]string) (Response, error) {
+func DefaultSendWithBody(ctx op_context.Context, httpClient *http_request.HttpClient, method string, url string, cmd interface{}, headers ...map[string]string) (Response, error) {
 
 	// setup
 	var err error
@@ -342,7 +345,7 @@ func DefaultSendWithBody(ctx op_context.Context, method string, url string, cmd 
 	}
 
 	// create request
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(cmdByte))
+	req, err := httpClient.NewRequest(method, url, bytes.NewBuffer(cmdByte))
 	if err != nil {
 		c.SetMessage("failed to create request")
 		return nil, c.SetError(err)
@@ -369,7 +372,7 @@ func DefaultSendWithBody(ctx op_context.Context, method string, url string, cmd 
 	return resp, nil
 }
 
-func DefaultSendWithQuery(ctx op_context.Context, method string, url string, cmd interface{}, headers ...map[string]string) (Response, error) {
+func DefaultSendWithQuery(ctx op_context.Context, httpClient *http_request.HttpClient, method string, url string, cmd interface{}, headers ...map[string]string) (Response, error) {
 
 	// setup
 	var err error
@@ -383,7 +386,7 @@ func DefaultSendWithQuery(ctx op_context.Context, method string, url string, cmd
 	defer onExit()
 
 	// create request
-	req, err := http.NewRequest(method, url, nil)
+	req, err := httpClient.NewRequest(method, url, nil)
 	if err != nil {
 		c.SetMessage("failed to create request")
 		return nil, c.SetError(err)
@@ -416,9 +419,9 @@ func DefaultSendWithQuery(ctx op_context.Context, method string, url string, cmd
 	return resp, nil
 }
 
-func DefaultRestApiClient(baseUrl string, userAgent ...string) *RestApiClientBase {
+func DefaultRestApiClient(httpClient *http_request.HttpClient, baseUrl string, userAgent ...string) *RestApiClientBase {
 	c := NewRestApiClientBase(DefaultSendWithBody, DefaultSendWithQuery)
-	c.Init(baseUrl, utils.OptionalArg("go-backend-helpers", userAgent...))
+	c.Init(httpClient, baseUrl, utils.OptionalArg("go-backend-helpers", userAgent...))
 	return c
 }
 

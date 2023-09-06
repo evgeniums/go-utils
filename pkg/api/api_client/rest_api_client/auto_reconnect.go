@@ -9,6 +9,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_csrf"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
 	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_token"
+	"github.com/evgeniums/go-backend-helpers/pkg/http_request"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
@@ -208,20 +209,20 @@ func NewAutoReconnectRestApiClient(reconnectHandlers api_client.AutoReconnectHan
 	reconnect := newAutoReconnectHelper(reconnectHandlers)
 	var client *RestApiClientWithConfig
 
-	sendWithBody := func(ctx op_context.Context, method string, url string, cmd interface{}, headers ...map[string]string) (Response, error) {
+	sendWithBody := func(ctx op_context.Context, httpClient *http_request.HttpClient, method string, url string, cmd interface{}, headers ...map[string]string) (Response, error) {
 		send := func(opCtx op_context.Context) (Response, error) {
 			hs := client.addTokens(headers...)
-			return DefaultSendWithBody(opCtx, method, url, cmd, hs)
+			return DefaultSendWithBody(opCtx, httpClient, method, url, cmd, hs)
 		}
 		hs := client.addTokens(headers...)
-		resp, err := DefaultSendWithBody(ctx, method, url, cmd, hs)
+		resp, err := DefaultSendWithBody(ctx, httpClient, method, url, cmd, hs)
 		return reconnect.checkResponse(ctx, send, resp, err, 5)
 	}
-	sendWithQuery := func(ctx op_context.Context, method string, url string, cmd interface{}, headers ...map[string]string) (Response, error) {
+	sendWithQuery := func(ctx op_context.Context, httpClient *http_request.HttpClient, method string, url string, cmd interface{}, headers ...map[string]string) (Response, error) {
 		send := func(opCtx op_context.Context) (Response, error) {
-			return DefaultSendWithQuery(opCtx, method, url, cmd, headers...)
+			return DefaultSendWithQuery(opCtx, httpClient, method, url, cmd, headers...)
 		}
-		resp, err := DefaultSendWithQuery(ctx, method, url, cmd, headers...)
+		resp, err := DefaultSendWithQuery(ctx, httpClient, method, url, cmd, headers...)
 		return reconnect.checkResponse(ctx, send, resp, err, 5)
 	}
 

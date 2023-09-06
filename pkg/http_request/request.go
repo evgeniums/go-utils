@@ -2,6 +2,7 @@ package http_request
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -34,9 +35,11 @@ type Request struct {
 	Transport       http.RoundTripper
 	Timeout         int
 	ParsingFailed   bool
+
+	client *http.Client
 }
 
-func NewPost(ctx op_context.Context, url string, msg interface{}, serializer ...message.Serializer) (*Request, error) {
+func NewPostWithContext(systemCtx context.Context, ctx op_context.Context, url string, msg interface{}, serializer ...message.Serializer) (*Request, error) {
 
 	r := &Request{}
 	r.Serializer = utils.OptionalArg[message.Serializer](message_json.Serializer, serializer...)
@@ -54,7 +57,7 @@ func NewPost(ctx op_context.Context, url string, msg interface{}, serializer ...
 	}
 
 	r.Body = cmdByte
-	r.NativeRequest, err = http.NewRequest(http.MethodPost, url, bytes.NewBuffer(cmdByte))
+	r.NativeRequest, err = http.NewRequestWithContext(systemCtx, http.MethodPost, url, bytes.NewBuffer(cmdByte))
 	if err != nil {
 		c.SetMessage("failed to create request")
 		return nil, c.SetError(err)
@@ -65,6 +68,10 @@ func NewPost(ctx op_context.Context, url string, msg interface{}, serializer ...
 	}
 
 	return r, nil
+}
+
+func NewPost(ctx op_context.Context, url string, msg interface{}, serializer ...message.Serializer) (*Request, error) {
+	return NewPostWithContext(context.Background(), ctx, url, msg, serializer...)
 }
 
 func UrlEncode(msg interface{}) (string, error) {
@@ -83,7 +90,7 @@ func UrlEncode(msg interface{}) (string, error) {
 	return "", nil
 }
 
-func NewGet(ctx op_context.Context, uRL string, msg interface{}) (*Request, error) {
+func NewGetWithContext(systemCtx context.Context, ctx op_context.Context, uRL string, msg interface{}) (*Request, error) {
 
 	r := &Request{}
 
@@ -97,7 +104,7 @@ func NewGet(ctx op_context.Context, uRL string, msg interface{}) (*Request, erro
 		return nil, err
 	}
 
-	r.NativeRequest, err = http.NewRequest(http.MethodGet, uRL, nil)
+	r.NativeRequest, err = http.NewRequestWithContext(systemCtx, http.MethodGet, uRL, nil)
 	if err != nil {
 		c.SetMessage("failed to create request")
 		return nil, c.SetError(err)
@@ -112,6 +119,10 @@ func NewGet(ctx op_context.Context, uRL string, msg interface{}) (*Request, erro
 	r.NativeRequest.URL.RawQuery = query
 
 	return r, nil
+}
+
+func NewGet(ctx op_context.Context, uRL string, msg interface{}) (*Request, error) {
+	return NewGetWithContext(context.Background(), ctx, uRL, msg)
 }
 
 func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
@@ -136,9 +147,12 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 		}
 	}
 
-	client := &http.Client{Transport: r.Transport}
-	if r.Timeout != 0 {
-		client.Timeout = time.Second * time.Duration(r.Timeout)
+	client := r.client
+	if client == nil {
+		client = &http.Client{Transport: r.Transport}
+		if r.Timeout != 0 {
+			client.Timeout = time.Second * time.Duration(r.Timeout)
+		}
 	}
 	r.NativeResponse, err = client.Do(r.NativeRequest)
 
@@ -162,6 +176,7 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 	}
 
 	if err != nil {
+		// TODO catch cancel and timeout
 		c.SetMessage("failed to client.Do")
 		return err
 	}

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client/rest_api_client"
+	"github.com/evgeniums/go-backend-helpers/pkg/http_request"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
@@ -63,14 +64,14 @@ type RestApiPoolServiceClient struct {
 	*rest_api_client.Client
 }
 
-func (r *RestApiPoolServiceClient) InitForPoolService(service *pool.PoolServiceBinding, clientAgent ...string) error {
+func (r *RestApiPoolServiceClient) InitForPoolService(httpClient *http_request.HttpClient, service *pool.PoolServiceBinding, clientAgent ...string) error {
 
 	url, err := BaseUrlForService(service)
 	if err != nil {
 		return err
 	}
 
-	r.Client = rest_api_client.New(rest_api_client.DefaultRestApiClient(url, clientAgent...))
+	r.Client = rest_api_client.New(rest_api_client.DefaultRestApiClient(httpClient, url, clientAgent...))
 
 	return nil
 }
