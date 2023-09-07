@@ -114,3 +114,7 @@ func (h *HttpClient) Shutdown(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (h *HttpClient) Context() context.Context {
+	return h.context
+}
