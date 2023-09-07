@@ -328,7 +328,7 @@ func DefaultSendWithBody(ctx op_context.Context, httpClient *http_request.HttpCl
 
 	// setup
 	var err error
-	c := ctx.TraceInMethod("http_request.DefaultSendWithBody", logger.Fields{"method": method, "url": url})
+	c := ctx.TraceInMethod("rest_api_client.DefaultSendWithBody", logger.Fields{"method": method, "url": url})
 	onExit := func() {
 		if err != nil {
 			c.SetError(err)
@@ -350,19 +350,19 @@ func DefaultSendWithBody(ctx op_context.Context, httpClient *http_request.HttpCl
 		c.SetMessage("failed to create request")
 		return nil, c.SetError(err)
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-	http_request.HttpHeadersSet(req, headers...)
+	req.NativeRequest.Header.Set("Content-Type", "application/json")
+	req.NativeRequest.Header.Set("Accept", "application/json")
+	http_request.HttpHeadersSet(req.NativeRequest, headers...)
 
 	// send request
-	rawResp, err := http_request.SendRawRequest(ctx, req)
+	err = req.SendRaw(ctx)
 	if err != nil {
 		c.SetMessage("failed to send raw")
 		return nil, c.SetError(err)
 	}
 
 	// parse response
-	resp, err := NewResponse(rawResp)
+	resp, err := NewResponse(req.NativeResponse)
 	if err != nil {
 		c.SetMessage("failed to parse response")
 		return nil, c.SetError(err)
@@ -393,23 +393,23 @@ func DefaultSendWithQuery(ctx op_context.Context, httpClient *http_request.HttpC
 	}
 
 	// prepare data
-	req.URL.RawQuery, err = http_request.UrlEncode(cmd)
+	req.NativeRequest.URL.RawQuery, err = http_request.UrlEncode(cmd)
 	if err != nil {
 		c.SetMessage("failed to build query")
 		return nil, c.SetError(err)
 	}
-	req.Header.Set("Accept", "application/json")
-	http_request.HttpHeadersSet(req, headers...)
+	req.NativeRequest.Header.Set("Accept", "application/json")
+	http_request.HttpHeadersSet(req.NativeRequest, headers...)
 
 	// send request
-	rawResp, err := http_request.SendRawRequest(ctx, req)
+	err = req.SendRaw(ctx)
 	if err != nil {
 		c.SetMessage("failed to send raw request")
 		return nil, c.SetError(err)
 	}
 
 	// parse response
-	resp, err := NewResponse(rawResp)
+	resp, err := NewResponse(req.NativeResponse)
 	if err != nil {
 		c.SetMessage("failed to parse response")
 		return nil, c.SetError(err)

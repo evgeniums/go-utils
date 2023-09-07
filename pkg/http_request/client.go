@@ -85,7 +85,7 @@ func (h *HttpClient) Init(cfg config.Config, log logger.Logger, vld validator.Va
 		ExpectContinueTimeout: time.Duration(h.EXPECT_CONTINUE_TIMEOUT) * time.Second,
 	}
 	h.httpClient.Transport = h.transport
-
+	h.httpClient.Timeout = time.Duration(h.TIMEOUT) * time.Second
 	return nil
 }
 
@@ -113,8 +113,15 @@ func (h *HttpClient) NewGet(ctx op_context.Context, url string, msg interface{})
 	return req, nil
 }
 
-func (h *HttpClient) NewRequest(method, url string, body io.Reader) (*http.Request, error) {
-	return http.NewRequestWithContext(h.context, method, url, body)
+func (h *HttpClient) NewRequest(method, url string, body io.Reader) (*Request, error) {
+	var err error
+	r := &Request{}
+	r.NativeRequest, err = http.NewRequestWithContext(h.context, method, url, body)
+	if err != nil {
+		return nil, err
+	}
+	r.client = h.httpClient
+	return r, nil
 }
 
 func (h *HttpClient) Shutdown(ctx context.Context) error {

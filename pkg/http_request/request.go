@@ -125,6 +125,44 @@ func NewGet(ctx op_context.Context, uRL string, msg interface{}) (*Request, erro
 	return NewGetWithContext(context.Background(), ctx, uRL, msg)
 }
 
+func (r *Request) SendRaw(ctx op_context.Context) error {
+
+	c := ctx.TraceInMethod("Request.SendRaw", logger.Fields{"url": r.NativeRequest.URL.String(), "method": r.NativeRequest.Method})
+	defer ctx.TraceOutMethod()
+	var err error
+
+	// TODO use this flag for server
+	if ctx.Logger().DumpRequests() {
+		dump, _ := httputil.DumpRequestOut(r.NativeRequest, true)
+		c.Logger().Debug("Client dump HTTP request", logger.Fields{"http_request": string(dump)})
+	}
+
+	client := r.client
+	if client == nil {
+		client = &http.Client{Transport: r.Transport}
+		if r.Timeout != 0 {
+			client.Timeout = time.Second * time.Duration(r.Timeout)
+		}
+	}
+	r.NativeResponse, err = client.Do(r.NativeRequest)
+
+	if ctx.Logger().DumpRequests() {
+		if r.NativeResponse != nil {
+			dump, _ := httputil.DumpResponse(r.NativeResponse, true)
+			c.Logger().Debug("Client dump HTTP response", logger.Fields{"http_response": string(dump)})
+		} else {
+			c.Logger().Debug("Client dump HTTP response", logger.Fields{"http_response": ""})
+		}
+	}
+
+	if err != nil {
+		c.SetLoggerField("http_response_nil", r.NativeResponse == nil)
+		return c.SetError(err)
+	}
+
+	return nil
+}
+
 func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 
 	c := ctx.TraceInMethod("Request.Send", logger.Fields{"url": r.NativeRequest.URL.String(), "method": r.NativeRequest.Method})
