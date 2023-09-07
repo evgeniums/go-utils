@@ -2,6 +2,7 @@ package http_request
 
 import (
 	"context"
+	"crypto/tls"
 	"io"
 	"net"
 	"net/http"
@@ -30,6 +31,7 @@ type HttpClient struct {
 	httpClient *http.Client
 	context    context.Context
 	cancel     context.CancelFunc
+	transport  *http.Transport
 }
 
 func (c *HttpClient) Config() interface{} {
@@ -70,7 +72,7 @@ func (h *HttpClient) Init(cfg config.Config, log logger.Logger, vld validator.Va
 		return log.PushFatalStack("failed to load configuration of http client", err)
 	}
 
-	h.httpClient.Transport = &http.Transport{
+	h.transport = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: transportDialContext(&net.Dialer{
 			Timeout:   time.Duration(h.TIMEOUT) * time.Second,
@@ -82,8 +84,15 @@ func (h *HttpClient) Init(cfg config.Config, log logger.Logger, vld validator.Va
 		TLSHandshakeTimeout:   time.Duration(h.TLS_HANDSHAKE_TIMEOUT) * time.Second,
 		ExpectContinueTimeout: time.Duration(h.EXPECT_CONTINUE_TIMEOUT) * time.Second,
 	}
+	h.httpClient.Transport = h.transport
 
 	return nil
+}
+
+func (h *HttpClient) SetTlsConfig(cfg *tls.Config) {
+	if h.transport != nil {
+		h.transport.TLSClientConfig = cfg
+	}
 }
 
 func (h *HttpClient) NewPost(ctx op_context.Context, url string, msg interface{}, serializer ...message.Serializer) (*Request, error) {
@@ -117,4 +126,33 @@ func (h *HttpClient) Shutdown(ctx context.Context) error {
 
 func (h *HttpClient) Context() context.Context {
 	return h.context
+}
+
+type WithHttpClient struct {
+	httpClient *HttpClient
+}
+
+func (w *WithHttpClient) Construct(transport ...http.RoundTripper) {
+	w.httpClient = NewHttpClient(transport...)
+}
+
+func (w *WithHttpClient) HttpClient() *HttpClient {
+	return w.httpClient
+}
+
+func (w *WithHttpClient) Init(cfg config.Config, log logger.Logger, vld validator.Validator, parentConfigPath string) error {
+	httpClientPath := object_config.Key(parentConfigPath, "http_client")
+	w.httpClient = NewHttpClient()
+	err := w.httpClient.Init(cfg, log, vld, httpClientPath)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (w *WithHttpClient) Shutdown(ctx context.Context) error {
+	if w.httpClient != nil {
+		return w.httpClient.Shutdown(ctx)
+	}
+	return nil
 }
