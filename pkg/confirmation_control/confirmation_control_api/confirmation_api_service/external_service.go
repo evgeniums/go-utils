@@ -113,6 +113,9 @@ func (e *CheckConfirmationEndpoint) HandleRequest(request api_server.Request) er
 	// set response
 	request.Response().SetMessage(resp)
 
+	// delete token from cache
+	confirmation_control_api.DeleteTokenFromCache(request)
+
 	// done
 	return nil
 }
