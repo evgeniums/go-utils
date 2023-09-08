@@ -143,38 +143,38 @@ func UpdateWithFilter(db DBHandlers, ctx logger.WithLogger, obj interface{}, fil
 
 type AllDatabases struct {
 	databases map[string]DB
-	mutex     sync.Mutex
 }
 
 var all *AllDatabases
+var dbMutex sync.Mutex
 
 func Databases() *AllDatabases {
+	dbMutex.Lock()
+	defer dbMutex.Unlock()
 	if all == nil {
 		all = &AllDatabases{}
-		all.mutex.Lock()
 		all.databases = make(map[string]DB)
-		all.mutex.Unlock()
 	}
 	return all
 }
 
 func (a *AllDatabases) Register(db DB) {
-	a.mutex.Lock()
+	dbMutex.Lock()
+	defer dbMutex.Unlock()
 	a.databases[db.ID()] = db
-	a.mutex.Unlock()
 }
 
 func (a *AllDatabases) Unregister(db DB) {
-	a.mutex.Lock()
+	dbMutex.Lock()
+	defer dbMutex.Unlock()
 	delete(a.databases, db.ID())
-	a.mutex.Unlock()
 }
 
 func (a *AllDatabases) CloseAll() {
-	a.mutex.Lock()
+	dbMutex.Lock()
 	databases := utils.AllMapValues(a.databases)
+	dbMutex.Unlock()
 	for _, db := range databases {
 		db.Close()
 	}
-	a.mutex.Unlock()
 }
