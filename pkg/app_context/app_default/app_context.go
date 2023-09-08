@@ -198,6 +198,7 @@ func (c *Context) InitWithArgs(configFile string, args []string, configType ...s
 	if c.cache == nil {
 		redisCacheConfigPath := "redis_cache"
 		if c.Cfg().IsSet(redisCacheConfigPath) {
+			log.Info("using Redis cache as application cache")
 			c.redisCache = redis_cache.NewCache()
 			err = c.redisCache.Init(c.Cfg(), c.Logger(), c.Validator(), redisCacheConfigPath)
 			if err != nil {
@@ -205,6 +206,7 @@ func (c *Context) InitWithArgs(configFile string, args []string, configType ...s
 			}
 			c.cache = cache.New(c.redisCache)
 		} else {
+			log.Info("using in-memory cache as application cache")
 			c.inmemCache = inmem_cache.New[string]()
 			c.cache = cache.New(c.inmemCache)
 			c.inmemCache.Start()
