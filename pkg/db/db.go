@@ -1,6 +1,7 @@
 package db
 
 import (
+	"sync"
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
@@ -142,6 +143,7 @@ func UpdateWithFilter(db DBHandlers, ctx logger.WithLogger, obj interface{}, fil
 
 type AllDatabases struct {
 	databases map[string]DB
+	mutex     sync.Mutex
 }
 
 var all *AllDatabases
@@ -149,22 +151,30 @@ var all *AllDatabases
 func Databases() *AllDatabases {
 	if all == nil {
 		all = &AllDatabases{}
+		all.mutex.Lock()
 		all.databases = make(map[string]DB)
+		all.mutex.Unlock()
 	}
 	return all
 }
 
 func (a *AllDatabases) Register(db DB) {
+	a.mutex.Lock()
 	a.databases[db.ID()] = db
+	a.mutex.Unlock()
 }
 
 func (a *AllDatabases) Unregister(db DB) {
+	a.mutex.Lock()
 	delete(a.databases, db.ID())
+	a.mutex.Unlock()
 }
 
 func (a *AllDatabases) CloseAll() {
+	a.mutex.Lock()
 	databases := utils.AllMapValues(a.databases)
 	for _, db := range databases {
 		db.Close()
 	}
+	a.mutex.Unlock()
 }
