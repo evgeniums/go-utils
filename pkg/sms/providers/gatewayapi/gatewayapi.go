@@ -1,6 +1,7 @@
 package gatewayapi
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
@@ -45,6 +46,8 @@ type SmsGatewayapiConfig struct {
 type SmsGatewayapi struct {
 	SmsGatewayapiConfig
 	sendUrl string
+
+	httpClient *http_request.HttpClient
 }
 
 func New() *SmsGatewayapi {
@@ -57,9 +60,17 @@ func (s *SmsGatewayapi) Config() interface{} {
 
 func (s *SmsGatewayapi) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
-	err := object_config.LoadLogValidate(cfg, log, vld, s, "sms.gatewayapi", configPath...)
+	cfgPath := utils.OptionalString("sms.gatewayapi", configPath...)
+	err := object_config.LoadLogValidate(cfg, log, vld, s, cfgPath)
 	if err != nil {
 		return log.PushFatalStack("failed to init SmsGatewayapi", err)
+	}
+
+	httpClientCfgPath := object_config.Key(cfgPath, "http_client")
+	s.httpClient = http_request.NewHttpClient()
+	err = s.httpClient.Init(cfg, log, vld, httpClientCfgPath)
+	if err != nil {
+		return log.PushFatalStack("failed to init http client in SmsGatewayapi", err)
 	}
 
 	s.ProviderBase.SetProtocolAndName(Protocol, utils.OptionalString(Protocol, s.NAME))
@@ -95,7 +106,7 @@ func (s *SmsGatewayapi) Send(ctx op_context.Context, message string, recipient s
 		obj = &msg
 	}
 
-	request, err := http_request.NewPost(ctx, s.sendUrl, obj)
+	request, err := s.httpClient.NewPost(ctx, s.sendUrl, obj)
 	if err != nil {
 		return nil, err
 	}
@@ -117,4 +128,11 @@ func (s *SmsGatewayapi) Send(ctx op_context.Context, message string, recipient s
 	}
 
 	return result, nil
+}
+
+func (s *SmsGatewayapi) Shutdown(ctx context.Context) error {
+	if s.httpClient != nil {
+		return s.httpClient.Shutdown(ctx)
+	}
+	return nil
 }

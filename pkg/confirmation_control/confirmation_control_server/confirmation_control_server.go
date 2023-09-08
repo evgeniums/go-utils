@@ -6,6 +6,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/app_with_multitenancy"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/markphelps/optional"
 )
 
 type ConfirmationControlServer struct {
@@ -58,4 +59,5 @@ func (s *ConfirmationControlServer) Init(app app_with_multitenancy.AppWithMultit
 func (s *ConfirmationControlServer) Run(fin background_worker.Finisher) {
 	s.ExternalServer.ApiServer().Run(fin)
 	s.InternalServer.ApiServer().Run(fin)
+	fin.AddRunner(s.CallbackMicroserviceClient(), &background_worker.RunnerConfig{Name: optional.NewString("callback_microservice_client")})
 }
