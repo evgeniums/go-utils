@@ -25,11 +25,11 @@ type PoolMicroserviceClientConfig struct {
 }
 
 type PoolMicroserviceClient struct {
+	http_request.WithHttpClient
 	PoolMicroserviceClientConfig
 	PoolServiceClient
 
 	overridePoolName string
-	httpClient       *http_request.HttpClient
 }
 
 func NewPoolMicroserviceClient(defaultRole string, client ...PoolServiceClient) *PoolMicroserviceClient {
@@ -37,7 +37,7 @@ func NewPoolMicroserviceClient(defaultRole string, client ...PoolServiceClient) 
 	if len(client) != 0 {
 		p.PoolServiceClient = client[0]
 	} else {
-		p.httpClient = http_request.NewHttpClient()
+		p.WithHttpClient.Construct()
 		p.PoolServiceClient = &RestApiPoolServiceClient{}
 	}
 	p.POOL_SERVICE_ROLE = defaultRole
@@ -67,8 +67,7 @@ func (p *PoolMicroserviceClient) Init(app app_with_pools.AppWithPools, configPat
 	}
 
 	// init http client
-	httpClientConfigPath := object_config.Key(path, "http_client")
-	err = p.httpClient.Init(app.Cfg(), app.Logger(), app.Validator(), httpClientConfigPath)
+	err = p.WithHttpClient.Init(app.Cfg(), app.Logger(), app.Validator(), path)
 	if err != nil {
 		return app.Logger().PushFatalStack("failed to init http client in microservice api client", err)
 	}
@@ -94,7 +93,7 @@ func (p *PoolMicroserviceClient) Init(app app_with_pools.AppWithPools, configPat
 	}
 
 	// init client form service data
-	err = p.InitForPoolService(p.httpClient, service, AppUserAgent(app))
+	err = p.InitForPoolService(p.HttpClient(), service, AppUserAgent(app))
 	if err != nil {
 		return app.Logger().PushFatalStack("failed to init microservice api client with pool service configuration", err)
 	}
@@ -112,7 +111,7 @@ func (p *PoolMicroserviceClient) SetService(ctx op_context.Context, service *poo
 	defer ctx.TraceOutMethod()
 
 	// init client form service data
-	err := p.InitForPoolService(p.httpClient, service, AppUserAgent(ctx.App()))
+	err := p.InitForPoolService(p.HttpClient(), service, AppUserAgent(ctx.App()))
 	if err != nil {
 		c.SetMessage("failed to init microservice api client with pool service configuration")
 		return c.SetError(err)
@@ -131,5 +130,5 @@ func (p *PoolMicroserviceClient) SetPropagateContextId(val bool) {
 }
 
 func (p *PoolMicroserviceClient) Shutdown(ctx context.Context) error {
-	return p.httpClient.Shutdown(ctx)
+	return p.WithHttpClient.Shutdown(ctx)
 }

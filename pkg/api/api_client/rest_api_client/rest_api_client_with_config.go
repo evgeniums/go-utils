@@ -19,6 +19,8 @@ type RestApiClientWithConfigCfg struct {
 type RestApiClientWithConfig struct {
 	RestApiClientWithConfigCfg
 	*RestApiClientBase
+
+	http_request.WithHttpClient
 }
 
 func (r *RestApiClientWithConfig) Config() interface{} {
@@ -33,18 +35,17 @@ func (r *RestApiClientWithConfig) Init(cfg config.Config, log logger.Logger, vld
 		return log.PushFatalStack("failed to load configuration of rest api client", err)
 	}
 
-	httpClient := http_request.NewHttpClient()
-	httpClientConfigPath := object_config.Key(path, "http_client")
-	err = httpClient.Init(cfg, log, vld, httpClientConfigPath)
+	r.WithHttpClient.Construct()
+	err = r.WithHttpClient.Init(cfg, log, vld, path)
 	if err != nil {
 		return log.PushFatalStack("failed to init http client in rest api client", err)
 	}
 
 	if r.TENANCY_PATH != "" {
 		tenancy := &TenancyAuth{TenancyType: r.TENANCY_TYPE, TenancyPath: r.TENANCY_PATH}
-		r.RestApiClientBase.Init(httpClient, r.BASE_URL, r.USER_AGENT, tenancy)
+		r.RestApiClientBase.Init(r.WithHttpClient.HttpClient(), r.BASE_URL, r.USER_AGENT, tenancy)
 	} else {
-		r.RestApiClientBase.Init(httpClient, r.BASE_URL, r.USER_AGENT)
+		r.RestApiClientBase.Init(r.WithHttpClient.HttpClient(), r.BASE_URL, r.USER_AGENT)
 	}
 
 	return nil
