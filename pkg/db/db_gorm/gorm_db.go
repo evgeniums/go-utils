@@ -15,9 +15,10 @@ import (
 )
 
 type baseDBConfig struct {
-	ENABLE_DEBUG     bool
-	VERBOSE_ERRORS   bool
-	MAX_FILTER_LIMIT int `validate:"gte=0" vmessage:"Invalid max filter limit" default:"100"`
+	ENABLE_DEBUG         bool
+	VERBOSE_ERRORS       bool
+	MAX_FILTER_LIMIT     int `validate:"gte=0" vmessage:"Invalid max filter limit" default:"100"`
+	MAX_IDLE_CONNECTIONS int
 }
 
 type gormDBConfig struct {
@@ -174,6 +175,11 @@ func (g *GormDB) Connect(ctx logger.WithLogger) error {
 	}
 
 	db.Databases().Register(g)
+
+	if g.MAX_IDLE_CONNECTIONS > 0 {
+		d, _ := g.db.DB()
+		d.SetMaxIdleConns(g.MAX_IDLE_CONNECTIONS)
+	}
 
 	// done
 	return nil
