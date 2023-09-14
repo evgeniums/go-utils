@@ -59,6 +59,24 @@ func FloatToStr2Hyphen[T Float](val T) string {
 	return str
 }
 
+func FloatToStr4Comma[T Float](val T) string {
+	str := FloatToStr4(val)
+	str = strings.ReplaceAll(str, ".", ",")
+	return str
+}
+
+func FloatToStr4Hyphen[T Float](val T) string {
+	str := FloatToStr4(val)
+	str = strings.ReplaceAll(str, ".", "-")
+	return str
+}
+
+func FloatToStr4[T Float](val T) string {
+	v := math.Round(float64(val)*10000) / 10000
+	str := strconv.FormatFloat(v, 'f', 2, 64)
+	return str
+}
+
 func MoneyToInteger(dollars float64) int64 {
 	return int64(math.Round(float64(dollars) * 100.00))
 }
@@ -92,6 +110,13 @@ func FloatToStr2Variant[T Float](val T, comma ...bool) string {
 		return FloatToStr2Comma(val)
 	}
 	return FloatToStr2(val)
+}
+
+func FloatToStr4Variant[T Float](val T, comma ...bool) string {
+	if OptionalArg(false, comma...) {
+		return FloatToStr4Comma(val)
+	}
+	return FloatToStr4(val)
 }
 
 func RoundMoneyUp(value float64) float64 {
