@@ -35,6 +35,12 @@ func FloatToStr[T Float](val T) string {
 	return str
 }
 
+func FloatToStrComma[T Float](val T) string {
+	str := strconv.FormatFloat(float64(val), 'f', -1, 64)
+	str = strings.ReplaceAll(str, ".", ",")
+	return str
+}
+
 func FloatToStr2[T Float](val T) string {
 	v := math.Round(float64(val)*100) / 100
 	str := strconv.FormatFloat(v, 'f', 2, 64)
@@ -64,6 +70,13 @@ func MoneyToIntegerUp(dollars float64) int64 {
 func MoneyToDecimal(cents int64) float64 {
 	v := float64(cents) / 100.00
 	return float64(v)
+}
+
+func FloatToDecimalStr(f float64, comma ...bool) string {
+	if OptionalArg(false, comma...) {
+		return FloatToStrComma(f)
+	}
+	return FloatToStr(f)
 }
 
 func MoneyToDecimalStr(cents int64, comma ...bool) string {
