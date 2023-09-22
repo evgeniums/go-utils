@@ -208,7 +208,7 @@ func (l *LoginHandler) Handle(ctx auth.AuthContext) (bool, error) {
 	// user must be of User interface
 	phashUser, ok := dbUser.(User)
 	if !ok {
-		err = errors.New("user must be of UserWithPasswordHash interface")
+		err = errors.New("user must be of auth_login_phash.User interface")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
 		return true, err
 	}
