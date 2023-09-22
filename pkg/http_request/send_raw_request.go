@@ -37,6 +37,7 @@ func SendRawRequest(ctx op_context.Context, request *http.Request, redirectHandl
 	}
 
 	if err != nil {
+		c.SetLoggerField("http_response_nil", response == nil)
 		return nil, c.SetError(err)
 	}
 

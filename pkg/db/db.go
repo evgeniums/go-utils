@@ -1,6 +1,7 @@
 package db
 
 import (
+	"sync"
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
@@ -145,8 +146,11 @@ type AllDatabases struct {
 }
 
 var all *AllDatabases
+var dbMutex sync.Mutex
 
 func Databases() *AllDatabases {
+	dbMutex.Lock()
+	defer dbMutex.Unlock()
 	if all == nil {
 		all = &AllDatabases{}
 		all.databases = make(map[string]DB)
@@ -155,15 +159,21 @@ func Databases() *AllDatabases {
 }
 
 func (a *AllDatabases) Register(db DB) {
+	dbMutex.Lock()
+	defer dbMutex.Unlock()
 	a.databases[db.ID()] = db
 }
 
 func (a *AllDatabases) Unregister(db DB) {
+	dbMutex.Lock()
+	defer dbMutex.Unlock()
 	delete(a.databases, db.ID())
 }
 
 func (a *AllDatabases) CloseAll() {
+	dbMutex.Lock()
 	databases := utils.AllMapValues(a.databases)
+	dbMutex.Unlock()
 	for _, db := range databases {
 		db.Close()
 	}

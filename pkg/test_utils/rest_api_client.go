@@ -127,16 +127,16 @@ func HttptestSendWithQuery(t *testing.T, g *gin.Engine, method string, url strin
 
 func RestApiTestClient(t *testing.T, g *gin.Engine, baseUrl string, userAgent ...string) *rest_api_client.RestApiClientBase {
 
-	sendWithBody := func(ctx op_context.Context, method string, url string, cmd interface{}, headers ...map[string]string) (rest_api_client.Response, error) {
+	sendWithBody := func(ctx op_context.Context, httpClient *http_request.HttpClient, method string, url string, cmd interface{}, headers ...map[string]string) (rest_api_client.Response, error) {
 		resp := HttptestSendWithBody(t, g, method, url, cmd, headers...)
 		return resp, nil
 	}
-	sendWithQuery := func(ctx op_context.Context, method string, url string, cmd interface{}, headers ...map[string]string) (rest_api_client.Response, error) {
+	sendWithQuery := func(ctx op_context.Context, httpClient *http_request.HttpClient, method string, url string, cmd interface{}, headers ...map[string]string) (rest_api_client.Response, error) {
 		resp := HttptestSendWithQuery(t, g, method, url, cmd, headers...)
 		return resp, nil
 	}
 
 	c := rest_api_client.NewRestApiClientBase(sendWithBody, sendWithQuery)
-	c.Init(baseUrl, utils.OptionalArg("go-backend-helpers", userAgent...))
+	c.Init(http_request.DefaultHttpClient(), baseUrl, utils.OptionalArg("go-backend-helpers", userAgent...))
 	return c
 }

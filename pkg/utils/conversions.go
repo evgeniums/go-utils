@@ -35,6 +35,12 @@ func FloatToStr[T Float](val T) string {
 	return str
 }
 
+func FloatToStrComma[T Float](val T) string {
+	str := strconv.FormatFloat(float64(val), 'f', -1, 64)
+	str = strings.ReplaceAll(str, ".", ",")
+	return str
+}
+
 func FloatToStr2[T Float](val T) string {
 	v := math.Round(float64(val)*100) / 100
 	str := strconv.FormatFloat(v, 'f', 2, 64)
@@ -53,6 +59,24 @@ func FloatToStr2Hyphen[T Float](val T) string {
 	return str
 }
 
+func FloatToStr4Comma[T Float](val T) string {
+	str := FloatToStr4(val)
+	str = strings.ReplaceAll(str, ".", ",")
+	return str
+}
+
+func FloatToStr4Hyphen[T Float](val T) string {
+	str := FloatToStr4(val)
+	str = strings.ReplaceAll(str, ".", "-")
+	return str
+}
+
+func FloatToStr4[T Float](val T) string {
+	v := math.Round(float64(val)*10000) / 10000
+	str := strconv.FormatFloat(v, 'f', 2, 64)
+	return str
+}
+
 func MoneyToInteger(dollars float64) int64 {
 	return int64(math.Round(float64(dollars) * 100.00))
 }
@@ -64,6 +88,13 @@ func MoneyToIntegerUp(dollars float64) int64 {
 func MoneyToDecimal(cents int64) float64 {
 	v := float64(cents) / 100.00
 	return float64(v)
+}
+
+func FloatToDecimalStr(f float64, comma ...bool) string {
+	if OptionalArg(false, comma...) {
+		return FloatToStrComma(f)
+	}
+	return FloatToStr(f)
 }
 
 func MoneyToDecimalStr(cents int64, comma ...bool) string {
@@ -79,6 +110,13 @@ func FloatToStr2Variant[T Float](val T, comma ...bool) string {
 		return FloatToStr2Comma(val)
 	}
 	return FloatToStr2(val)
+}
+
+func FloatToStr4Variant[T Float](val T, comma ...bool) string {
+	if OptionalArg(false, comma...) {
+		return FloatToStr4Comma(val)
+	}
+	return FloatToStr4(val)
 }
 
 func RoundMoneyUp(value float64) float64 {
@@ -97,7 +135,7 @@ func RoundMoney(value float64) float64 {
 }
 
 func TimeToStr(t time.Time) string {
-	str := fmt.Sprintf("%04d-%02d-%02d %02d:%02d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute())
+	str := fmt.Sprintf("%04d-%02d-%02d %02d:%02d:%02d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
 	return str
 }
 

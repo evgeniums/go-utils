@@ -92,6 +92,7 @@ func (e *CheckConfirmationEndpoint) HandleRequest(request api_server.Request) er
 		cmd := &confirmation_control.ConfirmationResult{}
 		err := request.ParseValidate(cmd)
 		if err != nil {
+			c.SetLoggerField("request_content", string(request.GetRequestContent()))
 			c.SetMessage("failed to parse/validate command")
 			return c.SetError(err)
 		}
@@ -103,6 +104,7 @@ func (e *CheckConfirmationEndpoint) HandleRequest(request api_server.Request) er
 	// invoke callback
 	resp := &confirmation_control_api.CheckConfirmationResponse{}
 	resp.RedirectUrl, err = e.service.ConfirmationCallbackHandler.ConfirmationCallback(request, confirmationId, result)
+	request.SetLoggerField("redirect_url", resp.RedirectUrl)
 	if err != nil {
 		c.SetMessage("failed to invoke callback")
 		return c.SetError(err)
@@ -110,6 +112,9 @@ func (e *CheckConfirmationEndpoint) HandleRequest(request api_server.Request) er
 
 	// set response
 	request.Response().SetMessage(resp)
+
+	// delete token from cache
+	confirmation_control_api.DeleteTokenFromCache(request)
 
 	// done
 	return nil
@@ -187,6 +192,7 @@ func (e *FailedConfirmationEndpoint) HandleRequest(request api_server.Request) e
 	// invoke callback
 	resp := &confirmation_control_api.CheckConfirmationResponse{}
 	resp.RedirectUrl, err = e.service.ConfirmationCallbackHandler.ConfirmationCallback(request, confirmationId, result)
+	request.SetLoggerField("redirect_url", confirmationId)
 	if err != nil {
 		c.SetMessage("failed to invoke callback")
 		return c.SetError(err)

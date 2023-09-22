@@ -63,6 +63,14 @@ func (w *WithCRUDBase) SetForceMainDb(enable bool) {
 	}
 }
 
+func (w *WithCRUDBase) IsForceMainDb() bool {
+	dbCrud, ok := w.crud.(*DbCRUD)
+	if ok {
+		return dbCrud.ForceMainDb
+	}
+	return false
+}
+
 func (w *WithCRUDBase) SetDryRun(enable bool) {
 	dbCrud, ok := w.crud.(*DbCRUD)
 	if ok {

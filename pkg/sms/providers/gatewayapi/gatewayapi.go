@@ -45,6 +45,8 @@ type SmsGatewayapiConfig struct {
 type SmsGatewayapi struct {
 	SmsGatewayapiConfig
 	sendUrl string
+
+	http_request.WithHttpClient
 }
 
 func New() *SmsGatewayapi {
@@ -57,9 +59,17 @@ func (s *SmsGatewayapi) Config() interface{} {
 
 func (s *SmsGatewayapi) Init(cfg config.Config, log logger.Logger, vld validator.Validator, configPath ...string) error {
 
-	err := object_config.LoadLogValidate(cfg, log, vld, s, "sms.gatewayapi", configPath...)
+	s.WithHttpClient.Construct()
+
+	cfgPath := utils.OptionalString("sms.gatewayapi", configPath...)
+	err := object_config.LoadLogValidate(cfg, log, vld, s, cfgPath)
 	if err != nil {
 		return log.PushFatalStack("failed to init SmsGatewayapi", err)
+	}
+
+	err = s.WithHttpClient.Init(cfg, log, vld, cfgPath)
+	if err != nil {
+		return log.PushFatalStack("failed to init http client in SmsGatewayapi", err)
 	}
 
 	s.ProviderBase.SetProtocolAndName(Protocol, utils.OptionalString(Protocol, s.NAME))
@@ -95,7 +105,7 @@ func (s *SmsGatewayapi) Send(ctx op_context.Context, message string, recipient s
 		obj = &msg
 	}
 
-	request, err := http_request.NewPost(ctx, s.sendUrl, obj)
+	request, err := s.HttpClient().NewPost(ctx, s.sendUrl, obj)
 	if err != nil {
 		return nil, err
 	}

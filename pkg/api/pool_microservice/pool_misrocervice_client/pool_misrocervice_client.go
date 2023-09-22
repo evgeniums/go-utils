@@ -1,20 +1,23 @@
 package pool_misrocervice_client
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
+	"github.com/evgeniums/go-backend-helpers/pkg/http_request"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool"
 	"github.com/evgeniums/go-backend-helpers/pkg/pool/app_with_pools"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 type PoolServiceClient interface {
 	api_client.Client
-	InitForPoolService(service *pool.PoolServiceBinding, clientAgent ...string) error
+	InitForPoolService(httpClient *http_request.HttpClient, service *pool.PoolServiceBinding, clientAgent ...string) error
 }
 
 type PoolMicroserviceClientConfig struct {
@@ -22,6 +25,7 @@ type PoolMicroserviceClientConfig struct {
 }
 
 type PoolMicroserviceClient struct {
+	http_request.WithHttpClient
 	PoolMicroserviceClientConfig
 	PoolServiceClient
 
@@ -33,6 +37,7 @@ func NewPoolMicroserviceClient(defaultRole string, client ...PoolServiceClient) 
 	if len(client) != 0 {
 		p.PoolServiceClient = client[0]
 	} else {
+		p.WithHttpClient.Construct()
 		p.PoolServiceClient = &RestApiPoolServiceClient{}
 	}
 	p.POOL_SERVICE_ROLE = defaultRole
@@ -55,9 +60,16 @@ func (p *PoolMicroserviceClient) SetOverridePool(poolName string) {
 func (p *PoolMicroserviceClient) Init(app app_with_pools.AppWithPools, configPath ...string) error {
 
 	// load config
-	err := object_config.LoadLogValidate(app.Cfg(), app.Logger(), app.Validator(), p, "microservice_client", configPath...)
+	path := utils.OptionalString("microservice_client", configPath...)
+	err := object_config.LoadLogValidate(app.Cfg(), app.Logger(), app.Validator(), p, path)
 	if err != nil {
 		return app.Logger().PushFatalStack("failed to load configuration of microservice api client", err)
+	}
+
+	// init http client
+	err = p.WithHttpClient.Init(app.Cfg(), app.Logger(), app.Validator(), path)
+	if err != nil {
+		return app.Logger().PushFatalStack("failed to init http client in microservice api client", err)
 	}
 
 	// find pool
@@ -81,7 +93,7 @@ func (p *PoolMicroserviceClient) Init(app app_with_pools.AppWithPools, configPat
 	}
 
 	// init client form service data
-	err = p.InitForPoolService(service, AppUserAgent(app))
+	err = p.InitForPoolService(p.HttpClient(), service, AppUserAgent(app))
 	if err != nil {
 		return app.Logger().PushFatalStack("failed to init microservice api client with pool service configuration", err)
 	}
@@ -99,7 +111,7 @@ func (p *PoolMicroserviceClient) SetService(ctx op_context.Context, service *poo
 	defer ctx.TraceOutMethod()
 
 	// init client form service data
-	err := p.InitForPoolService(service, AppUserAgent(ctx.App()))
+	err := p.InitForPoolService(p.HttpClient(), service, AppUserAgent(ctx.App()))
 	if err != nil {
 		c.SetMessage("failed to init microservice api client with pool service configuration")
 		return c.SetError(err)
@@ -115,4 +127,8 @@ func (p *PoolMicroserviceClient) SetPropagateAuthUser(val bool) {
 
 func (p *PoolMicroserviceClient) SetPropagateContextId(val bool) {
 	p.PoolServiceClient.SetPropagateContextId(val)
+}
+
+func (p *PoolMicroserviceClient) Shutdown(ctx context.Context) error {
+	return p.WithHttpClient.Shutdown(ctx)
 }

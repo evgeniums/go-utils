@@ -52,6 +52,13 @@ func (cl *ConfirmationInternalClient) SendConfirmation(ctx multitenancy.TenancyC
 	}
 	if len(parameters) != 0 {
 		cmd.Parameters = parameters[0]
+		ttlI, ok := cmd.Parameters["ttl"]
+		if ok {
+			ttl, ok := ttlI.(int)
+			if ok && ttl > 0 {
+				cmd.Ttl = ttl
+			}
+		}
 	}
 	handler := api_client.NewHandlerInTenancy(cmd, &confirmation_control_api.PrepareOperationResponse{})
 	err = cl.prepare_operation.ExecInTenancy(ctx, api_client.MakeTenancyOperationHandler(cl.ApiClient(), handler))

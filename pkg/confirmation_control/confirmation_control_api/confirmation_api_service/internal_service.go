@@ -55,13 +55,19 @@ func (e *PrepareOperationEndpoint) HandleRequest(request api_server.Request) err
 		c.SetMessage("failed to parse/validate command")
 		return err
 	}
-
 	request.SetLoggerField("confirmation_id", cmd.Id)
+
+	// setup ttl
+	ttl := e.service.TokenTtl
+	if cmd.Ttl > ttl {
+		request.SetLoggerField("command_ttl", cmd.Ttl)
+		ttl = cmd.Ttl + 1
+	}
 
 	// save data in cache
 	cacheToken := &confirmation_control_api.OperationCacheToken{Id: cmd.Id, Recipient: cmd.Recipient, FailedUrl: cmd.FailedUrl, Parameters: cmd.Parameters}
 	cacheKey := confirmation_control_api.OperationIdCacheKey(cmd.Id)
-	err = request.Cache().Set(cacheKey, cacheToken, e.service.TokenTtl)
+	err = request.Cache().Set(cacheKey, cacheToken, ttl)
 	if err != nil {
 		c.SetMessage("failed to store operation in cache")
 		return err

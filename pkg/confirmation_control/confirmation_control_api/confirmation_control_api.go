@@ -36,6 +36,7 @@ type PrepareOperationCmd struct {
 	Recipient  string                 `json:"recipient" validate:"required" vmessage:"Recipient must be specified"`
 	FailedUrl  string                 `json:"failed_url" validate:"required,url" vmessage:"Invalid format of failed URL"`
 	Parameters map[string]interface{} `json:"parameters"`
+	Ttl        int                    `json:"ttl"`
 }
 
 type PrepareOperationResponse struct {
@@ -92,6 +93,22 @@ func GetTokenFromCache(ctx auth.AuthContext) (*OperationCacheToken, error) {
 
 	// done
 	return cacheToken, nil
+}
+
+func DeleteTokenFromCache(ctx auth.AuthContext) {
+
+	// setup
+	c := ctx.TraceInMethod("DeleteTokenFromCache")
+	defer ctx.TraceOutMethod()
+
+	// get token from cache
+	operationId := ctx.GetResourceId(OperationResource)
+	ctx.SetLoggerField("confirmation_id", operationId)
+	cacheKey := OperationIdCacheKey(operationId)
+	err := ctx.Cache().Unset(cacheKey)
+	if err != nil {
+		c.Logger().Warn("failed to delete cache token")
+	}
 }
 
 func CallbackConfirmation() api.Operation {

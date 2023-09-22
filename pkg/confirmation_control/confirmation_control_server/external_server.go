@@ -28,6 +28,8 @@ type ExternalServer struct {
 	server       api_server.Server
 	smsManager   sms.SmsManager
 	smsProviders sms.ProviderFactory
+
+	callbackTransport *pool_misrocervice_client.PoolMicroserviceClient
 }
 
 type ExternalServerCfg struct {
@@ -120,14 +122,14 @@ func (s *ExternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, ctx
 
 	// create callback client
 	callbackTransportPath := object_config.Key(path, "callback_client")
-	callbackTransport := pool_misrocervice_client.NewPoolMicroserviceClient("confirmation_callback")
-	err = callbackTransport.Init(app, callbackTransportPath)
+	s.callbackTransport = pool_misrocervice_client.NewPoolMicroserviceClient("confirmation_callback")
+	err = s.callbackTransport.Init(app, callbackTransportPath)
 	if err != nil {
 		c.SetMessage("failed to init callback client")
 		return err
 	}
-	callbackTransport.SetPropagateAuthUser(false)
-	callbackClient := confirmation_api_client.NewConfirmationCallbackClient(callbackTransport)
+	s.callbackTransport.SetPropagateAuthUser(false)
+	callbackClient := confirmation_api_client.NewConfirmationCallbackClient(s.callbackTransport)
 
 	// add services
 	externalService := confirmation_api_service.NewConfirmationExternalService(callbackClient, s.EXPLICIT_CODE_CHECK)
@@ -139,6 +141,10 @@ func (s *ExternalServer) Init(app app_with_multitenancy.AppWithMultitenancy, ctx
 
 func (s *ExternalServer) ApiServer() api_server.Server {
 	return s.server
+}
+
+func (s *ExternalServer) CallbackMicroserviceClient() *pool_misrocervice_client.PoolMicroserviceClient {
+	return s.callbackTransport
 }
 
 func (s *ExternalServer) BaseUrl() string {

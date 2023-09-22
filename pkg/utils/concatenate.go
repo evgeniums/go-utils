@@ -4,8 +4,15 @@ import "strings"
 
 func ConcatStrings(parts ...string) string {
 	var sb strings.Builder
+	sz := 0
 	for _, part := range parts {
-		sb.WriteString(part)
+		sz += len(part)
+	}
+	sb.Grow(sz)
+	for _, part := range parts {
+		if len(part) != 0 {
+			sb.WriteString(part)
+		}
 	}
 	return sb.String()
 }
