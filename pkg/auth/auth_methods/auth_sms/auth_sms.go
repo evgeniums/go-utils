@@ -160,6 +160,15 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 	}
 	defer onExit()
 
+	// precheck context
+	message := ""
+	err = ctx.CheckRequestContent(&message)
+	if err != nil {
+		c.SetMessage("failed to check request content")
+		ctx.SetGenericErrorCode(generic_error.ErrorCodeFormat)
+		return true, err
+	}
+
 	// check if user authenticated
 	if ctx.AuthUser() == nil {
 		err = errors.New("unknown user")
@@ -295,15 +304,6 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 		// done
 		err = errors.New("wait for delay")
 		ctx.SetGenericErrorCode(ErrorCodeWaitDelay)
-		return true, err
-	}
-
-	// prepare SMS
-	message := ""
-	err = ctx.CheckRequestContent(&message)
-	if err != nil {
-		c.SetMessage("failed to check request content")
-		ctx.SetGenericErrorCode(generic_error.ErrorCodeFormat)
 		return true, err
 	}
 
