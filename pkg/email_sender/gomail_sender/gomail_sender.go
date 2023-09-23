@@ -17,8 +17,6 @@ type GomailSenderConfig struct {
 	PASSWORD     string `validate:"required"  vmessage:"Gomail client password must be specified"`
 	FROM_ADDRESS string
 	FROM_NAME    string
-
-	TEMPATES_PATH string
 }
 
 type GomailSender struct {

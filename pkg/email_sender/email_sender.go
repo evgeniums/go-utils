@@ -13,6 +13,8 @@ type EmailContent struct {
 	Content     string
 }
 
+type TemplateVals = map[string]string
+
 type EmailSender interface {
 	Send(ctx op_context.Context, to string, subject string, content ...EmailContent) error
 }
@@ -29,7 +31,7 @@ func SendHtmlAndText(ctx op_context.Context, client EmailSender, to string, subj
 	return client.Send(ctx, to, subject, EmailContent{ContentType: "text/html", Content: html}, EmailContent{ContentType: "text/plain", Content: text})
 }
 
-func SendTemplate(ctx op_context.Context, client EmailSender, templatesPath string, templateName string, to string, vals map[string]string) error {
+func SendTemplate(ctx op_context.Context, client EmailSender, templatesPath string, templateName string, to string, vals TemplateVals, language ...string) error {
 
 	c := ctx.TraceInMethod("email_client.SendTemplate", logger.Fields{"templates_path": templatesPath, "template": templateName})
 	defer ctx.TraceOutMethod()
