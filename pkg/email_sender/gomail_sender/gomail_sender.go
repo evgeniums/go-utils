@@ -84,3 +84,7 @@ func (g *GomailSender) Send(ctx op_context.Context, to string, subject string, c
 	// done
 	return nil
 }
+
+func New() *GomailSender {
+	return &GomailSender{}
+}
