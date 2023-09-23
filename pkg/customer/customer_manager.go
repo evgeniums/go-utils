@@ -10,6 +10,10 @@ type Manager struct {
 	auth_session.SessionController
 }
 
+func (m *Manager) SessionManager() auth_session.SessionController {
+	return m
+}
+
 type CustomersBase struct {
 	user.UsersValidator
 	auth_session.AuthUserFinder
