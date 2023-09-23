@@ -19,9 +19,9 @@ const ErrorCodeDuplicateEmail string = "duplicate_email"
 const ErrorCodeDuplicatePhone string = "duplicate_phone"
 
 var ErrorDescriptions = map[string]string{
-	ErrorCodeDuplicateLogin: "Login already occupied.",
-	ErrorCodeDuplicateEmail: "Email address already occupied.",
-	ErrorCodeDuplicatePhone: "Phone number already occupied.",
+	ErrorCodeDuplicateLogin: "Login already occupied",
+	ErrorCodeDuplicateEmail: "Email address is already in use",
+	ErrorCodeDuplicatePhone: "Phone number is already in use",
 }
 
 var ErrorHttpCodes = map[string]int{}
