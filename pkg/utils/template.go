@@ -7,8 +7,17 @@ import (
 	"text/template"
 )
 
-func ReadTemplate(path string, name string, vals interface{}) (string, error) {
-	fileName := fmt.Sprintf("%v/%v", path, name)
+func ReadTemplate(path string, name string, vals interface{}, language ...string) (string, error) {
+	var fileName string
+	if len(language) != 0 {
+		fileName = fmt.Sprintf("%s/%s/%s", path, language[0], name)
+		if !FileExists(fileName) {
+			fileName = ""
+		}
+	}
+	if fileName == "" {
+		fileName = fmt.Sprintf("%s/%s", path, name)
+	}
 	return ReadTemplateFile(fileName, vals)
 }
 
