@@ -24,3 +24,12 @@ func GenerateRand64() string {
 	id := fmt.Sprintf("%016x", r1)
 	return id
 }
+
+func GenerateRandInt(length ...int) string {
+	r1 := rand.Uint64()
+	id := fmt.Sprintf("%d", r1)
+	if len(length) != 0 {
+		return id[:length[0]]
+	}
+	return id
+}
