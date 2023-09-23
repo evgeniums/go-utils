@@ -49,6 +49,7 @@ type UserController[UserType User] interface {
 	MakeUser() UserType
 
 	SetOplogBuilder(builder func() OpLogUserI)
+	OpLog(ctx op_context.Context, op string, userId string, login string)
 }
 
 type Users[UserType User] interface {
