@@ -24,17 +24,19 @@ import (
 const MaxDumpSize int = 2048
 
 type Request struct {
-	NativeRequest   *http.Request
-	NativeResponse  *http.Response
-	ResponseStatus  int
-	Body            []byte
-	ResponseContent string
-	GoodResponse    interface{}
-	BadResponse     interface{}
-	Serializer      message.Serializer
-	Transport       http.RoundTripper
-	Timeout         int
-	ParsingFailed   bool
+	NativeRequest         *http.Request
+	NativeResponse        *http.Response
+	ResponseStatus        int
+	Body                  []byte
+	ResponseBody          []byte
+	ResponseContent       string
+	GoodResponse          interface{}
+	BadResponse           interface{}
+	Serializer            message.Serializer
+	Transport             http.RoundTripper
+	Timeout               int
+	ParsingFailed         bool
+	IgnoreResponseContent bool
 
 	client *http.Client
 }
@@ -226,7 +228,10 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 			body, _ = io.ReadAll(r.NativeResponse.Body)
 			r.NativeResponse.Body.Close()
 
-			r.ResponseContent = string(body)
+			r.ResponseBody = body
+			if !r.IgnoreResponseContent || r.ResponseStatus >= http.StatusBadRequest {
+				r.ResponseContent = string(r.ResponseBody)
+			}
 
 			parseResponse := func(obj interface{}) {
 				if r.Serializer == nil {
