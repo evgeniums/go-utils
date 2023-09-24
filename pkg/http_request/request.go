@@ -52,14 +52,18 @@ func NewPostWithContext(systemCtx context.Context, ctx op_context.Context, url s
 	var cmdByte []byte
 	var err error
 
-	cmdByte, err = r.Serializer.SerializeMessage(msg)
-	if err != nil {
-		c.SetMessage("failed to marshal message")
-		return nil, c.SetError(err)
+	var body io.Reader
+	if msg != nil {
+		cmdByte, err = r.Serializer.SerializeMessage(msg)
+		if err != nil {
+			c.SetMessage("failed to marshal message")
+			return nil, c.SetError(err)
+		}
+		r.Body = cmdByte
+		body = bytes.NewBuffer(cmdByte)
 	}
 
-	r.Body = cmdByte
-	r.NativeRequest, err = http.NewRequestWithContext(systemCtx, http.MethodPost, url, bytes.NewBuffer(cmdByte))
+	r.NativeRequest, err = http.NewRequestWithContext(systemCtx, http.MethodPost, url, body)
 	if err != nil {
 		c.SetMessage("failed to create request")
 		return nil, c.SetError(err)
