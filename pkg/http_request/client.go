@@ -96,7 +96,7 @@ func (h *HttpClient) SetTlsConfig(cfg *tls.Config) {
 }
 
 func (h *HttpClient) NewPost(ctx op_context.Context, url string, msg interface{}, serializer ...message.Serializer) (*Request, error) {
-	req, err := NewPostWithContext(h.context, ctx, url, msg)
+	req, err := NewPostWithContext(h.context, ctx, url, msg, serializer...)
 	if err != nil {
 		return nil, err
 	}
