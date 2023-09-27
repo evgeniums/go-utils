@@ -133,6 +133,8 @@ func NewGet(ctx op_context.Context, uRL string, msg interface{}) (*Request, erro
 
 func (r *Request) SendRaw(ctx op_context.Context) error {
 
+	// TODO set user agent
+
 	c := ctx.TraceInMethod("Request.SendRaw", logger.Fields{"url": r.NativeRequest.URL.String(), "method": r.NativeRequest.Method})
 	defer ctx.TraceOutMethod()
 	var err error
@@ -170,6 +172,8 @@ func (r *Request) SendRaw(ctx op_context.Context) error {
 }
 
 func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
+
+	// TODO set user agent
 
 	c := ctx.TraceInMethod("Request.Send", logger.Fields{"url": r.NativeRequest.URL.String(), "method": r.NativeRequest.Method})
 
