@@ -28,13 +28,15 @@ func SendHtml(ctx op_context.Context, client EmailSender, to string, subject str
 }
 
 func SendHtmlAndText(ctx op_context.Context, client EmailSender, to string, subject string, html string, text string) error {
-	return client.Send(ctx, to, subject, EmailContent{ContentType: "text/html", Content: html}, EmailContent{ContentType: "text/plain", Content: text})
+	return client.Send(ctx, to, subject, EmailContent{ContentType: "text/plain", Content: text}, EmailContent{ContentType: "text/html", Content: html})
 }
 
 func SendTemplate(ctx op_context.Context, client EmailSender, templatesPath string, templateName string, to string, vals TemplateVals, language ...string) error {
 
 	c := ctx.TraceInMethod("email_client.SendTemplate", logger.Fields{"templates_path": templatesPath, "template": templateName})
 	defer ctx.TraceOutMethod()
+
+	// TODO use language path
 
 	subject, err := utils.ReadTemplate(templatesPath, fmt.Sprintf("%v-subject.txt", templateName), nil)
 	if err != nil {

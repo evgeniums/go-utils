@@ -66,12 +66,14 @@ func (g *GomailSender) Send(ctx op_context.Context, to string, subject string, c
 	m := g.prepareMessage(to, subject)
 
 	// load content
-	for i, content := range contents {
+	i := 0
+	for _, content := range contents {
 		if i == 0 {
 			m.SetBody(content.ContentType, content.Content)
 		} else {
 			m.AddAlternative(content.ContentType, content.Content)
 		}
+		i++
 	}
 
 	// dial and send
