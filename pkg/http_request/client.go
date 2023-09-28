@@ -62,11 +62,10 @@ func (h *HttpClient) Init(cfg config.Config, log logger.Logger, vld validator.Va
 		return nil
 	}
 
+	err = object_config.LoadLogValidate(cfg, log, vld, h, "http_client")
 	key := utils.OptionalString("http_client", configPath...)
 	if cfg.IsSet(key) {
 		err = object_config.LoadLogValidate(cfg, log, vld, h, key)
-	} else {
-		err = object_config.LoadLogValidate(cfg, log, vld, h, "http_client")
 	}
 	if err != nil {
 		return log.PushFatalStack("failed to load configuration of http client", err)
