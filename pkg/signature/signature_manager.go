@@ -15,6 +15,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
+	"github.com/klauspost/compress/zstd"
 )
 
 type UserWithPubkey interface {
@@ -49,15 +50,19 @@ var ErrorHttpCodes = map[string]int{
 }
 
 type SignatureManagerBaseConfig struct {
-	ALGORITHM             string `validate:"required,oneof=rsa_h256_signature" default:"rsa_h256_signature"`
-	ENCRYPT_MESSAGE_STORE bool
-	SECRET                string `mask:"true"`
-	SALT                  string `mask:"true"`
+	ALGORITHM               string `validate:"required,oneof=rsa_h256_signature" default:"rsa_h256_signature"`
+	ENCRYPT_MESSAGE_STORE   bool
+	COMPRESS_BEFORE_ENCRYPT bool   `default:"true"`
+	SECRET                  string `mask:"true"`
+	SALT                    string `mask:"true"`
 }
 
 type SignatureManagerBase struct {
 	SignatureManagerBaseConfig
 	cipher *crypt_utils.AEAD
+
+	zstdEncoder *zstd.Encoder
+	zstdDecoder *zstd.Decoder
 
 	userKeyFinder func(ctx auth.AuthContext) (UserWithPubkey, error)
 }
@@ -91,6 +96,12 @@ func (s *SignatureManagerBase) Init(cfg config.Config, log logger.Logger, vld va
 		if err != nil {
 			return log.PushFatalStack("failed to init cipher for signature manager", err)
 		}
+	}
+
+	// init compressor
+	if s.COMPRESS_BEFORE_ENCRYPT {
+		s.zstdEncoder, _ = zstd.NewWriter(nil)
+		s.zstdDecoder, _ = zstd.NewReader(nil, zstd.WithDecoderConcurrency(1))
 	}
 
 	// done
@@ -158,6 +169,14 @@ func (s *SignatureManagerBase) MakeVerifier(ctx op_context.Context, key string) 
 	return verifier, nil
 }
 
+func (s *SignatureManagerBase) Compress(src []byte) []byte {
+	return s.zstdEncoder.EncodeAll(src, make([]byte, 0, len(src)))
+}
+
+func (s *SignatureManagerBase) Decompress(src []byte) ([]byte, error) {
+	return s.zstdDecoder.DecodeAll(src, nil)
+}
+
 func (s *SignatureManagerBase) Verify(ctx auth.AuthContext, signature string, message []byte, extraData ...string) error {
 
 	// setup
@@ -211,7 +230,11 @@ func (s *SignatureManagerBase) Verify(ctx auth.AuthContext, signature string, me
 	obj.ExtraData = strings.Join(extraData, "+")
 	obj.PubKeyHash = userKey.PubKeyHash()
 	if s.ENCRYPT_MESSAGE_STORE {
-		ciphertext, err := s.cipher.Encrypt([]byte(message))
+		src := []byte(message)
+		if s.COMPRESS_BEFORE_ENCRYPT {
+			src = s.Compress(src)
+		}
+		ciphertext, err := s.cipher.Encrypt(src)
 		if err != nil {
 			c.SetMessage("failed to encrypt message")
 			ctx.SetGenericErrorCode(generic_error.ErrorCodeInternalServerError)
@@ -269,6 +292,8 @@ func (s *SignatureManagerBase) Find(ctx op_context.Context, contextId string) (*
 		err = errors.New("signature not found")
 		return nil, err
 	}
+
+	// TODO decrypt and decompress data
 
 	return obj, nil
 }

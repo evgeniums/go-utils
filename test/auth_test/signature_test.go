@@ -53,7 +53,7 @@ func TestSignature(t *testing.T) {
 	// try echo without signature
 	path := "/status/echo"
 	t.Logf("No pubkey")
-	cmd1 := &Cmd{Param1: "value1_1", Param2: "value1_2"}
+	cmd1 := &Cmd{Param1: "value1_1", Param2: "Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text"}
 	resp := client.Post(path, cmd1)
 	test_utils.CheckResponse(t, resp, &test_utils.Expected{HttpCode: http.StatusUnauthorized, Error: auth.ErrorCodeUnauthorized})
 

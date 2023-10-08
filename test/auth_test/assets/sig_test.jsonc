@@ -15,6 +15,11 @@
             }
         }
     },
+    "signature" : {
+        "encrypt_message_store": true,
+        "secret" : "12345678",
+        "salt": "saltsalt"
+    },
     "server": { 
         "auth": {
             "manager" : {
