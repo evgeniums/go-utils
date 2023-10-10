@@ -2,8 +2,10 @@ package utils
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -223,4 +225,21 @@ func TimeReflectStr(val reflect.Value) string {
 func TimeConverter(str string) reflect.Value {
 	t, _ := ParseTime(str)
 	return reflect.ValueOf(t)
+}
+
+func DateFromId(id string) (Date, error) {
+
+	if len(id) != 20 {
+		return 0, errors.New("too short ID")
+	}
+
+	idTimeStr := id[:8]
+	timeInt, err := strconv.ParseInt(idTimeStr, 16, 64)
+	if err != nil {
+		return 0, errors.New("invalid time in ID")
+	}
+	tm := time.Unix(timeInt, 0)
+
+	m := DateOfTime(tm)
+	return m, nil
 }
