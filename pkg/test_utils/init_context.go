@@ -70,7 +70,7 @@ func InitAppContextNoDb(t *testing.T, testDir string, config ...string) app_cont
 
 func InitDbModels(t *testing.T, testDir string, dbModels []interface{}, config ...string) {
 
-	configFile := utils.OptionalArg(AssetsFilePath(testDir, "test_config.json"), config...)
+	configFile := utils.OptionalString(AssetsFilePath(testDir, "test_config.json"), config...)
 	if !utils.FileExists(configFile) {
 		configFile = AssetsFilePath(testDir, configFile)
 	}
@@ -103,7 +103,7 @@ func InitAppContext(t *testing.T, testDir string, dbModels []interface{}, config
 		InitDbModels(t, testDir, dbModels, config)
 	}
 
-	configFile := utils.OptionalArg(AssetsFilePath(testDir, "test_config.json"), config)
+	configFile := utils.OptionalString(AssetsFilePath(testDir, "test_config.json"), config)
 	if !utils.FileExists(configFile) {
 		configFile = AssetsFilePath(testDir, configFile)
 	}
