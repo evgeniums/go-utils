@@ -91,6 +91,8 @@ type WorkSchedule[T Work] struct {
 	workBuilder WorkBuilder[T]
 
 	lastStuckWorksCleanTime time.Time
+
+	running atomic.Bool
 }
 
 func New[T Work](name string, workBuilder WorkBuilder[T], workRunner WorkRunner[T], cruds ...crud.CRUD) *WorkSchedule[T] {
@@ -184,6 +186,11 @@ func (s *WorkSchedule[T]) RemoveWork(ctx op_context.Context, referenceId string)
 }
 
 func (s *WorkSchedule[T]) ProcessWorks() {
+
+	if !s.running.CompareAndSwap(false, true) {
+		return
+	}
+	defer s.running.Store(false)
 
 	// TODO support multitenancy
 
