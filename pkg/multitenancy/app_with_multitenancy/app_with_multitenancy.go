@@ -121,7 +121,7 @@ func (a *AppWithMultitenancyBase) Close() {
 	a.AppWithPoolsBase.Close()
 }
 
-func BackgroundOpContext(app AppWithMultitenancy, tenancy multitenancy.Tenancy, name string) multitenancy.TenancyContext {
+func BackgroundOpContext(app app_context.Context, tenancy multitenancy.Tenancy, name string) multitenancy.TenancyContext {
 	opCtx := multitenancy.NewInitContext(app, app.Logger(), app.Db())
 	opCtx.SetName(name)
 	errManager := &generic_error.ErrorManagerBase{}
