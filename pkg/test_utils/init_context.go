@@ -101,6 +101,8 @@ func InitAppContext(t *testing.T, testDir string, dbModels []interface{}, config
 
 	if utils.OptionalArg(true, newDb...) {
 		InitDbModels(t, testDir, dbModels, config)
+	} else {
+		SetupGormDB(t)
 	}
 
 	configFile := utils.OptionalString(AssetsFilePath(testDir, "test_config.json"), config)
