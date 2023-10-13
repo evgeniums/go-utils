@@ -134,7 +134,7 @@ func (w *WorkBase) SetNextTime(nextTime time.Time) {
 	w.NextTime = nextTime
 }
 
-func (w *WorkBase) ResetNextWorkTime() {
+func (w *WorkBase) ResetNextTime() {
 	w.SetNextTime(time.Time{})
 	w.SetDelay(0)
 }
