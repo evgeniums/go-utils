@@ -145,6 +145,7 @@ type WorkScheduleConfig struct {
 	INVOKATION_INTERVAL_SECONDS int `default:"300"`
 	HOLD_WORK_SECONDS           int `default:"900"`
 	LOCK_TTL_SECONDS            int `default:"300"`
+	PERIOD                      int `default:"5"`
 }
 
 type workItem[T Work] struct {
