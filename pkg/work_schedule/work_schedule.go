@@ -126,7 +126,7 @@ type Config[T Work] struct {
 	WorkPublisher WorkPublisher[T]
 }
 
-func New[T Work](name string, config Config[T], cruds ...crud.CRUD) *WorkSchedule[T] {
+func NewWorkSchedule[T Work](name string, config Config[T], cruds ...crud.CRUD) *WorkSchedule[T] {
 	s := &WorkSchedule[T]{
 		name:       name,
 		workRunner: config.WorkRunner,
