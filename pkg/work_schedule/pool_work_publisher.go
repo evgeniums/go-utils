@@ -9,9 +9,9 @@ import (
 )
 
 type PubsubWork[T Work] struct {
-	Work      T      `json:"work"`
-	Immediate bool   `json:"immediate"`
-	Tenancy   string `json:"tenancy"`
+	Work    T        `json:"work"`
+	Mode    PostMode `json:"mode"`
+	Tenancy string   `json:"tenancy"`
 }
 
 const PubsubTopicName = "work_schedule"
@@ -24,8 +24,8 @@ func MakePubsubWork[T Work]() *PubsubWork[T] {
 	return &PubsubWork[T]{}
 }
 
-func NewPubsubWork[T Work](work T, immediate bool, tenancy ...multitenancy.Tenancy) *PubsubWork[T] {
-	w := &PubsubWork[T]{Work: work, Immediate: immediate}
+func NewPubsubWork[T Work](work T, postMode PostMode, tenancy ...multitenancy.Tenancy) *PubsubWork[T] {
+	w := &PubsubWork[T]{Work: work, Mode: postMode}
 	t := utils.OptionalArg(nil, tenancy...)
 	if t != nil {
 		w.Tenancy = t.GetID()
@@ -42,12 +42,12 @@ func NewPoolWorkPublisher[T Work](pubsub pool_pubsub.PoolPubsub) *PoolWorkPublis
 	return p
 }
 
-func (p *PoolWorkPublisher[T]) PostWork(ctx op_context.Context, work T, immediate bool, tenancy ...multitenancy.Tenancy) error {
+func (p *PoolWorkPublisher[T]) InvokeWork(ctx op_context.Context, work T, postMode PostMode, tenancy ...multitenancy.Tenancy) error {
 
-	c := ctx.TraceInMethod("PoolWorkPublisher.PostWork")
+	c := ctx.TraceInMethod("PoolWorkPublisher.InvokeWork")
 	defer ctx.TraceOutMethod()
 
-	msg := NewPubsubWork(work, immediate, tenancy...)
+	msg := NewPubsubWork(work, postMode, tenancy...)
 	err := p.pubsub.PublishSelfPool(PubsubTopicName, msg)
 	if err != nil {
 		return c.SetError(err)

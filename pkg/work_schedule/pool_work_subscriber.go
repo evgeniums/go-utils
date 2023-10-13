@@ -19,18 +19,18 @@ func (p *PoolWorkNotificationHandler[T]) Handle(ctx op_context.Context, msg *Pub
 	c := ctx.TraceInMethod("PoolWorkNotificationHandler.Handle")
 	defer ctx.TraceOutMethod()
 
-	if msg.Immediate {
-
-		var tenancy multitenancy.Tenancy
-		var err error
-		if msg.Tenancy != "" {
-			tenancy, err = p.tenancies.Tenancy(msg.Tenancy)
-			if err != nil {
-				return c.SetError(err)
-			}
+	var tenancy multitenancy.Tenancy
+	var err error
+	if msg.Tenancy != "" {
+		tenancy, err = p.tenancies.Tenancy(msg.Tenancy)
+		if err != nil {
+			return c.SetError(err)
 		}
+	}
 
-		p.controller.queue <- workItem[T]{work: msg.Work, tenancy: tenancy}
+	err = p.controller.InvokeWork(ctx, msg.Work, msg.Mode, tenancy)
+	if err != nil {
+		return c.SetError(err)
 	}
 
 	return nil

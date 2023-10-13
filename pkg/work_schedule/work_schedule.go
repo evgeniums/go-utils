@@ -1,12 +1,13 @@
 package work_schedule
 
 import (
-	"sync"
+	"fmt"
 	"sync/atomic"
 	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/background_worker"
+	"github.com/evgeniums/go-backend-helpers/pkg/cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/crud"
@@ -18,22 +19,35 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
+type PostMode int
+
+const (
+	SCHEDULE PostMode = 0
+	DIRECT   PostMode = 1
+	QUEUED   PostMode = 2
+)
+
 type Work interface {
 	common.Object
 	GetReferenceId() string
 	SetReferenceId(string)
 	GetNextTime() time.Time
 	SetNextTime(time.Time)
-	IsAcquired() bool
+
+	GetDelay() int
+	SetDelay() int
+
+	SetLock(cache.Lock)
+	GetLock() cache.Lock
 }
 
 type WorkBuilder[T Work] func() T
 
-type WorkPublisher[T Work] func(ctx op_context.Context, work T, immediate bool, tenancy ...multitenancy.Tenancy) error
+type WorkInvoker[T Work] func(ctx op_context.Context, work T, postMode PostMode, tenancy ...multitenancy.Tenancy) error
 
 type WorkProducer[T Work] interface {
 	NewWork(referenceId string) T
-	PostWork(ctx op_context.Context, work T, immediate bool, tenancy ...multitenancy.Tenancy) error
+	PostWork(ctx op_context.Context, work T, postMode PostMode, tenancy ...multitenancy.Tenancy) error
 	RemoveWork(ctx op_context.Context, referenceId string) error
 }
 
@@ -54,10 +68,11 @@ func (s *WorkProducerBase[T]) NewWork(referenceId string) T {
 
 type WorkBase struct {
 	common.ObjectBase
-	ReferenceId   string    `json:"reference_id" gorm:"uniqueIndex"`
-	Acquired      bool      `json:"acquired" gorm:"index"`
-	NextTime      time.Time `json:"next_time" gorm:"index"`
-	AcquiringTime time.Time `json:"acquiring_time" gorm:"index"`
+	ReferenceId string    `json:"reference_id" gorm:"uniqueIndex"`
+	NextTime    time.Time `json:"next_time" gorm:"index"`
+
+	lock  cache.Lock `json:"-" gorm:"-:all"`
+	delay int        `json:"-" gorm:"-:all"`
 }
 
 func (w *WorkBase) GetReferenceId() string {
@@ -68,10 +83,6 @@ func (w *WorkBase) SetReferenceId(referenceId string) {
 	w.ReferenceId = referenceId
 }
 
-func (w *WorkBase) IsAcquired() bool {
-	return w.Acquired
-}
-
 func (w *WorkBase) GetNextTime() time.Time {
 	return w.NextTime
 }
@@ -80,15 +91,32 @@ func (w *WorkBase) SetNextTime(nextTime time.Time) {
 	w.NextTime = nextTime
 }
 
+func (w *WorkBase) GetLock() cache.Lock {
+	return w.lock
+}
+
+func (w *WorkBase) SetLock(lock cache.Lock) {
+	w.lock = lock
+}
+
+func (w *WorkBase) GetDelay() int {
+	return w.delay
+}
+
+func (w *WorkBase) SetDelay(delay int) {
+	w.delay = delay
+}
+
 type WorkRunner[T Work] interface {
-	Run(ctx op_context.Context, work T) (bool, time.Time, error)
+	Run(ctx op_context.Context, work T) (bool, error)
 }
 
 type WorkScheduleConfig struct {
-	PARALLEL_JOBS                       int `default:"8"`
-	BUCKET_SIZE                         int `default:"32"`
-	JOB_INVOKATION_INTERVAL_SECONDS     int `default:"300"`
-	STUCK_JOBS_RELEASE_INTERVAL_SECONDS int `default:"900"`
+	PARALLEL_JOBS               int `default:"8"`
+	BUCKET_SIZE                 int `default:"32"`
+	INVOKATION_INTERVAL_SECONDS int `default:"300"`
+	HOLD_WORK_SECONDS           int `default:"900"`
+	LOCK_TTL_SECONDS            int `default:"300"`
 }
 
 type workItem[T Work] struct {
@@ -106,24 +134,23 @@ type WorkSchedule[T Work] struct {
 
 	name string
 
-	mutex            sync.RWMutex
-	runningWorks     map[string]bool
+	runningWorkCount atomic.Int32
 	pendingWorkCount atomic.Int32
 
 	workRunner WorkRunner[T]
 
 	queue chan workItem[T]
 
-	lastStuckWorksCleanTime time.Time
+	running atomic.Bool
+	invoker WorkInvoker[T]
 
-	running       atomic.Bool
-	workPublisher WorkPublisher[T]
+	locker cache.Locker
 }
 
 type Config[T Work] struct {
-	WorkBuilder   WorkBuilder[T]
-	WorkRunner    WorkRunner[T]
-	WorkPublisher WorkPublisher[T]
+	WorkBuilder WorkBuilder[T]
+	WorkRunner  WorkRunner[T]
+	WorkInvoker WorkInvoker[T]
 }
 
 func NewWorkSchedule[T Work](name string, config Config[T], cruds ...crud.CRUD) *WorkSchedule[T] {
@@ -133,16 +160,10 @@ func NewWorkSchedule[T Work](name string, config Config[T], cruds ...crud.CRUD) 
 	}
 	s.WorkProducerBase.Construct(config.WorkBuilder)
 	s.WithCRUDBase.Construct(cruds...)
-	s.runningWorks = make(map[string]bool)
 	s.queue = make(chan workItem[T])
-	s.workPublisher = config.WorkPublisher
-	if s.workPublisher == nil {
-		s.workPublisher = func(ctx op_context.Context, work T, immediate bool, tenancy ...multitenancy.Tenancy) error {
-			if immediate {
-				s.queue <- workItem[T]{work: work, tenancy: utils.OptionalArg(nil, tenancy...)}
-			}
-			return nil
-		}
+	s.invoker = config.WorkInvoker
+	if s.invoker == nil {
+		s.invoker = s.InvokeWork
 	}
 	return s
 }
@@ -175,7 +196,56 @@ func (s *WorkSchedule[T]) RunJob() {
 	s.ProcessWorks()
 }
 
-func (s *WorkSchedule[T]) PostWork(ctx op_context.Context, work T, immediate bool, tenancy ...multitenancy.Tenancy) error {
+func (s *WorkSchedule[T]) AcquireWork(ctx op_context.Context, work T) error {
+
+	// setup
+	var err error
+	c := ctx.TraceInMethod("WorkSchedule.AcquireWork")
+	defer ctx.TraceOutMethod()
+
+	key := fmt.Sprintf("work_lock_%s", work.GetReferenceId())
+
+	lock, err := s.locker.Lock(key, time.Duration(s.LOCK_TTL_SECONDS))
+	if err != nil {
+		c.SetLoggerField("work_reference_id", work.GetReferenceId())
+		c.SetMessage("failed to lock work")
+		return c.SetError(err)
+	}
+	s.runningWorkCount.Add(1)
+	work.SetLock(lock)
+
+	return nil
+}
+
+func (s *WorkSchedule[T]) ReleaseWork(ctx op_context.Context, work T) error {
+
+	var err error
+	c := ctx.TraceInMethod("WorkSchedule.ReleaseWork")
+	defer ctx.TraceOutMethod()
+
+	lock := work.GetLock()
+	if lock != nil {
+		s.runningWorkCount.Add(-1)
+		err = lock.Release()
+		if err != nil {
+			c.SetLoggerField("work_reference_id", work.GetReferenceId())
+			c.SetMessage("failed to release work")
+			return c.SetError(err)
+		}
+	}
+
+	return nil
+}
+
+func (s *WorkSchedule[T]) SetNextWorkTime(work T) {
+	if work.GetDelay() == 0 && work.GetNextTime() == utils.TimeNil {
+		work.SetNextTime(time.Now().Add(time.Second * time.Duration(s.INVOKATION_INTERVAL_SECONDS)))
+	} else if work.GetNextTime() == utils.TimeNil && work.GetDelay() != 0 {
+		work.SetNextTime(time.Now().Add(time.Second * time.Duration(work.GetDelay())))
+	}
+}
+
+func (s *WorkSchedule[T]) PostWork(ctx op_context.Context, work T, postMode PostMode, tenancy ...multitenancy.Tenancy) error {
 
 	// setup
 	var err error
@@ -183,8 +253,10 @@ func (s *WorkSchedule[T]) PostWork(ctx op_context.Context, work T, immediate boo
 	defer ctx.TraceOutMethod()
 
 	// set next time
-	if work.GetNextTime() == utils.TimeNil {
-		work.SetNextTime(time.Now().Add(time.Second * time.Duration(s.JOB_INVOKATION_INTERVAL_SECONDS)))
+	if postMode == SCHEDULE {
+		s.SetNextWorkTime(work)
+	} else {
+		work.SetNextTime(time.Now().Add(time.Second * time.Duration(s.HOLD_WORK_SECONDS)))
 	}
 
 	// save in database
@@ -195,8 +267,8 @@ func (s *WorkSchedule[T]) PostWork(ctx op_context.Context, work T, immediate boo
 		return c.SetError(err)
 	}
 
-	// add to queue if immediate
-	err = s.workPublisher(ctx, work, immediate, tenancy...)
+	// invoke work
+	err = s.invoker(ctx, work, postMode, tenancy...)
 	if err != nil {
 		c.SetMessage("failed to publish work")
 		return nil
@@ -236,12 +308,11 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 
 	ctx := default_op_context.BackgroundOpContext(s.App(), s.name)
 	defer ctx.Close()
-	c := ctx.TraceInMethod("WorkSchedule.RunJob")
+	c := ctx.TraceInMethod("WorkSchedule.ProcessWorks")
 
 	filter := db.NewFilter()
 
 	// prepare filter
-	filter.AddField("acquired", false)
 	filter.AddInterval("next_time", nil, time.Now())
 	filter.SetSorting("next_time", db.SORT_ASC)
 
@@ -253,23 +324,8 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 			break
 		}
 
-		// release stuck works
-		if time.Since(s.lastStuckWorksCleanTime).Seconds() >= float64(s.STUCK_JOBS_RELEASE_INTERVAL_SECONDS) {
-			s.lastStuckWorksCleanTime = time.Now()
-			f := db.NewFilter()
-			beforeTimestamp := time.Now().Add(-time.Second * time.Duration(s.STUCK_JOBS_RELEASE_INTERVAL_SECONDS))
-			f.AddInterval("acquiring_time", nil, beforeTimestamp)
-			f.AddField("acquired", true)
-			e := s.CRUD().UpdateWithFilter(ctx, s.workBuilder(), f, db.Fields{"acquired": false})
-			if e != nil {
-				c.Logger().Error("failed to release stuck works", e)
-			}
-		}
-
 		// check number of works currently pending or being processed
-		s.mutex.RLock()
-		filter.Limit = s.BUCKET_SIZE - len(s.runningWorks) - int(s.pendingWorkCount.Load())
-		s.mutex.RUnlock()
+		filter.Limit = s.BUCKET_SIZE - int(s.runningWorkCount.Load()) - int(s.pendingWorkCount.Load())
 		if filter.Limit <= 0 {
 			c.Logger().Info("all bucket size is used, skipping")
 			break
@@ -277,11 +333,48 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 
 		// read works from database
 		var works []T
-		_, err := s.CRUD().List(ctx, filter, &works)
+		handler := func() error {
+
+			var works1 []T
+			_, err := s.CRUD().List(ctx, filter, &works1)
+			if err != nil {
+				c.SetMessage("failed to read works from database 1")
+				return err
+			}
+
+			// hold works
+			nextTime := time.Now().Add(time.Second * time.Duration(s.HOLD_WORK_SECONDS))
+			for _, w := range works1 {
+				dbWork := s.workBuilder()
+				found, err := s.CRUD().ReadForUpdate(ctx, db.Fields{"id": w.GetID()}, dbWork)
+				if err != nil {
+					c.SetMessage("failed to read work for hold from database")
+					return err
+				}
+				if found {
+					err = s.CRUD().Update(ctx, dbWork, db.Fields{"next_time": nextTime})
+					if err != nil {
+						c.SetLoggerField("work_reference_id", dbWork.GetReferenceId())
+						c.SetMessage("failed hold work in database")
+						return err
+					}
+				}
+			}
+
+			// read updated works
+			_, err = s.CRUD().List(ctx, filter, &works)
+			if err != nil {
+				c.SetMessage("failed to read works from database 2")
+				return err
+			}
+
+			// done
+			return nil
+		}
+		err := op_context.ExecDbTransaction(ctx, handler)
 		if err != nil {
-			c.SetMessage("failed to read works from database")
 			c.SetError(err)
-			return
+			break
 		}
 
 		// stop cycle if there are no works
@@ -301,7 +394,7 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 	}
 }
 
-func (s *WorkSchedule[T]) DoWork(ctx op_context.Context, work T) (bool, error) {
+func (s *WorkSchedule[T]) DoWork(ctx op_context.Context, work T) error {
 
 	// setup
 	var err error
@@ -309,74 +402,15 @@ func (s *WorkSchedule[T]) DoWork(ctx op_context.Context, work T) (bool, error) {
 	c := ctx.TraceInMethod("WorkSchedule.DoWork")
 	defer ctx.TraceOutMethod()
 
-	// check if work is already acquired
-	if work.IsAcquired() {
-		c.Logger().Warn("work is acquired in input")
-		return true, nil
-	}
-
-	// check if work is acquired by local process and acquire it by local process
-	s.mutex.Lock()
-	_, acquired := s.runningWorks[work.GetReferenceId()]
-	if acquired {
-		s.mutex.Unlock()
-		c.Logger().Warn("work is acquired in local map")
-		return true, nil
-	}
-	s.runningWorks[work.GetReferenceId()] = true
-	s.mutex.Unlock()
-	defer delete(s.runningWorks, work.GetReferenceId())
-
-	// read work from database
-	acquiredInDb := false
-	acquireWorkInDb := func() error {
-
-		// read work from database
-		dbWork := s.workBuilder()
-		found, err := s.CRUD().ReadForUpdate(ctx, db.Fields{"reference_id": work.GetReferenceId()}, dbWork)
-		if err != nil {
-			c.SetMessage("failed to read work from database")
-			return err
-		}
-		if !found {
-			// no need to update work in database
-			return nil
-		}
-
-		// check if work is already acquired
-		if work.IsAcquired() {
-			acquiredInDb = true
-			return nil
-		}
-
-		// acquire work
-		nextTime := time.Now().Add(time.Second * time.Duration(s.JOB_INVOKATION_INTERVAL_SECONDS))
-		err = s.CRUD().Update(ctx, dbWork, db.Fields{"acquired": true, "next_time": nextTime})
-		if err != nil {
-			c.SetMessage("failed to acquirer work in database")
-			return err
-		}
-
-		// done
-		return nil
-	}
-	if ctx.DbTransaction() != nil {
-		err = acquireWorkInDb()
-	} else {
-		err = op_context.ExecDbTransaction(ctx, acquireWorkInDb)
-	}
+	// acquire work
+	s.AcquireWork(ctx, work)
 	if err != nil {
-		return false, c.SetError(err)
-	}
-
-	// check if work is already acquired in db
-	if acquiredInDb {
-		c.Logger().Warn("work is acquired in db")
-		return true, nil
+		return c.SetError(err)
 	}
 
 	// run work
-	done, nextTime, err := s.workRunner.Run(ctx, work)
+	done, err := s.workRunner.Run(ctx, work)
+	s.SetNextWorkTime(work)
 	updateProcessedWork := func() error {
 
 		// read work from database
@@ -401,35 +435,46 @@ func (s *WorkSchedule[T]) DoWork(ctx op_context.Context, work T) (bool, error) {
 			return nil
 		}
 
-		// release work
-		if nextTime == utils.TimeNil {
-			nextTime = time.Now().Add(time.Second * time.Duration(s.JOB_INVOKATION_INTERVAL_SECONDS))
-		}
-		err = s.CRUD().Update(ctx, dbWork, db.Fields{"acquired": false, "next_time": nextTime, "acquiring_time": time.Now()})
+		// set next time
+		err = s.CRUD().Update(ctx, dbWork, db.Fields{"next_time": work.GetNextTime()})
 		if err != nil {
-			c.SetMessage("failed to release work in database")
+			c.SetMessage("failed to save next work time in database")
 			return err
 		}
 
 		// done
 		return nil
 	}
-	var err1 error
-	if ctx.DbTransaction() != nil {
-		err1 = updateProcessedWork()
-	} else {
-		err1 = op_context.ExecDbTransaction(ctx, updateProcessedWork)
-	}
+	err1 := op_context.ExecDbTransaction(ctx, updateProcessedWork)
 	if err1 != nil {
 		if err == nil {
-			return false, c.SetError(err1)
+			return c.SetError(err1)
 		}
 		c.Logger().Error("failed to update processed work", err1)
-		return false, c.SetError(err)
+		return c.SetError(err)
 	}
 
 	// done
-	return false, nil
+	return nil
+}
+
+func (s *WorkSchedule[T]) InvokeWork(ctx op_context.Context, work T, postMode PostMode, tenancy ...multitenancy.Tenancy) error {
+
+	c := ctx.TraceInMethod("WorkSchedule.InvokeWork")
+	defer ctx.TraceOutMethod()
+
+	switch postMode {
+	case DIRECT:
+		// TODO support multitenancy
+		err := s.DoWork(ctx, work)
+		if err != nil {
+			return c.SetError(err)
+		}
+	case QUEUED:
+		s.pendingWorkCount.Add(1)
+		s.queue <- workItem[T]{work: work, tenancy: utils.OptionalArg(nil, tenancy...)}
+	}
+	return nil
 }
 
 func (s *WorkSchedule[T]) worker() {
