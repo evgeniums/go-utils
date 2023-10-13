@@ -32,18 +32,23 @@ type Work interface {
 	common.Object
 
 	GetReferenceType() string
+	SetReferenceType(string)
 
 	GetReferenceId() string
 	SetReferenceId(string)
 
 	GetNextTime() time.Time
 	SetNextTime(time.Time)
+	ResetNextTime()
 
 	GetDelay() int
 	SetDelay(int)
 
 	SetLock(cache.Lock)
 	GetLock() cache.Lock
+
+	SetNoDb(enable bool)
+	IsNoDb() bool
 }
 
 type WorkBuilder[T Work] func() T
@@ -51,7 +56,7 @@ type WorkBuilder[T Work] func() T
 type WorkInvoker[T Work] func(ctx op_context.Context, work T, postMode PostMode, tenancy ...multitenancy.Tenancy) error
 
 type WorkScheduler[T Work] interface {
-	NewWork(referenceId string) T
+	NewWork(referenceId string, referenceType string) T
 	AcquireWork(ctx op_context.Context, work T) error
 	ReleaseWork(ctx op_context.Context, work T) error
 	PostWork(ctx op_context.Context, work T, postMode PostMode, tenancy ...multitenancy.Tenancy) error
@@ -66,10 +71,11 @@ func (s *WorkSchedulerBase[T]) Construct(workBuilder WorkBuilder[T]) {
 	s.workBuilder = workBuilder
 }
 
-func (s *WorkSchedulerBase[T]) NewWork(referenceId string) T {
+func (s *WorkSchedulerBase[T]) NewWork(referenceId string, referenceType string) T {
 	w := s.workBuilder()
 	w.InitObject()
 	w.SetReferenceId(referenceId)
+	w.SetReferenceType(referenceType)
 	return w
 }
 
@@ -101,10 +107,15 @@ type WorkBase struct {
 
 	lock  cache.Lock `json:"-" gorm:"-:all"`
 	delay int        `json:"-" gorm:"-:all"`
+	noDb  bool       `json:"-" gorm:"-:all"`
 }
 
 func (w *WorkBase) GetReferenceType() string {
 	return w.ReferenceType
+}
+
+func (w *WorkBase) SetReferenceType(referenceType string) {
+	w.ReferenceType = referenceType
 }
 
 func (w *WorkBase) GetReferenceId() string {
@@ -123,6 +134,11 @@ func (w *WorkBase) SetNextTime(nextTime time.Time) {
 	w.NextTime = nextTime
 }
 
+func (w *WorkBase) ResetNextWorkTime() {
+	w.SetNextTime(time.Time{})
+	w.SetDelay(0)
+}
+
 func (w *WorkBase) GetLock() cache.Lock {
 	return w.lock
 }
@@ -137,6 +153,14 @@ func (w *WorkBase) GetDelay() int {
 
 func (w *WorkBase) SetDelay(delay int) {
 	w.delay = delay
+}
+
+func (w *WorkBase) SetNoDb(enable bool) {
+	w.noDb = enable
+}
+
+func (w *WorkBase) IsNoDb() bool {
+	return w.noDb
 }
 
 type WorkScheduleConfig struct {
@@ -270,8 +294,9 @@ func (s *WorkSchedule[T]) ReleaseWork(ctx op_context.Context, work T) error {
 	return nil
 }
 
-func (s *WorkSchedule[T]) SetNextWorkTime(work T) {
-	if work.GetDelay() == 0 && work.GetNextTime() == utils.TimeNil {
+func (s *WorkSchedule[T]) SetNextWorkTime(work T, reset ...bool) {
+	defaultNextTime := utils.OptionalArg(false, reset...)
+	if defaultNextTime || work.GetDelay() == 0 && work.GetNextTime() == utils.TimeNil {
 		work.SetNextTime(time.Now().Add(time.Second * time.Duration(s.INVOKATION_INTERVAL_SECONDS)))
 	} else if work.GetNextTime() == utils.TimeNil && work.GetDelay() != 0 {
 		work.SetNextTime(time.Now().Add(time.Second * time.Duration(work.GetDelay())))
@@ -293,11 +318,13 @@ func (s *WorkSchedule[T]) PostWork(ctx op_context.Context, work T, postMode Post
 	}
 
 	// create work in database
-	_, err = s.CRUD().CreateDup(ctx, work)
-	if err != nil {
-		c.SetLoggerField("work_reference_id", work.GetReferenceId())
-		c.SetMessage("failed to save work in database")
-		return c.SetError(err)
+	if !work.IsNoDb() {
+		_, err = s.CRUD().CreateDup(ctx, work)
+		if err != nil {
+			c.SetLoggerField("work_reference_id", work.GetReferenceId())
+			c.SetMessage("failed to save work in database")
+			return c.SetError(err)
+		}
 	}
 
 	if postMode != SCHEDULE {
@@ -480,6 +507,7 @@ func (s *WorkSchedule[T]) DoWork(ctx op_context.Context, work T) error {
 	releaseWork = true
 
 	// run work
+	work.ResetNextTime()
 	done, err := s.workRunner.Run(ctx, work)
 	s.SetNextWorkTime(work)
 	updateProcessedWork := func() error {
