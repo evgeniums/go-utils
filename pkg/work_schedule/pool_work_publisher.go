@@ -14,8 +14,6 @@ type PubsubWork[T Work] struct {
 	Tenancy string   `json:"tenancy"`
 }
 
-const PubsubTopicName = "work_schedule"
-
 type PubsubTopic[T Work] struct {
 	*pubsub_subscriber.TopicBase[*PubsubWork[T]]
 }
@@ -34,11 +32,12 @@ func NewPubsubWork[T Work](work T, postMode PostMode, tenancy ...multitenancy.Te
 }
 
 type PoolWorkPublisher[T Work] struct {
-	pubsub pool_pubsub.PoolPubsub
+	pubsub    pool_pubsub.PoolPubsub
+	topicName string
 }
 
-func NewPoolWorkPublisher[T Work](pubsub pool_pubsub.PoolPubsub) *PoolWorkPublisher[T] {
-	p := &PoolWorkPublisher[T]{pubsub: pubsub}
+func NewPoolWorkPublisher[T Work](pubsub pool_pubsub.PoolPubsub, topicName string) *PoolWorkPublisher[T] {
+	p := &PoolWorkPublisher[T]{pubsub: pubsub, topicName: topicName}
 	return p
 }
 
@@ -48,7 +47,7 @@ func (p *PoolWorkPublisher[T]) InvokeWork(ctx op_context.Context, work T, postMo
 	defer ctx.TraceOutMethod()
 
 	msg := NewPubsubWork(work, postMode, tenancy...)
-	err := p.pubsub.PublishSelfPool(PubsubTopicName, msg)
+	err := p.pubsub.PublishSelfPool(p.topicName, msg)
 	if err != nil {
 		return c.SetError(err)
 	}

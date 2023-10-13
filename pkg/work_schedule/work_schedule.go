@@ -1,6 +1,7 @@
 package work_schedule
 
 import (
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -29,13 +30,17 @@ const (
 
 type Work interface {
 	common.Object
+
+	GetReferenceType() string
+
 	GetReferenceId() string
 	SetReferenceId(string)
+
 	GetNextTime() time.Time
 	SetNextTime(time.Time)
 
 	GetDelay() int
-	SetDelay() int
+	SetDelay(int)
 
 	SetLock(cache.Lock)
 	GetLock() cache.Lock
@@ -45,34 +50,61 @@ type WorkBuilder[T Work] func() T
 
 type WorkInvoker[T Work] func(ctx op_context.Context, work T, postMode PostMode, tenancy ...multitenancy.Tenancy) error
 
-type WorkProducer[T Work] interface {
+type WorkScheduler[T Work] interface {
 	NewWork(referenceId string) T
+	AcquireWork(ctx op_context.Context, work T) error
+	ReleaseWork(ctx op_context.Context, work T) error
 	PostWork(ctx op_context.Context, work T, postMode PostMode, tenancy ...multitenancy.Tenancy) error
 	RemoveWork(ctx op_context.Context, referenceId string) error
 }
 
-type WorkProducerBase[T Work] struct {
+type WorkSchedulerBase[T Work] struct {
 	workBuilder WorkBuilder[T]
 }
 
-func (s *WorkProducerBase[T]) Construct(workBuilder WorkBuilder[T]) {
+func (s *WorkSchedulerBase[T]) Construct(workBuilder WorkBuilder[T]) {
 	s.workBuilder = workBuilder
 }
 
-func (s *WorkProducerBase[T]) NewWork(referenceId string) T {
+func (s *WorkSchedulerBase[T]) NewWork(referenceId string) T {
 	w := s.workBuilder()
 	w.InitObject()
 	w.SetReferenceId(referenceId)
 	return w
 }
 
+func (s *WorkSchedulerBase[T]) AcquireWork(ctx op_context.Context, work T) error {
+	return nil
+}
+
+func (s *WorkSchedulerBase[T]) ReleaseWork(ctx op_context.Context, work T) error {
+	return nil
+}
+
+func (s *WorkSchedulerBase[T]) PostWork(ctx op_context.Context, work T, postMode PostMode, tenancy ...multitenancy.Tenancy) error {
+	return nil
+}
+
+func (s *WorkSchedulerBase[T]) RemoveWork(ctx op_context.Context, referenceId string) error {
+	return nil
+}
+
+type WorkRunner[T Work] interface {
+	Run(ctx op_context.Context, work T) (bool, error)
+}
+
 type WorkBase struct {
 	common.ObjectBase
-	ReferenceId string    `json:"reference_id" gorm:"uniqueIndex"`
-	NextTime    time.Time `json:"next_time" gorm:"index"`
+	ReferenceId   string    `json:"reference_id" gorm:"index;index:,unique,composite:ref"`
+	ReferenceType string    `json:"reference_type" gorm:"index;index:,unique,composite:ref"`
+	NextTime      time.Time `json:"next_time" gorm:"index"`
 
 	lock  cache.Lock `json:"-" gorm:"-:all"`
 	delay int        `json:"-" gorm:"-:all"`
+}
+
+func (w *WorkBase) GetReferenceType() string {
+	return w.ReferenceType
 }
 
 func (w *WorkBase) GetReferenceId() string {
@@ -107,10 +139,6 @@ func (w *WorkBase) SetDelay(delay int) {
 	w.delay = delay
 }
 
-type WorkRunner[T Work] interface {
-	Run(ctx op_context.Context, work T) (bool, error)
-}
-
 type WorkScheduleConfig struct {
 	PARALLEL_JOBS               int `default:"8"`
 	BUCKET_SIZE                 int `default:"32"`
@@ -130,7 +158,7 @@ type WorkSchedule[T Work] struct {
 	crud.WithCRUDBase
 	background_worker.JobRunnerBase
 
-	WorkProducerBase[T]
+	WorkSchedulerBase[T]
 
 	name string
 
@@ -158,7 +186,7 @@ func NewWorkSchedule[T Work](name string, config Config[T], cruds ...crud.CRUD) 
 		name:       name,
 		workRunner: config.WorkRunner,
 	}
-	s.WorkProducerBase.Construct(config.WorkBuilder)
+	s.WorkSchedulerBase.Construct(config.WorkBuilder)
 	s.WithCRUDBase.Construct(cruds...)
 	s.queue = make(chan workItem[T])
 	s.invoker = config.WorkInvoker
@@ -194,6 +222,10 @@ func (s *WorkSchedule[T]) StopJob() {
 
 func (s *WorkSchedule[T]) RunJob() {
 	s.ProcessWorks()
+}
+
+func (s *WorkSchedule[T]) SetRunner(runner WorkRunner[T]) {
+	s.workRunner = runner
 }
 
 func (s *WorkSchedule[T]) AcquireWork(ctx op_context.Context, work T) error {
@@ -269,12 +301,17 @@ func (s *WorkSchedule[T]) PostWork(ctx op_context.Context, work T, postMode Post
 
 	if postMode != SCHEDULE {
 
+		if ctx.DbTransaction() != nil {
+			c.Logger().Error("incompatible mode for calling inside transaction", nil)
+			return nil
+		}
+
 		// read work from database
 		dbWork := s.workBuilder()
 		found, err := s.CRUD().Read(ctx, db.Fields{"reference_id": work.GetReferenceId()}, dbWork)
 		if err != nil {
 			c.SetMessage("failed to read work from database")
-			return err
+			return c.SetError(err)
 		}
 		if !found {
 			// no work in database
@@ -427,6 +464,12 @@ func (s *WorkSchedule[T]) DoWork(ctx op_context.Context, work T) error {
 		ctx.TraceOutMethod()
 	}
 	defer onExit()
+
+	// check work runner
+	if s.workRunner == nil {
+		err = errors.New("invalid work runner")
+		return err
+	}
 
 	// acquire work
 	s.AcquireWork(ctx, work)

@@ -50,12 +50,12 @@ func NewPoolSubscriber[T Work](tenancies multitenancy.Multitenancy, controller *
 	return p
 }
 
-func (p *PoolWorkSubscriber[T]) Init(ctx op_context.Context, pubsub pool_pubsub.PoolPubsub) error {
+func (p *PoolWorkSubscriber[T]) Init(ctx op_context.Context, pubsub pool_pubsub.PoolPubsub, topicName string) error {
 
 	c := ctx.TraceInMethod("PoolWorkSubscriber.Init")
 	defer ctx.TraceOutMethod()
 
-	p.topic.TopicBase = pubsub_subscriber.New(PubsubTopicName, MakePubsubWork[T])
+	p.topic.TopicBase = pubsub_subscriber.New(topicName, MakePubsubWork[T])
 	_, err := pubsub.SubscribeSelfPool(ctx, p.topic)
 	if err != nil {
 		c.SetError(err)
