@@ -29,6 +29,29 @@ type Work interface {
 
 type WorkBuilder[T Work] func() T
 
+type WorkPublisher[T Work] func(ctx op_context.Context, work T, immediate bool, tenancy ...multitenancy.Tenancy) error
+
+type WorkProducer[T Work] interface {
+	NewWork(referenceId string) T
+	PostWork(ctx op_context.Context, work T, immediate bool, tenancy ...multitenancy.Tenancy) error
+	RemoveWork(ctx op_context.Context, referenceId string) error
+}
+
+type WorkProducerBase[T Work] struct {
+	workBuilder WorkBuilder[T]
+}
+
+func (s *WorkProducerBase[T]) Construct(workBuilder WorkBuilder[T]) {
+	s.workBuilder = workBuilder
+}
+
+func (s *WorkProducerBase[T]) NewWork(referenceId string) T {
+	w := s.workBuilder()
+	w.InitObject()
+	w.SetReferenceId(referenceId)
+	return w
+}
+
 type WorkBase struct {
 	common.ObjectBase
 	ReferenceId   string    `json:"reference_id" gorm:"uniqueIndex"`
@@ -79,6 +102,8 @@ type WorkSchedule[T Work] struct {
 	crud.WithCRUDBase
 	background_worker.JobRunnerBase
 
+	WorkProducerBase[T]
+
 	name string
 
 	mutex            sync.RWMutex
@@ -87,23 +112,38 @@ type WorkSchedule[T Work] struct {
 
 	workRunner WorkRunner[T]
 
-	queue       chan workItem[T]
-	workBuilder WorkBuilder[T]
+	queue chan workItem[T]
 
 	lastStuckWorksCleanTime time.Time
 
-	running atomic.Bool
+	running       atomic.Bool
+	workPublisher WorkPublisher[T]
 }
 
-func New[T Work](name string, workBuilder WorkBuilder[T], workRunner WorkRunner[T], cruds ...crud.CRUD) *WorkSchedule[T] {
+type Config[T Work] struct {
+	WorkBuilder   WorkBuilder[T]
+	WorkRunner    WorkRunner[T]
+	WorkPublisher WorkPublisher[T]
+}
+
+func New[T Work](name string, config Config[T], cruds ...crud.CRUD) *WorkSchedule[T] {
 	s := &WorkSchedule[T]{
-		name:        name,
-		workBuilder: workBuilder,
-		workRunner:  workRunner,
+		name:       name,
+		workRunner: config.WorkRunner,
 	}
-	s.Construct(cruds...)
+	s.WorkProducerBase.Construct(config.WorkBuilder)
+	s.WithCRUDBase.Construct(cruds...)
 	s.runningWorks = make(map[string]bool)
 	s.queue = make(chan workItem[T])
+	s.workPublisher = config.WorkPublisher
+	if s.workPublisher == nil {
+		s.workPublisher = func(ctx op_context.Context, work T, immediate bool, tenancy ...multitenancy.Tenancy) error {
+			if immediate {
+				s.queue <- workItem[T]{work: work, tenancy: utils.OptionalArg(nil, tenancy...)}
+			}
+			return nil
+		}
+	}
 	return s
 }
 
@@ -127,13 +167,6 @@ func (s *WorkSchedule[T]) Init(app app_context.Context, configPath ...string) er
 	return nil
 }
 
-func (s *WorkSchedule[T]) NewWork(referenceId string) T {
-	w := s.workBuilder()
-	w.InitObject()
-	w.SetReferenceId(referenceId)
-	return w
-}
-
 func (s *WorkSchedule[T]) StopJob() {
 	close(s.queue)
 }
@@ -142,11 +175,11 @@ func (s *WorkSchedule[T]) RunJob() {
 	s.ProcessWorks()
 }
 
-func (s *WorkSchedule[T]) AddWork(ctx op_context.Context, work T) error {
+func (s *WorkSchedule[T]) PostWork(ctx op_context.Context, work T, immediate bool, tenancy ...multitenancy.Tenancy) error {
 
 	// setup
 	var err error
-	c := ctx.TraceInMethod("WorkSchedule.AddWork")
+	c := ctx.TraceInMethod("WorkSchedule.PostWork")
 	defer ctx.TraceOutMethod()
 
 	// set next time
@@ -160,6 +193,13 @@ func (s *WorkSchedule[T]) AddWork(ctx op_context.Context, work T) error {
 		c.SetLoggerField("work_reference_id", work.GetReferenceId())
 		c.SetMessage("failed to save work in database")
 		return c.SetError(err)
+	}
+
+	// add to queue if immediate
+	err = s.workPublisher(ctx, work, immediate, tenancy...)
+	if err != nil {
+		c.SetMessage("failed to publish work")
+		return nil
 	}
 
 	// done
@@ -408,6 +448,6 @@ func (s *WorkSchedule[T]) worker() {
 		}
 		s.pendingWorkCount.Add(-1)
 
-		s.ProcessWorks()
+		go s.ProcessWorks()
 	}
 }
