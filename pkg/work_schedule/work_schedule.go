@@ -135,7 +135,7 @@ type WorkSchedule[T Work] struct {
 	name string
 
 	runningWorkCount atomic.Int32
-	pendingWorkCount atomic.Int32
+	workQueueSize    atomic.Int32
 
 	workRunner WorkRunner[T]
 
@@ -259,19 +259,34 @@ func (s *WorkSchedule[T]) PostWork(ctx op_context.Context, work T, postMode Post
 		work.SetNextTime(time.Now().Add(time.Second * time.Duration(s.HOLD_WORK_SECONDS)))
 	}
 
-	// save in database
-	_, err = s.CRUD().CreateDup(ctx, work, true)
+	// create work in database
+	_, err = s.CRUD().CreateDup(ctx, work)
 	if err != nil {
 		c.SetLoggerField("work_reference_id", work.GetReferenceId())
 		c.SetMessage("failed to save work in database")
 		return c.SetError(err)
 	}
 
-	// invoke work
-	err = s.invoker(ctx, work, postMode, tenancy...)
-	if err != nil {
-		c.SetMessage("failed to publish work")
-		return nil
+	if postMode != SCHEDULE {
+
+		// read work from database
+		dbWork := s.workBuilder()
+		found, err := s.CRUD().Read(ctx, db.Fields{"reference_id": work.GetReferenceId()}, dbWork)
+		if err != nil {
+			c.SetMessage("failed to read work from database")
+			return err
+		}
+		if !found {
+			// no work in database
+			return nil
+		}
+
+		// invoke work
+		err = s.invoker(ctx, dbWork, postMode, tenancy...)
+		if err != nil {
+			c.SetMessage("failed to invoke work")
+			return nil
+		}
 	}
 
 	// done
@@ -325,7 +340,7 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 		}
 
 		// check number of works currently pending or being processed
-		filter.Limit = s.BUCKET_SIZE - int(s.runningWorkCount.Load()) - int(s.pendingWorkCount.Load())
+		filter.Limit = s.BUCKET_SIZE - int(s.runningWorkCount.Load()) - int(s.workQueueSize.Load())
 		if filter.Limit <= 0 {
 			c.Logger().Info("all bucket size is used, skipping")
 			break
@@ -382,14 +397,13 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 			break
 		}
 
-		// enqueue works to workers
+		// enqueu works to workers
 		for _, work := range works {
 			if s.Stopper().IsStopped() {
 				break
 			}
-			s.pendingWorkCount.Add(1)
 			// TODO support multitenancy
-			s.queue <- workItem[T]{work: work, tenancy: nil}
+			s.enqueuWork(work, nil)
 		}
 	}
 }
@@ -398,15 +412,28 @@ func (s *WorkSchedule[T]) DoWork(ctx op_context.Context, work T) error {
 
 	// setup
 	var err error
+	releaseWork := false
 	ctx.SetLoggerField("work_reference_id", work.GetReferenceId())
 	c := ctx.TraceInMethod("WorkSchedule.DoWork")
-	defer ctx.TraceOutMethod()
+	onExit := func() {
+
+		if releaseWork {
+			s.ReleaseWork(ctx, work)
+		}
+		if err != nil {
+			c.SetError(err)
+		}
+
+		ctx.TraceOutMethod()
+	}
+	defer onExit()
 
 	// acquire work
 	s.AcquireWork(ctx, work)
 	if err != nil {
-		return c.SetError(err)
+		return err
 	}
+	releaseWork = true
 
 	// run work
 	done, err := s.workRunner.Run(ctx, work)
@@ -448,10 +475,11 @@ func (s *WorkSchedule[T]) DoWork(ctx op_context.Context, work T) error {
 	err1 := op_context.ExecDbTransaction(ctx, updateProcessedWork)
 	if err1 != nil {
 		if err == nil {
-			return c.SetError(err1)
+			err = err1
+			return err
 		}
 		c.Logger().Error("failed to update processed work", err1)
-		return c.SetError(err)
+		return err
 	}
 
 	// done
@@ -471,14 +499,15 @@ func (s *WorkSchedule[T]) InvokeWork(ctx op_context.Context, work T, postMode Po
 			return c.SetError(err)
 		}
 	case QUEUED:
-		s.pendingWorkCount.Add(1)
-		s.queue <- workItem[T]{work: work, tenancy: utils.OptionalArg(nil, tenancy...)}
+		s.enqueuWork(work, tenancy...)
 	}
 	return nil
 }
 
 func (s *WorkSchedule[T]) worker() {
 	for work := range s.queue {
+
+		s.workQueueSize.Add(-1)
 
 		if s.Stopper().IsStopped() {
 			break
@@ -491,8 +520,12 @@ func (s *WorkSchedule[T]) worker() {
 			ctx := default_op_context.BackgroundOpContext(s.App(), s.name)
 			s.DoWork(ctx, work.work)
 		}
-		s.pendingWorkCount.Add(-1)
 
 		go s.ProcessWorks()
 	}
+}
+
+func (s *WorkSchedule[T]) enqueuWork(work T, tenancy ...multitenancy.Tenancy) {
+	s.workQueueSize.Add(1)
+	s.queue <- workItem[T]{work: work, tenancy: utils.OptionalArg(nil, tenancy...)}
 }
