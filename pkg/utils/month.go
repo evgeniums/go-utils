@@ -11,6 +11,10 @@ import (
 
 type Month int
 
+func MakeMonth() Month {
+	return Month(0)
+}
+
 func CurrentMonth() Month {
 	t := time.Now()
 	var m Month
