@@ -24,6 +24,10 @@ func CheckGenericError(t *testing.T, err error, expectedCode string, expectedMes
 }
 
 func DumpError(t *testing.T, err error, message ...string) {
+	if err == nil {
+		t.Logf(utils.OptionalArg("Dump error", message...) + ": no error")
+		return
+	}
 	gErr, ok := err.(generic_error.Error)
 	if ok {
 		DumpObject(t, gErr, message...)

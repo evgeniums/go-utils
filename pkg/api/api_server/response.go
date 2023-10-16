@@ -5,6 +5,12 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
+type File struct {
+	Content     []byte
+	ContentType string
+	Name        string
+}
+
 // Interface of response of server API.
 type Response interface {
 	Message() interface{}
@@ -17,6 +23,9 @@ type Response interface {
 
 	SetRedirectPath(path string)
 	RedirectPath() string
+
+	SetFile(file *File)
+	File() *File
 }
 
 type ResponseBase struct {
@@ -24,6 +33,7 @@ type ResponseBase struct {
 	request              Request
 	text                 string
 	redirectResourcePath string
+	file                 *File
 }
 
 func (r *ResponseBase) Message() interface{} {
@@ -70,4 +80,12 @@ func (r *ResponseBase) SetRedirectPath(path string) {
 
 func (r *ResponseBase) RedirectPath() string {
 	return r.redirectResourcePath
+}
+
+func (r *ResponseBase) SetFile(file *File) {
+	r.file = file
+}
+
+func (r *ResponseBase) File() *File {
+	return r.file
 }

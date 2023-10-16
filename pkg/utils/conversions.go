@@ -85,7 +85,7 @@ func MoneyToIntegerUp(dollars float64) int64 {
 	return int64(math.Ceil(float64(dollars) * 100.00))
 }
 
-func MoneyToDecimal(cents int64) float64 {
+func MoneyToDecimal[T constraints.Integer](cents T) float64 {
 	v := float64(cents) / 100.00
 	return float64(v)
 }

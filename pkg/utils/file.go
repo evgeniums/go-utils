@@ -1,6 +1,9 @@
 package utils
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
 
 func FileExists(path string) bool {
 	_, err := os.Stat(path)
@@ -24,4 +27,10 @@ func IsDir(path string) bool {
 		return false
 	}
 	return fileinfo.IsDir()
+}
+
+func MakePath(filename string) error {
+	dir := filepath.Dir(filename)
+	err := os.MkdirAll(dir, os.ModePerm)
+	return err
 }

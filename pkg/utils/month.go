@@ -11,6 +11,10 @@ import (
 
 type Month int
 
+func MakeMonth() Month {
+	return Month(0)
+}
+
 func CurrentMonth() Month {
 	t := time.Now()
 	var m Month
@@ -50,6 +54,17 @@ func MonthFromString(str string) (Month, error) {
 
 func (m *Month) String() string {
 	str := fmt.Sprintf("%04d-%02d", m.Year(), m.Month())
+	return str
+}
+
+func (m *Month) AsNumber() string {
+	str := fmt.Sprintf("%04d%02d", m.Year(), m.Month())
+	return str
+}
+
+func (m *Month) AsShortNumber() string {
+	str := fmt.Sprintf("%04d%02d", m.Year(), m.Month())
+	str = str[2:]
 	return str
 }
 

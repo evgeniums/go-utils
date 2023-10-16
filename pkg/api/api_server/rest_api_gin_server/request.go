@@ -3,6 +3,7 @@ package rest_api_gin_server
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -99,13 +100,16 @@ func (r *Request) Close(successMessage ...string) {
 		if !redirect {
 			if r.response.Text() != "" {
 				r.ginCtx.String(r.response.httpCode, r.response.Text())
+			} else if r.response.Message() != nil {
+				reponseBody = r.response.Message()
+				r.ginCtx.JSON(r.response.httpCode, r.response.Message())
+			} else if r.response.File() != nil {
+				file := r.response.File()
+				r.ginCtx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", file.Name))
+				r.ginCtx.Header("Accept-Length", utils.NumToStr(len(file.Content)))
+				r.ginCtx.Data(r.response.httpCode, file.ContentType, file.Content)
 			} else {
-				if r.response.Message() != nil {
-					reponseBody = r.response.Message()
-					r.ginCtx.JSON(r.response.httpCode, r.response.Message())
-				} else {
-					r.ginCtx.Status(r.response.httpCode)
-				}
+				r.ginCtx.Status(r.response.httpCode)
 			}
 		}
 
