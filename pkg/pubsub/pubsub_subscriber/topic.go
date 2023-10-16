@@ -88,9 +88,7 @@ func (t *TopicBase[T]) Handle(ctx op_context.Context, msg []byte, serializer mes
 		if err != nil {
 			c.SetLoggerField("subscriber", subscriber.Name())
 			c.SetMessage("failed to handle message")
-			c.SetError(err)
 			ctx.DumpLog()
-			ctx.ClearError()
 		}
 	}
 

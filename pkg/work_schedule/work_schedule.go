@@ -566,11 +566,10 @@ func (s *WorkSchedule[T]) DoWork(ctx op_context.Context, work T) error {
 	}
 	err1 := op_context.ExecDbTransaction(ctx, updateProcessedWork)
 	if err1 != nil {
+		c.Logger().Error("failed to update processed work", err1)
 		if err == nil {
 			err = err1
-			return err
 		}
-		c.Logger().Error("failed to update processed work", err1)
 		return err
 	}
 
