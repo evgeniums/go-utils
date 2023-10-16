@@ -47,6 +47,7 @@ func NewPoolSubscriber[T Work](tenancies multitenancy.Multitenancy, controller *
 		tenancies:  tenancies,
 		controller: controller,
 	}
+	p.topic = &PubsubTopic[T]{}
 	return p
 }
 
