@@ -57,6 +57,17 @@ func (m *Month) String() string {
 	return str
 }
 
+func (m *Month) AsNumber() string {
+	str := fmt.Sprintf("%04d%02d", m.Year(), m.Month())
+	return str
+}
+
+func (m *Month) AsShortNumber() string {
+	str := fmt.Sprintf("%04d%02d", m.Year(), m.Month())
+	str = str[2:]
+	return str
+}
+
 func (m *Month) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), "\"")
 	var err error
