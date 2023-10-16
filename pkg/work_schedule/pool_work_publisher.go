@@ -46,6 +46,9 @@ func (p *PoolWorkPublisher[T]) InvokeWork(ctx op_context.Context, work T, postMo
 	c := ctx.TraceInMethod("PoolWorkPublisher.InvokeWork")
 	defer ctx.TraceOutMethod()
 
+	c.SetLoggerField("pool_topic_name", p.topicName)
+	c.Logger().Debug("publish work to self pool")
+
 	msg := NewPubsubWork(work, postMode, tenancy...)
 	err := p.pubsub.PublishSelfPool(p.topicName, msg)
 	if err != nil {

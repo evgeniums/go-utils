@@ -9,6 +9,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/background_worker"
 	"github.com/evgeniums/go-backend-helpers/pkg/cache"
+	"github.com/evgeniums/go-backend-helpers/pkg/cache/redis_cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/crud"
@@ -218,6 +219,7 @@ func NewWorkSchedule[T Work](name string, config Config[T], cruds ...crud.CRUD) 
 	if s.invoker == nil {
 		s.invoker = s.InvokeWork
 	}
+
 	return s
 }
 
@@ -234,10 +236,20 @@ func (s *WorkSchedule[T]) Init(app app_context.Context, configPath ...string) er
 		return app.Logger().PushFatalStack("failed to load configuration of WorkSchedule", err)
 	}
 
+	// init locker
+	redisCache := redis_cache.NewCache()
+	err = redisCache.Init(app.Cfg(), app.Logger(), app.Validator(), "redis_cache")
+	if err != nil {
+		return app.Logger().PushFatalStack("failed to init redis cache for WorkSchedule", err)
+	}
+	s.locker = redis_cache.NewLocker(redisCache)
+
+	// run workers
 	for i := 0; i < s.PARALLEL_JOBS; i++ {
 		go s.worker()
 	}
 
+	// done
 	return nil
 }
 
@@ -262,7 +274,7 @@ func (s *WorkSchedule[T]) AcquireWork(ctx op_context.Context, work T) error {
 
 	key := fmt.Sprintf("work_lock_%s", work.GetReferenceId())
 
-	lock, err := s.locker.Lock(key, time.Duration(s.LOCK_TTL_SECONDS))
+	lock, err := s.locker.Lock(key, time.Second*time.Duration(s.LOCK_TTL_SECONDS))
 	if err != nil {
 		c.SetLoggerField("work_reference_id", work.GetReferenceId())
 		c.SetMessage("failed to lock work")
@@ -317,14 +329,22 @@ func (s *WorkSchedule[T]) PostWork(ctx op_context.Context, work T, postMode Post
 		work.SetNextTime(time.Now().Add(time.Second * time.Duration(s.HOLD_WORK_SECONDS)))
 	}
 
-	// create work in database
-	if !work.IsNoDb() {
-		_, err = s.CRUD().CreateDup(ctx, work)
+	if work.IsNoDb() {
+		// invoke work
+		err = s.invoker(ctx, work, postMode, tenancy...)
 		if err != nil {
-			c.SetLoggerField("work_reference_id", work.GetReferenceId())
-			c.SetMessage("failed to save work in database")
-			return c.SetError(err)
+			c.SetMessage("failed to invoke work")
+			return err
 		}
+		return nil
+	}
+
+	// create work in database
+	_, err = s.CRUD().CreateDup(ctx, work)
+	if err != nil {
+		c.SetLoggerField("work_reference_id", work.GetReferenceId())
+		c.SetMessage("failed to save work in database")
+		return c.SetError(err)
 	}
 
 	if postMode != SCHEDULE {
@@ -350,7 +370,7 @@ func (s *WorkSchedule[T]) PostWork(ctx op_context.Context, work T, postMode Post
 		err = s.invoker(ctx, dbWork, postMode, tenancy...)
 		if err != nil {
 			c.SetMessage("failed to invoke work")
-			return nil
+			return err
 		}
 	}
 
@@ -588,9 +608,11 @@ func (s *WorkSchedule[T]) worker() {
 		if work.tenancy != nil {
 			ctx := app_with_multitenancy.BackgroundOpContext(s.App(), work.tenancy, s.name)
 			s.DoWork(ctx, work.work)
+			ctx.Close("Served queue work")
 		} else {
 			ctx := default_op_context.BackgroundOpContext(s.App(), s.name)
 			s.DoWork(ctx, work.work)
+			ctx.Close("Served queue work")
 		}
 
 		go s.ProcessWorks()
