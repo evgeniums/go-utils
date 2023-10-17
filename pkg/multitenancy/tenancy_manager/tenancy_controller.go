@@ -104,7 +104,7 @@ func (t *TenancyController) List(ctx op_context.Context, filter *db.Filter) ([]*
 	var tenancies []*multitenancy.TenancyItem
 	count, err := t.CRUD.Join(ctx, db.NewJoin(queryBuilder, "ListTenancies"), filter, &tenancies)
 	if err != nil {
-		c.SetMessage("failed to find tenancy")
+		c.SetMessage("failed to join tenancies")
 		return nil, 0, c.SetError(err)
 	}
 
