@@ -61,7 +61,7 @@ type WorkScheduler[T Work] interface {
 	AcquireWork(ctx op_context.Context, work T) error
 	ReleaseWork(ctx op_context.Context, work T) error
 	PostWork(ctx op_context.Context, work T, postMode PostMode, tenancy ...multitenancy.Tenancy) error
-	RemoveWork(ctx op_context.Context, referenceId string) error
+	RemoveWork(ctx op_context.Context, referenceId string, referenceType string) error
 }
 
 type WorkSchedulerBase[T Work] struct {
@@ -378,7 +378,7 @@ func (s *WorkSchedule[T]) PostWork(ctx op_context.Context, work T, postMode Post
 	return nil
 }
 
-func (s *WorkSchedule[T]) RemoveWork(ctx op_context.Context, referenceId string) error {
+func (s *WorkSchedule[T]) RemoveWork(ctx op_context.Context, referenceId string, refernecType string) error {
 
 	// setup
 	var err error
@@ -386,7 +386,7 @@ func (s *WorkSchedule[T]) RemoveWork(ctx op_context.Context, referenceId string)
 	defer ctx.TraceOutMethod()
 
 	// delete from database
-	err = s.CRUD().DeleteByFields(ctx, db.Fields{"reference_id": referenceId}, s.workBuilder())
+	err = s.CRUD().DeleteByFields(ctx, db.Fields{"reference_id": referenceId, "reference_type": refernecType}, s.workBuilder())
 	if err != nil {
 		c.SetLoggerField("work_reference_id", referenceId)
 		c.SetMessage("failed to delete work from database")
