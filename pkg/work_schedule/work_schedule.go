@@ -340,7 +340,7 @@ func (s *WorkSchedule[T]) PostWork(ctx op_context.Context, work T, postMode Post
 	}
 
 	// create work in database
-	_, err = s.CRUD().CreateDup(ctx, work)
+	_, err = s.CRUD().CreateDup(ctx, work, true)
 	if err != nil {
 		c.SetLoggerField("work_reference_id", work.GetReferenceId())
 		c.SetMessage("failed to save work in database")
@@ -444,6 +444,7 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 
 			// hold works
 			nextTime := time.Now().Add(time.Second * time.Duration(s.HOLD_WORK_SECONDS))
+			workIds := []string{}
 			for _, w := range works1 {
 				dbWork := s.workBuilder()
 				found, err := s.CRUD().ReadForUpdate(ctx, db.Fields{"id": w.GetID()}, dbWork)
@@ -458,11 +459,14 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 						c.SetMessage("failed hold work in database")
 						return err
 					}
+					workIds = append(workIds, dbWork.GetID())
 				}
 			}
 
 			// read updated works
-			_, err = s.CRUD().List(ctx, filter, &works)
+			f := db.NewFilter()
+			f.AddFieldIn("id", utils.ListInterfaces(workIds)...)
+			_, err = s.CRUD().List(ctx, f, &works)
 			if err != nil {
 				c.SetMessage("failed to read works from database 2")
 				return err
