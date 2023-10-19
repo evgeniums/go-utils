@@ -29,6 +29,18 @@ const (
 	QUEUED   PostMode = 2
 )
 
+func Mode(m string) PostMode {
+	switch m {
+	case "schedule":
+		return SCHEDULE
+	case "direct":
+		return DIRECT
+	case "queued":
+		return QUEUED
+	}
+	return SCHEDULE
+}
+
 type Work interface {
 	common.Object
 
