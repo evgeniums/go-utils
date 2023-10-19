@@ -22,6 +22,7 @@ func NewWorkScheduleCommands[T work_schedule.Work](name string, description stri
 	w := &WorkScheduleCommands[T]{}
 	w.Construct(w, name, description)
 	w.MakeController = makeController
+	w.LoadHandlers()
 	return w
 }
 

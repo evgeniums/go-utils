@@ -18,9 +18,9 @@ func PostWork[T work_schedule.Work]() console_tool.Handler[*WorkScheduleCommands
 }
 
 type PostWorkData struct {
-	ReferenceType string `long:"reference_type" description:"Work reference type"`
-	ReferenceId   string `long:"reference_id" description:"Work reference ID"`
-	Mode          string `long:"mode" description:"Posting mode: direct | queued | schedule" validate:"oneof:direct queued schedule" vmessage:"Invalid mode"`
+	ReferenceType string `long:"reference_type" description:"Work reference type" validate:"required" vmessage:"Invalid reference type"`
+	ReferenceId   string `long:"reference_id" description:"Work reference ID" validate:"required,id" vmessage:"Invalid reference ID"`
+	Mode          string `long:"mode" description:"Posting mode: direct | queued | schedule" validate:"oneof=direct queued schedule" vmessage:"Invalid mode"`
 	Delay         int    `long:"delay" description:"Work invokation delay"`
 }
 
@@ -42,6 +42,7 @@ func (a *PostWorkHandler[T]) Execute(args []string) error {
 	defer ctx.Close()
 
 	work := controller.NewWork(a.ReferenceId, a.ReferenceType)
+	work.SetDelay(a.Delay)
 	err = controller.PostWork(ctx, work, work_schedule.Mode(a.Mode), ctx.GetTenancy())
 	if err != nil {
 		return err
