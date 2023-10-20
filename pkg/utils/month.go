@@ -52,6 +52,34 @@ func MonthFromString(str string) (Month, error) {
 	return m, nil
 }
 
+func MonthFromShortString(str string, reverse bool) (Month, error) {
+
+	if len(str) != 4 {
+		return MakeMonth(), errors.New("invalid month length")
+	}
+	mint, err := StrToInt(str)
+	if err != nil {
+		return MakeMonth(), nil
+	}
+
+	var y int
+	var m int
+
+	if reverse {
+		m = mint / 100
+		y = mint - m*100
+		y = y + 2000
+	} else {
+		y = mint / 100
+		m = mint - y*100
+		y = y + 2000
+	}
+
+	month := MakeMonth()
+	month.Set(y, m)
+	return month, nil
+}
+
 func (m *Month) String() string {
 	str := fmt.Sprintf("%04d-%02d", m.Year(), m.Month())
 	return str
@@ -65,6 +93,12 @@ func (m *Month) AsNumber() string {
 func (m *Month) AsShortNumber() string {
 	str := fmt.Sprintf("%04d%02d", m.Year(), m.Month())
 	str = str[2:]
+	return str
+}
+
+func (m *Month) AsShortNumberReverse() string {
+	y := m.Year() - 2000
+	str := fmt.Sprintf("%02d%02d", m.Month(), y)
 	return str
 }
 
