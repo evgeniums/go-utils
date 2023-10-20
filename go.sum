@@ -310,8 +310,6 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/pseidemann/finish v1.2.0 h1:XrEc9FCnBPulyM9NvAptAtcOCZZYHwV0MRCcnCfQlnw=
 github.com/pseidemann/finish v1.2.0/go.mod h1:Wl17vXLhlT9a/K7jryhExgJPfbs4+dUpRaauEWt7oQ4=
-github.com/qida/go-docx-templates v0.0.0-20190909183856-83e215e5caec h1:RCi5vNMXeQJtlsYPK4PZKRfNRu/JZSK/HDd9WI9u/oE=
-github.com/qida/go-docx-templates v0.0.0-20190909183856-83e215e5caec/go.mod h1:1nGV9+KXLORmAnDzvi9Rp3dXICCY/x7rlxmsPousrMc=
 github.com/redis/go-redis/v9 v9.0.2 h1:BA426Zqe/7r56kCcvxYLWe1mkaz71LKF77GwgFzSxfE=
 github.com/redis/go-redis/v9 v9.0.2/go.mod h1:/xDTe9EF1LM61hek62Poq2nzQSGj0xSrEtEHbBQevps=
 github.com/redis/go-redis/v9 v9.0.3 h1:+7mmR26M0IvyLxGZUHxu4GiBkJkVDid0Un+j4ScYu4k=

@@ -19,6 +19,10 @@ func (p *PoolWorkNotificationHandler[T]) Handle(ctx op_context.Context, msg *Pub
 	c := ctx.TraceInMethod("PoolWorkNotificationHandler.Handle")
 	defer ctx.TraceOutMethod()
 
+	ctx.SetLoggerField("pool_work_mode", msg.Mode)
+	ctx.SetLoggerField("pool_work_id", msg.Work.GetReferenceId())
+	ctx.SetLoggerField("pool_work_type", msg.Work.GetReferenceType())
+
 	var tenancy multitenancy.Tenancy
 	var err error
 	if msg.Tenancy != "" {
@@ -41,12 +45,14 @@ type PoolWorkSubscriber[T Work] struct {
 	handler *PoolWorkNotificationHandler[T]
 }
 
-func NewPoolSubscriber[T Work](tenancies multitenancy.Multitenancy, controller *WorkSchedule[T]) *PoolWorkSubscriber[T] {
+func NewPoolSubscriber[T Work](tenancies multitenancy.Multitenancy, controller *WorkSchedule[T], name string) *PoolWorkSubscriber[T] {
 	p := &PoolWorkSubscriber[T]{}
 	p.handler = &PoolWorkNotificationHandler[T]{
 		tenancies:  tenancies,
 		controller: controller,
 	}
+	p.handler.Init(name)
+	p.topic = &PubsubTopic[T]{}
 	return p
 }
 

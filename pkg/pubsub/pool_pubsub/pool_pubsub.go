@@ -192,7 +192,7 @@ func (p *PoolPubsubBase) SubscribeSelfPool(ctx op_context.Context, topic pubsub_
 		return "", c.SetError(err)
 	}
 	c.SetLoggerField("subscription_id", subscriptionId)
-	c.Logger().Debug("topic was subscribed to self pool")
+	c.Logger().Info("topic was subscribed to self pool")
 	return subscriptionId, nil
 }
 
@@ -220,7 +220,7 @@ func (p *PoolPubsubBase) SubscribePools(ctx op_context.Context, topic pubsub_sub
 			}
 			c.SetLoggerField("subscription_id", subscriptionId)
 			poolSubscriptions[poolId] = subscriptionId
-			c.Logger().Debug("topic was subscribed to pool")
+			c.Logger().Info("topic was subscribed to pool")
 		}
 	} else {
 		// subscribe to specific pools
@@ -235,7 +235,7 @@ func (p *PoolPubsubBase) SubscribePools(ctx op_context.Context, topic pubsub_sub
 				}
 				c.SetLoggerField("subscription_id", subscriptionId)
 				poolSubscriptions[poolId] = subscriptionId
-				c.Logger().Debug("topic was subscribed to pool")
+				c.Logger().Info("topic was subscribed to pool")
 			} else {
 				c.Logger().Warn("pubsub subscriber not found in pool")
 			}

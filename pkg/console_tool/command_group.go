@@ -65,8 +65,10 @@ func (c *Commands[T]) Handlers(ctxBuilder ContextBulder, parser *flags.Parser) *
 		fmt.Printf("failed to add %s group: %s", c.Name(), err)
 		os.Exit(1)
 	}
+	// fmt.Printf("added group: %s\n", c.Name())
 
 	for _, handler := range c.ExtraHandlers {
+		// fmt.Printf("adding handler %d for group: %s\n", i, c.Name())
 		AddCommand(commandGroup, ctxBuilder, c.Self, handler)
 	}
 
@@ -109,9 +111,19 @@ func (c *Commands[T]) Construct(self T, name string, description string) {
 //-------------------------------------------------
 
 func AddCommand[T CommandGroup](parent *flags.Command, ctxBuilder ContextBulder, group T, makeHandler HandlerBuilder[T]) {
+
 	handler := makeHandler()
 	handler.Construct(ctxBuilder, group)
-	parent.AddCommand(handler.HandlerName(), handler.HandlerDescription(), "", handler)
+
+	// fmt.Printf("adding command %s to group %s\n", handler.HandlerName(), group.Name())
+
+	_, err := parent.AddCommand(handler.HandlerName(), handler.HandlerDescription(), "", handler)
+	if err != nil {
+		fmt.Printf("failed to add command %s to group %s: %s", handler.HandlerName(), group.Name(), err)
+		os.Exit(1)
+	}
+
+	// fmt.Printf("added command %s to group %s\n", handler.HandlerName(), group.Name())
 }
 
 //-------------------------------------------------

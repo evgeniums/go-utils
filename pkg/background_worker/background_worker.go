@@ -18,6 +18,18 @@ type BackgroundStopper interface {
 	IsStopped() bool
 }
 
+type BackgroundStopperStub struct {
+	stopped atomic.Bool
+}
+
+func (b *BackgroundStopperStub) IsStopped() bool {
+	return b.stopped.Load()
+}
+
+func (b *BackgroundStopperStub) Stop() {
+	b.stopped.Store(true)
+}
+
 type JobRunner interface {
 	RunJob()
 	StopJob()

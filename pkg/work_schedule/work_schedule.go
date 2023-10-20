@@ -9,6 +9,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/background_worker"
 	"github.com/evgeniums/go-backend-helpers/pkg/cache"
+	"github.com/evgeniums/go-backend-helpers/pkg/cache/redis_cache"
 	"github.com/evgeniums/go-backend-helpers/pkg/common"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/crud"
@@ -27,6 +28,18 @@ const (
 	DIRECT   PostMode = 1
 	QUEUED   PostMode = 2
 )
+
+func Mode(m string) PostMode {
+	switch m {
+	case "schedule":
+		return SCHEDULE
+	case "direct":
+		return DIRECT
+	case "queued":
+		return QUEUED
+	}
+	return SCHEDULE
+}
 
 type Work interface {
 	common.Object
@@ -60,7 +73,7 @@ type WorkScheduler[T Work] interface {
 	AcquireWork(ctx op_context.Context, work T) error
 	ReleaseWork(ctx op_context.Context, work T) error
 	PostWork(ctx op_context.Context, work T, postMode PostMode, tenancy ...multitenancy.Tenancy) error
-	RemoveWork(ctx op_context.Context, referenceId string) error
+	RemoveWork(ctx op_context.Context, referenceId string, referenceType string) error
 }
 
 type WorkSchedulerBase[T Work] struct {
@@ -218,6 +231,7 @@ func NewWorkSchedule[T Work](name string, config Config[T], cruds ...crud.CRUD) 
 	if s.invoker == nil {
 		s.invoker = s.InvokeWork
 	}
+
 	return s
 }
 
@@ -234,10 +248,20 @@ func (s *WorkSchedule[T]) Init(app app_context.Context, configPath ...string) er
 		return app.Logger().PushFatalStack("failed to load configuration of WorkSchedule", err)
 	}
 
+	// init locker
+	redisCache := redis_cache.NewCache()
+	err = redisCache.Init(app.Cfg(), app.Logger(), app.Validator(), "redis_cache")
+	if err != nil {
+		return app.Logger().PushFatalStack("failed to init redis cache for WorkSchedule", err)
+	}
+	s.locker = redis_cache.NewLocker(redisCache)
+
+	// run workers
 	for i := 0; i < s.PARALLEL_JOBS; i++ {
 		go s.worker()
 	}
 
+	// done
 	return nil
 }
 
@@ -262,7 +286,7 @@ func (s *WorkSchedule[T]) AcquireWork(ctx op_context.Context, work T) error {
 
 	key := fmt.Sprintf("work_lock_%s", work.GetReferenceId())
 
-	lock, err := s.locker.Lock(key, time.Duration(s.LOCK_TTL_SECONDS))
+	lock, err := s.locker.Lock(key, time.Second*time.Duration(s.LOCK_TTL_SECONDS))
 	if err != nil {
 		c.SetLoggerField("work_reference_id", work.GetReferenceId())
 		c.SetMessage("failed to lock work")
@@ -317,14 +341,22 @@ func (s *WorkSchedule[T]) PostWork(ctx op_context.Context, work T, postMode Post
 		work.SetNextTime(time.Now().Add(time.Second * time.Duration(s.HOLD_WORK_SECONDS)))
 	}
 
-	// create work in database
-	if !work.IsNoDb() {
-		_, err = s.CRUD().CreateDup(ctx, work)
+	if work.IsNoDb() {
+		// invoke work
+		err = s.invoker(ctx, work, postMode, tenancy...)
 		if err != nil {
-			c.SetLoggerField("work_reference_id", work.GetReferenceId())
-			c.SetMessage("failed to save work in database")
-			return c.SetError(err)
+			c.SetMessage("failed to invoke work")
+			return err
 		}
+		return nil
+	}
+
+	// create work in database
+	_, err = s.CRUD().CreateDup(ctx, work, true)
+	if err != nil {
+		c.SetLoggerField("work_reference_id", work.GetReferenceId())
+		c.SetMessage("failed to save work in database")
+		return c.SetError(err)
 	}
 
 	if postMode != SCHEDULE {
@@ -350,7 +382,7 @@ func (s *WorkSchedule[T]) PostWork(ctx op_context.Context, work T, postMode Post
 		err = s.invoker(ctx, dbWork, postMode, tenancy...)
 		if err != nil {
 			c.SetMessage("failed to invoke work")
-			return nil
+			return err
 		}
 	}
 
@@ -358,7 +390,7 @@ func (s *WorkSchedule[T]) PostWork(ctx op_context.Context, work T, postMode Post
 	return nil
 }
 
-func (s *WorkSchedule[T]) RemoveWork(ctx op_context.Context, referenceId string) error {
+func (s *WorkSchedule[T]) RemoveWork(ctx op_context.Context, referenceId string, refernecType string) error {
 
 	// setup
 	var err error
@@ -366,7 +398,7 @@ func (s *WorkSchedule[T]) RemoveWork(ctx op_context.Context, referenceId string)
 	defer ctx.TraceOutMethod()
 
 	// delete from database
-	err = s.CRUD().DeleteByFields(ctx, db.Fields{"reference_id": referenceId}, s.workBuilder())
+	err = s.CRUD().DeleteByFields(ctx, db.Fields{"reference_id": referenceId, "reference_type": refernecType}, s.workBuilder())
 	if err != nil {
 		c.SetLoggerField("work_reference_id", referenceId)
 		c.SetMessage("failed to delete work from database")
@@ -390,12 +422,6 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 	defer ctx.Close()
 	c := ctx.TraceInMethod("WorkSchedule.ProcessWorks")
 
-	filter := db.NewFilter()
-
-	// prepare filter
-	filter.AddInterval("next_time", nil, time.Now())
-	filter.SetSorting("next_time", db.SORT_ASC)
-
 	// process works
 	for {
 
@@ -403,6 +429,11 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 		if s.Stopper().IsStopped() {
 			break
 		}
+
+		// prepare filter
+		filter := db.NewFilter()
+		filter.SetSorting("next_time", db.SORT_ASC)
+		filter.AddInterval("next_time", nil, time.Now())
 
 		// check number of works currently pending or being processed
 		filter.Limit = s.BUCKET_SIZE - int(s.runningWorkCount.Load()) - int(s.workQueueSize.Load())
@@ -424,6 +455,7 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 
 			// hold works
 			nextTime := time.Now().Add(time.Second * time.Duration(s.HOLD_WORK_SECONDS))
+			workIds := []string{}
 			for _, w := range works1 {
 				dbWork := s.workBuilder()
 				found, err := s.CRUD().ReadForUpdate(ctx, db.Fields{"id": w.GetID()}, dbWork)
@@ -438,11 +470,14 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 						c.SetMessage("failed hold work in database")
 						return err
 					}
+					workIds = append(workIds, dbWork.GetID())
 				}
 			}
 
 			// read updated works
-			_, err = s.CRUD().List(ctx, filter, &works)
+			f := db.NewFilter()
+			f.AddFieldIn("id", utils.ListInterfaces(workIds)...)
+			_, err = s.CRUD().List(ctx, f, &works)
 			if err != nil {
 				c.SetMessage("failed to read works from database 2")
 				return err
@@ -546,11 +581,10 @@ func (s *WorkSchedule[T]) DoWork(ctx op_context.Context, work T) error {
 	}
 	err1 := op_context.ExecDbTransaction(ctx, updateProcessedWork)
 	if err1 != nil {
+		c.Logger().Error("failed to update processed work", err1)
 		if err == nil {
 			err = err1
-			return err
 		}
-		c.Logger().Error("failed to update processed work", err1)
 		return err
 	}
 
@@ -588,9 +622,11 @@ func (s *WorkSchedule[T]) worker() {
 		if work.tenancy != nil {
 			ctx := app_with_multitenancy.BackgroundOpContext(s.App(), work.tenancy, s.name)
 			s.DoWork(ctx, work.work)
+			ctx.Close("Served queue work")
 		} else {
 			ctx := default_op_context.BackgroundOpContext(s.App(), s.name)
 			s.DoWork(ctx, work.work)
+			ctx.Close("Served queue work")
 		}
 
 		go s.ProcessWorks()

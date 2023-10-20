@@ -3,7 +3,6 @@ package pubsub_subscriber
 import (
 	"sync"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/message"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
@@ -87,7 +86,9 @@ func (t *TopicBase[T]) Handle(ctx op_context.Context, msg []byte, serializer mes
 	for _, subscriber := range subscribers {
 		err = subscriber.Handle(ctx, obj)
 		if err != nil {
-			c.Logger().Warn("failed to handle message", logger.Fields{"subscriber": subscriber.Name()})
+			c.SetLoggerField("subscriber", subscriber.Name())
+			c.SetMessage("failed to handle message")
+			ctx.DumpLog()
 		}
 	}
 
