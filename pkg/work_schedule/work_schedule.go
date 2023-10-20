@@ -422,12 +422,6 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 	defer ctx.Close()
 	c := ctx.TraceInMethod("WorkSchedule.ProcessWorks")
 
-	filter := db.NewFilter()
-
-	// prepare filter
-	filter.AddInterval("next_time", nil, time.Now())
-	filter.SetSorting("next_time", db.SORT_ASC)
-
 	// process works
 	for {
 
@@ -435,6 +429,11 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 		if s.Stopper().IsStopped() {
 			break
 		}
+
+		// prepare filter
+		filter := db.NewFilter()
+		filter.SetSorting("next_time", db.SORT_ASC)
+		filter.AddInterval("next_time", nil, time.Now())
 
 		// check number of works currently pending or being processed
 		filter.Limit = s.BUCKET_SIZE - int(s.runningWorkCount.Load()) - int(s.workQueueSize.Load())
