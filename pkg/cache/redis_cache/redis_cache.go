@@ -48,6 +48,20 @@ func (r *RedisCache) Get(key string, value *string) (bool, error) {
 	return true, nil
 }
 
+func (r *RedisCache) GetUnset(key string, value *string) (bool, error) {
+
+	var err error
+	*value, err = r.NativeHandler().GetDel(r.Context(), key).Result()
+	if err == redis.Nil {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
 func (r *RedisCache) Unset(key string) error {
 	return r.NativeHandler().Del(r.Context(), key).Err()
 }

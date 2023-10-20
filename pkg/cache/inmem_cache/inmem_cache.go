@@ -42,6 +42,17 @@ func (c *InmemCache[T]) Get(key string, value *T) (bool, error) {
 	return true, nil
 }
 
+func (c *InmemCache[T]) GetUnset(key string, value *T) (bool, error) {
+
+	item, found := c.cache.GetAndDelete(key)
+	if !found || item == nil || item.IsExpired() {
+		return false, nil
+	}
+
+	*value = item.Value()
+	return true, nil
+}
+
 func (c *InmemCache[T]) Unset(key string) error {
 
 	c.cache.Delete(key)

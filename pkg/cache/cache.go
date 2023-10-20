@@ -10,6 +10,7 @@ type Cache interface {
 	Set(key string, value interface{}, ttlSeconds ...int) error
 	Get(key string, value interface{}) (bool, error)
 	Unset(key string) error
+	GetUnset(key string, value interface{}) (bool, error)
 	Touch(key string) error
 	Keys() ([]string, error)
 	Clear() error
@@ -19,6 +20,7 @@ type GenericCache[T any] interface {
 	Set(key string, value T, ttlSeconds ...int) error
 	Get(key string, value *T) (bool, error)
 	Unset(key string) error
+	GetUnset(key string, value *T) (bool, error)
 	Touch(key string) error
 	Keys() ([]string, error)
 	Clear() error
@@ -56,6 +58,28 @@ func (c *SerializedObjectCache) Get(key string, obj interface{}) (bool, error) {
 	var val string
 
 	found, err := c.impl.Get(key, &val)
+	if !found || err != nil {
+		return false, err
+	}
+
+	b, err := c.StringCoding.Decode(val)
+	if err != nil {
+		return true, err
+	}
+
+	err = c.Serializer.ParseMessage(b, obj)
+	if err != nil {
+		return true, err
+	}
+
+	return true, nil
+}
+
+func (c *SerializedObjectCache) GetUnset(key string, obj interface{}) (bool, error) {
+
+	var val string
+
+	found, err := c.impl.GetUnset(key, &val)
 	if !found || err != nil {
 		return false, err
 	}
