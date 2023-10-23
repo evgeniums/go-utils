@@ -476,7 +476,7 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 
 			// read updated works
 			f := db.NewFilter()
-			f.AddFieldIn("id", utils.ListInterfaces(workIds)...)
+			f.AddFieldIn("id", utils.ListInterfaces(workIds...)...)
 			_, err = s.CRUD().List(ctx, f, &works)
 			if err != nil {
 				c.SetMessage("failed to read works from database 2")
