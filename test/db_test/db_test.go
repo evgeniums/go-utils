@@ -11,6 +11,7 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/db"
 	"github.com/evgeniums/go-backend-helpers/pkg/db/db_gorm"
 	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -473,4 +474,20 @@ func TestQueryFilter(t *testing.T) {
 	require.NotNil(t, f)
 
 	test_utils.DumpObject(t, f, "Filter")
+}
+
+func TestInList(t *testing.T) {
+
+	app := test_utils.InitAppContext(t, testDir, dbModels(), "maindb.json")
+	defer app.Close()
+	crud := &crud.DbCRUD{}
+	opCtx := test_utils.SimpleOpContext(app, "query")
+
+	ids := []string{"a", "b", "c"}
+	var result []*SampleModel1
+	f := db.NewFilter()
+	ifs := utils.ListInterfaces(ids...)
+	f.AddFieldIn("id", ifs...)
+	_, err := crud.List(opCtx, f, &result)
+	test_utils.NoError(t, opCtx, err)
 }
