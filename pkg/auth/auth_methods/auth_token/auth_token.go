@@ -92,7 +92,7 @@ const ErrorCodeRefreshDisabled = "refresh_disabled"
 
 var ErrorDescriptions = map[string]string{
 	ErrorCodeTokenExpired:    "Provided authentication token expired",
-	ErrorCodeInvalidToken:    "Invalid authentication token token",
+	ErrorCodeInvalidToken:    "Invalid authentication token",
 	ErrorCodeSessionExpired:  "Session expired",
 	ErrorCodeUnknownUser:     "Unknown user",
 	ErrorCodeRefreshDisabled: "Refresh disabled",
