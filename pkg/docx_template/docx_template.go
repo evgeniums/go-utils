@@ -1,6 +1,7 @@
 package docx_template
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -66,6 +67,11 @@ func (d *DocxTemplate) ToDocx(ctx op_context.Context, templateFile string, targe
 		return c.SetError(err)
 	}
 
+	if !utils.FileExists(targetFile) {
+		err = errors.New("failed to find generated docx file")
+		return c.SetError(err)
+	}
+
 	// done
 	return nil
 }
@@ -82,13 +88,18 @@ func (d *DocxTemplate) ToPdf(ctx op_context.Context, templateFile string, target
 	var err error
 	c := ctx.TraceInMethod("DocxTemplate.ToPdf")
 	onExit := func() {
-		os.Remove(tempFileName)
 		if err != nil {
 			c.SetError(err)
+		} else {
+			os.Remove(tempFileName)
 		}
 		ctx.TraceOutMethod()
 	}
 	defer onExit()
+	c.SetLoggerField("temp_dir", tempDir)
+	c.SetLoggerField("template_file", templateFile)
+	c.SetLoggerField("temporary_file", tempFileName)
+	c.SetLoggerField("target_file", targetFile)
 
 	// create temporary docx
 	err = d.ToDocx(ctx, templateFile, tempFileName, vars)
@@ -107,6 +118,7 @@ func (d *DocxTemplate) ToPdf(ctx op_context.Context, templateFile string, target
 
 	// rename file
 	tmpPdfFileName := filepath.Join(targetDir, fmt.Sprintf("%s.pdf", tempFileBase))
+	c.SetLoggerField("temporary_file_pdf", tmpPdfFileName)
 	err = os.Rename(tmpPdfFileName, targetFile)
 	if err != nil {
 		c.SetMessage("failed to rename target file")
