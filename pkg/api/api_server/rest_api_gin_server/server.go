@@ -49,6 +49,8 @@ type ServerConfig struct {
 	TENANCY_ALLOWED_IP_LIST     bool
 
 	TENANCY_PARAMETER string `validate:"omitempty,alphanum"`
+
+	DEFAULT_RESPONSE_JSON string
 }
 
 type AuthParameterGetter = func(r *Request, key string) string

@@ -108,6 +108,8 @@ func (r *Request) Close(successMessage ...string) {
 				r.ginCtx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", file.Name))
 				r.ginCtx.Header("Accept-Length", utils.NumToStr(len(file.Content)))
 				r.ginCtx.Data(r.response.httpCode, file.ContentType, file.Content)
+			} else if r.server.DEFAULT_RESPONSE_JSON != "" {
+				r.ginCtx.String(r.response.httpCode, r.server.DEFAULT_RESPONSE_JSON)
 			} else {
 				r.ginCtx.Status(r.response.httpCode)
 			}
