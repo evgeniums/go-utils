@@ -183,6 +183,7 @@ type WorkScheduleConfig struct {
 	HOLD_WORK_SECONDS           int `default:"900"`
 	LOCK_TTL_SECONDS            int `default:"300"`
 	PERIOD                      int `default:"5"`
+	LOG_EMPTY_WORKS             bool
 }
 
 type workItem[T Work] struct {
@@ -419,6 +420,7 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 	// TODO support multitenancy
 
 	ctx := default_op_context.BackgroundOpContext(s.App(), s.name)
+	ctx.SetWriteCloseLog(s.LOG_EMPTY_WORKS)
 	defer ctx.Close()
 	c := ctx.TraceInMethod("WorkSchedule.ProcessWorks")
 
