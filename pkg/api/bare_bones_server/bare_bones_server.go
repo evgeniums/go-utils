@@ -151,6 +151,10 @@ func (s *BareBonesServerBase) Init(app app_context.Context, tenancyManager multi
 	}
 	api_server.AddServiceToServer(s.pimpl.server, auth_service.NewAuthService(s.MultitenancyBaseServices))
 
+	if s.pimpl.smsManager != nil {
+		s.pimpl.smsManager.AttachToErrorManager(s.pimpl.server)
+	}
+
 	// done
 	return nil
 }

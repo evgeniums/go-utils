@@ -32,7 +32,7 @@ const (
 )
 
 var SmsErrorDescriptions = map[string]string{
-	ErrorCodeSmsSendingFailed: "Failed to send SMS.",
+	ErrorCodeSmsSendingFailed: "Failed to send SMS",
 }
 
 var SmsErrorHttpCodes = map[string]int{
