@@ -1,6 +1,9 @@
 package utils
 
 func MaskPhone(phone string) string {
+	if phone == "" {
+		return ""
+	}
 	if len(phone) <= 4 {
 		return "****"
 	}
