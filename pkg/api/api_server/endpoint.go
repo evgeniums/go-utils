@@ -16,7 +16,7 @@ type Endpoint interface {
 	HandleRequest(request Request) error
 
 	// Precheck request before some authorization methods
-	PrecheckRequestBeforeAuth(request Request, smsMessage *string) error
+	PrecheckRequestBeforeAuth(request Request, smsMessage *string, skipSms *bool) error
 }
 
 type EndpointHandler = func(request Request)
@@ -35,7 +35,7 @@ func (e *EndpointBase) Init(operationName string, accessType ...access_control.A
 	e.Construct(api.NewOperation(operationName, utils.OptionalArg(access_control.Get, accessType...)))
 }
 
-func (e *EndpointBase) PrecheckRequestBeforeAuth(request Request, smsMessage *string) error {
+func (e *EndpointBase) PrecheckRequestBeforeAuth(request Request, smsMessage *string, skipSms *bool) error {
 	return nil
 }
 

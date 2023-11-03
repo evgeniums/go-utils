@@ -17,7 +17,7 @@ type AuthContext interface {
 	Session
 
 	GetRequestContent() []byte
-	CheckRequestContent(smsMessage *string) error
+	CheckRequestContent(smsMessage *string, skipSms *bool) error
 	GetRequestPath() string
 	GetRequestMethod() string
 	GetResourceId(resourceType string) string

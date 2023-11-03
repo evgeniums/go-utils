@@ -162,11 +162,15 @@ func (a *AuthSms) Handle(ctx auth.AuthContext) (bool, error) {
 
 	// precheck context
 	message := ""
-	err = ctx.CheckRequestContent(&message)
+	var skip bool
+	err = ctx.CheckRequestContent(&message, &skip)
 	if err != nil {
 		c.SetMessage("failed to check request content")
 		ctx.SetGenericErrorCode(generic_error.ErrorCodeFormat)
 		return true, err
+	}
+	if skip {
+		return true, nil
 	}
 
 	// check if user authenticated

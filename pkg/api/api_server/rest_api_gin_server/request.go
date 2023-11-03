@@ -178,8 +178,8 @@ func (r *Request) GetAuthParameter(authMethodProtocol string, key string, direct
 	return getHttpHeader(r.ginCtx, AuthKey(key, directKeyName...))
 }
 
-func (r *Request) CheckRequestContent(smsMessage *string) error {
-	return r.Endpoint().PrecheckRequestBeforeAuth(r, smsMessage)
+func (r *Request) CheckRequestContent(smsMessage *string, skipSms *bool) error {
+	return r.Endpoint().PrecheckRequestBeforeAuth(r, smsMessage, skipSms)
 }
 
 func (r *Request) ResourceIds() map[string]string {
