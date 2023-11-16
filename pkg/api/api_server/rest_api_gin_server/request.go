@@ -266,3 +266,7 @@ func (r *Request) ParseValidate(cmd interface{}) error {
 
 	return r.ParseValidateBody(cmd)
 }
+
+func (r *Request) GetGinCtx() *gin.Context {
+	return r.ginCtx
+}
