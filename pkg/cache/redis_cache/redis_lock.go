@@ -58,3 +58,73 @@ func (r *RedisLocker) Lock(key string, ttl time.Duration) (cache.Lock, error) {
 
 	return lock, nil
 }
+
+/**
+
+HOW TO USE.
+
+1. Add variable to struct.
+
+type SomeType struct {
+
+	...
+
+	locker cache.Locker
+
+	...
+}
+
+2. Init locker in Init.const
+
+func (s *SomeType) Init(...) error {
+
+...
+
+	// init locker
+	redisCache := redis_cache.NewCache()
+	err = redisCache.Init(app.Cfg(), app.Logger(), app.Validator(), redis_cache.RedisCacheConfigPath)
+	if err != nil {
+		...
+		return ...
+	}
+	s.locker = redis_cache.NewLocker(redisCache)
+
+...
+
+}
+
+3. Use locker to lock access to some object when required.
+
+func FuncWithLock(...) (...) {
+
+...
+
+lock, err := cache.LockObject(s.locker, keyPrefix, objectId, s.LOCK_TTL)
+if err!= nil {
+	c.SetLoggerField("locked_object_id",objectId)
+	c.SetMessage("failed to lock object")
+	return ...
+}
+if lock==nil {
+
+	// object already locked - skip operation or retry later
+	c.SetLoggerField("locked_object_id",objectId)
+	c.Logger().Warn("object already locked")
+	...
+
+	return ...
+}
+defer func() {
+	e:=lock.Release()
+	if e!=nil {
+		c.SetLoggerField("locked_object_id",objectId)
+		c.Logger().Error("failed to release lock",e)
+	}
+} ()
+
+
+...
+
+}
+
+**/

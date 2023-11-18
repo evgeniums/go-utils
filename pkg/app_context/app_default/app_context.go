@@ -196,7 +196,7 @@ func (c *Context) InitWithArgs(configFile string, args []string, configType ...s
 
 	// init cache
 	if c.cache == nil {
-		redisCacheConfigPath := "redis_cache"
+		redisCacheConfigPath := redis_cache.RedisCacheConfigPath
 		if c.Cfg().IsSet(redisCacheConfigPath) {
 			log.Info("using Redis cache as application cache")
 			c.redisCache = redis_cache.NewCache()

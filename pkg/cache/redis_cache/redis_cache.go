@@ -7,6 +7,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+const RedisCacheConfigPath = "redis_cache"
+
 type RedisCache struct {
 	pubsub_redis.RedisClient
 }

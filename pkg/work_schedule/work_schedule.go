@@ -2,7 +2,6 @@ package work_schedule
 
 import (
 	"errors"
-	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -251,7 +250,7 @@ func (s *WorkSchedule[T]) Init(app app_context.Context, configPath ...string) er
 
 	// init locker
 	redisCache := redis_cache.NewCache()
-	err = redisCache.Init(app.Cfg(), app.Logger(), app.Validator(), "redis_cache")
+	err = redisCache.Init(app.Cfg(), app.Logger(), app.Validator(), redis_cache.RedisCacheConfigPath)
 	if err != nil {
 		return app.Logger().PushFatalStack("failed to init redis cache for WorkSchedule", err)
 	}
@@ -285,13 +284,15 @@ func (s *WorkSchedule[T]) AcquireWork(ctx op_context.Context, work T) error {
 	c := ctx.TraceInMethod("WorkSchedule.AcquireWork")
 	defer ctx.TraceOutMethod()
 
-	key := fmt.Sprintf("work_lock_%s", work.GetReferenceId())
-
-	lock, err := s.locker.Lock(key, time.Second*time.Duration(s.LOCK_TTL_SECONDS))
+	lock, err := cache.LockObject(s.locker, "work_lock_%s", work.GetReferenceId(), s.LOCK_TTL_SECONDS)
 	if err != nil {
 		c.SetLoggerField("work_reference_id", work.GetReferenceId())
 		c.SetMessage("failed to lock work")
 		return c.SetError(err)
+	}
+	if lock == nil {
+		c.SetLoggerField("work_reference_id", work.GetReferenceId())
+		return c.SetErrorStr("work already locked")
 	}
 	s.runningWorkCount.Add(1)
 	work.SetLock(lock)
