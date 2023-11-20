@@ -270,3 +270,12 @@ func (r *Request) ParseValidate(cmd interface{}) error {
 func (r *Request) GetGinCtx() *gin.Context {
 	return r.ginCtx
 }
+
+func (r *Request) FormData() map[string][]string {
+	err := r.ginCtx.Request.ParseForm()
+	if err != nil {
+		r.Logger().Error("failed to parse form", err)
+		return map[string][]string{}
+	}
+	return r.ginCtx.Request.Form
+}

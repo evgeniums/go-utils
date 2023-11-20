@@ -21,6 +21,7 @@ type Request interface {
 	Endpoint() Endpoint
 
 	ParseValidate(cmd interface{}) error
+	FormData() map[string][]string
 }
 
 type RequestBase struct {
@@ -79,4 +80,19 @@ func ParseDbQuery(request Request, model interface{}, queryName string, cmd ...a
 	}
 
 	return filter, nil
+}
+
+func UniqueFormData(request Request) map[string]string {
+
+	form := request.FormData()
+	res := make(map[string]string)
+	for key, values := range form {
+		if len(values) != 0 {
+			res[key] = values[0]
+		} else {
+			res[key] = ""
+		}
+	}
+
+	return res
 }
