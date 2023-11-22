@@ -48,7 +48,7 @@ func SubresourceOperation(sampleResource Resource, resourceId string, subResourc
 }
 
 func NewResourceWithNamedSubresource(resourceName string, subResourceName string, op ...Operation) Resource {
-	subResource := NewResource(subResourceName)
+	subResource := NamedResource(subResourceName)
 	resource := NewResource(resourceName)
 	resource.AddChild(subResource.Parent())
 	if len(op) != 0 {
