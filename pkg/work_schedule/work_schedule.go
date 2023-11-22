@@ -284,7 +284,7 @@ func (s *WorkSchedule[T]) AcquireWork(ctx op_context.Context, work T) error {
 	c := ctx.TraceInMethod("WorkSchedule.AcquireWork")
 	defer ctx.TraceOutMethod()
 
-	lock, err := cache.LockObject(s.locker, "work_lock_%s", work.GetReferenceId(), s.LOCK_TTL_SECONDS)
+	lock, err := cache.LockObject(s.locker, "work_lock", work.GetReferenceId(), s.LOCK_TTL_SECONDS)
 	if err != nil {
 		c.SetLoggerField("work_reference_id", work.GetReferenceId())
 		c.SetMessage("failed to lock work")
