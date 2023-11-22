@@ -47,6 +47,22 @@ func SubresourceOperation(sampleResource Resource, resourceId string, subResourc
 	return op
 }
 
+func NewResourceWithNamedSubresource(resourceName string, subResourceName string, op ...Operation) Resource {
+	subResource := NewResource(subResourceName)
+	resource := NewResource(resourceName)
+	resource.AddChild(subResource.Parent())
+	if len(op) != 0 {
+		subResource.AddOperation(op[0])
+	}
+	return resource
+}
+
+func NewResourceWithOp(resourceName string, op Operation) Resource {
+	resource := NewResource(resourceName)
+	resource.AddOperation(op)
+	return resource
+}
+
 func Post(name string) Operation {
 	return NewOperation(name, access_control.Post)
 }
