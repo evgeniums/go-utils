@@ -160,7 +160,8 @@ func (s *BareBonesServerBase) Init(app app_context.Context, tenancyManager multi
 }
 
 func (s *BareBonesServerBase) initFromPoolService(app app_context.Context, restApiServer *rest_api_gin_server.Server) error {
-	return noauth_server.InitFromPoolService(app, restApiServer, &s.config)
+	_, err := noauth_server.InitFromPoolService(app, restApiServer, &s.config)
+	return err
 }
 
 func (s *BareBonesServerBase) Auth() auth.Auth {

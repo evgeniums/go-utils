@@ -52,6 +52,8 @@ type NoAuthServer struct {
 
 	config        NoAuthServerConfig
 	restApiServer *rest_api_gin_server.Server
+
+	poolService *pool.PoolServiceBinding
 }
 
 type Config struct {
@@ -94,43 +96,45 @@ func (s *NoAuthServer) Construct(config ...Config) {
 	}
 }
 
-func InitFromPoolService(app app_context.Context, restApiServer *rest_api_gin_server.Server, cfg PoolServiceConfigI) error {
+func InitFromPoolService(app app_context.Context, restApiServer *rest_api_gin_server.Server, cfg PoolServiceConfigI) (*pool.PoolServiceBinding, error) {
+
+	var service *pool.PoolServiceBinding
 
 	if cfg.NameOrRole() != "" {
 
 		poolApp, ok := app.(app_with_pools.AppWithPools)
 		if !ok {
-			return app.Logger().PushFatalStack("invalid application type, must be pool app", nil)
+			return nil, app.Logger().PushFatalStack("invalid application type, must be pool app", nil)
 		}
 
 		// check if app with self pool
 		selfPool, err := poolApp.Pools().SelfPool()
 		if err != nil {
-			return app.Logger().PushFatalStack("self pool must be specified for API server", err)
+			return nil, app.Logger().PushFatalStack("self pool must be specified for API server", err)
 		}
 
 		// find service by name
-		service, err := selfPool.ServiceByName(cfg.NameOrRole())
+		service, err = selfPool.ServiceByName(cfg.NameOrRole())
 		if err != nil {
 			service, err = selfPool.Service(cfg.NameOrRole())
 			if err != nil {
-				return app.Logger().PushFatalStack("failed to find service with specified name/tole", err, logger.Fields{"name/role": cfg.NameOrRole()})
+				return nil, app.Logger().PushFatalStack("failed to find service with specified name/tole", err, logger.Fields{"name/role": cfg.NameOrRole()})
 			}
 		}
 
 		if service.TypeName() != cfg.Type() {
-			return app.Logger().PushFatalStack("invalid service type", err, logger.Fields{"name": cfg.NameOrRole(), "service_type": cfg.Type(), "pool_service_type": service.TypeName()})
+			return service, app.Logger().PushFatalStack("invalid service type", err, logger.Fields{"name": cfg.NameOrRole(), "service_type": cfg.Type(), "pool_service_type": service.TypeName()})
 		}
 
 		if service.Provider() != app.Application() {
-			return app.Logger().PushFatalStack("invalid service provider", err, logger.Fields{"name": cfg.NameOrRole(), "application": app.Application(), "pool_service_provider": service.Provider()})
+			return service, app.Logger().PushFatalStack("invalid service provider", err, logger.Fields{"name": cfg.NameOrRole(), "application": app.Application(), "pool_service_provider": service.Provider()})
 		}
 
 		// load server configuration from service
 		restApiServer.SetConfigFromPoolService(service, cfg.IsPublic())
 	}
 
-	return nil
+	return service, nil
 }
 
 func (s *NoAuthServer) Init(app app_with_multitenancy.AppWithMultitenancy, configPath ...string) error {
@@ -145,7 +149,7 @@ func (s *NoAuthServer) Init(app app_with_multitenancy.AppWithMultitenancy, confi
 	// init REST API server
 	if s.restApiServer != nil {
 
-		err = InitFromPoolService(app, s.restApiServer, &s.config)
+		s.poolService, err = InitFromPoolService(app, s.restApiServer, &s.config)
 		if err != nil {
 			return err
 		}
@@ -181,4 +185,8 @@ func (s *NoAuthServer) Auth() auth.Auth {
 
 func (s *NoAuthServer) ApiServer() api_server.Server {
 	return s.server
+}
+
+func (s *NoAuthServer) PoolService() *pool.PoolServiceBinding {
+	return s.poolService
 }
