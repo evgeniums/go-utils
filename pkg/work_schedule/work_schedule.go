@@ -116,6 +116,7 @@ type WorkBase struct {
 	ReferenceId   string    `json:"reference_id" gorm:"index;index:,unique,composite:ref"`
 	ReferenceType string    `json:"reference_type" gorm:"index;index:,unique,composite:ref"`
 	NextTime      time.Time `json:"next_time" gorm:"index"`
+	NextTimeSet   bool      `json:"next_time_set" gorm:"index;defaule:false"`
 
 	lock  cache.Lock `json:"-" gorm:"-:all"`
 	delay int        `json:"-" gorm:"-:all"`
@@ -284,6 +285,7 @@ func (s *WorkSchedule[T]) AcquireWork(ctx op_context.Context, work T) error {
 	c := ctx.TraceInMethod("WorkSchedule.AcquireWork")
 	defer ctx.TraceOutMethod()
 
+	// lock work in cache
 	lock, err := cache.LockObject(s.locker, "work_lock", work.GetReferenceId(), s.LOCK_TTL_SECONDS)
 	if err != nil {
 		c.SetLoggerField("work_reference_id", work.GetReferenceId())
@@ -297,6 +299,14 @@ func (s *WorkSchedule[T]) AcquireWork(ctx op_context.Context, work T) error {
 	s.runningWorkCount.Add(1)
 	work.SetLock(lock)
 
+	// reset next time flag
+	err = s.CRUD().Update(ctx, work, db.Fields{"next_time_set": false})
+	if err != nil {
+		c.SetMessage("failed to save next work time set flag in database")
+		return c.SetError(err)
+	}
+
+	// done
 	return nil
 }
 
@@ -467,7 +477,7 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 					return err
 				}
 				if found {
-					err = s.CRUD().Update(ctx, dbWork, db.Fields{"next_time": nextTime})
+					err = s.CRUD().Update(ctx, dbWork, db.Fields{"next_time": nextTime, "next_time_set": false})
 					if err != nil {
 						c.SetLoggerField("work_reference_id", dbWork.GetReferenceId())
 						c.SetMessage("failed hold work in database")
@@ -573,7 +583,10 @@ func (s *WorkSchedule[T]) DoWork(ctx op_context.Context, work T) error {
 		}
 
 		// set next time
-		err = s.CRUD().Update(ctx, dbWork, db.Fields{"next_time": work.GetNextTime()})
+		f := db.NewFilter()
+		f.AddField("id", work.GetID())
+		f.AddField("next_time_set", false)
+		err = s.CRUD().UpdateWithFilter(ctx, s.workBuilder(), f, db.Fields{"next_time": work.GetNextTime(), "next_time_set": true})
 		if err != nil {
 			c.SetMessage("failed to save next work time in database")
 			return err
@@ -610,6 +623,20 @@ func (s *WorkSchedule[T]) InvokeWork(ctx op_context.Context, work T, postMode Po
 	case QUEUED:
 		s.enqueuWork(work, tenancy...)
 	}
+	return nil
+}
+
+func (s *WorkSchedule[T]) UpdateWorkNextTime(ctx op_context.Context, work T, tenancy ...multitenancy.Tenancy) error {
+
+	c := ctx.TraceInMethod("WorkSchedule.UpdateWorkNextTime")
+	defer ctx.TraceOutMethod()
+
+	err := s.CRUD().Update(ctx, work, db.Fields{"next_time": work.GetNextTime(), "next_time_set": true})
+	if err != nil {
+		c.SetMessage("failed to save next work time in database")
+		return c.SetError(err)
+	}
+
 	return nil
 }
 
