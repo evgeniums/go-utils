@@ -22,15 +22,17 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.8.2
 	github.com/tidwall/jsonc v0.3.2
-	golang.org/x/crypto v0.6.0
+	golang.org/x/crypto v0.16.0
 	golang.org/x/exp v0.0.0-20230126173853-a67bb567ff2e
-	golang.org/x/term v0.5.0
-	golang.org/x/text v0.9.0
+	golang.org/x/term v0.15.0
+	golang.org/x/text v0.14.0
 	gopkg.in/go-playground/assert.v1 v1.2.1
-	gorm.io/driver/postgres v1.3.8
+	gorm.io/driver/postgres v1.5.4
 	gorm.io/driver/sqlite v1.4.4
-	gorm.io/gorm v1.24.0
+	gorm.io/gorm v1.25.5
 )
+
+require github.com/jackc/puddle/v2 v2.2.1 // indirect
 
 require (
 	github.com/bsm/redislock v0.9.3
@@ -50,10 +52,10 @@ require (
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.2 // indirect
-	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
+	github.com/jackc/pgservicefile v0.0.0-20231201235250-de7065d80cb9 // indirect
 	github.com/jackc/pgtype v1.11.0 // indirect
 	github.com/jackc/pgx/v4 v4.16.1 // indirect
-	github.com/jackc/pgx/v5 v5.3.1
+	github.com/jackc/pgx/v5 v5.5.1
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -80,9 +82,9 @@ require (
 	github.com/ugorji/go/codec v1.2.10 // indirect
 	gitlab.com/jonas.jasas/condchan v0.0.0-20190210165812-36637ad2b5bc // indirect
 	golang.org/x/arch v0.2.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/sync v0.4.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
+	golang.org/x/sync v0.5.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
