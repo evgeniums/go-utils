@@ -42,6 +42,7 @@ type Request struct {
 
 	TxSerializer message.Serializer
 	RxSerializer message.Serializer
+	UserAgent    string
 }
 
 func (r *Request) SetSerializer(serializer ...message.Serializer) {
@@ -83,6 +84,10 @@ func NewPostWithContext(systemCtx context.Context, ctx op_context.Context, url s
 	if err != nil {
 		c.SetMessage("failed to create request")
 		return nil, c.SetError(err)
+	}
+
+	if r.UserAgent != "" {
+		r.NativeRequest.Header.Set("User-Agent", r.UserAgent)
 	}
 
 	if r.TxSerializer.ContentMime() != "" {

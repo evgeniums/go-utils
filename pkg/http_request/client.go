@@ -24,6 +24,8 @@ type HttpClientConfig struct {
 	IDLE_CONNECTIONS_TIMEOUT int `default:"90"`
 	TLS_HANDSHAKE_TIMEOUT    int `default:"10"`
 	EXPECT_CONTINUE_TIMEOUT  int `default:"1"`
+
+	USER_AGENT string `default:"go-backend-helpers"`
 }
 
 type HttpClient struct {
@@ -100,6 +102,7 @@ func (h *HttpClient) NewPost(ctx op_context.Context, url string, msg interface{}
 		return nil, err
 	}
 	req.client = h.httpClient
+	req.UserAgent = h.USER_AGENT
 	return req, nil
 }
 
@@ -109,6 +112,7 @@ func (h *HttpClient) NewGet(ctx op_context.Context, url string, msg interface{})
 		return nil, err
 	}
 	req.client = h.httpClient
+	req.UserAgent = h.USER_AGENT
 	return req, nil
 }
 
@@ -120,6 +124,7 @@ func (h *HttpClient) NewRequest(method, url string, body io.Reader) (*Request, e
 		return nil, err
 	}
 	r.client = h.httpClient
+	r.UserAgent = h.USER_AGENT
 	return r, nil
 }
 
