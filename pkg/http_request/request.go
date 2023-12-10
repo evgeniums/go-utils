@@ -24,27 +24,43 @@ import (
 const MaxDumpSize int = 2048
 
 type Request struct {
-	NativeRequest         *http.Request
-	NativeResponse        *http.Response
-	ResponseStatus        int
-	Body                  []byte
-	ResponseBody          []byte
-	ResponseContent       string
-	GoodResponse          interface{}
-	BadResponse           interface{}
-	Serializer            message.Serializer
+	NativeRequest   *http.Request
+	NativeResponse  *http.Response
+	ResponseStatus  int
+	Body            []byte
+	ResponseBody    []byte
+	ResponseContent string
+	GoodResponse    interface{}
+	BadResponse     interface{}
+	// Serializer            message.Serializer
 	Transport             http.RoundTripper
 	Timeout               int
 	ParsingFailed         bool
 	IgnoreResponseContent bool
 
 	client *http.Client
+
+	TxSerializer message.Serializer
+	RxSerializer message.Serializer
+}
+
+func (r *Request) SetSerializer(serializer ...message.Serializer) {
+	if len(serializer) == 1 {
+		r.TxSerializer = serializer[0]
+		r.RxSerializer = serializer[0]
+	} else if len(serializer) == 2 {
+		r.TxSerializer = serializer[0]
+		r.RxSerializer = serializer[1]
+	} else {
+		r.TxSerializer = message_json.Serializer
+		r.RxSerializer = message_json.Serializer
+	}
 }
 
 func NewPostWithContext(systemCtx context.Context, ctx op_context.Context, url string, msg interface{}, serializer ...message.Serializer) (*Request, error) {
 
 	r := &Request{}
-	r.Serializer = utils.OptionalArg[message.Serializer](message_json.Serializer, serializer...)
+	r.SetSerializer(serializer...)
 
 	c := ctx.TraceInMethod("http_request.NewPost", logger.Fields{"url": url})
 	defer ctx.TraceOutMethod()
@@ -54,7 +70,7 @@ func NewPostWithContext(systemCtx context.Context, ctx op_context.Context, url s
 
 	var body io.Reader
 	if msg != nil {
-		cmdByte, err = r.Serializer.SerializeMessage(msg)
+		cmdByte, err = r.TxSerializer.SerializeMessage(msg)
 		if err != nil {
 			c.SetMessage("failed to marshal message")
 			return nil, c.SetError(err)
@@ -69,8 +85,8 @@ func NewPostWithContext(systemCtx context.Context, ctx op_context.Context, url s
 		return nil, c.SetError(err)
 	}
 
-	if r.Serializer.ContentMime() != "" {
-		r.NativeRequest.Header.Set("Content-Type", utils.ConcatStrings(r.Serializer.ContentMime(), ";charset=UTF-8"))
+	if r.TxSerializer.ContentMime() != "" {
+		r.NativeRequest.Header.Set("Content-Type", utils.ConcatStrings(r.TxSerializer.ContentMime(), ";charset=UTF-8"))
 	}
 
 	return r, nil
@@ -96,9 +112,10 @@ func UrlEncode(msg interface{}) (string, error) {
 	return "", nil
 }
 
-func NewGetWithContext(systemCtx context.Context, ctx op_context.Context, uRL string, msg interface{}) (*Request, error) {
+func NewGetWithContext(systemCtx context.Context, ctx op_context.Context, uRL string, msg interface{}, serializer ...message.Serializer) (*Request, error) {
 
 	r := &Request{}
+	r.SetSerializer(serializer...)
 
 	c := ctx.TraceInMethod("http_request.NewGet", logger.Fields{"url": uRL})
 	defer ctx.TraceOutMethod()
@@ -242,10 +259,10 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 			}
 
 			parseResponse := func(obj interface{}) {
-				if r.Serializer == nil {
-					r.Serializer = message_json.Serializer
+				if r.RxSerializer == nil {
+					r.RxSerializer = message_json.Serializer
 				}
-				err = r.Serializer.ParseMessage(body, obj)
+				err = r.RxSerializer.ParseMessage(body, obj)
 				if err != nil {
 					r.ParsingFailed = true
 				}
@@ -266,7 +283,11 @@ func (r *Request) Send(ctx op_context.Context, relaxedParsing ...bool) error {
 				if r.BadResponse != nil {
 					parseResponse(r.BadResponse)
 					if err != nil {
-						c.SetMessage("failed to parse bad response")
+						if !utils.OptionalArg(false, relaxedParsing...) {
+							c.SetMessage("failed to parse bad response")
+						} else {
+							err = nil
+						}
 					}
 				}
 			}
