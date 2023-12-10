@@ -24,15 +24,14 @@ import (
 const MaxDumpSize int = 2048
 
 type Request struct {
-	NativeRequest   *http.Request
-	NativeResponse  *http.Response
-	ResponseStatus  int
-	Body            []byte
-	ResponseBody    []byte
-	ResponseContent string
-	GoodResponse    interface{}
-	BadResponse     interface{}
-	// Serializer            message.Serializer
+	NativeRequest         *http.Request
+	NativeResponse        *http.Response
+	ResponseStatus        int
+	Body                  []byte
+	ResponseBody          []byte
+	ResponseContent       string
+	GoodResponse          interface{}
+	BadResponse           interface{}
 	Transport             http.RoundTripper
 	Timeout               int
 	ParsingFailed         bool
