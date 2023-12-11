@@ -11,7 +11,7 @@ require (
 	github.com/go-playground/validator/v10 v10.11.2
 	github.com/google/go-querystring v1.1.0
 	github.com/gorilla/schema v1.2.0
-	github.com/jackc/pgconn v1.14.0
+	github.com/jackc/pgconn v1.14.1
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/jellydator/ttlcache/v3 v3.1.0
 	github.com/jessevdk/go-flags v1.5.0

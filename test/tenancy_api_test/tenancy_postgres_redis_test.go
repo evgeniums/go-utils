@@ -142,3 +142,21 @@ func TestPostgresRedis(t *testing.T) {
 	multiPoolCtx.Close()
 	pubsub_factory.ResetSingletonInmemPubsub()
 }
+
+func TestPostgresDup(t *testing.T) {
+
+	t.Skip("Run this test manually after preparing postgres")
+
+	initDatabase(t)
+	prepareCtx := initContext(t, true, "postgres")
+
+	doc1 := &SampleModel1{}
+	doc1.InitObject()
+	doc1.Field1 = "value1"
+	doc1.Field2 = "value2"
+	require.NoError(t, prepareCtx.ServerApp.Db().Create(prepareCtx.ServerApp, doc1), "failed to create doc1 in database")
+
+	dup, err := prepareCtx.ServerApp.Db().CreateDup(prepareCtx.ServerApp, doc1)
+	test_utils.DumpError(t, err)
+	require.True(t, dup)
+}
