@@ -408,6 +408,7 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 						request.SetGenericErrorCode(generic_error.ErrorCodeForbidden)
 					}
 				}
+				// TODO white list for non tenancy mode
 			}
 		}
 
