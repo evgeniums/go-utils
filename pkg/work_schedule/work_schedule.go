@@ -116,7 +116,7 @@ type WorkBase struct {
 	ReferenceId   string    `json:"reference_id" gorm:"index;index:,unique,composite:ref"`
 	ReferenceType string    `json:"reference_type" gorm:"index;index:,unique,composite:ref"`
 	NextTime      time.Time `json:"next_time" gorm:"index"`
-	NextTimeSet   bool      `json:"next_time_set" gorm:"index;defaule:false"`
+	NextTimeSet   bool      `json:"next_time_set" gorm:"index;default:false"`
 
 	lock  cache.Lock `json:"-" gorm:"-:all"`
 	delay int        `json:"-" gorm:"-:all"`
@@ -174,6 +174,19 @@ func (w *WorkBase) SetNoDb(enable bool) {
 
 func (w *WorkBase) IsNoDb() bool {
 	return w.noDb
+}
+
+type WorkInTenancyBase struct {
+	WorkBase
+	TenancyId string `json:"tenancy_id" gorm:"index"`
+}
+
+func (w *WorkInTenancyBase) SetTenancy(tenancy multitenancy.Tenancy) {
+	w.TenancyId = tenancy.GetID()
+}
+
+func (w *WorkInTenancyBase) GetTenancyId() string {
+	return w.TenancyId
 }
 
 type WorkScheduleConfig struct {
