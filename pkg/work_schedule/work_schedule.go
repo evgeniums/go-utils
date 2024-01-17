@@ -225,6 +225,7 @@ type WorkSchedule[T Work] struct {
 	invoker WorkInvoker[T]
 
 	locker cache.Locker
+	db     db.DB
 }
 
 type Config[T Work] struct {
@@ -434,6 +435,10 @@ func (s *WorkSchedule[T]) RemoveWork(ctx op_context.Context, referenceId string,
 	return nil
 }
 
+func (s *WorkSchedule[T]) SetOverrideDb(db db.DB) {
+	s.db = db
+}
+
 func (s *WorkSchedule[T]) ProcessWorks() {
 
 	if !s.running.CompareAndSwap(false, true) {
@@ -444,6 +449,9 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 	// TODO support multitenancy
 
 	ctx := default_op_context.BackgroundOpContext(s.App(), s.name)
+	if s.db != nil {
+		ctx.SetOverrideDb(s.db)
+	}
 	ctx.SetWriteCloseLog(s.LOG_EMPTY_WORKS)
 	defer ctx.Close()
 	c := ctx.TraceInMethod("WorkSchedule.ProcessWorks")
@@ -493,7 +501,7 @@ func (s *WorkSchedule[T]) ProcessWorks() {
 					err = s.CRUD().Update(ctx, dbWork, db.Fields{"next_time": nextTime, "next_time_set": false})
 					if err != nil {
 						c.SetLoggerField("work_reference_id", dbWork.GetReferenceId())
-						c.SetMessage("failed hold work in database")
+						c.SetMessage("failed to hold work in database")
 						return err
 					}
 					workIds = append(workIds, dbWork.GetID())
@@ -668,6 +676,9 @@ func (s *WorkSchedule[T]) worker() {
 			ctx.Close("Served queue work")
 		} else {
 			ctx := default_op_context.BackgroundOpContext(s.App(), s.name)
+			if s.db != nil {
+				ctx.SetOverrideDb(s.db)
+			}
 			s.DoWork(ctx, work.work)
 			ctx.Close("Served queue work")
 		}
