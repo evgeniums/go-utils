@@ -24,10 +24,19 @@ const (
 	OpAddIpAddress    string = "add_ip_address"
 	OpDeleteIpAddress string = "delete_ip_address"
 	OpSetDbRole       string = "set_db_role"
+	OpSetPathBlocked  string = "set_path_blocked"
 )
 
 const (
 	TENANCY_DATABASE_ROLE string = "tenancy_db"
+)
+
+type TenancyBlockPathMode string
+
+const (
+	TenancyBlockPathModeDefault TenancyBlockPathMode = "default"
+	TenancyBlockPathModeShadow  TenancyBlockPathMode = "shadow"
+	TenancyBlockPathModeBoth    TenancyBlockPathMode = "both"
 )
 
 const (
@@ -130,6 +139,8 @@ type TenancyController interface {
 	Activate(ctx op_context.Context, id string, idIsDisplay ...bool) error
 	Deactivate(ctx op_context.Context, id string, idIsDisplay ...bool) error
 	SetDbRole(ctx op_context.Context, id string, dbRole string, idIsDisplay ...bool) error
+
+	SetPathBlocked(ctx op_context.Context, id string, blocked bool, mode TenancyBlockPathMode, idIsDisplay ...bool) error
 
 	ListIpAddresses(ctx op_context.Context, filter *db.Filter) ([]*TenancyIpAddressItem, int64, error)
 	DeleteIpAddress(ctx op_context.Context, id string, ipAddress string, tag string, idIsDisplay ...bool) error

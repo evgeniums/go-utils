@@ -363,26 +363,27 @@ func (t *TenancyController) ChangePoolOrDb(ctx op_context.Context, id string, po
 		}
 	}
 
-	// check database
 	dbN := dbName
 	if dbN == "" {
 		dbN = tenancy.DbName()
 	}
 	tenancy.DBNAME = dbN
 	tenancy.POOL_ID = p.GetID()
-	checkTenancy := NewTenancy(t.Manager)
-	skip, err := checkTenancy.Init(ctx, &tenancy.TenancyDb)
-	if checkTenancy.Db() != nil {
-		checkTenancy.Db().Close()
-	}
-	if err != nil {
-		c.SetMessage("failed to init tenancy with new parameters")
-		return c.SetError(err)
-	}
-	if skip {
-		ctx.SetGenericErrorCode(pool.ErrorCodePoolNotActive)
-		err = errors.New("failed to check tenancy database as the pool is not active")
-		return c.SetError(err)
+
+	// check database
+	if tenancy.IsActive() {
+		checkTenancy := NewTenancy(t.Manager)
+		err = checkTenancy.Init(ctx, &tenancy.TenancyDb)
+		multitenancy.CloseTenancyDb(checkTenancy)
+		if err != nil {
+			c.SetMessage("failed to init tenancy with new parameters")
+			return c.SetError(err)
+		}
+		if checkTenancy.TenancyBaseData.Pool == nil || !checkTenancy.TenancyBaseData.Pool.IsActive() {
+			ctx.SetGenericErrorCode(pool.ErrorCodePoolNotActive)
+			err = errors.New("failed to check tenancy database as the pool is not active")
+			return c.SetError(err)
+		}
 	}
 
 	// update fields
@@ -421,15 +422,13 @@ func (t *TenancyController) SetDbRole(ctx op_context.Context, id string, dbRole 
 	// check database
 	tenancy.DB_ROLE = dbRole
 	checkTenancy := NewTenancy(t.Manager)
-	skip, err := checkTenancy.Init(ctx, &tenancy.TenancyDb)
-	if checkTenancy.Db() != nil {
-		checkTenancy.Db().Close()
-	}
+	err = checkTenancy.Init(ctx, &tenancy.TenancyDb)
+	multitenancy.CloseTenancyDb(checkTenancy)
 	if err != nil {
 		c.SetMessage("failed to init tenancy with new parameters")
 		return c.SetError(err)
 	}
-	if skip {
+	if checkTenancy.TenancyBaseData.Pool == nil || !checkTenancy.TenancyBaseData.Pool.IsActive() {
 		ctx.SetGenericErrorCode(pool.ErrorCodePoolNotActive)
 		err = errors.New("failed to check tenancy database as the pool is not active")
 		return c.SetError(err)
@@ -578,6 +577,46 @@ func (t *TenancyController) AddIpAddress(ctx op_context.Context, id string, ipAd
 
 	// publish notification
 	t.PublishOp(tenancy, multitenancy.OpAddIpAddress)
+
+	// done
+	return nil
+}
+
+func (t *TenancyController) SetPathBlocked(ctx op_context.Context, id string, blocked bool, mode multitenancy.TenancyBlockPathMode, idIsDisplay ...bool) error {
+
+	// setup
+	c := ctx.TraceInMethod("TenancyController.SetPathBlocked")
+	defer ctx.TraceOutMethod()
+
+	// find tenancy
+	tenancy, err := t.Find(ctx, id, idIsDisplay...)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	// update fields
+	switch mode {
+	case multitenancy.TenancyBlockPathModeDefault:
+		tenancy.BLOCK_PATH = blocked
+	case multitenancy.TenancyBlockPathModeShadow:
+		tenancy.BLOCK_SHADOW_PATH = blocked
+	default:
+		tenancy.BLOCK_PATH = blocked
+		tenancy.BLOCK_SHADOW_PATH = blocked
+	}
+	fields := db.Fields{"block_path": tenancy.BLOCK_PATH, "block_shadow_path": tenancy.BLOCK_SHADOW_PATH}
+	err = t.CRUD.Update(ctx, &tenancy.TenancyDb, fields)
+	if err != nil {
+		c.SetMessage("failed to update tenancy")
+		return c.SetError(err)
+	}
+
+	// save oplog
+	t.OpLog(ctx, multitenancy.OpSetPathBlocked, &multitenancy.OpLogTenancy{TenancyId: tenancy.GetID(),
+		BlockPath: tenancy.IsBlockedPath(), BlockShadowPath: tenancy.IsBlockedShadowPath(), Customer: tenancy.CustomerDisplay()})
+
+	// publish notification
+	t.PublishOp(tenancy, multitenancy.OpSetPathBlocked)
 
 	// done
 	return nil

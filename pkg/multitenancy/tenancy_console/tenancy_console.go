@@ -136,6 +136,7 @@ func (p *TenancyCommands) LoadHandlers() {
 		DeleteIpAddress,
 		ListIpAddresses,
 		DbRole,
+		SetPathBlocked,
 	)
 }
 

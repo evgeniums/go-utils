@@ -2,6 +2,7 @@ package tenancy_manager
 
 import (
 	"errors"
+	"strings"
 	"sync"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
@@ -154,7 +155,7 @@ func (t *TenancyManager) Close() {
 	t.mutex.Lock()
 
 	for _, tenancy := range t.tenanciesById {
-		tenancy.Db().Close()
+		multitenancy.CloseTenancyDb(tenancy)
 	}
 	t.tenanciesById = make(map[string]multitenancy.Tenancy)
 	t.tenanciesByPath = make(map[string]multitenancy.Tenancy)
@@ -229,7 +230,7 @@ func (t *TenancyManager) UnloadTenancy(id string) {
 	defer t.mutex.Unlock()
 	tenancy, ok := t.tenanciesById[id]
 	if ok {
-		tenancy.Db().Close()
+		multitenancy.CloseTenancyDb(tenancy)
 		delete(t.tenanciesById, id)
 		delete(t.tenanciesByPath, tenancy.Path())
 		delete(t.tenanciesByShadowPath, tenancy.ShadowPath())
@@ -254,13 +255,13 @@ func (t *TenancyManager) LoadTenancyFromData(ctx op_context.Context, tenancyDb *
 	// TODO use tenancy builder to support derived tenancy types
 	// init tenancy
 	tenancy := NewTenancy(t)
-	skip, err := tenancy.Init(ctx, tenancyDb)
+	err = tenancy.Init(ctx, tenancyDb)
 	if err != nil {
 		return nil, err
 	}
-	if skip {
-		return nil, nil
-	}
+	// if skip {
+	// 	return nil, nil
+	// }
 
 	addresses, _, err := multitenancy.ListTenancyIpAddresses(t.Controller, ctx, tenancyDb.GetID(), nil)
 	if err != nil {
@@ -447,14 +448,15 @@ func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenanc
 	tenancy := NewTenancy(t)
 	tenancy.InitObject()
 	tenancy.TenancyData = *data
+	tenancy.WithActiveBase.Init()
 	tenancy.CUSTOMER_ID = customer.GetID()
 	tenancy.POOL_ID = p.GetID()
 	tenancy.TenancyBaseData.Pool = p
 	if tenancy.PATH == "" {
-		tenancy.PATH = crypt_utils.GenerateString()
+		tenancy.PATH = strings.ToLower(crypt_utils.GenerateString())
 	}
 	if tenancy.SHADOW_PATH == "" {
-		tenancy.SHADOW_PATH = crypt_utils.GenerateString()
+		tenancy.SHADOW_PATH = strings.ToLower(crypt_utils.GenerateString())
 	}
 	if tenancy.DBNAME == "" {
 		tenancy.DBNAME = utils.ConcatStrings(t.DB_PREFIX, "_", customer.Login(), "_", data.ROLE)
@@ -478,7 +480,7 @@ func (t *TenancyManager) CreateTenancy(ctx op_context.Context, data *multitenanc
 	if err != nil {
 		return nil, err
 	}
-	defer tenancy.Db().Close()
+	defer multitenancy.CloseTenancyDb(tenancy)
 
 	// create database
 	err = multitenancy.UpgradeTenancyDatabase(ctx, tenancy, t.tenancyDbModels)

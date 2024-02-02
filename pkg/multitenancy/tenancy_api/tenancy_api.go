@@ -39,4 +39,5 @@ var (
 	DeleteIpAddress = func() api.Operation { return api.Update("delete_tenancy_ip_address") }
 	ListIpAddresses = func() api.Operation { return api.List("list_tenancy_ip_address") }
 	SetDbRole       = func() api.Operation { return api.Update("set_db_role") }
+	SetPathBlocked  = func() api.Operation { return api.UpdatePartial("set_path_blocked") }
 )

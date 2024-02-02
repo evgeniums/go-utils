@@ -152,8 +152,6 @@ func TestTenancyAwareService(t *testing.T) {
 	addedTenancy1, err := multiPoolCtx.RemoteTenancyController.Add(multiPoolCtx.ClientOp, tenancyData1)
 	require.NoError(t, err)
 	require.NotNil(t, addedTenancy1)
-	err = multiPoolCtx.RemoteTenancyController.Activate(multiPoolCtx.ClientOp, addedTenancy1.GetID())
-	require.NoError(t, err)
 	loadedTenancy1, err := multiPoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy1.GetID())
 	require.NoError(t, err)
 	require.NotNil(t, loadedTenancy1)
@@ -164,9 +162,25 @@ func TestTenancyAwareService(t *testing.T) {
 	addedTenancy2, err := multiPoolCtx.RemoteTenancyController.Add(multiPoolCtx.ClientOp, tenancyData2)
 	require.NoError(t, err)
 	require.NotNil(t, addedTenancy2)
+	err = multiPoolCtx.RemoteTenancyController.Deactivate(multiPoolCtx.ClientOp, addedTenancy2.GetID())
+	require.NoError(t, err)
 	loadedTenancy2, err := multiPoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy2.GetID())
 	require.NoError(t, err)
-	require.NotNil(t, loadedTenancy1)
+	require.NotNil(t, loadedTenancy2)
+	assert.False(t, loadedTenancy2.IsBlockedPath())
+
+	// add third tenancy to the same pool as single pool app, add via mutipool app then block path
+	tenancyData3 := tenancyData1
+	tenancyData3.ROLE = "blocked_path_role"
+	addedTenancy3, err := multiPoolCtx.RemoteTenancyController.Add(multiPoolCtx.ClientOp, tenancyData3)
+	require.NoError(t, err)
+	require.NotNil(t, addedTenancy3)
+	err = multiPoolCtx.RemoteTenancyController.SetPathBlocked(multiPoolCtx.ClientOp, addedTenancy3.GetID(), true, multitenancy.TenancyBlockPathModeDefault)
+	require.NoError(t, err)
+	loadedTenancy3, err := multiPoolCtx.AppWithTenancy.Multitenancy().Tenancy(addedTenancy3.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, loadedTenancy3)
+	assert.True(t, loadedTenancy3.IsBlockedPath())
 
 	// add document to tenancy database
 	sample1 := &InTenancySample{Field1: "hello world", Field2: 10}
@@ -190,8 +204,14 @@ func TestTenancyAwareService(t *testing.T) {
 	require.Equal(t, 1, len(samples))
 	assert.Equal(t, sample1, samples[0])
 
-	// invoke operation on tenancy 2
+	// invoke operation on tenancy 2 that is not active
 	tenancyResource.SetId(loadedTenancy2.Path())
+	samples, err = sampleClient.List(multiPoolCtx.ClientOp)
+	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeNotFound)
+	assert.Equal(t, 0, len(samples))
+
+	// invoke operation on tenancy 3 that is blocked
+	tenancyResource.SetId(loadedTenancy3.Path())
 	samples, err = sampleClient.List(multiPoolCtx.ClientOp)
 	require.NoError(t, err)
 	require.NotNil(t, samples)
@@ -218,7 +238,7 @@ func TestTenancyAwareService(t *testing.T) {
 	multiPoolCtx.Close()
 	singlePoolCtx.Close()
 
-	// check disallowed not active tenancy
+	// check disallowed blocked tenancy
 	multiPoolCtx = initContext(t, false, "tenancy_notactive")
 	sampleService1 := NewSampleService()
 	api_server.AddServiceToServer(multiPoolCtx.Server.ApiServer(), sampleService1)
@@ -231,7 +251,7 @@ func TestTenancyAwareService(t *testing.T) {
 	require.NotNil(t, samples)
 	require.Equal(t, 1, len(samples))
 	assert.Equal(t, sample1, samples[0])
-	tenancyResource1.SetId(loadedTenancy2.Path())
+	tenancyResource1.SetId(loadedTenancy3.Path())
 	_, err = sampleClient1.List(multiPoolCtx.ClientOp)
 	test_utils.CheckGenericError(t, err, generic_error.ErrorCodeNotFound)
 

@@ -1,0 +1,41 @@
+package tenancy_service
+
+import (
+	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
+	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_api"
+)
+
+type SetPathBlockedEndpoint struct {
+	TenancyUpdateEndpoint
+}
+
+func (s *SetPathBlockedEndpoint) HandleRequest(request api_server.Request) error {
+
+	// setup
+	c := request.TraceInMethod("tenancy.SetPathBlocked")
+	defer request.TraceOutMethod()
+
+	// parse command
+	cmd := &multitenancy.BlockPathCmd{}
+	err := request.ParseValidate(cmd)
+	if err != nil {
+		c.SetMessage("failed to parse/validate command")
+		return err
+	}
+
+	// apply
+	err = s.service.Tenancies.SetPathBlocked(request, request.GetResourceId(tenancy_api.TenancyResource), cmd.Block, cmd.Mode)
+	if err != nil {
+		return c.SetError(err)
+	}
+
+	// done
+	return nil
+}
+
+func SetPathBlocked(s *TenancyService) *SetPathBlockedEndpoint {
+	e := &SetPathBlockedEndpoint{}
+	e.Construct(s, e, "block-path", tenancy_api.SetPathBlocked())
+	return e
+}

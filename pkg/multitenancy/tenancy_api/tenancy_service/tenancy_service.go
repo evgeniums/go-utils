@@ -65,6 +65,7 @@ func NewTenancyService(tenancyController multitenancy.TenancyController) *Tenanc
 		ChangePoolOrDb(s),
 		AddIpAddress(s),
 		DeleteIpAddress(s),
+		SetPathBlocked(s),
 	)
 
 	s.IpAddressesResource = api.NewResource(tenancy_api.IpAddressResource)

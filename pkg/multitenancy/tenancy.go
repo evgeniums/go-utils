@@ -34,6 +34,9 @@ type Tenancy interface {
 	Db() db.DB
 	Pool() pool.Pool
 	Cache() cache.Cache
+
+	IsBlockedPath() bool
+	IsBlockedShadowPath() bool
 }
 
 type WithPath struct {
@@ -58,6 +61,24 @@ type WithDbRole struct {
 	DB_ROLE string `json:"db_role" gorm:"index;column:db_role" validate:"omitempty,alphanum_" vmessage:"Database role must be alhanumeric" long:"db_role" description:"Role of database service in the pool" display:"Database service role"`
 }
 
+type WithBlockPath struct {
+	BLOCK_PATH        bool `json:"block_path" gorm:"index;column:block_path" display:"Block tenancy path"`
+	BLOCK_SHADOW_PATH bool `json:"block_shadow_path" gorm:"index;column:block_shadow_path" display:"Block shadow tenancy path"`
+}
+
+type BlockPathCmd struct {
+	Block bool                 `json:"block" long:"mode" description:"Block or unblock tenancy path"`
+	Mode  TenancyBlockPathMode `json:"mode" long:"mode" description:"Mode: default | shadow | both"`
+}
+
+func (t *WithBlockPath) IsBlockedPath() bool {
+	return t.BLOCK_PATH
+}
+
+func (t *WithBlockPath) IsBlockedShadowPath() bool {
+	return t.BLOCK_SHADOW_PATH
+}
+
 type TenancyData struct {
 	common.WithDescriptionBase
 	WithPath
@@ -65,6 +86,7 @@ type TenancyData struct {
 	WithCustomerId
 	WithPoolAndDb
 	WithDbRole
+	WithBlockPath
 }
 
 func (t *WithCustomerId) CustomerId() string {
@@ -278,4 +300,10 @@ type TenancyIpAddressItem struct {
 	PoolName         string `json:"pool_name" source:"pools.name" gorm:"index" display:"Pool"`
 	CustomerLogin    string `json:"customer_login" source:"customers.login" gorm:"index" display:"Customer"`
 	TenancyRole      string `json:"tenancy_role" source:"tenancies.role" gorm:"index" display:"Tenancy role"`
+}
+
+func CloseTenancyDb(tenancy Tenancy) {
+	if tenancy.Db() != nil {
+		tenancy.Db().Close()
+	}
 }

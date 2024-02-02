@@ -477,19 +477,11 @@ func TestTenancySetters(t *testing.T) {
 	singleAppTenancy, err := singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
 	require.NoError(t, err)
 	require.NotNil(t, singleAppTenancy)
-	assert.False(t, singleAppTenancy.IsActive())
+	assert.True(t, singleAppTenancy.IsActive())
 	assert.Equal(t, tenancy1.Path(), singleAppTenancy.Path())
 	assert.Equal(t, tenancy1.Role(), singleAppTenancy.Role())
 	assert.Equal(t, "customer1", singleAppTenancy.CustomerDisplay())
 	assert.Equal(t, tenancy1.PoolId(), singleAppTenancy.PoolId())
-
-	// activate tenancy
-	err = multiPoolCtx.RemoteTenancyController.SetActive(multiPoolCtx.ClientOp, tenancy1.GetID(), true)
-	require.NoError(t, err)
-	singleAppTenancy, err = singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
-	require.NoError(t, err)
-	require.NotNil(t, singleAppTenancy)
-	assert.True(t, singleAppTenancy.IsActive())
 
 	// change path
 	newPath := "tenancy1path"
@@ -545,6 +537,22 @@ func TestTenancySetters(t *testing.T) {
 	// try customer with duplicate role/path
 	err = multiPoolCtx.RemoteTenancyController.SetCustomer(multiPoolCtx.ClientOp, tenancy1.GetID(), newCustomer)
 	test_utils.CheckGenericError(t, err, multitenancy.ErrorCodeTenancyConflictRole)
+
+	// deactivate tenancy
+	err = multiPoolCtx.RemoteTenancyController.SetActive(multiPoolCtx.ClientOp, tenancy1.GetID(), false)
+	require.NoError(t, err)
+	singleAppTenancy, err = singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, singleAppTenancy)
+	assert.False(t, singleAppTenancy.IsActive())
+
+	// activate tenancy
+	err = multiPoolCtx.RemoteTenancyController.SetActive(multiPoolCtx.ClientOp, tenancy1.GetID(), true)
+	require.NoError(t, err)
+	singleAppTenancy, err = singlePoolCtx.AppWithTenancy.Multitenancy().Tenancy(tenancy1.GetID())
+	require.NoError(t, err)
+	require.NotNil(t, singleAppTenancy)
+	assert.True(t, singleAppTenancy.IsActive())
 
 	// change pool or db
 	newDb := tenancy1.DbName()

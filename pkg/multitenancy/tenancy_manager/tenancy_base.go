@@ -54,7 +54,7 @@ func (t *TenancyBase) SetCache(c cache.Cache) {
 	t.TenancyBaseData.Cache = c
 }
 
-func (t *TenancyBase) Init(ctx op_context.Context, data *multitenancy.TenancyDb) (bool, error) {
+func (t *TenancyBase) Init(ctx op_context.Context, data *multitenancy.TenancyDb) error {
 
 	// setup
 	var err error
@@ -68,47 +68,57 @@ func (t *TenancyBase) Init(ctx op_context.Context, data *multitenancy.TenancyDb)
 	defer onExit()
 
 	t.TenancyDb = *data
-	t.SetCache(ctx.Cache())
 
 	// find customer
 	t.Customer, err = t.TenancyManager.Customers.Find(ctx, data.CUSTOMER_ID)
 	if err != nil {
 		c.SetMessage("failed to find customer")
-		return false, err
+		return err
 	}
 	if t.Customer == nil {
 		c.SetMessage("failed to find customer")
-		return false, err
+		return err
 	}
 	c.SetLoggerField("tenancy", multitenancy.TenancyDisplay(t))
+
+	// check if tenancy is active
+	if !t.TenancyDb.IsActive() {
+		c.Logger().Warn("skipping tenancy initialization because it is not active")
+		return nil
+	}
+
+	// init tenancy resources
+
+	// set tenancy cache
+	t.SetCache(ctx.Cache())
 
 	// check if pool exists
 	t.TenancyBaseData.Pool, err = t.TenancyManager.Pools.Pool(data.POOL_ID)
 	if err != nil {
 		ctx.SetGenericErrorCode(pool.ErrorCodePoolNotFound)
 		c.SetMessage("unknown pool")
-		return false, err
+		return err
 	}
 	if !t.TenancyBaseData.Pool.IsActive() {
-		c.Logger().Warn("skipping tenancy because pool is not active", logger.Fields{"pool": t.TenancyBaseData.Pool.Name()})
-		return true, nil
+		c.Logger().Warn("skipping tenancy initialization pool is not active", logger.Fields{"pool": t.TenancyBaseData.Pool.Name()})
+		return nil
 	}
 
 	// init database
 	err = t.ConnectDatabase(ctx)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// check tenancy database
 	err = multitenancy.CheckTenancyDatabase(ctx, t.Db(), t.GetID())
 	if err != nil {
-		t.Db().Close()
-		return false, err
+		multitenancy.CloseTenancyDb(t)
+		return err
 	}
 
 	// done
-	return false, nil
+	return nil
 }
 
 func (t *TenancyBase) ConnectDatabase(ctx op_context.Context, newDb ...bool) error {

@@ -35,15 +35,15 @@ var TenancyParameter string = "tenancy"
 type ServerConfig struct {
 	api_server.ServerBaseConfig
 
-	HOST                     string `validate:"ip" default:"127.0.0.1"`
-	PORT                     uint16 `validate:"required"`
-	PATH_PREFIX              string `default:"/api"`
-	TRUSTED_PROXIES          []string
-	VERBOSE                  bool
-	VERBOSE_BODY_MAX_LENGTH  int `default:"2048"`
-	ALLOW_NOT_ACTIVE_TENANCY bool
-	AUTH_FROM_TENANCY_DB     bool `default:"true"`
-	SHADOW_TENANCY_PATH      bool
+	HOST                       string `validate:"ip" default:"127.0.0.1"`
+	PORT                       uint16 `validate:"required"`
+	PATH_PREFIX                string `default:"/api"`
+	TRUSTED_PROXIES            []string
+	VERBOSE                    bool
+	VERBOSE_BODY_MAX_LENGTH    int `default:"2048"`
+	ALLOW_BLOCKED_TENANCY_PATH bool
+	AUTH_FROM_TENANCY_DB       bool `default:"true"`
+	SHADOW_TENANCY_PATH        bool
 
 	TENANCY_ALLOWED_IP_LIST_TAG string
 	TENANCY_ALLOWED_IP_LIST     bool
@@ -392,12 +392,27 @@ func requestHandler(s *Server, ep api_server.Endpoint) gin.HandlerFunc {
 				request.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
 				c.SetMessage("unknown tenancy")
 			} else {
-				if !s.ALLOW_NOT_ACTIVE_TENANCY && !tenancy.IsActive() {
+
+				if !tenancy.IsActive() {
 					request.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
 					err = errors.New("tenancy is not active")
 				} else {
-					if s.AUTH_FROM_TENANCY_DB {
-						request.SetTenancy(tenancy)
+
+					blocked := false
+					if !s.ALLOW_BLOCKED_TENANCY_PATH {
+						if s.SHADOW_TENANCY_PATH {
+							blocked = tenancy.IsBlockedShadowPath()
+						} else {
+							blocked = tenancy.IsBlockedPath()
+						}
+					}
+					if blocked {
+						request.SetGenericErrorCode(generic_error.ErrorCodeNotFound)
+						err = errors.New("tenancy path is blocked")
+					} else {
+						if s.AUTH_FROM_TENANCY_DB {
+							request.SetTenancy(tenancy)
+						}
 					}
 				}
 			}
