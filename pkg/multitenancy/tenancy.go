@@ -67,7 +67,7 @@ type WithBlockPath struct {
 }
 
 type BlockPathCmd struct {
-	Block bool                 `json:"block" long:"mode" description:"Block or unblock tenancy path"`
+	Block bool                 `json:"block" long:"block" description:"Block or unblock tenancy path"`
 	Mode  TenancyBlockPathMode `json:"mode" long:"mode" description:"Mode: default | shadow | both"`
 }
 
