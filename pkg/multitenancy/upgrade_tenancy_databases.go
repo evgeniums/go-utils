@@ -53,10 +53,14 @@ func UpgradeTenancyDatabases(ctx op_context.Context, multitenancy Multitenancy, 
 
 	fmt.Println("Upgrading tenancy databases...")
 	for _, tenancy := range multitenancy.Tenancies() {
-		fmt.Printf("Upgrading tenancy %s ...\n", TenancyDisplay(tenancy))
-		err := UpgradeTenancyDatabase(ctx, tenancy, dbModels)
-		if err != nil {
-			return c.SetError(err)
+		if tenancy.Db() != nil {
+			fmt.Printf("Upgrading tenancy %s ...\n", TenancyDisplay(tenancy))
+			err := UpgradeTenancyDatabase(ctx, tenancy, dbModels)
+			if err != nil {
+				return c.SetError(err)
+			}
+		} else {
+			fmt.Printf("Skip upgrading deactivated tenancy %s ...\n", TenancyDisplay(tenancy))
 		}
 	}
 
