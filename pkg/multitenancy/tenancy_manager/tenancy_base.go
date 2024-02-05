@@ -83,7 +83,7 @@ func (t *TenancyBase) Init(ctx op_context.Context, data *multitenancy.TenancyDb)
 
 	// check if tenancy is active
 	if !t.TenancyDb.IsActive() {
-		c.Logger().Warn("skipping tenancy initialization because it is not active")
+		c.Logger().Info("skipping tenancy initialization because it is not active")
 		return nil
 	}
 
