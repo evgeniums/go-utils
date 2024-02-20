@@ -16,6 +16,7 @@ const (
 	ErrorCodeExpired                    string = "operation_expired"
 	ErrorCodeRetryLater                 string = "retry_later"
 	ErrorCodeOperationNotPermitted      string = "operation_not_permitteds"
+	ErrorCodeResourceBusy               string = "resource_busyr"
 )
 
 var CommonErrorDescriptions = map[string]string{
@@ -32,6 +33,7 @@ var CommonErrorDescriptions = map[string]string{
 	ErrorCodeExpired:                    "Operation expired",
 	ErrorCodeOperationNotPermitted:      "Operation not permitted",
 	ErrorCodeRetryLater:                 "Service is temporarily unavailable, please retry later",
+	ErrorCodeResourceBusy:               "Resource is busy, please retry later",
 }
 
 var CommonErrorHttpCodes = map[string]int{
@@ -43,4 +45,5 @@ var CommonErrorHttpCodes = map[string]int{
 	ErrorCodeExternalServiceError:       http.StatusInternalServerError,
 	ErrorCodeRetryLater:                 http.StatusServiceUnavailable,
 	ErrorCodeOperationNotPermitted:      http.StatusForbidden,
+	ErrorCodeResourceBusy:               http.StatusServiceUnavailable,
 }
