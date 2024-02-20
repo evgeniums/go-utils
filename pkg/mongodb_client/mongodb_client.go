@@ -14,6 +14,7 @@ import (
 type MongoDbClientConfig struct {
 	MONGODB_URI string `validate:"required" vmessage:"mongodb URI must be specified"`
 	DB_NAME     string `validate:"required" vmessage:"Name of database must be specified"`
+	JSON_TAG    bool   `default:"true"`
 }
 
 type MongoDbClient struct {
@@ -40,6 +41,9 @@ func (m *MongoDbClient) Init(app app_context.Context, configPath ...string) erro
 	if app.Cfg().IsSet("mongodb.db_name") {
 		m.DB_NAME = app.Cfg().GetString("mongodb.db_name")
 	}
+	if app.Cfg().IsSet("mongodb.json_tag") {
+		m.JSON_TAG = app.Cfg().GetBool("mongodb.json_tag")
+	}
 
 	// load configuration
 	err := object_config.LoadLogValidateApp(app, m, "mongodb_client", configPath...)
@@ -48,7 +52,10 @@ func (m *MongoDbClient) Init(app app_context.Context, configPath ...string) erro
 	}
 
 	// init mongodb client
-	m.client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(m.MONGODB_URI))
+	bsonOpts := &options.BSONOptions{
+		UseJSONStructTags: m.JSON_TAG,
+	}
+	m.client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(m.MONGODB_URI).SetBSONOptions(bsonOpts))
 	if err != nil {
 		return app.Logger().PushFatalStack("failed to connect to mongodb server", err)
 	}
