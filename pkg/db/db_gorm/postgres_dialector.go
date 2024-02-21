@@ -92,6 +92,10 @@ func PostgresTableExists(db *gorm.DB, tableName string) (bool, error) {
 	return count > 0, nil
 }
 
+func partitionTableName(table string, month utils.Month) string {
+	return fmt.Sprintf("%s_%d", table, month)
+}
+
 func PostgresPartitionedMonthAutoMigrate(ctx logger.WithLogger, db *gorm.DB, models ...interface{}) error {
 
 	if len(models) == 0 {
@@ -153,12 +157,74 @@ func PostgresPartitionedMonthMigrator(provider string, ctx logger.WithLogger, db
 	return PostgresPartitionedMonthAutoMigrate(ctx, db, models...)
 }
 
+func PostgresPartitionedMonthDetach(provider string, ctx logger.WithLogger, db *gorm.DB, table string, months []utils.Month) error {
+	if provider != "postgres" {
+		return errors.New("unknown database provider")
+	}
+
+	for _, month := range months {
+
+		partition := partitionTableName(table, month)
+		fields := logger.Fields{"month": month, "table": table, "partition": partition}
+
+		partitionExists, err := PostgresTableExists(db, partition)
+		if err != nil {
+			return ctx.Logger().PushFatalStack("failed to check if partition exists in database", err, fields)
+		}
+
+		if partitionExists {
+			sqlExpr := fmt.Sprintf("ALTER TABLE %s DETACH PARTITION %s CONCURRENTLY;", table, partition)
+			fields["sql"] = sqlExpr
+			ctx.Logger().Info("Detaching partition", fields)
+			result := db.Exec(sqlExpr)
+			if result.Error != nil {
+				return ctx.Logger().PushFatalStack("failed to detach partition", err, fields)
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func PostgresPartitionedMonthDelete(provider string, ctx logger.WithLogger, db *gorm.DB, table string, months []utils.Month) error {
+	if provider != "postgres" {
+		return errors.New("unknown database provider")
+	}
+
+	for _, month := range months {
+
+		partition := partitionTableName(table, month)
+		fields := logger.Fields{"month": month, "table": table, "partition": partition}
+
+		partitionExists, err := PostgresTableExists(db, partition)
+		if err != nil {
+			return ctx.Logger().PushFatalStack("failed to check if partition exists in database", err, fields)
+		}
+
+		if partitionExists {
+			sqlExpr := fmt.Sprintf("DROP TABLE %s;", partition)
+			fields["sql"] = sqlExpr
+			ctx.Logger().Info("Deleting partition", fields)
+			result := db.Exec(sqlExpr)
+			if result.Error != nil {
+				return ctx.Logger().PushFatalStack("failed to delete partition", err, fields)
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func PostgresDbConnector() *DbConnector {
 	c := &DbConnector{}
 	c.DialectorOpener = PostgresOpener
 	c.DsnBuilder = PostgresDsnBuilder
 	c.CheckDuplicateKeyError = PostgresCheckDuplicateKeyError
 	c.PartitionedMonthMigrator = PostgresPartitionedMonthMigrator
+	c.PartitionedMonthDeleter = PostgresPartitionedMonthDelete
+	c.PartitionedMonthDetacher = PostgresPartitionedMonthDetach
 	c.DbCreator = PostgresDbCreator
 	return c
 }

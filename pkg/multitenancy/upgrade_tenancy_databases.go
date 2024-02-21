@@ -5,6 +5,7 @@ import (
 
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 )
 
 func UpgradeTenancyDatabase(ctx op_context.Context, tenancy Tenancy, dbModels *TenancyDbModels) error {
@@ -46,21 +47,25 @@ func UpgradeTenancyDatabase(ctx op_context.Context, tenancy Tenancy, dbModels *T
 	return nil
 }
 
-func UpgradeTenancyDatabases(ctx op_context.Context, multitenancy Multitenancy, dbModels *TenancyDbModels) error {
+func UpgradeTenancyDatabases(ctx op_context.Context, multitenancy Multitenancy, dbModels *TenancyDbModels, singleTenancy ...string) error {
 
 	c := ctx.TraceInMethod("multitenancy.UpgradeTenancyDatabases")
 	defer ctx.TraceOutMethod()
 
+	onlyTenancy := utils.OptionalString("", singleTenancy...)
+
 	fmt.Println("Upgrading tenancy databases...")
 	for _, tenancy := range multitenancy.Tenancies() {
-		if tenancy.Db() != nil {
-			fmt.Printf("Upgrading tenancy %s ...\n", TenancyDisplay(tenancy))
-			err := UpgradeTenancyDatabase(ctx, tenancy, dbModels)
-			if err != nil {
-				return c.SetError(err)
+		if onlyTenancy == "" || TenancyDisplay(tenancy) == onlyTenancy {
+			if tenancy.Db() != nil {
+				fmt.Printf("Upgrading tenancy %s ...\n", TenancyDisplay(tenancy))
+				err := UpgradeTenancyDatabase(ctx, tenancy, dbModels)
+				if err != nil {
+					return c.SetError(err)
+				}
+			} else {
+				fmt.Printf("Skip upgrading deactivated tenancy %s ...\n", TenancyDisplay(tenancy))
 			}
-		} else {
-			fmt.Printf("Skip upgrading deactivated tenancy %s ...\n", TenancyDisplay(tenancy))
 		}
 	}
 

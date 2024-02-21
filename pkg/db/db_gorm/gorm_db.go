@@ -32,6 +32,8 @@ type DbConnector struct {
 	DbCreator                func(provider string, db *gorm.DB, dbName string) error
 	CheckDuplicateKeyError   func(provider string, result *gorm.DB) (bool, error)
 	PartitionedMonthMigrator func(provider string, ctx logger.WithLogger, db *gorm.DB, models ...interface{}) error
+	PartitionedMonthDetacher func(provider string, ctx logger.WithLogger, db *gorm.DB, table string, months []utils.Month) error
+	PartitionedMonthDeleter  func(provider string, ctx logger.WithLogger, db *gorm.DB, table string, months []utils.Month) error
 }
 
 type DbState struct {
@@ -215,6 +217,14 @@ func (g *GormDB) MigrateDropIndex(ctx logger.WithLogger, model interface{}, inde
 
 func (g *GormDB) PartitionedMonthAutoMigrate(ctx logger.WithLogger, models []interface{}) error {
 	return g.dbConnector.PartitionedMonthMigrator(g.DB_PROVIDER, ctx, g.db_(), models...)
+}
+
+func (g *GormDB) PartitionedMonthsDetach(provider string, ctx logger.WithLogger, db *gorm.DB, table string, months []utils.Month) error {
+	return g.dbConnector.PartitionedMonthDetacher(provider, ctx, db, table, months)
+}
+
+func (g *GormDB) PartitionedMonthsDelete(provider string, ctx logger.WithLogger, db *gorm.DB, table string, months []utils.Month) error {
+	return g.dbConnector.PartitionedMonthDeleter(provider, ctx, db, table, months)
 }
 
 func (g *GormDB) FindByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}, dest ...interface{}) (bool, error) {
