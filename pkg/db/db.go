@@ -8,7 +8,6 @@ import (
 	"github.com/evgeniums/go-backend-helpers/pkg/logger"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator"
-	"gorm.io/gorm"
 )
 
 const (
@@ -97,8 +96,8 @@ type DB interface {
 	MigrateDropIndex(ctx logger.WithLogger, model interface{}, indexName string) error
 
 	PartitionedMonthAutoMigrate(ctx logger.WithLogger, models []interface{}) error
-	PartitionedMonthsDetach(provider string, ctx logger.WithLogger, db *gorm.DB, table string, months []utils.Month) error
-	PartitionedMonthsDelete(provider string, ctx logger.WithLogger, db *gorm.DB, table string, months []utils.Month) error
+	PartitionedMonthsDetach(ctx logger.WithLogger, table string, months []utils.Month) error
+	PartitionedMonthsDelete(ctx logger.WithLogger, table string, months []utils.Month) error
 
 	NativeHandler() interface{}
 

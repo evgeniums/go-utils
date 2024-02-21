@@ -219,12 +219,12 @@ func (g *GormDB) PartitionedMonthAutoMigrate(ctx logger.WithLogger, models []int
 	return g.dbConnector.PartitionedMonthMigrator(g.DB_PROVIDER, ctx, g.db_(), models...)
 }
 
-func (g *GormDB) PartitionedMonthsDetach(provider string, ctx logger.WithLogger, db *gorm.DB, table string, months []utils.Month) error {
-	return g.dbConnector.PartitionedMonthDetacher(provider, ctx, db, table, months)
+func (g *GormDB) PartitionedMonthsDetach(ctx logger.WithLogger, table string, months []utils.Month) error {
+	return g.dbConnector.PartitionedMonthDetacher(g.DB_PROVIDER, ctx, g.db_(), table, months)
 }
 
-func (g *GormDB) PartitionedMonthsDelete(provider string, ctx logger.WithLogger, db *gorm.DB, table string, months []utils.Month) error {
-	return g.dbConnector.PartitionedMonthDeleter(provider, ctx, db, table, months)
+func (g *GormDB) PartitionedMonthsDelete(ctx logger.WithLogger, table string, months []utils.Month) error {
+	return g.dbConnector.PartitionedMonthDeleter(g.DB_PROVIDER, ctx, g.db_(), table, months)
 }
 
 func (g *GormDB) FindByField(ctx logger.WithLogger, field string, value interface{}, obj interface{}, dest ...interface{}) (bool, error) {
