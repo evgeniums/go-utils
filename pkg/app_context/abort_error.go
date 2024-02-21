@@ -24,10 +24,21 @@ func Panic(msg string, err error) {
 	panic(e)
 }
 
+func Abort(msg string, err ...error) {
+	e := errors.New(msg)
+	if len(err) > 0 {
+		e = fmt.Errorf("%s: %s", msg, err[0])
+	}
+	testError(e)
+	ErrorLn(e.Error())
+	ErrorLn("Failed")
+	os.Exit(1)
+}
+
 func AbortError(ctx Context, msg string, err ...error) {
 	e := errors.New(msg)
 	if len(err) > 0 {
-		e = fmt.Errorf("%v: %s", msg, err[0])
+		e = fmt.Errorf("%s: %s", msg, err[0])
 		if ctx.Logger() != nil {
 			ctx.Logger().ErrorRaw(err[0].Error())
 		}
