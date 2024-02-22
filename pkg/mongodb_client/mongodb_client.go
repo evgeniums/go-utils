@@ -2,6 +2,7 @@ package mongodb_client
 
 import (
 	"context"
+	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
@@ -12,15 +13,19 @@ import (
 )
 
 type MongoDbClientConfig struct {
-	MONGODB_URI string `validate:"required" vmessage:"mongodb URI must be specified"`
-	DB_NAME     string `validate:"required" vmessage:"Name of database must be specified"`
-	JSON_TAG    bool   `default:"true"`
+	MONGODB_URI string        `validate:"required" vmessage:"mongodb URI must be specified"`
+	DB_NAME     string        `validate:"required" vmessage:"Name of database must be specified"`
+	JSON_TAG    bool          `default:"true"`
+	TIMEOUT     time.Duration `default:"30s"`
 }
 
 type MongoDbClient struct {
 	MongoDbClientConfig
 	client *mongo.Client
 	name   string
+
+	context context.Context
+	cancel  context.CancelFunc
 }
 
 func New(name string, defaultDbName ...string) *MongoDbClient {
@@ -51,11 +56,13 @@ func (m *MongoDbClient) Init(app app_context.Context, configPath ...string) erro
 		return app.Logger().PushFatalStack("failed to load config of mongodb client", err)
 	}
 
+	m.context, m.cancel = context.WithTimeout(context.TODO(), time.Duration(m.TIMEOUT))
+
 	// init mongodb client
 	bsonOpts := &options.BSONOptions{
 		UseJSONStructTags: m.JSON_TAG,
 	}
-	m.client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(m.MONGODB_URI).SetBSONOptions(bsonOpts))
+	m.client, err = mongo.Connect(m.context, options.Client().ApplyURI(m.MONGODB_URI).SetBSONOptions(bsonOpts))
 	if err != nil {
 		return app.Logger().PushFatalStack("failed to connect to mongodb server", err)
 	}
@@ -69,6 +76,10 @@ func (m *MongoDbClient) Client() *mongo.Client {
 	return m.client
 }
 
+func (m *MongoDbClient) Context() context.Context {
+	return m.context
+}
+
 func (m *MongoDbClient) DbName() string {
 	return m.DB_NAME
 }
@@ -78,6 +89,9 @@ func (m *MongoDbClient) Name() string {
 }
 
 func (m *MongoDbClient) Shutdown(ctx context.Context) error {
+	if m.cancel != nil {
+		m.cancel()
+	}
 	if m.client != nil {
 		return m.client.Disconnect(ctx)
 	}
