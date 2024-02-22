@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 type Config interface {
 	Get(key string) interface{}
 	GetString(key string) string
@@ -15,6 +17,9 @@ type Config interface {
 	GetStringSlice(key string) []string
 	GetFloat64Slice(key string) []float64
 	GetStringMapString(key string) map[string]string
+
+	GetTime(key string) time.Time
+	GetDuration(key string) time.Duration
 
 	SetDefault(key string, value interface{})
 	Set(key string, value interface{})

@@ -3,13 +3,26 @@ package config_test
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/config/config_viper"
 	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
 	"github.com/evgeniums/go-backend-helpers/pkg/logger/logger_logrus"
 	"github.com/evgeniums/go-backend-helpers/pkg/utils"
 	"github.com/evgeniums/go-backend-helpers/pkg/validator/validator_playground"
+	"gopkg.in/go-playground/assert.v1"
 )
+
+type config0 struct {
+	FIELD_TIME_DURATION time.Duration
+}
+type sample0 struct {
+	config0
+}
+
+func (s *sample0) Config() interface{} {
+	return &s.config0
+}
 
 type embeddedConfig1 struct {
 	FIELD_EMBEDDED_STRING string `default:"default_value1"`
@@ -32,6 +45,9 @@ type config1 struct {
 	FIELD_FLOAT64      float64
 	FIELD_SLICE_INT    []int
 	FIELD_SLICE_STRING []string
+
+	FIELD_TIME          time.Time
+	FIELD_TIME_DURATION time.Duration
 }
 
 type sample1 struct {
@@ -44,11 +60,17 @@ func (s *sample1) Config() interface{} {
 
 func TestObjectConfig(t *testing.T) {
 
-	sampleConfig1 := `{"field_embedded_string":"value1","field_int":100}`
+	sampleConfig1 := `{"field_embedded_string":"value1","field_int":100, "field_time_duration": "1h"}`
 	cfg1 := config_viper.New()
 	err := cfg1.LoadString(sampleConfig1)
 	if err != nil {
 		t.Fatalf("failed to load configuration from string: %s", err)
+	}
+
+	s0 := &sample0{}
+	err = object_config.Load(cfg1, s0, "")
+	if err != nil {
+		t.Fatalf("failed to load object configuration: %s", err)
 	}
 
 	s1 := &sample1{}
@@ -86,7 +108,9 @@ func TestObjectConfig(t *testing.T) {
 		"field_float32":1000.01,
 		"field_float64":2000.02,
 		"field_slice_int":[1,2,3,4],
-		"field_slice_string":["a","b","c","d"]
+		"field_slice_string":["a","b","c","d"],
+		"field_time": "2024-02-22",
+		"field_time_duration": "1h"
 	}
 `
 	cfg2 := config_viper.New()
@@ -152,6 +176,10 @@ func TestObjectConfig(t *testing.T) {
 	if !reflect.DeepEqual(s2.FIELD_SLICE_STRING, []string{"a", "b", "c", "d"}) {
 		t.Errorf("invalid field_slice_string: expected %v, got %v", []string{"a", "b", "c", "d"}, s2.FIELD_SLICE_STRING)
 	}
+
+	assert.Equal(t, 1, int(s2.FIELD_TIME_DURATION.Hours()))
+	tm, _ := utils.ParseTime("2024-02-22")
+	assert.Equal(t, tm, s2.FIELD_TIME)
 
 	s3 := &sample1{}
 

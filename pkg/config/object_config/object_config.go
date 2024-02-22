@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
 	"github.com/evgeniums/go-backend-helpers/pkg/config"
@@ -125,7 +126,13 @@ func loadValue(cfg config.Config, configPath string, objectValue reflect.Value) 
 		switch field.Type.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			if cfg.IsSet(fieldConfigPath) {
-				fieldValue.SetInt(int64(cfg.GetInt(fieldConfigPath)))
+				i := fieldValue.Interface()
+				switch i.(type) {
+				case time.Duration:
+					fieldValue.Set(reflect.ValueOf(cfg.GetDuration(fieldConfigPath)))
+				default:
+					fieldValue.SetInt(int64(cfg.GetInt(fieldConfigPath)))
+				}
 			}
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 			if cfg.IsSet(fieldConfigPath) {
@@ -161,6 +168,18 @@ func loadValue(cfg config.Config, configPath string, objectValue reflect.Value) 
 				}
 				if skippedK != nil && len(skippedKeys) > 0 {
 					skippedKeys = append(skippedKeys, skippedK...)
+				}
+			} else {
+				i := fieldValue.Interface()
+				switch i.(type) {
+				case time.Time:
+					if cfg.IsSet(fieldConfigPath) {
+						fieldValue.Set(reflect.ValueOf(cfg.GetTime(fieldConfigPath)))
+					}
+				case time.Duration:
+					if cfg.IsSet(fieldConfigPath) {
+						fieldValue.Set(reflect.ValueOf(cfg.GetDuration(fieldConfigPath)))
+					}
 				}
 			}
 		default:
