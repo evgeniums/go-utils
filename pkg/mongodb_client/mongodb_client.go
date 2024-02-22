@@ -23,9 +23,6 @@ type MongoDbClient struct {
 	MongoDbClientConfig
 	client *mongo.Client
 	name   string
-
-	context context.Context
-	cancel  context.CancelFunc
 }
 
 func New(name string, defaultDbName ...string) *MongoDbClient {
@@ -56,13 +53,13 @@ func (m *MongoDbClient) Init(app app_context.Context, configPath ...string) erro
 		return app.Logger().PushFatalStack("failed to load config of mongodb client", err)
 	}
 
-	m.context, m.cancel = context.WithTimeout(context.TODO(), time.Duration(m.TIMEOUT))
-
 	// init mongodb client
 	bsonOpts := &options.BSONOptions{
 		UseJSONStructTags: m.JSON_TAG,
 	}
-	m.client, err = mongo.Connect(m.context, options.Client().ApplyURI(m.MONGODB_URI).SetBSONOptions(bsonOpts))
+	context, cancel := context.WithTimeout(context.TODO(), time.Duration(m.TIMEOUT))
+	defer cancel()
+	m.client, err = mongo.Connect(context, options.Client().ApplyURI(m.MONGODB_URI).SetBSONOptions(bsonOpts))
 	if err != nil {
 		return app.Logger().PushFatalStack("failed to connect to mongodb server", err)
 	}
@@ -77,7 +74,9 @@ func (m *MongoDbClient) Client() *mongo.Client {
 }
 
 func (m *MongoDbClient) Context() context.Context {
-	return m.context
+	// TODO use context with deadline
+	// ctx, _ := context.WithTimeout(context.TODO(), time.Duration(m.TIMEOUT))
+	return context.TODO()
 }
 
 func (m *MongoDbClient) DbName() string {
@@ -89,9 +88,6 @@ func (m *MongoDbClient) Name() string {
 }
 
 func (m *MongoDbClient) Shutdown(ctx context.Context) error {
-	if m.cancel != nil {
-		m.cancel()
-	}
 	if m.client != nil {
 		return m.client.Disconnect(ctx)
 	}
