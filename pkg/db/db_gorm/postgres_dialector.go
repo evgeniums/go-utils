@@ -173,12 +173,12 @@ func PostgresPartitionedMonthDetach(provider string, ctx logger.WithLogger, db *
 		}
 
 		if partitionExists {
-			sqlExpr := fmt.Sprintf("ALTER TABLE %s DETACH PARTITION %s CONCURRENTLY;", table, partition)
+			sqlExpr := fmt.Sprintf("ALTER TABLE %s DETACH PARTITION %s;", table, partition)
 			fields["sql"] = sqlExpr
 			ctx.Logger().Info("Detaching partition", fields)
 			result := db.Exec(sqlExpr)
 			if result.Error != nil {
-				return ctx.Logger().PushFatalStack("failed to detach partition", err, fields)
+				return ctx.Logger().PushFatalStack("failed to detach partition", result.Error, fields)
 			}
 		}
 
