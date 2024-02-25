@@ -54,12 +54,22 @@ func (m *MongoDbClient) Init(app app_context.Context, configPath ...string) erro
 	}
 
 	// init mongodb client
+	if m.JSON_TAG {
+		app.Logger().Info("using json tags in mongodb client")
+	} else {
+		app.Logger().Info("using bson tags in mongodb client")
+	}
 	bsonOpts := &options.BSONOptions{
 		UseJSONStructTags: m.JSON_TAG,
 	}
+	opts := &options.ClientOptions{
+		BSONOptions: bsonOpts,
+	}
+	opts.ApplyURI(m.MONGODB_URI)
+
 	context, cancel := context.WithTimeout(context.TODO(), time.Duration(m.TIMEOUT))
 	defer cancel()
-	m.client, err = mongo.Connect(context, options.Client().ApplyURI(m.MONGODB_URI).SetBSONOptions(bsonOpts))
+	m.client, err = mongo.Connect(context, opts)
 	if err != nil {
 		return app.Logger().PushFatalStack("failed to connect to mongodb server", err)
 	}
