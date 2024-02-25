@@ -156,6 +156,12 @@ func Yesterday() Date {
 	return d
 }
 
+func Tommorrow() Date {
+	var d Date
+	d.SetTime(time.Now().Add(+time.Hour * 24))
+	return d
+}
+
 func DateOfTime(t time.Time) Date {
 	var d Date
 	d.SetTime(t)
@@ -242,4 +248,50 @@ func DateFromId(id string) (Date, error) {
 
 	m := DateOfTime(tm)
 	return m, nil
+}
+
+func TimeInTimezone(tz string, inTime ...time.Time) (time.Time, error) {
+
+	t := OptionalArg(time.Now(), inTime...)
+
+	//init location
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		return t, err
+	}
+
+	// set timezone
+	result := t.In(loc)
+
+	// done
+	return result, nil
+}
+
+func DateInTimezone(tz string, inTime ...time.Time) (Date, error) {
+
+	t := OptionalArg(time.Now(), inTime...)
+
+	//init location
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		return DateOfTime(t), err
+	}
+
+	// set timezone
+	result := t.In(loc)
+
+	// done
+	return DateOfTime(result), nil
+}
+
+func DateWithOffset(offset int, inDate ...Date) Date {
+	d := OptionalArg(Today(), inDate...)
+	if offset == 0 {
+		return d
+	}
+
+	now := d.Time()
+	offsTime := now.Add(time.Hour * time.Duration(offset))
+	result := DateOfTime(offsTime)
+	return result
 }
