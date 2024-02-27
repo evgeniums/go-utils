@@ -16,6 +16,7 @@ type MongoDbClientConfig struct {
 	MONGODB_URI string        `validate:"required" vmessage:"mongodb URI must be specified"`
 	DB_NAME     string        `validate:"required" vmessage:"Name of database must be specified"`
 	JSON_TAG    bool          `default:"true"`
+	DEBUG       bool          `default:"false"`
 	TIMEOUT     time.Duration `default:"30s"`
 }
 
@@ -46,9 +47,12 @@ func (m *MongoDbClient) Init(app app_context.Context, configPath ...string) erro
 	if app.Cfg().IsSet("mongodb.json_tag") {
 		m.JSON_TAG = app.Cfg().GetBool("mongodb.json_tag")
 	}
+	if app.Cfg().IsSet("mongodb.debug") {
+		m.DEBUG = app.Cfg().GetBool("mongodb.debug")
+	}
 
 	// load configuration
-	err := object_config.LoadLogValidateApp(app, m, "mongodb_client", configPath...)
+	err := object_config.LoadLogValidateApp(app, m, "mongodb", configPath...)
 	if err != nil {
 		return app.Logger().PushFatalStack("failed to load config of mongodb client", err)
 	}
@@ -66,6 +70,13 @@ func (m *MongoDbClient) Init(app app_context.Context, configPath ...string) erro
 		BSONOptions: bsonOpts,
 	}
 	opts.ApplyURI(m.MONGODB_URI)
+
+	if m.DEBUG {
+		loggerOptions := options.
+			Logger().
+			SetComponentLevel(options.LogComponentCommand, options.LogLevelDebug)
+		opts.SetLoggerOptions(loggerOptions)
+	}
 
 	context, cancel := context.WithTimeout(context.TODO(), time.Duration(m.TIMEOUT))
 	defer cancel()
