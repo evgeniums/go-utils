@@ -1,12 +1,12 @@
 package customer_console
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/console_tool"
-	"github.com/evgeniums/go-backend-helpers/pkg/customer"
-	"github.com/evgeniums/go-backend-helpers/pkg/user"
-	"github.com/evgeniums/go-backend-helpers/pkg/user/user_console"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/app_context"
+	"github.com/evgeniums/go-utils/pkg/console_tool"
+	"github.com/evgeniums/go-utils/pkg/customer"
+	"github.com/evgeniums/go-utils/pkg/user"
+	"github.com/evgeniums/go-utils/pkg/user/user_console"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 type Commands[T customer.User] struct {

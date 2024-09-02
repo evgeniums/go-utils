@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"hash"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 type Hmac struct {

@@ -1,6 +1,6 @@
 package api
 
-import "github.com/evgeniums/go-backend-helpers/pkg/access_control"
+import "github.com/evgeniums/go-utils/pkg/access_control"
 
 func OperationAsResource(sampleResource Resource, resourceName string, resourceId string, op Operation) Operation {
 	opResource := NewResource(resourceName)

@@ -1,9 +1,9 @@
 package user_pubkey
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
-	"github.com/evgeniums/go-backend-helpers/pkg/signature"
+	"github.com/evgeniums/go-utils/pkg/auth"
+	"github.com/evgeniums/go-utils/pkg/common"
+	"github.com/evgeniums/go-utils/pkg/signature"
 )
 
 type PubkeyI interface {

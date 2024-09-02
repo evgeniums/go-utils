@@ -1,17 +1,17 @@
 package auth_factory
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_sms"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_token"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
-	"github.com/evgeniums/go-backend-helpers/pkg/config"
-	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
-	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/sms"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
-	"github.com/evgeniums/go-backend-helpers/pkg/validator"
+	"github.com/evgeniums/go-utils/pkg/auth"
+	"github.com/evgeniums/go-utils/pkg/auth/auth_methods/auth_login_phash"
+	"github.com/evgeniums/go-utils/pkg/auth/auth_methods/auth_sms"
+	"github.com/evgeniums/go-utils/pkg/auth/auth_methods/auth_token"
+	"github.com/evgeniums/go-utils/pkg/auth/auth_session"
+	"github.com/evgeniums/go-utils/pkg/config"
+	"github.com/evgeniums/go-utils/pkg/config/object_config"
+	"github.com/evgeniums/go-utils/pkg/logger"
+	"github.com/evgeniums/go-utils/pkg/sms"
+	"github.com/evgeniums/go-utils/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/validator"
 )
 
 const LoginphashSmsTokenProtocol = "login_phash_sms_token"

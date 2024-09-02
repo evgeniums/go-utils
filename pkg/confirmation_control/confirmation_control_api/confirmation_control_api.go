@@ -3,10 +3,10 @@ package confirmation_control_api
 import (
 	"fmt"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/confirmation_control"
-	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
+	"github.com/evgeniums/go-utils/pkg/api"
+	"github.com/evgeniums/go-utils/pkg/auth"
+	"github.com/evgeniums/go-utils/pkg/confirmation_control"
+	"github.com/evgeniums/go-utils/pkg/generic_error"
 )
 
 const ServiceName string = "confirmation"

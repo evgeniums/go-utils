@@ -1,11 +1,11 @@
 package work_schedule
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pool_pubsub"
-	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pubsub_subscriber"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/multitenancy"
+	"github.com/evgeniums/go-utils/pkg/op_context"
+	"github.com/evgeniums/go-utils/pkg/pubsub/pool_pubsub"
+	"github.com/evgeniums/go-utils/pkg/pubsub/pubsub_subscriber"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 type PubsubWork[T Work] struct {

@@ -3,12 +3,12 @@ package api_server
 import (
 	"fmt"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/background_worker"
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
-	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
-	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
-	"github.com/evgeniums/go-backend-helpers/pkg/pool"
+	"github.com/evgeniums/go-utils/pkg/auth"
+	"github.com/evgeniums/go-utils/pkg/background_worker"
+	"github.com/evgeniums/go-utils/pkg/common"
+	"github.com/evgeniums/go-utils/pkg/generic_error"
+	"github.com/evgeniums/go-utils/pkg/multitenancy"
+	"github.com/evgeniums/go-utils/pkg/pool"
 )
 
 // Interface of generic server that implements some API.

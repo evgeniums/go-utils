@@ -8,13 +8,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
-	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
-	"github.com/evgeniums/go-backend-helpers/pkg/http_request"
-	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
-	"github.com/evgeniums/go-backend-helpers/pkg/validator"
+	"github.com/evgeniums/go-utils/pkg/access_control"
+	"github.com/evgeniums/go-utils/pkg/api"
+	"github.com/evgeniums/go-utils/pkg/api/api_server"
+	"github.com/evgeniums/go-utils/pkg/http_request"
+	"github.com/evgeniums/go-utils/pkg/logger"
+	"github.com/evgeniums/go-utils/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/validator"
 	"github.com/gin-gonic/gin"
 )
 

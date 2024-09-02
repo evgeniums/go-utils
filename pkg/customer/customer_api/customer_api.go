@@ -1,12 +1,12 @@
 package customer_api
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
-	"github.com/evgeniums/go-backend-helpers/pkg/customer"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/user"
+	"github.com/evgeniums/go-utils/pkg/access_control"
+	"github.com/evgeniums/go-utils/pkg/api"
+	"github.com/evgeniums/go-utils/pkg/common"
+	"github.com/evgeniums/go-utils/pkg/customer"
+	"github.com/evgeniums/go-utils/pkg/op_context"
+	"github.com/evgeniums/go-utils/pkg/user"
 )
 
 type FieldsSetter[T customer.User] struct {

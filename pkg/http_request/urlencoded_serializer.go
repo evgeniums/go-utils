@@ -1,7 +1,7 @@
 package http_request
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/message"
+	"github.com/evgeniums/go-utils/pkg/message"
 )
 
 type UrlEncodedSerializer struct {

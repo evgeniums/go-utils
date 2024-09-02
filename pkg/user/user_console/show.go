@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/console_tool"
-	"github.com/evgeniums/go-backend-helpers/pkg/user"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/console_tool"
+	"github.com/evgeniums/go-utils/pkg/user"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 const ShowCmd string = "show"

@@ -1,10 +1,10 @@
 package tenancy_client
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
-	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
-	"github.com/evgeniums/go-backend-helpers/pkg/db"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-utils/pkg/api"
+	"github.com/evgeniums/go-utils/pkg/api/api_client"
+	"github.com/evgeniums/go-utils/pkg/db"
+	"github.com/evgeniums/go-utils/pkg/op_context"
 )
 
 func (t *TenancyClient) Exists(ctx op_context.Context, fields db.Fields) (bool, error) {

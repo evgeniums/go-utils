@@ -1,10 +1,10 @@
 package auth
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
-	"github.com/evgeniums/go-backend-helpers/pkg/config"
-	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/validator"
+	"github.com/evgeniums/go-utils/pkg/common"
+	"github.com/evgeniums/go-utils/pkg/config"
+	"github.com/evgeniums/go-utils/pkg/logger"
+	"github.com/evgeniums/go-utils/pkg/validator"
 )
 
 type AuthDataAccessor interface {

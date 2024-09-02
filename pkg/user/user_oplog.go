@@ -1,6 +1,6 @@
 package user
 
-import "github.com/evgeniums/go-backend-helpers/pkg/oplog"
+import "github.com/evgeniums/go-utils/pkg/oplog"
 
 type OpLogUserI interface {
 	oplog.Oplog

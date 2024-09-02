@@ -1,8 +1,8 @@
 package auth_service
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
-	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
+	"github.com/evgeniums/go-utils/pkg/access_control"
+	"github.com/evgeniums/go-utils/pkg/api/api_server"
 )
 
 // Login endpoint is derived from no handler endpoint because all processing in performed in auth preprocessing.

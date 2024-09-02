@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/console_tool"
-	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
-	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/app_with_multitenancy"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/pool"
-	"github.com/evgeniums/go-backend-helpers/pkg/pool/app_with_pools"
+	"github.com/evgeniums/go-utils/pkg/app_context"
+	"github.com/evgeniums/go-utils/pkg/console_tool"
+	"github.com/evgeniums/go-utils/pkg/multitenancy"
+	"github.com/evgeniums/go-utils/pkg/multitenancy/app_with_multitenancy"
+	"github.com/evgeniums/go-utils/pkg/op_context"
+	"github.com/evgeniums/go-utils/pkg/pool"
+	"github.com/evgeniums/go-utils/pkg/pool/app_with_pools"
 )
 
 type MultitenancyAppBuilder struct {

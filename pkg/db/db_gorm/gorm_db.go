@@ -3,13 +3,13 @@ package db_gorm
 import (
 	"fmt"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
-	"github.com/evgeniums/go-backend-helpers/pkg/config"
-	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
-	"github.com/evgeniums/go-backend-helpers/pkg/db"
-	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
-	"github.com/evgeniums/go-backend-helpers/pkg/validator"
+	"github.com/evgeniums/go-utils/pkg/common"
+	"github.com/evgeniums/go-utils/pkg/config"
+	"github.com/evgeniums/go-utils/pkg/config/object_config"
+	"github.com/evgeniums/go-utils/pkg/db"
+	"github.com/evgeniums/go-utils/pkg/logger"
+	"github.com/evgeniums/go-utils/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/validator"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

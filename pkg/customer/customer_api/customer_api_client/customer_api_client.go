@@ -1,10 +1,10 @@
 package customer_api_client
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
-	"github.com/evgeniums/go-backend-helpers/pkg/customer"
-	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api/user_client"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/api/api_client"
+	"github.com/evgeniums/go-utils/pkg/customer"
+	"github.com/evgeniums/go-utils/pkg/user/user_api/user_client"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 type Client[T customer.User] struct {

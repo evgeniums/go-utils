@@ -3,9 +3,9 @@ package default_op_context
 import (
 	"net/http"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
+	"github.com/evgeniums/go-utils/pkg/app_context"
+	"github.com/evgeniums/go-utils/pkg/generic_error"
+	"github.com/evgeniums/go-utils/pkg/op_context"
 )
 
 func NewAppInitContext(app app_context.Context) op_context.Context {

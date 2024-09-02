@@ -3,7 +3,7 @@ package pool_console
 import (
 	"fmt"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 const ListPoolServicesCmd string = "list_pool_services"

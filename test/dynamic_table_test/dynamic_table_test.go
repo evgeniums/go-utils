@@ -3,11 +3,11 @@ package dynamic_table_test
 import (
 	"testing"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
-	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
-	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server/dynamic_table_gorm"
-	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/api"
+	"github.com/evgeniums/go-utils/pkg/api/api_server"
+	"github.com/evgeniums/go-utils/pkg/api/api_server/dynamic_table_gorm"
+	"github.com/evgeniums/go-utils/pkg/test_utils"
+	"github.com/evgeniums/go-utils/pkg/utils"
 	"github.com/stretchr/testify/require"
 )
 

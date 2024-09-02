@@ -1,11 +1,11 @@
 package customer_api_client
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
-	"github.com/evgeniums/go-backend-helpers/pkg/customer/customer_api"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api/user_client"
+	"github.com/evgeniums/go-utils/pkg/api/api_client"
+	"github.com/evgeniums/go-utils/pkg/common"
+	"github.com/evgeniums/go-utils/pkg/customer/customer_api"
+	"github.com/evgeniums/go-utils/pkg/op_context"
+	"github.com/evgeniums/go-utils/pkg/user/user_api/user_client"
 )
 
 type SetDescription = user_client.SetterHandler[common.WithDescriptionBase]

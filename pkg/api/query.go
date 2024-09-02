@@ -1,6 +1,6 @@
 package api
 
-import "github.com/evgeniums/go-backend-helpers/pkg/db"
+import "github.com/evgeniums/go-utils/pkg/db"
 
 type Query interface {
 	Query() string

@@ -1,9 +1,9 @@
 package admin
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_session"
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
-	"github.com/evgeniums/go-backend-helpers/pkg/user/user_session_default"
+	"github.com/evgeniums/go-utils/pkg/auth/auth_session"
+	"github.com/evgeniums/go-utils/pkg/common"
+	"github.com/evgeniums/go-utils/pkg/user/user_session_default"
 )
 
 type Role struct {

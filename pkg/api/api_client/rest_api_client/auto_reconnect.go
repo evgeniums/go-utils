@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_csrf"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_login_phash"
-	"github.com/evgeniums/go-backend-helpers/pkg/auth/auth_methods/auth_token"
-	"github.com/evgeniums/go-backend-helpers/pkg/http_request"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/api/api_client"
+	"github.com/evgeniums/go-utils/pkg/auth/auth_methods/auth_csrf"
+	"github.com/evgeniums/go-utils/pkg/auth/auth_methods/auth_login_phash"
+	"github.com/evgeniums/go-utils/pkg/auth/auth_methods/auth_token"
+	"github.com/evgeniums/go-utils/pkg/http_request"
+	"github.com/evgeniums/go-utils/pkg/op_context"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 type autoReconnect struct {

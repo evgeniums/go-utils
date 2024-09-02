@@ -1,8 +1,8 @@
 package confirmation_control
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
-	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
+	"github.com/evgeniums/go-utils/pkg/generic_error"
+	"github.com/evgeniums/go-utils/pkg/multitenancy"
 )
 
 const StatusSuccess string = "success"

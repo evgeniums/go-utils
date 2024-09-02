@@ -3,7 +3,7 @@ package crypt_test
 import (
 	"testing"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
+	"github.com/evgeniums/go-utils/pkg/crypt_utils"
 	"github.com/stretchr/testify/assert"
 )
 

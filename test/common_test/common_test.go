@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-utils/pkg/common"
 	"gopkg.in/go-playground/assert.v1"
 )
 

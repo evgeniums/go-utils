@@ -5,8 +5,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
-	"github.com/evgeniums/go-backend-helpers/pkg/test_utils"
+	"github.com/evgeniums/go-utils/pkg/crypt_utils"
+	"github.com/evgeniums/go-utils/pkg/test_utils"
 	"github.com/stretchr/testify/assert"
 )
 

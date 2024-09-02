@@ -3,11 +3,11 @@ package user_console
 import (
 	"fmt"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/console_tool"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/user"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/app_context"
+	"github.com/evgeniums/go-utils/pkg/console_tool"
+	"github.com/evgeniums/go-utils/pkg/op_context"
+	"github.com/evgeniums/go-utils/pkg/user"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 type UserCommands[T user.User] struct {

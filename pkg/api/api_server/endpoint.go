@@ -1,10 +1,10 @@
 package api_server
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/access_control"
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
-	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/access_control"
+	"github.com/evgeniums/go-utils/pkg/api"
+	"github.com/evgeniums/go-utils/pkg/generic_error"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 // Interface of API endpoint.

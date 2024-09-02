@@ -3,10 +3,10 @@ package pool
 import (
 	"errors"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/config/object_config"
-	"github.com/evgeniums/go-backend-helpers/pkg/crud"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/config/object_config"
+	"github.com/evgeniums/go-utils/pkg/crud"
+	"github.com/evgeniums/go-utils/pkg/op_context"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 type PoolStoreConfigI interface {

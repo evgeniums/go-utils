@@ -1,10 +1,10 @@
 package confirmation_api_client
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
-	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
-	"github.com/evgeniums/go-backend-helpers/pkg/confirmation_control/confirmation_control_api"
-	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
+	"github.com/evgeniums/go-utils/pkg/api"
+	"github.com/evgeniums/go-utils/pkg/api/api_client"
+	"github.com/evgeniums/go-utils/pkg/confirmation_control/confirmation_control_api"
+	"github.com/evgeniums/go-utils/pkg/multitenancy"
 )
 
 type ConfirmationInternalClient struct {

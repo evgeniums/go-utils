@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/db"
-	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/db"
+	"github.com/evgeniums/go-utils/pkg/logger"
+	"github.com/evgeniums/go-utils/pkg/utils"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/driver/postgres"

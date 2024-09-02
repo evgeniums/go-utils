@@ -4,15 +4,15 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/crud"
-	"github.com/evgeniums/go-backend-helpers/pkg/crypt_utils"
-	"github.com/evgeniums/go-backend-helpers/pkg/db"
-	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
-	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/signature"
-	"github.com/evgeniums/go-backend-helpers/pkg/user"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/crud"
+	"github.com/evgeniums/go-utils/pkg/crypt_utils"
+	"github.com/evgeniums/go-utils/pkg/db"
+	"github.com/evgeniums/go-utils/pkg/generic_error"
+	"github.com/evgeniums/go-utils/pkg/logger"
+	"github.com/evgeniums/go-utils/pkg/op_context"
+	"github.com/evgeniums/go-utils/pkg/signature"
+	"github.com/evgeniums/go-utils/pkg/user"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 const (

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 const RSA_H256_SIGNATURE = "rsa_h256_signature"

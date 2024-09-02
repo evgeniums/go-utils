@@ -1,9 +1,9 @@
 package pool_service
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/api"
-	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
-	"github.com/evgeniums/go-backend-helpers/pkg/pool"
+	"github.com/evgeniums/go-utils/pkg/api"
+	"github.com/evgeniums/go-utils/pkg/api/api_server"
+	"github.com/evgeniums/go-utils/pkg/pool"
 )
 
 type PoolEndpoint struct {

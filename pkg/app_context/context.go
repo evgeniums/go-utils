@@ -3,12 +3,12 @@ package app_context
 import (
 	"time"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/cache"
-	"github.com/evgeniums/go-backend-helpers/pkg/config"
-	"github.com/evgeniums/go-backend-helpers/pkg/db"
-	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
-	"github.com/evgeniums/go-backend-helpers/pkg/validator"
+	"github.com/evgeniums/go-utils/pkg/cache"
+	"github.com/evgeniums/go-utils/pkg/config"
+	"github.com/evgeniums/go-utils/pkg/db"
+	"github.com/evgeniums/go-utils/pkg/logger"
+	"github.com/evgeniums/go-utils/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/validator"
 )
 
 type BuildConfig struct {

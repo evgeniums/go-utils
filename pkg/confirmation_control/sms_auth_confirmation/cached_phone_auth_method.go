@@ -1,11 +1,11 @@
 package sms_auth_confirmation
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/config"
-	"github.com/evgeniums/go-backend-helpers/pkg/confirmation_control/confirmation_control_api"
-	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/validator"
+	"github.com/evgeniums/go-utils/pkg/auth"
+	"github.com/evgeniums/go-utils/pkg/config"
+	"github.com/evgeniums/go-utils/pkg/confirmation_control/confirmation_control_api"
+	"github.com/evgeniums/go-utils/pkg/logger"
+	"github.com/evgeniums/go-utils/pkg/validator"
 )
 
 type User struct {

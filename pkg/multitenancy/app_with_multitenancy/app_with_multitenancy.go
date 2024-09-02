@@ -3,15 +3,15 @@ package app_with_multitenancy
 import (
 	"net/http"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/background_worker"
-	"github.com/evgeniums/go-backend-helpers/pkg/customer"
-	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
-	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
-	"github.com/evgeniums/go-backend-helpers/pkg/multitenancy/tenancy_manager"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/pubsub/pool_pubsub"
+	"github.com/evgeniums/go-utils/pkg/app_context"
+	"github.com/evgeniums/go-utils/pkg/background_worker"
+	"github.com/evgeniums/go-utils/pkg/customer"
+	"github.com/evgeniums/go-utils/pkg/generic_error"
+	"github.com/evgeniums/go-utils/pkg/multitenancy"
+	"github.com/evgeniums/go-utils/pkg/multitenancy/tenancy_manager"
+	"github.com/evgeniums/go-utils/pkg/op_context"
+	"github.com/evgeniums/go-utils/pkg/op_context/default_op_context"
+	"github.com/evgeniums/go-utils/pkg/pubsub/pool_pubsub"
 )
 
 type AppWithMultitenancy interface {

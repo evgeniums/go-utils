@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client/rest_api_client"
-	"github.com/evgeniums/go-backend-helpers/pkg/http_request"
-	"github.com/evgeniums/go-backend-helpers/pkg/pool"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/api/api_client/rest_api_client"
+	"github.com/evgeniums/go-utils/pkg/http_request"
+	"github.com/evgeniums/go-utils/pkg/pool"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 func BaseUrlForService(service *pool.PoolServiceBinding, public ...bool) (string, error) {

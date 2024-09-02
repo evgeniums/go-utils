@@ -1,6 +1,6 @@
 package tenancy_console
 
-import "github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
+import "github.com/evgeniums/go-utils/pkg/multitenancy"
 
 const PathCmd string = "path"
 const PathDescription string = "Set new tenancy's path"

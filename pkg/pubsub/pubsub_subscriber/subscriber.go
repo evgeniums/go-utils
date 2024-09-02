@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/generic_error"
-	"github.com/evgeniums/go-backend-helpers/pkg/message"
-	"github.com/evgeniums/go-backend-helpers/pkg/message/message_json"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/app_context"
+	"github.com/evgeniums/go-utils/pkg/generic_error"
+	"github.com/evgeniums/go-utils/pkg/message"
+	"github.com/evgeniums/go-utils/pkg/message/message_json"
+	"github.com/evgeniums/go-utils/pkg/op_context"
+	"github.com/evgeniums/go-utils/pkg/op_context/default_op_context"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 type Subscriber interface {

@@ -1,9 +1,9 @@
 package cache
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/message"
-	"github.com/evgeniums/go-backend-helpers/pkg/message/message_json"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/message"
+	"github.com/evgeniums/go-utils/pkg/message/message_json"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 type Cache interface {

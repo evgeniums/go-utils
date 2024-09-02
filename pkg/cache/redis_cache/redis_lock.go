@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/bsm/redislock"
-	"github.com/evgeniums/go-backend-helpers/pkg/cache"
+	"github.com/evgeniums/go-utils/pkg/cache"
 )
 
 type RedisLocker struct {

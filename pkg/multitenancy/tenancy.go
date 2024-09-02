@@ -4,17 +4,17 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/app_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/cache"
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
-	"github.com/evgeniums/go-backend-helpers/pkg/db"
-	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context/default_op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/pool"
-	"github.com/evgeniums/go-backend-helpers/pkg/pool/app_with_pools"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
-	"github.com/evgeniums/go-backend-helpers/pkg/validator"
+	"github.com/evgeniums/go-utils/pkg/app_context"
+	"github.com/evgeniums/go-utils/pkg/cache"
+	"github.com/evgeniums/go-utils/pkg/common"
+	"github.com/evgeniums/go-utils/pkg/db"
+	"github.com/evgeniums/go-utils/pkg/logger"
+	"github.com/evgeniums/go-utils/pkg/op_context"
+	"github.com/evgeniums/go-utils/pkg/op_context/default_op_context"
+	"github.com/evgeniums/go-utils/pkg/pool"
+	"github.com/evgeniums/go-utils/pkg/pool/app_with_pools"
+	"github.com/evgeniums/go-utils/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/validator"
 )
 
 type Tenancy interface {

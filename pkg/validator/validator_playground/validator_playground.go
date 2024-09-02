@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
-	"github.com/evgeniums/go-backend-helpers/pkg/validator"
+	"github.com/evgeniums/go-utils/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/validator"
 	playground "github.com/go-playground/validator/v10"
 )
 

@@ -1,6 +1,6 @@
 package multitenancy
 
-import "github.com/evgeniums/go-backend-helpers/pkg/oplog"
+import "github.com/evgeniums/go-utils/pkg/oplog"
 
 type OpLogTenancy struct {
 	oplog.OplogBase

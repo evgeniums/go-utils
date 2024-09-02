@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/db"
+	"github.com/evgeniums/go-utils/pkg/db"
 	"gorm.io/gorm/schema"
 )
 

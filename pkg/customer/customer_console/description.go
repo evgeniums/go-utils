@@ -1,9 +1,9 @@
 package customer_console
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/console_tool"
-	"github.com/evgeniums/go-backend-helpers/pkg/customer"
-	"github.com/evgeniums/go-backend-helpers/pkg/user/user_console"
+	"github.com/evgeniums/go-utils/pkg/console_tool"
+	"github.com/evgeniums/go-utils/pkg/customer"
+	"github.com/evgeniums/go-utils/pkg/user/user_console"
 )
 
 const DescriptionCmd string = "description"

@@ -1,9 +1,9 @@
 package admin_api_client
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/admin"
-	"github.com/evgeniums/go-backend-helpers/pkg/api/api_client"
-	"github.com/evgeniums/go-backend-helpers/pkg/user/user_api/user_client"
+	"github.com/evgeniums/go-utils/pkg/admin"
+	"github.com/evgeniums/go-utils/pkg/api/api_client"
+	"github.com/evgeniums/go-utils/pkg/user/user_api/user_client"
 )
 
 type AdminClient = user_client.UserClient[*admin.Admin]

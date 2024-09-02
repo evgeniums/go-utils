@@ -1,6 +1,6 @@
 package tenancy_console
 
-import "github.com/evgeniums/go-backend-helpers/pkg/multitenancy"
+import "github.com/evgeniums/go-utils/pkg/multitenancy"
 
 const AddIpAddressCmd string = "ip-add"
 const AddIpAddressDescription string = "Add allowed IP address to tenancy"

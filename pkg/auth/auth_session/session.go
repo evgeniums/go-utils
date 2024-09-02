@@ -3,8 +3,8 @@ package auth_session
 import (
 	"time"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/auth"
-	"github.com/evgeniums/go-backend-helpers/pkg/common"
+	"github.com/evgeniums/go-utils/pkg/auth"
+	"github.com/evgeniums/go-utils/pkg/common"
 )
 
 type Session interface {

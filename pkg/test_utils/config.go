@@ -3,7 +3,7 @@ package test_utils
 import (
 	"path/filepath"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 var Testing = ""

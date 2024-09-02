@@ -3,9 +3,9 @@ package multitenancy
 import (
 	"fmt"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/logger"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/logger"
+	"github.com/evgeniums/go-utils/pkg/op_context"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 func UpgradeTenancyDatabase(ctx op_context.Context, tenancy Tenancy, dbModels *TenancyDbModels) error {

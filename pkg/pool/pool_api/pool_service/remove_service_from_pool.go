@@ -1,8 +1,8 @@
 package pool_service
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/api/api_server"
-	"github.com/evgeniums/go-backend-helpers/pkg/pool/pool_api"
+	"github.com/evgeniums/go-utils/pkg/api/api_server"
+	"github.com/evgeniums/go-utils/pkg/pool/pool_api"
 )
 
 type RemoveServiceFromPoolEndpoint struct {

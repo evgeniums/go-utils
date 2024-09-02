@@ -1,7 +1,7 @@
 package crypt_utils
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/utils"
 )
 
 type ESigner interface {

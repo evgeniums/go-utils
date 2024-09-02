@@ -1,9 +1,9 @@
 package admin_api
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/admin"
-	"github.com/evgeniums/go-backend-helpers/pkg/op_context"
-	"github.com/evgeniums/go-backend-helpers/pkg/user"
+	"github.com/evgeniums/go-utils/pkg/admin"
+	"github.com/evgeniums/go-utils/pkg/op_context"
+	"github.com/evgeniums/go-utils/pkg/user"
 )
 
 type AdminFieldsSetter struct {

@@ -6,8 +6,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/evgeniums/go-backend-helpers/pkg/utils"
-	"github.com/evgeniums/go-backend-helpers/pkg/validator"
+	"github.com/evgeniums/go-utils/pkg/utils"
+	"github.com/evgeniums/go-utils/pkg/validator"
 	"github.com/markphelps/optional"
 )
 

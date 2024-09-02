@@ -1,8 +1,8 @@
 package user_console
 
 import (
-	"github.com/evgeniums/go-backend-helpers/pkg/console_tool"
-	"github.com/evgeniums/go-backend-helpers/pkg/user"
+	"github.com/evgeniums/go-utils/pkg/console_tool"
+	"github.com/evgeniums/go-utils/pkg/user"
 )
 
 const PasswordCmd string = "password"
