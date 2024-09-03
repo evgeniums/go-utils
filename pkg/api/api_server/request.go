@@ -1,6 +1,8 @@
 package api_server
 
 import (
+	"mime/multipart"
+
 	"github.com/evgeniums/go-utils/pkg/api"
 	"github.com/evgeniums/go-utils/pkg/app_context"
 	"github.com/evgeniums/go-utils/pkg/auth"
@@ -22,6 +24,7 @@ type Request interface {
 
 	ParseValidate(cmd interface{}) error
 	FormData() map[string][]string
+	FormFile() (*multipart.FileHeader, error)
 }
 
 type RequestBase struct {

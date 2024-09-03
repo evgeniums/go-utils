@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"time"
 
@@ -278,4 +279,13 @@ func (r *Request) FormData() map[string][]string {
 		return map[string][]string{}
 	}
 	return r.ginCtx.Request.Form
+}
+
+func (r *Request) FormFile() (*multipart.FileHeader, error) {
+	file, err := r.ginCtx.FormFile(r.server.FORM_SINGLE_FILE_FIELD)
+	if err != nil {
+		r.Logger().Error("failed to extract single file from form", err)
+		return nil, err
+	}
+	return file, nil
 }

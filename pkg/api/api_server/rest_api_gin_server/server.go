@@ -51,6 +51,8 @@ type ServerConfig struct {
 	TENANCY_PARAMETER string `validate:"omitempty,alphanum"`
 
 	DEFAULT_RESPONSE_JSON string
+
+	FORM_SINGLE_FILE_FIELD string `default:"file"`
 }
 
 type AuthParameterGetter = func(r *Request, key string) string
