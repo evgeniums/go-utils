@@ -22,6 +22,11 @@ type ResponseBase struct {
 	HateoasLinksContainer
 }
 
+type ResponseStatus struct {
+	ResponseStub
+	Status string `json:"status"`
+}
+
 type ResponseCount struct {
 	Count int64 `json:"count,omitempty"`
 }

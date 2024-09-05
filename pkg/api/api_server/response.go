@@ -15,6 +15,8 @@ type File struct {
 type Response interface {
 	Message() interface{}
 	SetMessage(message api.Response)
+	SetStatusMessage(status string)
+	SetSuccessStatusMessage()
 	Request() Request
 	SetRequest(request Request)
 
@@ -45,6 +47,15 @@ func (r *ResponseBase) SetMessage(message api.Response) {
 		api.InjectHateoasLinksToObject(r.request.Endpoint().Resource(), message)
 	}
 	r.message = message
+}
+
+func (r *ResponseBase) SetStatusMessage(status string) {
+	m := &api.ResponseStatus{Status: status}
+	r.SetMessage(m)
+}
+
+func (r *ResponseBase) SetSuccessStatusMessage() {
+	r.SetStatusMessage("success")
 }
 
 func SetResponseList(r Request, response api.ResponseListI, resourceType ...string) {
