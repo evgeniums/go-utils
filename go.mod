@@ -3,8 +3,8 @@ module github.com/evgeniums/go-utils
 go 1.18
 
 require (
+	github.com/Jille/contextcond v1.0.0
 	github.com/dchest/uniuri v1.2.0
-	github.com/evgeniums/go-condchan v0.0.0-20210623094011-3f4a45786e20
 	github.com/evgeniums/go-finish-service v0.0.0-20230710172925-6f222f893152
 	github.com/evgeniums/viper v0.0.0-20230408104246-ba679b16578b
 	github.com/gin-gonic/gin v1.9.0
@@ -89,7 +89,6 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.10 // indirect
-	gitlab.com/jonas.jasas/condchan v0.0.0-20190210165812-36637ad2b5bc // indirect
 	golang.org/x/arch v0.2.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect

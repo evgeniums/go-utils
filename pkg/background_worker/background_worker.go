@@ -6,9 +6,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/Jille/contextcond"
 	"github.com/evgeniums/go-utils/pkg/logger"
 	"github.com/evgeniums/go-utils/pkg/utils"
-	"github.com/evgeniums/go-condchan"
 	"github.com/markphelps/optional"
 )
 
@@ -58,7 +58,7 @@ type BackgroundWorker struct {
 	Period int
 	Name   string
 
-	CondChan *condchan.CondChan
+	CondChan *contextcond.Cond
 	Finished chan bool
 	Stopped  atomic.Bool
 	Running  atomic.Bool
@@ -82,7 +82,7 @@ func New(log logger.Logger, jobRunner JobRunner, period int, name ...string) *Ba
 	b := &BackgroundWorker{JobRunner: jobRunner, Period: period}
 	jobRunner.SetStopper(b)
 	b.WithLoggerBase.Init(log)
-	b.CondChan = condchan.New(&sync.Mutex{})
+	b.CondChan = contextcond.NewCond(&sync.Mutex{})
 	b.Finished = make(chan bool, 1)
 	b.Name = utils.OptionalArg("", name...)
 	return b
@@ -102,26 +102,23 @@ func (w *BackgroundWorker) RunInBackground() {
 		}
 		for {
 
-			timeoutChan := time.After(time.Second * time.Duration(w.Period+1))
-			br := new(bool)
-			*br = false
+			ctx, cancel := system_context.WithTimeout(system_context.Background(), time.Second*time.Duration(w.Period+1))
+			br := false
 
 			w.CondChan.L.Lock()
-			w.CondChan.Select(func(c <-chan struct{}) {
-				select {
-				case <-c:
-					w.Logger().Debug("Background worker: signal received")
-					*br = true
-				case <-timeoutChan:
-					if !w.IsStopped() {
-						// w.Log.LogDebug("Background worker: run job")
-						w.JobRunner.RunJob()
-					}
+			if w.CondChan.WaitContext(ctx) != nil {
+				if !w.IsStopped() {
+					// w.Log.LogDebug("Background worker: run job")
+					w.JobRunner.RunJob()
 				}
-			})
+			} else {
+				w.Logger().Debug("Background worker: signal received")
+				br = true
+			}
 			w.CondChan.L.Unlock()
+			cancel()
 
-			if w.IsStopped() || *br {
+			if w.IsStopped() || br {
 				w.Logger().Debug("Background worker: break cycle")
 				break
 			}
