@@ -1,3 +1,3 @@
 # go-utils
 
-Various types and functions to be used in Go programs.
+Deprecated. Moved to https://github.com/evgeniums/evgo
